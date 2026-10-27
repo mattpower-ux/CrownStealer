@@ -18,6 +18,9 @@ const volume = (value, fallback) => Number.isFinite(value) ? Math.min(1, Math.ma
 export class AudioDirector {
   constructor(options = {}) {
     this.Context = options.AudioContext === undefined ? globalThis.AudioContext || globalThis.webkitAudioContext : options.AudioContext;
+    this.MediaAudio = options.Audio === undefined ? globalThis.Audio : options.Audio;
+    this.titlePlayer = null;
+    this.titleUnavailable = false;
     this.interval = options.setInterval || globalThis.setInterval.bind(globalThis);
     this.clear = options.clearInterval || globalThis.clearInterval.bind(globalThis);
     this.fetch = options.fetch || globalThis.fetch?.bind(globalThis);
@@ -58,6 +61,7 @@ export class AudioDirector {
           }
         }
         if (!this.paused) await this.context.resume();
+        if(!this.titlePlayer&&this.MediaAudio){this.titlePlayer=new this.MediaAudio('/assets/title-theme.mp3');this.titlePlayer.loop=true;this.titlePlayer.preload='none';this.titlePlayer.volume=this.musicVolume;this.titlePlayer.onerror=()=>{this.titleUnavailable=true;if(this.scene==='title'&&!this.paused&&!this.destroyed)this.start();};}
         if (this.destroyed) return false;
         if (!this.paused) this.start();
         if(this.context.decodeAudioData) this.loadEncounter();
@@ -75,6 +79,7 @@ export class AudioDirector {
   setVolumes(music, effects) {
     this.musicVolume = volume(music, this.musicVolume);
     this.effectsVolume = volume(effects, this.effectsVolume);
+    if(this.titlePlayer)this.titlePlayer.volume=this.musicVolume;
     if (!this.context || this.destroyed) return;
     const now = this.context.currentTime;
     this.music.gain.setTargetAtTime(this.musicVolume, now, .035);
@@ -84,6 +89,7 @@ export class AudioDirector {
   setScene(name) {
     if (this.destroyed || !Object.hasOwn(THEMES, name) || name === this.scene) return;
     this.scene = name;
+    if(name!=='title')this.titlePlayer?.pause();
     this.encounterGeneration++;
     this.stopSchedule();
     this.retire('music');
@@ -92,6 +98,7 @@ export class AudioDirector {
 
   start() {
     if (this.timer !== null || this.paused || this.destroyed || this.context.state !== 'running') return;
+    if(this.scene==='title'&&this.titlePlayer&&!this.titleUnavailable){if(this.titlePlayer.paused)this.titlePlayer.play().catch(()=>{this.titleUnavailable=true;if(this.scene==='title'&&!this.paused&&!this.destroyed)this.start();});return;}
     this.beat = 0;
     this.nextNote = this.context.currentTime + .035;
     this.schedule();
@@ -223,6 +230,7 @@ export class AudioDirector {
 
   async suspend() {
     this.paused = true;
+    this.titlePlayer?.pause();
     this.transport++;
     this.stopSchedule();
     this.retire();
@@ -247,6 +255,7 @@ export class AudioDirector {
   async destroy() {
     if (this.destroyed) return;
     this.destroyed = true;
+    this.titlePlayer?.pause();
     this.transport++;
     this.stopSchedule();
     this.retire();
