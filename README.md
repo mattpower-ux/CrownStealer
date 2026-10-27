@@ -10,7 +10,7 @@ Run `npm start`, then open `http://localhost:4173`. No npm dependencies are requ
 
 ## Android
 
-The standalone installer is `releases/CrownStealer-0.4.0.apk`, for Android 8 or newer. Transfer it to the tablet, open it, and allow installation from that file source when prompted. All game assets are bundled, and the app requests no internet permission. Save progress is local. Export a save from Settings before uninstalling or clearing app data.
+The standalone installer is `releases/CrownStealer-0.4.1.apk`, for Android 8 or newer. Transfer it to the tablet, open it, and allow installation from that file source when prompted. All game assets are bundled, and the app requests no internet permission. Save progress is local. Export a save from Settings before uninstalling or clearing app data.
 
 See `android/README.md` for the reproducible build and private signing-key backup instructions. A newer APK signed with the same key can update the installed app. The APK signature and bundled file hashes are checked during build; physical Android-device behavior still needs testing.
 
@@ -36,6 +36,6 @@ Combat now presents each impact in sequence with sounds, icon flashes, floating 
 
 Random encounters use the user-supplied bass-note MP3. Combat switches to a close-up 2D map with small monster and adventurer icons; dungeon exploration remains first-person. A generated cloaked traveler replaces the old pawn. Dungeon entrances now face open corridors, and blocked directions are labeled. Visit `/update.html` to refresh an older offline preview while preserving the saved game.
 
-## Version 0.4.0
+## Version 0.4.1
 
 Distinct woodland, desert, coastal and snowy maps, transparent treetops, connected dirt/gravel/cobblestone paths, unique settlement icons and a fairground pavilion. Arrow keys move one square; dungeon left/right sidestep without turning. Q/E and curved touch buttons turn.

@@ -31,3 +31,11 @@ Built 2026-10-27 after combat, loot and naming changes. VersionCode 2. Signature
 ## Version 0.3.0 verification
 
 VersionCode3; same signing certificate. v2/v3 signature and alignment verified;17 assets hash-matched. SHA256 d58e9c96c926294bbc4c4741590db5dc012591c2ed765a092a7346ad6aff3d65. Includes user encounter MP3, adventurer sprite, tactical map combat, and dungeon facing repair. Physical tablet testing remains pending.
+
+## Version 0.4.1 verification (2026-10-27)
+- Signed APK: releases/CrownStealer-0.4.1.apk, 1,558,397 bytes, versionCode 5.
+- SHA-256: 790678a150add2ec317b9ccff2c066eba1c43224c59ce4555cfe9f712092bbf9.
+- APK v2/v3 signatures verified with the original signing identity; all 21 bundled files match source hashes.
+- 48 Node tests pass; Chrome tests pass for four biome maps, arrow movement, dungeon sidestepping, encounters and offline audio. Native routing/MIME: 20 checks pass.
+- Artwork converted to WebP with transparent icons sized for map display; original masters retained locally outside distribution.
+- Physical Android tablet testing remains pending.

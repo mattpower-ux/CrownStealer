@@ -61,5 +61,14 @@
       256,
       244
     ]
+  },
+  {
+    "asset": "vault.webp",
+    "originalBytes": 1999216,
+    "optimizedBytes": 16488,
+    "dimensions": [
+      256,
+      205
+    ]
   }
 ]

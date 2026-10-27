@@ -38,6 +38,7 @@ function groundTile(c,region,gx,gy,x,y,size){
  }
 }
 const settlements=new Image();settlements.src='/assets/towns.webp';
+const vault=new Image();vault.src='/assets/vault.webp';
 const fair=new Image();fair.src='/assets/fair.webp';
 function settlementIcon(c,t,x,y,size){if(t.name==='Gallows Fair'&&fair.complete&&fair.naturalWidth){c.drawImage(fair,x-size/2,y-size*.7,size,size);return;}const i=TOWNS.indexOf(t);if(settlements.complete&&settlements.naturalWidth){const sw=settlements.width/4,sh=settlements.height/3;c.drawImage(settlements,i%4*sw,Math.floor(i/4)*sh,sw,sh,x-size/2,y-size*.7,size,size);}else village(c,x,y,size*.6,t===TOWNS[1]);}
 function path(c,pts,fill,stroke){c.beginPath();pts.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.closePath();if(fill){c.fillStyle=fill;c.fill();}if(stroke){c.strokeStyle=stroke;c.stroke();}}
@@ -53,7 +54,7 @@ export function render(canvas,s,time=0,fx=null,reduced=false){const rect=canvas.
 function world(c,w,h,s,time){const p=REGIONS[s.region].palette;const size=Math.min(w/32,h/24),ox=(w-size*32)/2,oy=(h-size*24)/2;c.fillStyle=p.water;c.fillRect(0,0,w,h);c.save();c.translate(ox,oy);
  for(let y=0;y<24;y++)for(let x=0;x<32;x++)groundTile(c,s.region,x,y,x*size,y*size,size);
  for(const t of TOWNS.filter(t=>t.region===s.region)){settlementIcon(c,t,(t.x+.5)*size,(t.y+.5)*size,size*2);label(c,t.name,(t.x+.5)*size,(t.y+1.6)*size,Math.max(10,size*.42));}
- for(const d of DUNGEONS.filter(d=>d.region===s.region)){const x=(d.x+.5)*size,y=(d.y+.5)*size;path(c,[[x-size*.5,y+size*.3],[x-size*.4,y-size*.4],[x+size*.25,y-size*.7],[x+size*.6,y+size*.3]],'#718276','#a7a988');c.fillStyle='#101b18';c.beginPath();c.arc(x,y,size*.24,Math.PI,0);c.fillRect(x-size*.24,y,size*.48,size*.3);c.fill();circle(c,x,y+size*.1,size*.07,s.relics.includes(d.id)?'#bcd492':'#edb767');label(c,d.name,x,y+size*1.1,Math.max(10,size*.4));}
+ for(const d of DUNGEONS.filter(d=>d.region===s.region)){const x=(d.x+.5)*size,y=(d.y+.5)*size;if(d.id==='tithe-vault'&&vault.complete&&vault.naturalWidth){c.drawImage(vault,x-size*.8,y-size,size*1.6,size*1.6);label(c,d.name,x,y+size*1.1,Math.max(10,size*.4));continue;}path(c,[[x-size*.5,y+size*.3],[x-size*.4,y-size*.4],[x+size*.25,y-size*.7],[x+size*.6,y+size*.3]],'#718276','#a7a988');c.fillStyle='#101b18';c.beginPath();c.arc(x,y,size*.24,Math.PI,0);c.fillRect(x-size*.24,y,size*.48,size*.3);c.fill();circle(c,x,y+size*.1,size*.07,s.relics.includes(d.id)?'#bcd492':'#edb767');label(c,d.name,x,y+size*1.1,Math.max(10,size*.4));}
  const px=(s.x+.5)*size,py=(s.y+.5)*size;drawAdventurer(c,px,py,size*1.9);c.restore();
  label(c,'N',w-33,35,15,'#d1b57c');c.strokeStyle='#d1b57c';c.beginPath();c.moveTo(w-33,42);c.lineTo(w-33,66);c.stroke();path(c,[[w-33,39],[w-38,49],[w-28,49]],'#d1b57c');
 }
@@ -78,7 +79,7 @@ function battle(c,w,h,s,time,fx,reduced){
  for(let row=0;row<11;row++)for(let col=0;col<15;col++){
   const gx=originX+col,gy=originY+row,t=tile(gx,gy),x=ox+col*size,y=oy+row*size;
   if(inDungeon){c.fillStyle=t==='wall'?'#586358':'#1c3028';c.fillRect(x,y,size,size);c.strokeStyle=t==='wall'?'#82907c55':'#a2ac7b19';c.strokeRect(x+1,y+1,size-2,size-2);if(t==='stairs')label(c,'STAIRS',x+size/2,y+size*.6,Math.max(7,size*.18),'#d7bf83');}
-  else{groundTile(c,s.region,gx,gy,x,y,size);const town=TOWNS.find(p=>p.region===s.region&&p.x===gx&&p.y===gy);if(town)settlementIcon(c,town,x+size/2,y+size/2,size*1.3);const ruin=DUNGEONS.find(p=>p.region===s.region&&p.x===gx&&p.y===gy);if(ruin)tileArt(c,6,x,y,size);}
+  else{groundTile(c,s.region,gx,gy,x,y,size);const town=TOWNS.find(p=>p.region===s.region&&p.x===gx&&p.y===gy);if(town)settlementIcon(c,town,x+size/2,y+size/2,size*1.3);const ruin=DUNGEONS.find(p=>p.region===s.region&&p.x===gx&&p.y===gy);if(ruin){if(ruin.id==='tithe-vault'&&vault.complete&&vault.naturalWidth)c.drawImage(vault,x,y,size,size);else tileArt(c,6,x,y,size);}}
   c.strokeStyle='#06150b18';c.strokeRect(x,y,size,size);
  }
  const heroX=ox+7.5*size,heroY=oy+5.5*size,enemyX=ox+(ex-originX+.5)*size,enemyY=oy+(ey-originY+.5)*size;
