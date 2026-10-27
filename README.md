@@ -10,7 +10,7 @@ Run `npm start`, then open `http://localhost:4173`. No npm dependencies are requ
 
 ## Android
 
-The standalone installer is `releases/CrownStealer-0.7.2.apk`, for Android 8 or newer. Transfer it to the tablet, open it, and allow installation from that file source when prompted. All game assets are bundled, and the app requests no internet permission. Save progress is local. Export a save from Settings before uninstalling or clearing app data.
+The standalone installer is `releases/CrownStealer-0.7.3.apk`, for Android 8 or newer. Transfer it to the tablet, open it, and allow installation from that file source when prompted. All game assets are bundled, and the app requests no internet permission. Save progress is local. Export a save from Settings before uninstalling or clearing app data.
 
 See `android/README.md` for the reproducible build and private signing-key backup instructions. A newer APK signed with the same key can update the installed app. The APK signature and bundled file hashes are checked during build; physical Android-device behavior still needs testing.
 
@@ -47,5 +47,5 @@ Version 0.5.0 adds twelve illustrated dealers with matching annoyed portraits (f
 Live game: https://crownstealer.onrender.com/
 Android download: https://crownstealer.onrender.com/download.html
 
-## Version 0.7.2
+## Version 0.7.3
 The six opening court scenes use supplied voice recordings, bundled for offline playback. Subtitles, replay, skip, and saved scene progress remain available. Dungeon combat stays in first-person view, with painted monster cutouts, impact flashes and a victory fade; wilderness combat uses the tactical map after its encounter introduction.

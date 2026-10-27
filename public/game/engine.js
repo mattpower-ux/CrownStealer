@@ -68,6 +68,7 @@ function actInner(input,action,events=[]){
   else if(a.type==='royalIntroSkip')banishRoyal(s);
   return s;
  }
+ if(a.type==='acknowledgeGuards'){delete s.flags.guardTauntPending;return s;}
  if(a.type==='royalSearch'&&s.mode==='dungeon'&&s.dungeon?.royal==='cell'){s.flags.royalTrapFound=true;note(s,'Behind the royal chamber pot you find a trapdoor at (3, 3). The lid reads: EMERGENCY EXIT. NO REFUNDS.');return s;}
  if(a.type==='royalChoice'&&s.mode==='town'&&s.location==='bellwether'&&['escaped','audience'].includes(s.flags.royalQuest)&&s.flags['garrison:0']&&Object.hasOwn(ROYAL_ENDINGS,a.choice)){s.flags.royalQuest='resolved';s.flags.royalEnding=a.choice;s.flags.princessImprisoned=a.choice==='tyrant';s.flags.married=a.choice==='marriage';s.flags.kingUsurped=a.choice==='tyrant';if(a.choice==='tyrant')s.reputation-=10;s.ending=a.choice;s.mode='ending';note(s,ROYAL_ENDINGS[a.choice]);return s;}
  if(s.casino?.active&&s.mode==='town'&&!['casinoHit','casinoStand','casinoHold','casinoDraw','casinoShoot','gamble','rename'].includes(a.type)){note(s,'Finish your current casino game before leaving the table.');return s;}
@@ -90,6 +91,7 @@ function actInner(input,action,events=[]){
  }
  if(a.type==='enter'&&s.mode==='world'){
   const p=pointAt(s);if(!p){note(s,'There is nothing to enter here. Follow the map to a settlement or ruin.');return s;}
+  if(p.id==='bellwether'&&!s.flags['garrison:0'])s.flags.guardTauntPending=true;
   if(p.id==='bellwether'&&s.flags.royalQuest&&s.flags.royalQuest!=='resolved'){
    if(s.gold<500&&!s.flags['garrison:0']){note(s,'The royal guards refuse entry. You need 500 gold in hand. Rock Troll toes are optional.');return s;}
    if(s.flags.royalQuest==='banished'){s.flags.royalQuest='imprisoned';s.flags.royalTrapFound=false;s.mode='dungeon';s.location=null;s.dungeon={index:0,floor:0,x:1,y:1,dir:1,royal:'cell'};note(s,'Grumpipants refuses to let you see Bunnyfoot. “Five hundred gold? Excellent. Arrest this suspiciously prosperous knave!” You are locked in the royal dungeon. Search for a way out.');return s;}
