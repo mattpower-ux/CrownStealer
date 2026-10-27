@@ -53,3 +53,4 @@ Painted transparent dungeon enemy reveal before first combat action; persists ac
 
 ## 0.6.0 — 2026-10-27
 APK: 5,888,987 bytes; SHA-256 06b3e200ea76673720ef2e1feb427af2e3bd0507f9ad961d4b575200644d8bcc. Version code 8. Signature v2/v3 verified with existing signing identity. All 36 bundled public files verified; 20 native routing/MIME checks passed. 63 Node tests passed including both full campaign routes. Chrome checks passed for dungeon impact colors, victory fade, eight wall profiles, wilderness introduction and double-tap turning. Physical Android tablet testing remains pending.
+`n## 0.6.1 — 2026-10-27`nInventory shortcut and unlimited bag. APK: 5,888,988 bytes. SHA-256: 809a23c7c554823ffcbb7c59ce227dc3b6fc7b0661bcdddb87488af30d7372a8. Version code 9; signature v2/v3 and 36 bundled files verified. 65 Node tests, inventory browser checks and 20 native routing checks passed. Physical tablet testing remains pending.

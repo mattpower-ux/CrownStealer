@@ -119,6 +119,6 @@ export function loadGame(json){
  if(!validCasino(s.casino,s))throw Error('Invalid casino save.');
  if(s.enemy){for(const key of ['level','armor','xp'])if(s.enemy[key]!==undefined&&(!Number.isInteger(s.enemy[key])||s.enemy[key]<0||s.enemy[key]>100000))throw Error('Invalid enemy '+key);}
  s.bag??=['road-sword'];s.equipped??='road-sword';s.pendingLoot??=[];
- if(!Array.isArray(s.bag)||s.bag.length>Object.keys(WEAPONS).length||new Set(s.bag).size!==s.bag.length||s.bag.some(id=>!Object.hasOwn(WEAPONS,id))||!s.bag.includes(s.equipped)||!Array.isArray(s.pendingLoot)||s.pendingLoot.length>20||s.pendingLoot.some(id=>!itemById(id)||!s.bag.includes(id)&&!s.relics.includes(id)))throw Error('Invalid equipment.');
+ if(!Array.isArray(s.bag)||s.bag.some(id=>!Object.hasOwn(WEAPONS,id))||!s.bag.includes(s.equipped)||!Array.isArray(s.pendingLoot)||s.pendingLoot.some(id=>!itemById(id)||!s.bag.includes(id)&&!s.relics.includes(id)))throw Error('Invalid equipment.');
  if(s.mode==='ending'&&!Object.hasOwn(ENDINGS,s.ending))throw Error('Unknown ending.');if(!s.savedAt&&s.mode==='dungeon'&&s.dungeon.x===1&&s.dungeon.y===1&&!dungeonNavigation(s.dungeon).forward)s.dungeon.dir=openDungeonDirection(s.dungeon);return s;
 }
