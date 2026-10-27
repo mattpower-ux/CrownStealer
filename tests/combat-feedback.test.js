@@ -1,0 +1,9 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createGame,act,saveGame} from '../public/game/engine.js';
+function battle(){return {...createGame('Mara'),mode:'battle',enemy:{name:'Bailiff',hp:100,maxHp:100,attack:12,gold:15,weakness:'quick strikes'},returnMode:'world'};}
+test('strike reports ordered impacts separately from saved state',()=>{const s=battle(),events=[];const n=act(s,{type:'attack'},events);assert.deepEqual(events.map(e=>e.target),['enemy','hero']);assert.equal(events[0].amount,s.enemy.hp-n.enemy.hp);assert.equal(events[1].amount,s.hp-n.hp);assert.equal(events[0].sound,'hit');assert.equal(events[1].sound,'hurt');assert.ok(!saveGame(n).includes('events'));});
+test('killing strike still reports impact without a phantom retaliation',()=>{const s=battle();s.enemy.hp=1;const events=[];const n=act(s,{type:'attack'},events);assert.equal(n.mode,'world');assert.deepEqual(events.map(e=>e.kind),['hit','victory']);assert.equal(events[0].target,'enemy');});
+test('guard reports blocked damage even when regeneration masks health loss',()=>{const s=battle();s.hp=40;s.armor=100;const events=[];act(s,{type:'guard'},events);assert.equal(events.length,1);assert.equal(events[0].kind,'block');assert.equal(events[0].amount,1);assert.equal(events[0].sound,'block');});
+test('unaffordable magic and unusable tonic produce no attack feedback',()=>{const s=battle();s.food=0;for(const type of ['magic','heal']){const events=[];act(s,{type},events);assert.deepEqual(events,[]);}});
+test('healing and lethal retaliation preserve actual amounts before recovery',()=>{const s=battle();s.hp=3;s.potions=1;s.enemy.attack=1000;const events=[];act(s,{type:'heal'},events);assert.deepEqual(events.map(e=>e.kind),['heal','hit','defeat']);assert.equal(events[0].amount,45);assert.ok(events[1].amount>48);});

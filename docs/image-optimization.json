@@ -1,0 +1,65 @@
+[
+  {
+    "asset": "cover.webp",
+    "originalBytes": 2957403,
+    "optimizedBytes": 335930,
+    "dimensions": [
+      1536,
+      1024
+    ]
+  },
+  {
+    "asset": "creatures.webp",
+    "originalBytes": 3070118,
+    "optimizedBytes": 350712,
+    "dimensions": [
+      1024,
+      683
+    ]
+  },
+  {
+    "asset": "terrain.webp",
+    "originalBytes": 4179044,
+    "optimizedBytes": 290534,
+    "dimensions": [
+      1024,
+      683
+    ]
+  },
+  {
+    "asset": "adventurer.webp",
+    "originalBytes": 1136461,
+    "optimizedBytes": 15696,
+    "dimensions": [
+      256,
+      256
+    ]
+  },
+  {
+    "asset": "biome-trees.webp",
+    "originalBytes": 2943700,
+    "optimizedBytes": 134630,
+    "dimensions": [
+      512,
+      512
+    ]
+  },
+  {
+    "asset": "towns.webp",
+    "originalBytes": 2314512,
+    "optimizedBytes": 308634,
+    "dimensions": [
+      1024,
+      768
+    ]
+  },
+  {
+    "asset": "fair.webp",
+    "originalBytes": 1688942,
+    "optimizedBytes": 18212,
+    "dimensions": [
+      256,
+      244
+    ]
+  }
+]

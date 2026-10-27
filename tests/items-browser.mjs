@@ -1,0 +1,17 @@
+import {createRequire} from 'node:module';
+import assert from 'node:assert/strict';
+const require=createRequire('C:/Users/mattp/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/package.json');
+const {chromium}=require('playwright');
+const browser=await chromium.launch({channel:'chrome',headless:true});
+const page=await browser.newPage({viewport:{width:1280,height:800}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+await page.goto('http://127.0.0.1:4173');
+await page.getByLabel('NAME YOUR ADVENTURER').fill('Mara the Bold');await page.locator('#new-game').click();assert.equal(await page.locator('#hero-label').textContent(),'Mara the Bold');
+await page.getByRole('button',{name:'Settings',exact:true}).click();await page.locator('#rename-hero').fill('Lady Mara');await page.locator('#save-hero-name').click();assert.equal(await page.locator('#hero-label').textContent(),'Lady Mara');await page.locator('#close-panel').click();
+const fixture=await page.evaluate(async()=>{const {createGame,saveGame}=await import('/game/engine.js');const s=createGame('Lady Mara');s.mode='battle';s.enemy={name:'Wolf',hp:1,maxHp:1,attack:1,gold:15,weakness:'quick strikes'};return saveGame(s);});
+await page.addInitScript(value=>localStorage.setItem('crownstealer-save-v1',value),fixture);await page.reload();await page.locator('#continue-game').click();await page.getByRole('button',{name:'Ember spell · 3 food',exact:true}).click();
+await page.getByRole('heading',{name:'Longsword of Smiting',exact:true}).waitFor();assert.ok((await page.locator('.item-stats').textContent()).includes('+3'));await page.screenshot({path:'artifacts/item-found.png'});
+await page.setViewportSize({width:412,height:915});await page.screenshot({path:'artifacts/item-phone.png'});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+await page.getByRole('button',{name:'Equip Longsword of Smiting',exact:true}).click();await page.waitForFunction(()=>!document.querySelector('#panel').open);
+const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('crownstealer-save-v1')));assert.equal(saved.equipped,'smiting');assert.deepEqual(saved.pendingLoot,[]);
+await page.getByRole('button',{name:'Pack',exact:true}).click();assert.ok((await page.locator('#panel-body').textContent()).includes('Longsword of Smiting'));assert.deepEqual(errors,[]);
+await browser.close();console.log('Items browser: naming, renaming, victory popup, illustrated stats, mobile layout, equipping and save persistence pass.');

@@ -1,0 +1,21 @@
+import {createRequire} from 'node:module';
+import {mkdir,writeFile} from 'node:fs/promises';
+const require=createRequire('C:/Users/mattp/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/package.json');
+const {chromium}=require('playwright');
+const browser=await chromium.launch({channel:'chrome',headless:true});
+const context=await browser.newContext({viewport:{width:1280,height:800},hasTouch:true});
+const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+await mkdir('artifacts',{recursive:true});
+await page.goto('http://127.0.0.1:4173');await page.locator('#new-game').waitFor();await page.screenshot({path:'artifacts/title.png'});
+await page.locator('#hero-name').fill('Mara');await page.locator('#new-game').click();await page.locator('#game').waitFor({state:'visible'});await page.screenshot({path:'artifacts/world.png'});
+await page.getByRole('button',{name:'Move east',exact:true}).click();await page.locator('#actions button').first().click();await page.getByRole('button',{name:'Casino',exact:true}).click();await page.getByRole('button',{name:'Dice · 4+ wins ×2',exact:true}).click();await page.screenshot({path:'artifacts/casino.png'});await page.locator('#close-panel').click();
+await page.getByRole('button',{name:'Court & travel',exact:true}).click();await page.getByRole('button',{name:'Lift a purse',exact:true}).click();await page.locator('#close-panel').click();
+await page.getByRole('button',{name:'Journal',exact:true}).click();await page.screenshot({path:'artifacts/journal.png'});await page.locator('#close-panel').click();
+// Fixture is saved through the real validator on continue, exercising first-person rendering.
+const fixture=await page.evaluate(async()=>{const {createGame,saveGame}=await import('/game/engine.js');const {DUNGEONS}=await import('/game/content.js');const s=createGame('Dungeon test');s.x=DUNGEONS[0].x;s.y=DUNGEONS[0].y;s.mode='dungeon';s.location=DUNGEONS[0].id;s.dungeon={index:0,floor:0,x:1,y:1,dir:1};return saveGame(s);});
+await page.addInitScript(value=>localStorage.setItem('crownstealer-save-v1',value),fixture);
+await page.reload();await page.locator('#continue-game').click();await page.screenshot({path:'artifacts/dungeon.png'});await page.getByRole('button',{name:'Turn right',exact:true}).click();
+await page.setViewportSize({width:412,height:915});await page.screenshot({path:'artifacts/phone.png',fullPage:true});const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth);if(overflow)errors.push('Horizontal overflow at 412px');
+await page.setViewportSize({width:1280,height:800});await page.evaluate(()=>navigator.serviceWorker.ready);await page.reload();await page.waitForFunction(()=>navigator.serviceWorker.controller!==null);await context.setOffline(true);await page.reload();await page.locator('#continue-game').click();await page.locator('#game').waitFor({state:'visible'});await context.setOffline(false);
+await writeFile('artifacts/browser-results.json',JSON.stringify({errors,offlineReload:true,tabletViewport:'1280x800',phoneViewport:'412x915',note:'Browser emulation, not Android device verification'},null,2));
+await browser.close();if(errors.length)throw Error(errors.join('\n'));console.log('Browser smoke passed: title, movement, town, casino, crime, journal, dungeon, portrait and offline reload.');
