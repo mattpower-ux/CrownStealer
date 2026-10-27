@@ -63,9 +63,9 @@ test('a late encounter decode cannot play after leaving battle',async()=>{
  assert.equal([...director.voices].some(v=>v.encounter),false);await director.destroy();
 });
 
-test('original score supplies seven distinct playable themes without browser globals', () => {
+test('original score supplies location-specific playable themes without browser globals', () => {
   assert.equal(typeof audio.AudioDirector, 'function');
-  assert.deepEqual(Object.keys(audio.THEMES).sort(), ['battle', 'casino', 'dungeon', 'overworld', 'title', 'town', 'victory']);
+  assert.ok(Object.keys(audio.THEMES).length >= 33);
   const melodies = new Set();
   for (const theme of Object.values(audio.THEMES)) {
     assert.ok(theme.bpm >= 50 && theme.bpm <= 180);
@@ -73,7 +73,7 @@ test('original score supplies seven distinct playable themes without browser glo
     assert.ok(theme.melody.every(note => note === null || (Number.isInteger(note) && note >= 36 && note <= 96)));
     melodies.add(JSON.stringify(theme.melody));
   }
-  assert.equal(melodies.size, 7);
+  assert.equal(melodies.size, Object.keys(audio.THEMES).length);
 });
 
 test('construction and locked calls never allocate an audio context', async () => {
@@ -173,3 +173,4 @@ test('hiding and reopening the tab before the first gesture still allows sound a
   assert.ok(h.contexts[0].nodes.length > 0, 'the gesture starts music after returning to the tab');
   await director.destroy();
 });
+
