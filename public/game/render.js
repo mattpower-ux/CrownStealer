@@ -1,8 +1,9 @@
+import {silhouetteComponents} from './sprite-bounds.js';
 import {MONSTER_BY_ID,ENEMIES} from './bestiary.js';
 import {DUNGEON_WALLS} from './dungeon-walls.js';
 import {TOWN_SIZE,TOWN_PLACES,townPosition} from './town.js';
 import {REGIONS,TOWNS,DUNGEONS} from './content.js';
-import {worldTile,makeDungeon,DIRS} from './engine.js';
+import {worldTile,makeDungeon,dungeonMap,DIRS} from './engine.js';
 const sprites=new Image();sprites.src='/assets/creatures.webp';
 const adventurer=new Image();adventurer.src='/assets/adventurer.webp';
 function drawAdventurer(c,x,y,size,flash=0){c.save();c.fillStyle='#05150a77';c.beginPath();c.ellipse(x,y+size*.36,size*.27,size*.10,0,0,Math.PI*2);c.fill();if(flash)c.filter=`brightness(${1+flash*1.8})`;if(adventurer.complete&&adventurer.naturalWidth)c.drawImage(adventurer,x-size/2,y-size/2,size,size);else{path(c,[[x,y-size*.35],[x-size*.25,y+size*.35],[x+size*.25,y+size*.35]],'#477653','#d5b675');circle(c,x,y-size*.3,size*.12,'#ddc295');c.strokeStyle='#e2e7da';c.lineWidth=2;c.beginPath();c.moveTo(x+size*.2,y);c.lineTo(x+size*.4,y+size*.35);c.stroke();}c.restore();}
@@ -86,17 +87,28 @@ function town(c,w,h,s,time){
  }
  const pos=townPosition(s);drawAdventurer(c,(pos.x+.5)*size,(pos.y+.5)*size,size*1.25);c.restore();
 }
-function dungeon(c,w,h,s,time){const d=s.dungeon;if(!d)return;const m=makeDungeon(d.index,d.floor),wall=DUNGEON_WALLS[d.index];const ceiling=c.createLinearGradient(0,0,0,h);ceiling.addColorStop(0,wall.ceiling);ceiling.addColorStop(.5,'#151b1b');ceiling.addColorStop(.51,wall.floor);ceiling.addColorStop(1,'#111816');c.fillStyle=ceiling;c.fillRect(0,0,w,h);const [dx,dy]=DIRS[d.dir];const angle=Math.atan2(dy,dx),fov=Math.PI/2.6,step=3;
+function dungeon(c,w,h,s,time){const d=s.dungeon;if(!d)return;const m=dungeonMap(d),wall=DUNGEON_WALLS[d.index];const ceiling=c.createLinearGradient(0,0,0,h);ceiling.addColorStop(0,wall.ceiling);ceiling.addColorStop(.5,'#151b1b');ceiling.addColorStop(.51,wall.floor);ceiling.addColorStop(1,'#111816');c.fillStyle=ceiling;c.fillRect(0,0,w,h);const [dx,dy]=DIRS[d.dir];const angle=Math.atan2(dy,dx),fov=Math.PI/2.6,step=3;
  for(let col=0;col<w;col+=step){const a=angle+Math.atan((col/w-.5)*2*Math.tan(fov/2));const vx=Math.cos(a),vy=Math.sin(a);let dist=.02,x=d.x+.5,y=d.y+.5;while(dist<18){x=d.x+.5+vx*dist;y=d.y+.5+vy*dist;if(m[Math.floor(y)]?.[Math.floor(x)]===1||m[Math.floor(y)]?.[Math.floor(x)]===undefined)break;dist+=.025;}const corrected=dist*Math.cos(a-angle),height=Math.min(h*2,h*.85/corrected),top=(h-height)/2;const fracX=x-Math.floor(x),fracY=y-Math.floor(y),vertical=fracX<.04||fracX>.96,tex=vertical?fracY:fracX;const light=clamp(1-dist/11,.09,.95)*(vertical?.77:1);for(let yy=Math.max(0,top);yy<Math.min(h,top+height);yy+=3){const v=(yy-top)/height;const row=Math.floor(v*wall.rows);const mortar=(v*wall.rows)%1<.06||((tex*wall.columns+(row%2)*.5)%1)<.045;const grain=Math.sin(tex*190+v*140)*4;const wear=wall.wear===1&&(row+Math.floor(tex*9))%7===0?-9:wall.wear===2&&(tex*wall.columns)%1<.12?8:0;const base=mortar?28:78+grain+wear;c.fillStyle=`rgb(${Math.max(0,Math.floor((base+wall.tint[0])*light))},${Math.max(0,Math.floor((base+wall.tint[1])*light))},${Math.max(0,Math.floor((base+wall.tint[2])*light))})`;c.fillRect(col,yy,step+1,3.5);}}
  const glow=c.createRadialGradient(w*.18,h*.68,5,w*.18,h*.68,w*.65);glow.addColorStop(0,'#e5a84021');glow.addColorStop(1,'#d9a34400');c.fillStyle=glow;c.fillRect(0,0,w,h);
  // Project the stair beacon along the view vector.
- for(const [tx,ty,color] of [[13,13,'#e4bb75'],[1,1,'#83b9b6']]){const rx=tx-d.x,ry=ty-d.y,depth=rx*dx+ry*dy,side=-rx*dy+ry*dx;if(depth>.1&&Math.abs(side/depth)<.7){const sx=w/2+side/depth*w*.7,sz=Math.min(90,h*.25/depth);c.fillStyle=color+'66';c.fillRect(sx-sz*.3,h/2-sz*.5,sz*.6,sz);label(c,tx===13?'↓':'↑',sx,h/2+sz*.2,sz,color);}}
+ for(const [tx,ty,color] of [[d.royal==='cell'?3:13,d.royal==='cell'?3:13,'#e4bb75'],[1,1,'#83b9b6']]){const rx=tx-d.x,ry=ty-d.y,depth=rx*dx+ry*dy,side=-rx*dy+ry*dx;if(depth>.1&&Math.abs(side/depth)<.7){const sx=w/2+side/depth*w*.7,sz=Math.min(90,h*.25/depth);c.fillStyle=color+'66';c.fillRect(sx-sz*.3,h/2-sz*.5,sz*.6,sz);label(c,tx!==1?'↓':'↑',sx,h/2+sz*.2,sz,color);}}
  // A clear floor map makes touch navigation usable without a separate overlay.
  const z=Math.min(7,w/65),mx=w-15*z-18,my=18;c.fillStyle='#06100de6';c.fillRect(mx-7,my-7,15*z+14,15*z+14);for(let y=0;y<15;y++)for(let x=0;x<15;x++){c.fillStyle=m[y][x]===1?'#354239':m[y][x]===2?'#c8a35f':'#101c19';c.fillRect(mx+x*z,my+y*z,z-1,z-1);}circle(c,mx+(d.x+.5)*z,my+(d.y+.5)*z,z*.4,'#f4db9c');c.strokeStyle='#f4db9c';c.beginPath();c.moveTo(mx+(d.x+.5)*z,my+(d.y+.5)*z);c.lineTo(mx+(d.x+.5+dx)*z,my+(d.y+.5+dy)*z);c.stroke();
  label(c,['NORTH','EAST','SOUTH','WEST'][d.dir],w/2,28,12,'#bfad85');
 }
 const monsterAtlases=Object.fromEntries(['dungeon-monsters','monsters-hearth','monsters-cinder','monsters-tide','monsters-star','monsters-wild'].map(key=>{const img=new Image();img.src='/assets/'+key+'.webp';return [key,img];}));
-function paintMonster(c,enemy,x,y,w,h,dungeonIndex=0){const species=MONSTER_BY_ID[enemy.speciesId]||ENEMIES.find(m=>m.name===enemy.name);const art=species?.art||{sheet:'dungeon-monsters',index:enemy.guard?11:enemy.boss?[2,2,4,4,7,6,8,10][dungeonIndex]:9};const img=monsterAtlases[art.sheet];if(!img?.complete||!img.naturalWidth)return false;const cols=art.sheet==='monsters-wild'?2:4,rows=art.sheet==='monsters-wild'?1:3,sw=img.width/cols,sh=img.height/rows;c.drawImage(img,art.index%cols*sw,Math.floor(art.index/cols)*sh,sw,sh,x,y,w,h);return true;}
+const monsterBounds=new Map();
+function paintMonster(c,enemy,x,y,w,h,dungeonIndex=0){const species=MONSTER_BY_ID[enemy.speciesId]||ENEMIES.find(m=>m.name===enemy.name);const art=species?.art||{sheet:'dungeon-monsters',index:enemy.guard?11:enemy.boss?[2,2,4,4,7,6,8,10][dungeonIndex]:9};const img=monsterAtlases[art.sheet];if(!img?.complete||!img.naturalWidth)return false;const cols=art.sheet==='monsters-wild'?2:4,rows=art.sheet==='monsters-wild'?1:3,sw=img.width/cols,sh=img.height/rows,key=art.sheet+':'+art.index;
+ if(!monsterBounds.has(art.sheet)){
+  const sample=document.createElement('canvas');sample.width=img.width;sample.height=img.height;const sc=sample.getContext('2d',{willReadFrequently:true});sc.drawImage(img,0,0);
+  for(const bounds of silhouetteComponents(sc.getImageData(0,0,img.width,img.height).data,img.width,img.height)){
+   const col=Math.min(cols-1,Math.floor((bounds.x+bounds.width/2)/sw)),row=Math.min(rows-1,Math.floor((bounds.y+bounds.height/2)/sh)),id=art.sheet+':'+(row*cols+col),previous=monsterBounds.get(id);
+   if(!previous||bounds.count>previous.count)monsterBounds.set(id,bounds);
+  }monsterBounds.set(art.sheet,true);
+ }
+ const crop=monsterBounds.get(key)||{x:art.index%cols*sw,y:Math.floor(art.index/cols)*sh,width:sw,height:sh};
+ const scale=Math.min(w/crop.width,h/crop.height),dw=crop.width*scale,dh=crop.height*scale;
+ c.drawImage(img,crop.x,crop.y,crop.width,crop.height,x+(w-dw)/2,y+h-dh,dw,dh);return true;}
 function wildernessMonster(c,w,h,s){
  c.fillStyle='#02100bcc';c.fillRect(0,0,w,h);const width=Math.min(w-28,560),left=(w-width)/2,top=70,height=Math.max(240,h-150);
  c.fillStyle='#142b21';c.fillRect(left,top,width,height);c.strokeStyle='#ac9560';c.strokeRect(left,top,width,height);
@@ -123,7 +135,7 @@ function dungeonMonster(c,w,h,s,time,fx,reduced){
  if(hit)label(c,`${fx.target==='enemy'?'-':'You: -'}${fx.amount}`,w/2,feet-height*.55,28,'#ffb4a0');
 }
 function battle(c,w,h,s,time,fx,reduced){
- const inDungeon=s.returnMode==='dungeon',maze=inDungeon?makeDungeon(s.dungeon.index,s.dungeon.floor):null;
+ const inDungeon=s.returnMode==='dungeon',maze=inDungeon?dungeonMap(s.dungeon):null;
  const px=inDungeon?s.dungeon.x:s.x,py=inDungeon?s.dungeon.y:s.y;
  const tile=(x,y)=>inDungeon?(maze[y]?.[x]===undefined||maze[y][x]===1?'wall':maze[y][x]===2?'stairs':'floor'):worldTile(s.region,x,y);
  const passable=(x,y)=>!['wall','water','mountain'].includes(tile(x,y));

@@ -129,7 +129,8 @@ test('all four political endings resolve the kingdom and the princess agency', (
   assert.deepEqual(Object.keys(content.ENDINGS).sort(), ['alliance', 'exile', 'rebel', 'usurper']);
   for (const ending of Object.values(content.ENDINGS)) {
     prose(ending, 600);
-    assert.match(ending, /Mara/);
+    assert.match(ending, /Bunnyfoot/);
   }
   assert.equal(new Set(Object.values(content.ENDINGS)).size, 4);
 });
+

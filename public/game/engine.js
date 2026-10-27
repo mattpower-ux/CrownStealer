@@ -1,7 +1,8 @@
+import {ROYAL_INTRO,ROYAL_ENDINGS,royalObjective,royalCell} from './royal-story.js';
 import {buildEncounter} from './encounters.js';
 import {casinoAction,validCasino} from './casino.js';
 import {townWalkable,townPosition} from './town.js';
-import {WEAPONS,itemById,weaponAccuracy} from './items.js';
+import {WEAPONS,UNARMED,armorProtection,itemById,weaponAccuracy} from './items.js';
 import {TOWNS,DUNGEONS,CHAPTERS,ENEMIES,ENDINGS,SIDE_QUESTS} from './content.js';
 export const DIRS=[[0,-1],[1,0],[0,1],[-1,0]];
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -9,8 +10,12 @@ function rand(s){s.rng=(Math.imul(s.rng,1664525)+1013904223)>>>0;return s.rng/42
 function note(s,text){s.log.push(text);s.log=s.log.slice(-60);}
 function advance(s,chapter){if(chapter>s.chapter){s.chapter=chapter;note(s,CHAPTERS[chapter].text);}}
 export function createGame(name='Wanderer'){
- const town=TOWNS[0];return {version:1,bag:['road-sword'],equipped:'road-sword',pendingLoot:[],name:String(name).trim().slice(0,24)||'Wanderer',region:0,x:town.x-1,y:town.y,mode:'world',location:null,hp:80,maxHp:80,gold:65,food:90,level:1,xp:0,weapon:1,armor:1,potions:3,chapter:0,relics:[],quests:[],wanted:[0,0,0,0],reputation:0,flags:{victories:0,transport:false},log:['The crown has called for a hero. Unfortunately, it has found you.',CHAPTERS[0].text],rng:187441,turns:0,dungeon:null,enemy:null,returnMode:'world',ending:null};
+ const town=TOWNS[0];return {version:1,bag:['road-sword','travel-armor'],equipped:'road-sword',equippedArmor:'travel-armor',equipmentVersion:1,pendingLoot:[],name:String(name).trim().slice(0,24)||'Wanderer',region:0,x:town.x-1,y:town.y,mode:'world',location:null,hp:80,maxHp:80,gold:65,food:90,level:1,xp:0,weapon:1,armor:1,potions:3,chapter:0,relics:[],quests:[],wanted:[0,0,0,0],reputation:0,flags:{victories:0,transport:false},log:['The crown has called for a hero. Unfortunately, it has found you.',CHAPTERS[0].text],rng:187441,turns:0,dungeon:null,enemy:null,returnMode:'world',ending:null};
 }
+export function createRoyalGame(name){const s=createGame(name),court=TOWNS[1];s.mode='town';s.location=court.id;s.x=court.x;s.y=court.y;s.townPosition={x:6,y:11};s.gold=1;s.food=8;s.potions=0;s.bag=['rusty-sword','travel-armor'];s.equipped='rusty-sword';s.equippedArmor=null;s.flags.royalQuest='opening';s.flags.royalIntroLine=0;s.log=[ROYAL_INTRO[0].text];return s;}
+export function dungeonMap(d){return d.royal==='cell'?royalCell():makeDungeon(d.royal==='sewer'?8:d.index,d.floor);}
+export function dungeonName(d){return d.royal==='cell'?'The Royal Dungeon':d.royal==='sewer'?'The Royal Sewers':DUNGEONS[d.index].name;}
+function banishRoyal(s){const c=TOWNS[1];s.flags.royalQuest='banished';s.flags.royalIntroLine=ROYAL_INTRO.length-1;s.mode='world';s.location=null;s.x=c.x-1;s.y=c.y;s.dungeon=null;note(s,'You are kicked outside Bellwether with a rusty sword, eight moldy provisions and one gold piece. Return with 500 gold. Rock Troll toes are not required.');}
 export function worldTile(region,x,y){
  if(x<1||x>30||y<1||y>22)return 'water';
  const points=[...TOWNS,...DUNGEONS].filter(p=>p.region===region);
@@ -28,8 +33,8 @@ export function makeDungeon(index,floor){
  while(stack.length){const [x,y]=stack.at(-1);const opts=DIRS.filter(([dx,dy])=>{const nx=x+dx*2,ny=y+dy*2;return nx>0&&ny>0&&nx<14&&ny<14&&m[ny][nx]===1;});if(!opts.length){stack.pop();continue;}const [dx,dy]=opts[Math.floor(r()*opts.length)];m[y+dy][x+dx]=0;m[y+dy*2][x+dx*2]=0;stack.push([x+dx*2,y+dy*2]);}
  m[1][1]=3;m[13][13]=2;dungeonCache.set(key,m);return m;
 }
-function openDungeonDirection(d){const m=makeDungeon(d.index,d.floor);return Math.max(0,DIRS.findIndex(([dx,dy])=>m[d.y+dy]?.[d.x+dx]!==undefined&&m[d.y+dy][d.x+dx]!==1));}
-export function dungeonNavigation(d){const m=makeDungeon(d.index,d.floor);const clear=dir=>{const [dx,dy]=DIRS[(dir+4)%4];return m[d.y+dy]?.[d.x+dx]!==undefined&&m[d.y+dy][d.x+dx]!==1;};return {forward:clear(d.dir),back:clear(d.dir+2),left:clear(d.dir-1),right:clear(d.dir+1),facing:['north','east','south','west'][d.dir]};}
+function openDungeonDirection(d){const m=dungeonMap(d);return Math.max(0,DIRS.findIndex(([dx,dy])=>m[d.y+dy]?.[d.x+dx]!==undefined&&m[d.y+dy][d.x+dx]!==1));}
+export function dungeonNavigation(d){const m=dungeonMap(d);const clear=dir=>{const [dx,dy]=DIRS[(dir+4)%4];return m[d.y+dy]?.[d.x+dx]!==undefined&&m[d.y+dy][d.x+dx]!==1;};return {forward:clear(d.dir),back:clear(d.dir+2),left:clear(d.dir-1),right:clear(d.dir+1),facing:['north','east','south','west'][d.dir]};}
 // Turn in place only when a wall would hide the encounter portrait.
 function faceEncounterPassage(d){
  if(dungeonNavigation(d).forward)return false;
@@ -41,14 +46,14 @@ function faceEncounterPassage(d){
  open.sort((a,b)=>a.turn-b.turn||b.distance-a.distance);if(!open.length)return false;d.dir=open[0].dir;return true;
 }
 export function pointAt(s){return [...TOWNS.map(p=>({...p,kind:'town'})),...DUNGEONS.map((p,index)=>({...p,index,kind:'dungeon'}))].find(p=>p.region===s.region&&p.x===s.x&&p.y===s.y);}
-export function nextObjective(s){const d=DUNGEONS.find(d=>!s.relics.includes(d.id));return d?`Recover ${d.relic} from ${d.name}.`:'Return to the royal court and decide the fate of the crown.';}
+export function nextObjective(s){const royal=royalObjective(s);if(royal)return royal;const d=DUNGEONS.find(d=>!s.relics.includes(d.id));return d?`Recover ${d.relic} from ${d.name}.`:'Return to the royal court and decide the fate of the crown.';}
 function encounter(s,boss=false,guard=false){
  if(s.mode==='dungeon'&&faceEncounterPassage(s.dungeon))note(s,'You turn toward the open passage as a creature blocks your way.');
  const enemy=buildEncounter(s,rand(s),boss,guard);s.returnMode=s.mode;s.flags.guarded=false;s.flags.combo=0;s.enemy=enemy;s.flags.lastSpecies=enemy.speciesId;s.mode='battle';note(s,`${s.enemy.name} (level ${s.enemy.level}) bars your way. Armor: ${s.enemy.armor}. Weakness: ${s.enemy.weakness}. ${guard?'Level 20 royal plate guard: retreat unless well prepared.':boss?'There will be no quiet passage.':'Fight, defend, use magic, or retreat.'}`);
 }
 function recover(s){s.hp=s.maxHp;s.gold=Math.floor(s.gold*.8);s.food=Math.max(s.food,25);s.enemy=null;s.dungeon=null;s.mode='world';const town=TOWNS.find(t=>t.region===s.region);s.x=town.x-1;s.y=town.y;note(s,'A weary pilgrim drags you to safety. You lose a fifth of your gold, but your story continues.');}
 function clock(s,food=.25){s.turns++;s.food=Math.max(0,s.food-food);if(s.food===0){s.hp-=2;note(s,'Your empty pack offers little encouragement. Find provisions.');}if(s.hp<=0)recover(s);}
-function enemyTurn(s,defending=false,events=[]){if(!s.enemy)return;const damage=Math.max(1,Math.floor(s.enemy.attack*(.7+rand(s)*.7)-s.armor*1.3));s.hp-=defending?Math.ceil(damage/3):damage;events.push({kind:defending?'block':'hit',target:'hero',hpAfter:Math.max(0,s.hp),amount:defending?Math.ceil(damage/3):damage,sound:defending?'block':'hurt'});note(s,`${s.enemy.name} strikes for ${defending?Math.ceil(damage/3):damage}.`);if(s.hp<=0){events.push({kind:'defeat',target:'hero',amount:0,sound:'defeat'});recover(s);}}
+function enemyTurn(s,defending=false,events=[]){if(!s.enemy)return;const damage=Math.max(1,Math.floor(s.enemy.attack*(.7+rand(s)*.7)-armorProtection(s)*1.3));s.hp-=defending?Math.ceil(damage/3):damage;events.push({kind:defending?'block':'hit',target:'hero',hpAfter:Math.max(0,s.hp),amount:defending?Math.ceil(damage/3):damage,sound:defending?'block':'hurt'});note(s,`${s.enemy.name} strikes for ${defending?Math.ceil(damage/3):damage}.`);if(s.hp<=0){events.push({kind:'defeat',target:'hero',amount:0,sound:'defeat'});recover(s);}}
 function victory(s){const e=s.enemy;s.gold+=e.gold;s.xp+=e.xp??(e.boss?60:20);s.flags.victories++;if(e.boss||s.flags.victories%3===1){const pool=Object.keys(WEAPONS).slice(1+s.region*2,3+s.region*2);const found=pool.find(id=>!s.bag?.includes(id));if(found){s.bag??=['road-sword'];s.pendingLoot??=[];s.bag.push(found);s.pendingLoot.push(found);note(s,`You found ${WEAPONS[found].name}.`);}}if(e.boss)s.flags['boss:'+s.dungeon.index]=true;if(e.guard){s.wanted[s.region]=Math.max(0,s.wanted[s.region]-1);s.flags['garrison:'+s.region]=true;s.reputation-=3;}note(s,`${e.name} is defeated. You find ${e.gold} gold.`);s.mode=s.returnMode;s.enemy=null;while(s.xp>=s.level*50){s.xp-=s.level*50;s.level++;s.maxHp+=14;s.hp=Math.min(s.maxHp,s.hp+30);note(s,`Level ${s.level}. Rumors of your competence are becoming difficult to deny.`);}}
 export function act(input,action,events=[]){
  const s=actInner(input,action,events);
@@ -58,15 +63,23 @@ export function act(input,action,events=[]){
 }
 function actInner(input,action,events=[]){
  const s=structuredClone(input);const a=action||{};
+ if(s.flags.royalQuest==='opening'){
+  if(a.type==='royalIntroNext'){s.flags.royalIntroLine++;if(s.flags.royalIntroLine>=ROYAL_INTRO.length)banishRoyal(s);}
+  else if(a.type==='royalIntroSkip')banishRoyal(s);
+  return s;
+ }
+ if(a.type==='royalSearch'&&s.mode==='dungeon'&&s.dungeon?.royal==='cell'){s.flags.royalTrapFound=true;note(s,'Behind the royal chamber pot you find a trapdoor at (3, 3). The lid reads: EMERGENCY EXIT. NO REFUNDS.');return s;}
+ if(a.type==='royalChoice'&&s.mode==='town'&&s.location==='bellwether'&&['escaped','audience'].includes(s.flags.royalQuest)&&s.flags['garrison:0']&&Object.hasOwn(ROYAL_ENDINGS,a.choice)){s.flags.royalQuest='resolved';s.flags.royalEnding=a.choice;s.flags.princessImprisoned=a.choice==='tyrant';s.flags.married=a.choice==='marriage';s.flags.kingUsurped=a.choice==='tyrant';if(a.choice==='tyrant')s.reputation-=10;s.ending=a.choice;s.mode='ending';note(s,ROYAL_ENDINGS[a.choice]);return s;}
  if(s.casino?.active&&s.mode==='town'&&!['casinoHit','casinoStand','casinoHold','casinoDraw','casinoShoot','gamble','rename'].includes(a.type)){note(s,'Finish your current casino game before leaving the table.');return s;}
  if(a.type==='rename'){const name=String(a.name??'').replace(/[\x00-\x1f\x7f]/g,'').trim().slice(0,24);if(name)s.name=name;return s;}
  if(a.type==='acknowledgeLoot'){s.pendingLoot?.shift();return s;}
- if(a.type==='equip'){if(s.mode!=='battle'&&s.bag?.includes(a.id)&&Object.hasOwn(WEAPONS,a.id)){s.equipped=a.id;note(s,`Equipped ${WEAPONS[a.id].name}.`);}return s;}
+ if(a.type==='equip'){const item=itemById(a.id,s);if(s.mode!=='battle'&&s.bag?.includes(a.id)&&['weapon','armor'].includes(item?.kind)){s[item.kind==='weapon'?'equipped':'equippedArmor']=a.id;note(s,`Equipped ${item.name}.`);}return s;}
+ if(a.type==='unequip'){const key=a.slot==='weapon'?'equipped':a.slot==='armor'?'equippedArmor':null;if(key&&s.mode!=='battle'&&s[key]){note(s,`You put ${itemById(s[key],s).name} in your bag.`);s[key]=null;}return s;}
  if(s.mode==='ending'&&!['continue'].includes(a.type))return s;
  if(a.type==='continue'){s.mode='world';s.ending=null;s.dungeon=null;s.location=null;return s;}
  if(a.type==='heal'){if(s.potions>0&&s.hp<s.maxHp){s.potions--;events.push({kind:'heal',target:'hero',amount:Math.min(45,s.maxHp-s.hp),sound:'magic'});s.hp=Math.min(s.maxHp,s.hp+45);note(s,'The tonic tastes like regret. It restores 45 health.');if(s.mode==='battle')enemyTurn(s,false,events);}return s;}
  if(s.mode==='battle'){
-  if(a.type==='attack'||a.type==='magic'){if(a.type==='magic'&&s.food<3){note(s,'You need three provisions to focus your spell.');return s;}if(a.type==='magic')s.food-=3;const weakness=s.enemy.weakness;const effective=a.type==='attack'&&(weakness==='quick strikes'||weakness==='guard then counter'&&s.flags.guarded||weakness==='steady pressure'&&s.flags.combo>=1);const gear=WEAPONS[s.equipped]||WEAPONS['road-sword'];if(a.type==='attack'&&rand(s)*100>=Math.max(5,weaponAccuracy(s)-(s.enemy.kind==='swift'?8:0))){s.flags.guarded=false;s.flags.combo=0;events.push({kind:'miss',target:'enemy',amount:0,sound:'miss'});note(s,'Your weapon misses.');enemyTurn(s,false,events);return s;}const base=a.type==='magic'?18+s.level*3:gear.damage[0]+Math.floor(rand(s)*(gear.damage[1]-gear.damage[0]+1))+s.weapon*4+s.level*2;const raw=Math.floor(base*(a.type==='magic'?(.8+rand(s)*.5):1)*(effective?1.4:1)*(a.type==='magic'&&s.enemy.kind==='spectral'?1.25:1));const protection=Math.floor((s.enemy.armor||0)*(a.type==='magic'?.25:1));const damage=Math.max(1,raw-protection);s.flags.guarded=false;s.flags.combo=a.type==='attack'?(s.flags.combo||0)+1:0;s.enemy.hp-=damage;events.push({kind:a.type==='magic'?'magic':'hit',target:'enemy',amount:damage,sound:a.type==='magic'?'magic':'hit'});note(s,`${a.type==='magic'?'Ember spell':'Your weapon'} deals ${damage} damage.${effective?' You exploit its weakness.':''}${protection?' Its armor absorbs '+Math.min(protection,raw-1)+' damage.':''}`);if(s.enemy.hp<=0){events.push({kind:'victory',target:'enemy',amount:0,sound:'victory'});victory(s);}else enemyTurn(s,false,events);}
+  if(a.type==='attack'||a.type==='magic'){if(a.type==='magic'&&s.food<3){note(s,'You need three provisions to focus your spell.');return s;}if(a.type==='magic')s.food-=3;const weakness=s.enemy.weakness;const effective=a.type==='attack'&&(weakness==='quick strikes'||weakness==='guard then counter'&&s.flags.guarded||weakness==='steady pressure'&&s.flags.combo>=1);const gear=WEAPONS[s.equipped]||UNARMED;if(a.type==='attack'&&rand(s)*100>=Math.max(5,weaponAccuracy(s)-(s.enemy.kind==='swift'?8:0))){s.flags.guarded=false;s.flags.combo=0;events.push({kind:'miss',target:'enemy',amount:0,sound:'miss'});note(s,'Your weapon misses.');enemyTurn(s,false,events);return s;}const base=a.type==='magic'?18+s.level*3:gear.damage[0]+Math.floor(rand(s)*(gear.damage[1]-gear.damage[0]+1))+(s.equipped?s.weapon*4:0)+s.level*2;const raw=Math.floor(base*(a.type==='magic'?(.8+rand(s)*.5):1)*(effective?1.4:1)*(a.type==='magic'&&s.enemy.kind==='spectral'?1.25:1));const protection=Math.floor((s.enemy.armor||0)*(a.type==='magic'?.25:1));const damage=Math.max(1,raw-protection);s.flags.guarded=false;s.flags.combo=a.type==='attack'?(s.flags.combo||0)+1:0;s.enemy.hp-=damage;events.push({kind:a.type==='magic'?'magic':'hit',target:'enemy',amount:damage,sound:a.type==='magic'?'magic':'hit'});note(s,`${a.type==='magic'?'Ember spell':'Your weapon'} deals ${damage} damage.${effective?' You exploit its weakness.':''}${protection?' Its armor absorbs '+Math.min(protection,raw-1)+' damage.':''}`);if(s.enemy.hp<=0){events.push({kind:'victory',target:'enemy',amount:0,sound:'victory'});victory(s);}else enemyTurn(s,false,events);}
   else if(a.type==='guard'){s.flags.guarded=true;s.flags.combo=0;s.hp=Math.min(s.maxHp,s.hp+3);enemyTurn(s,true,events);}
   else if(a.type==='flee'){if(rand(s)<.8){s.mode=s.returnMode;s.enemy=null;if(s.dungeon){s.dungeon.x=1;s.dungeon.y=1;s.dungeon.dir=openDungeonDirection(s.dungeon);}note(s,'You retreat. Discretion is a very respectable kind of panic.');}else{note(s,'Your escape is blocked.');enemyTurn(s,false,events);}}
   return s;
@@ -77,17 +90,26 @@ function actInner(input,action,events=[]){
  }
  if(a.type==='enter'&&s.mode==='world'){
   const p=pointAt(s);if(!p){note(s,'There is nothing to enter here. Follow the map to a settlement or ruin.');return s;}
+  if(p.id==='bellwether'&&s.flags.royalQuest&&s.flags.royalQuest!=='resolved'){
+   if(s.gold<500&&!s.flags['garrison:0']){note(s,'The royal guards refuse entry. You need 500 gold in hand. Rock Troll toes are optional.');return s;}
+   if(s.flags.royalQuest==='banished'){s.flags.royalQuest='imprisoned';s.flags.royalTrapFound=false;s.mode='dungeon';s.location=null;s.dungeon={index:0,floor:0,x:1,y:1,dir:1,royal:'cell'};note(s,'Grumpipants refuses to let you see Bunnyfoot. “Five hundred gold? Excellent. Arrest this suspiciously prosperous knave!” You are locked in the royal dungeon. Search for a way out.');return s;}
+  }
   if(p.kind==='town'&&s.gold===0){note(s,'The guards refuse entry. Return with some gold in your possession.');return s;}s.location=p.id;if(p.kind==='town'){s.mode='town';s.townPosition={x:6,y:11};note(s,p.greeting);if(s.flags.legacy)note(s,`The ${s.flags.legacy} settlement has changed the town. People remember the hand that moved the crown.`);if(s.wanted[s.region]>=3&&!s.flags['garrison:'+s.region]){note(s,'Wanted notices bear a surprisingly flattering sketch of you. Guards are watching.');if(s.wanted[s.region]>=4)encounter(s,false,true);}}
   else{s.mode='dungeon';s.dungeon={index:p.index,floor:0,x:1,y:1,dir:1};s.dungeon.dir=openDungeonDirection(s.dungeon);note(s,p.description);}return s;
  }
  if(a.type==='leave'){
   if(s.mode==='town'){s.mode='world';s.location=null;}
-  else if(s.mode==='dungeon'){if(s.dungeon.x===1&&s.dungeon.y===1){if(s.dungeon.floor>0){s.dungeon.floor--;s.dungeon.x=13;s.dungeon.y=13;s.dungeon.dir=openDungeonDirection(s.dungeon);}else{s.mode='world';s.dungeon=null;s.location=null;}}else note(s,'Return to the entrance stair to leave this floor.');}return s;
+  else if(s.mode==='dungeon'){if(s.dungeon.royal){note(s,'The door behind you is locked. Find the trapdoor or the sewer exit.');return s;}if(s.dungeon.x===1&&s.dungeon.y===1){if(s.dungeon.floor>0){s.dungeon.floor--;s.dungeon.x=13;s.dungeon.y=13;s.dungeon.dir=openDungeonDirection(s.dungeon);}else{s.mode='world';s.dungeon=null;s.location=null;}}else note(s,'Return to the entrance stair to leave this floor.');}return s;
  }
  if(s.mode==='dungeon'){
-  const d=s.dungeon,m=makeDungeon(d.index,d.floor);
+  const d=s.dungeon,m=dungeonMap(d);
   if(a.type==='turn'&&[-1,1].includes(a.delta))d.dir=(d.dir+a.delta+4)%4;
-  if(a.type==='forward'||a.type==='back'||a.type==='strafe'){const [dx,dy]=DIRS[(d.dir+(a.type==='strafe'?(a.delta<0?-1:1):0)+4)%4],n=a.type==='back'?-1:1;const x=d.x+dx*n,y=d.y+dy*n;if(m[y]?.[x]!==undefined&&m[y][x]!==1){d.x=x;d.y=y;clock(s,.1);if(s.mode==='dungeon'&&!(x===1&&y===1)&&!(x===13&&y===13)&&rand(s)<.055)encounter(s);}else note(s,'Cold stone blocks your path.');}
+  if(a.type==='forward'||a.type==='back'||a.type==='strafe'){const [dx,dy]=DIRS[(d.dir+(a.type==='strafe'?(a.delta<0?-1:1):0)+4)%4],n=a.type==='back'?-1:1;const x=d.x+dx*n,y=d.y+dy*n;if(m[y]?.[x]!==undefined&&m[y][x]!==1){d.x=x;d.y=y;clock(s,.1);if(s.mode==='dungeon'&&d.royal!=='cell'&&!(x===1&&y===1)&&!(x===13&&y===13)&&rand(s)<.055)encounter(s);}else note(s,'Cold stone blocks your path.');}
+  if(d.royal){if(a.type==='descend'){
+   if(d.royal==='cell'&&d.x===3&&d.y===3){if(!s.flags.royalTrapFound){note(s,'There is a loose stone here. Search the cell.');return s;}s.flags.royalQuest='sewers';s.dungeon={index:0,floor:0,x:1,y:1,dir:1,royal:'sewer'};s.dungeon.dir=openDungeonDirection(s.dungeon);note(s,'You lift the trapdoor and descend into the royal sewers. Find the golden exit.');}
+   else if(d.royal==='sewer'&&d.x===13&&d.y===13){s.flags.royalQuest='escaped';s.mode='world';s.dungeon=null;s.location=null;s.x=TOWNS[1].x-1;s.y=TOWNS[1].y+1;note(s,'You emerge beyond Bellwether’s walls. The princess remains under guard. Grow strong enough to defeat Grumpipants’s royal guards, then demand an audience.');}
+   else note(s,d.royal==='cell'?'Reach the trapdoor at (3, 3).':'Find the sewer exit at (13, 13).');
+  }return s;}
   if(a.type==='descend'&&d.x===13&&d.y===13){if(d.floor<2){d.floor++;d.x=1;d.y=1;d.dir=openDungeonDirection(d);note(s,`Depth ${d.floor+1}. The air grows still.`);}else if(s.relics.includes(DUNGEONS[d.index].id))note(s,'The empty reliquary remembers you.');else if(!s.flags['boss:'+d.index])encounter(s,true);else claimRelic(s);}
   if(a.type==='claim'&&d.x===13&&d.y===13&&d.floor===2&&s.flags['boss:'+d.index])claimRelic(s);
   return s;
@@ -95,6 +117,8 @@ function actInner(input,action,events=[]){
  if(s.mode==='town'){
   if(a.type==='move'){const p=townPosition(s);if(!Number.isInteger(a.dx)||!Number.isInteger(a.dy)||Math.abs(a.dx)+Math.abs(a.dy)!==1)return s;const x=p.x+a.dx,y=p.y+a.dy;if(townWalkable(x,y)){s.townPosition={x,y};s.turns++;if(x===6&&y===12){s.mode='world';s.location=null;}}else note(s,'A building or town wall blocks your path. Follow the streets to its entrance.');return s;}
   const town=TOWNS.find(t=>t.id===s.location)||TOWNS.find(t=>t.region===s.region);
+  if(a.type==='talk'&&town.id==='bellwether'&&s.flags.princessImprisoned){note(s,'The chamberlain bows. Bunnyfoot remains imprisoned by your order.');return s;}
+  if(a.type==='talk'&&town.id==='bellwether'&&s.flags.royalQuest==='escaped'){if(s.flags['garrison:0']){s.flags.royalQuest='audience';note(s,'The guards have yielded. Princess Bunnyfoot grants you an audience. Visit Court & travel to choose your future.');}else note(s,'Grumpipants refuses an audience. Defeat his level-20 royal guards before demanding to see Bunnyfoot.');return s;}
   if(a.type==='talk'){note(s,`${town.npc}: ${town.rumor}`);const n=s.relics.length;if(n===1)advance(s,2);if(n===2&&town.id==='bellwether'){advance(s,4);s.flags.courtBriefing=true;}if(n===4)advance(s,8);if(n===5)advance(s,11);if(n===7)advance(s,15);if(n===8&&town.id==='bellwether')advance(s,18);note(s,town.quest);}
   if(a.type==='rest'){const price=s.wanted[s.region]>=3?20:8;if(s.gold>=price){s.gold-=price;s.hp=s.maxHp;note(s,'A bed, a bowl of soup, and eight hours without prophecy. Health restored.');}else{ s.hp=Math.min(s.maxHp,s.hp+20);s.food=Math.max(s.food,20);note(s,'You work in the kitchens for a meal and a bench. Some health and provisions restored.');}}
   if(a.type==='buy'){
@@ -123,14 +147,19 @@ export function loadGame(json){
  for(const [key,allowed] of [['relics',DUNGEONS.map(d=>d.id)],['quests',SIDE_QUESTS.map(q=>q.id)]])if(!Array.isArray(s[key])||s[key].length>allowed.length||new Set(s[key]).size!==s[key].length||s[key].some(x=>!allowed.includes(x)))throw Error('Invalid campaign progress.');
  if(!Array.isArray(s.wanted)||s.wanted.length!==4||s.wanted.some(n=>!Number.isInteger(n)||n<0||n>10000)||!Number.isFinite(s.reputation)||!s.flags||typeof s.flags!=='object'||!Number.isInteger(s.flags.victories)||s.flags.victories<0)throw Error('Invalid reputation data.');
  if(s.mode==='town'&&!TOWNS.some(t=>t.id===s.location&&t.region===s.region))throw Error('Unknown settlement.');
- if(s.dungeon!==null){const d=s.dungeon;if(!d||!Number.isInteger(d.index)||!DUNGEONS[d.index]||DUNGEONS[d.index].region!==s.region||!Number.isInteger(d.floor)||d.floor<0||d.floor>2||!Number.isInteger(d.x)||!Number.isInteger(d.y)||!Number.isInteger(d.dir)||d.dir<0||d.dir>3||makeDungeon(d.index,d.floor)[d.y]?.[d.x]===undefined||makeDungeon(d.index,d.floor)[d.y][d.x]===1)throw Error('Invalid dungeon position.');}
+ if(s.dungeon!==null){const d=s.dungeon;if(!d||!Number.isInteger(d.index)||!DUNGEONS[d.index]||DUNGEONS[d.index].region!==s.region||!Number.isInteger(d.floor)||d.floor<0||d.floor>2||!Number.isInteger(d.x)||!Number.isInteger(d.y)||!Number.isInteger(d.dir)||d.dir<0||d.dir>3||dungeonMap(d)[d.y]?.[d.x]===undefined||dungeonMap(d)[d.y][d.x]===1)throw Error('Invalid dungeon position.');}
  if(s.mode==='dungeon'&&!s.dungeon)throw Error('Missing dungeon.');
  if(s.mode==='battle'){if(!s.enemy||!['world','town','dungeon'].includes(s.returnMode)||s.returnMode==='dungeon'&&!s.dungeon||s.enemy.boss&&(s.returnMode!=='dungeon'||!s.dungeon)||s.returnMode==='town'&&!TOWNS.some(t=>t.id===s.location&&t.region===s.region))throw Error('Invalid encounter.');for(const k of ['hp','maxHp','attack','gold'])if(!Number.isFinite(s.enemy[k])||s.enemy[k]<0||s.enemy[k]>100000)throw Error('Invalid enemy.');if(typeof s.enemy.name!=='string'||s.enemy.name.length>100)throw Error('Invalid enemy name.');}
  if(s.mode==='town'||s.returnMode==='town'){s.townPosition??={x:6,y:11};const p=s.townPosition;if(!p||!Number.isInteger(p.x)||!Number.isInteger(p.y)||!townWalkable(p.x,p.y))throw Error('Invalid town position.');}
  if(!validCasino(s.casino,s))throw Error('Invalid casino save.');
  if(s.enemy){for(const key of ['level','armor','xp'])if(s.enemy[key]!==undefined&&(!Number.isInteger(s.enemy[key])||s.enemy[key]<0||s.enemy[key]>100000))throw Error('Invalid enemy '+key);}
- s.bag??=['road-sword'];s.equipped??='road-sword';s.pendingLoot??=[];
- if(!Array.isArray(s.bag)||s.bag.some(id=>!Object.hasOwn(WEAPONS,id))||!s.bag.includes(s.equipped)||!Array.isArray(s.pendingLoot)||s.pendingLoot.some(id=>!itemById(id)||!s.bag.includes(id)&&!s.relics.includes(id)))throw Error('Invalid equipment.');
+ s.bag??=['road-sword'];if(s.equipped===undefined)s.equipped='road-sword';s.pendingLoot??=[];
+ if(s.equipmentVersion===undefined){if(Array.isArray(s.bag)&&!s.bag.includes('travel-armor'))s.bag.push('travel-armor');s.equippedArmor='travel-armor';s.equipmentVersion=1;}
+ if(s.dungeon?.royal&&!['cell','sewer'].includes(s.dungeon.royal))throw Error('Invalid royal dungeon.');
+ if(s.flags.royalQuest&&!['opening','banished','imprisoned','sewers','escaped','audience','resolved'].includes(s.flags.royalQuest))throw Error('Invalid royal quest.');
+ if(s.flags.royalQuest==='opening'&&(!Number.isInteger(s.flags.royalIntroLine)||s.flags.royalIntroLine<0||s.flags.royalIntroLine>=ROYAL_INTRO.length))throw Error('Invalid introduction.');
+ if(s.equipmentVersion!==1||!(s.equippedArmor===null||s.equippedArmor==='travel-armor'&&s.bag?.includes('travel-armor')))throw Error('Invalid armor equipment.');
+ if(!Array.isArray(s.bag)||s.bag.some(id=>!Object.hasOwn(WEAPONS,id)&&id!=='travel-armor')||s.equipped!==null&&(!Object.hasOwn(WEAPONS,s.equipped)||!s.bag.includes(s.equipped))||!Array.isArray(s.pendingLoot)||s.pendingLoot.some(id=>!itemById(id)||!s.bag.includes(id)&&!s.relics.includes(id)))throw Error('Invalid equipment.');
  if(s.mode==='battle'&&s.returnMode==='dungeon')faceEncounterPassage(s.dungeon);
- if(s.mode==='ending'&&!Object.hasOwn(ENDINGS,s.ending))throw Error('Unknown ending.');if(!s.savedAt&&s.mode==='dungeon'&&s.dungeon.x===1&&s.dungeon.y===1&&!dungeonNavigation(s.dungeon).forward)s.dungeon.dir=openDungeonDirection(s.dungeon);return s;
+ if(s.mode==='ending'&&!Object.hasOwn(ENDINGS,s.ending)&&!Object.hasOwn(ROYAL_ENDINGS,s.ending))throw Error('Unknown ending.');if(!s.savedAt&&s.mode==='dungeon'&&s.dungeon.x===1&&s.dungeon.y===1&&!dungeonNavigation(s.dungeon).forward)s.dungeon.dir=openDungeonDirection(s.dungeon);return s;
 }

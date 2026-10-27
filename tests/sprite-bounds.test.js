@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {silhouetteBounds} from '../public/game/sprite-bounds.js';
+test('atlas sampling excludes detached neighboring artwork and trims feet padding',()=>{const w=40,h=40,d=new Uint8ClampedArray(w*h*4);for(let y=6;y<34;y++)for(let x=10;x<30;x++)d[(y*w+x)*4+3]=255;for(let y=18;y<38;y++)d[(y*w+1)*4+3]=255;const b=silhouetteBounds(d,w,h);assert.deepEqual(b,{x:10,y:6,width:20,height:28,count:560});});
+test('transparent sprites use a safe empty fallback',()=>{assert.equal(silhouetteBounds(new Uint8ClampedArray(16),2,2).count,0);});
