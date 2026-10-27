@@ -30,9 +30,20 @@ export function makeDungeon(index,floor){
 }
 function openDungeonDirection(d){const m=makeDungeon(d.index,d.floor);return Math.max(0,DIRS.findIndex(([dx,dy])=>m[d.y+dy]?.[d.x+dx]!==undefined&&m[d.y+dy][d.x+dx]!==1));}
 export function dungeonNavigation(d){const m=makeDungeon(d.index,d.floor);const clear=dir=>{const [dx,dy]=DIRS[(dir+4)%4];return m[d.y+dy]?.[d.x+dx]!==undefined&&m[d.y+dy][d.x+dx]!==1;};return {forward:clear(d.dir),back:clear(d.dir+2),left:clear(d.dir-1),right:clear(d.dir+1),facing:['north','east','south','west'][d.dir]};}
+// Turn in place only when a wall would hide the encounter portrait.
+function faceEncounterPassage(d){
+ if(dungeonNavigation(d).forward)return false;
+ const m=makeDungeon(d.index,d.floor),open=[];
+ for(const offset of [-1,1,2]){const dir=(d.dir+offset+4)%4,[dx,dy]=DIRS[dir];let distance=0;
+  while(m[d.y+dy*(distance+1)]?.[d.x+dx*(distance+1)]!==undefined&&m[d.y+dy*(distance+1)][d.x+dx*(distance+1)]!==1)distance++;
+  if(distance)open.push({dir,turn:Math.abs(offset),distance});
+ }
+ open.sort((a,b)=>a.turn-b.turn||b.distance-a.distance);if(!open.length)return false;d.dir=open[0].dir;return true;
+}
 export function pointAt(s){return [...TOWNS.map(p=>({...p,kind:'town'})),...DUNGEONS.map((p,index)=>({...p,index,kind:'dungeon'}))].find(p=>p.region===s.region&&p.x===s.x&&p.y===s.y);}
 export function nextObjective(s){const d=DUNGEONS.find(d=>!s.relics.includes(d.id));return d?`Recover ${d.relic} from ${d.name}.`:'Return to the royal court and decide the fate of the crown.';}
 function encounter(s,boss=false,guard=false){
+ if(s.mode==='dungeon'&&faceEncounterPassage(s.dungeon))note(s,'You turn toward the open passage as a creature blocks your way.');
  const enemy=buildEncounter(s,rand(s),boss,guard);s.returnMode=s.mode;s.flags.guarded=false;s.flags.combo=0;s.enemy=enemy;s.flags.lastSpecies=enemy.speciesId;s.mode='battle';note(s,`${s.enemy.name} (level ${s.enemy.level}) bars your way. Armor: ${s.enemy.armor}. Weakness: ${s.enemy.weakness}. ${guard?'Level 20 royal plate guard: retreat unless well prepared.':boss?'There will be no quiet passage.':'Fight, defend, use magic, or retreat.'}`);
 }
 function recover(s){s.hp=s.maxHp;s.gold=Math.floor(s.gold*.8);s.food=Math.max(s.food,25);s.enemy=null;s.dungeon=null;s.mode='world';const town=TOWNS.find(t=>t.region===s.region);s.x=town.x-1;s.y=town.y;note(s,'A weary pilgrim drags you to safety. You lose a fifth of your gold, but your story continues.');}
@@ -120,5 +131,6 @@ export function loadGame(json){
  if(s.enemy){for(const key of ['level','armor','xp'])if(s.enemy[key]!==undefined&&(!Number.isInteger(s.enemy[key])||s.enemy[key]<0||s.enemy[key]>100000))throw Error('Invalid enemy '+key);}
  s.bag??=['road-sword'];s.equipped??='road-sword';s.pendingLoot??=[];
  if(!Array.isArray(s.bag)||s.bag.some(id=>!Object.hasOwn(WEAPONS,id))||!s.bag.includes(s.equipped)||!Array.isArray(s.pendingLoot)||s.pendingLoot.some(id=>!itemById(id)||!s.bag.includes(id)&&!s.relics.includes(id)))throw Error('Invalid equipment.');
+ if(s.mode==='battle'&&s.returnMode==='dungeon')faceEncounterPassage(s.dungeon);
  if(s.mode==='ending'&&!Object.hasOwn(ENDINGS,s.ending))throw Error('Unknown ending.');if(!s.savedAt&&s.mode==='dungeon'&&s.dungeon.x===1&&s.dungeon.y===1&&!dungeonNavigation(s.dungeon).forward)s.dungeon.dir=openDungeonDirection(s.dungeon);return s;
 }
