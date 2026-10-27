@@ -8,7 +8,7 @@ const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors
 await mkdir('artifacts',{recursive:true});
 await page.goto('http://127.0.0.1:4173');await page.locator('#new-game').waitFor();await page.screenshot({path:'artifacts/title.png'});
 await page.locator('#hero-name').fill('Mara');await page.locator('#new-game').click();await page.locator('#game').waitFor({state:'visible'});await page.screenshot({path:'artifacts/world.png'});
-await page.getByRole('button',{name:'Move east',exact:true}).click();await page.locator('#actions button').first().click();for(const key of ['ArrowLeft','ArrowLeft','ArrowLeft','ArrowUp','ArrowUp'])await page.keyboard.press(key);await page.getByRole('button',{name:'Dice · 4+ wins ×2',exact:true}).click();await page.screenshot({path:'artifacts/casino.png'});await page.locator('#close-panel').click();
+await page.getByRole('button',{name:'Move east',exact:true}).click();await page.locator('#actions button').first().click();for(const key of ['ArrowLeft','ArrowLeft','ArrowLeft','ArrowUp','ArrowUp'])await page.keyboard.press(key);await page.getByRole('button',{name:'Spin Roulette',exact:true}).click();await page.screenshot({path:'artifacts/casino.png'});await page.locator('#close-panel').click();
 for(let i=0;i<6;i++)await page.keyboard.press('ArrowRight');await page.getByRole('button',{name:'Lift a purse',exact:true}).click();await page.locator('#close-panel').click();
 await page.getByRole('button',{name:'Journal',exact:true}).click();await page.screenshot({path:'artifacts/journal.png'});await page.locator('#close-panel').click();
 // Fixture is saved through the real validator on continue, exercising first-person rendering.
