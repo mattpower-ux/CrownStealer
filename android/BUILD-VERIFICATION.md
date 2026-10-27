@@ -50,3 +50,6 @@ VersionCode3; same signing certificate. v2/v3 signature and alignment verified;1
 
 ## Version 0.5.1 verification (2026-10-27)
 Painted transparent dungeon enemy reveal before first combat action; persists across save/reload. 59 Node tests pass; Chrome verifies reveal, tactical transition, phone sizing and offline WebP. APK 2,726,268 bytes, versionCode7; v2/v3 signature valid; 28 bundled files hash-verified. SHA256 7e042ae11f1a0980ee96748b892c4aa2bcc07dfbad9f12d320ebea5c04a32859. Physical tablet still untested.
+
+## 0.6.0 — 2026-10-27
+APK: 5,888,987 bytes; SHA-256 06b3e200ea76673720ef2e1feb427af2e3bd0507f9ad961d4b575200644d8bcc. Version code 8. Signature v2/v3 verified with existing signing identity. All 36 bundled public files verified; 20 native routing/MIME checks passed. 63 Node tests passed including both full campaign routes. Chrome checks passed for dungeon impact colors, victory fade, eight wall profiles, wilderness introduction and double-tap turning. Physical Android tablet testing remains pending.

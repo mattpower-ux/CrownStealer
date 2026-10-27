@@ -101,10 +101,55 @@
   {
     "asset": "dungeon-monsters.webp",
     "originalBytes": 2479960,
-    "optimizedBytes": 617234,
+    "optimizedBytes": 606982,
     "dimensions": [
       1448,
       1086
+    ]
+  },
+  {
+    "asset": "monsters-hearth.webp",
+    "originalBytes": 2946761,
+    "optimizedBytes": 687642,
+    "dimensions": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "asset": "monsters-cinder.webp",
+    "originalBytes": 2821963,
+    "optimizedBytes": 696022,
+    "dimensions": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "asset": "monsters-tide.webp",
+    "originalBytes": 2914437,
+    "optimizedBytes": 745652,
+    "dimensions": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "asset": "monsters-star.webp",
+    "originalBytes": 2636281,
+    "optimizedBytes": 672336,
+    "dimensions": [
+      1448,
+      1086
+    ]
+  },
+  {
+    "asset": "monsters-wild.webp",
+    "originalBytes": 2252431,
+    "optimizedBytes": 365212,
+    "dimensions": [
+      1536,
+      768
     ]
   }
 ]

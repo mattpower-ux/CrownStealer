@@ -59,7 +59,9 @@ function campaign(outlaw) {
     step({type:'talk'});
     for (const q of SIDE_QUESTS.filter(q=>q.town === town.id)) step({type:'quest',id:q.id});
     if (state.hp < state.maxHp) step({type:'rest'});
-    if (challenge) {
+    // Level-20 plate guards are a late-game confrontation, not a starting gold farm.
+    if (challenge && state.level < 14) step({type:'steal'});
+    else if (challenge) {
       for (let i=0;i<4;i++) { step({type:'steal'}); fight(); }
       assert.equal(state.flags['garrison:'+state.region],true);
       const victories = state.flags.victories;
@@ -111,7 +113,7 @@ function campaign(outlaw) {
     step({type:'travel',region:region===3 ? 0 : region+1});
     assert.equal(state.region,region===3 ? 0 : region+1);
   }
-  visit(TOWNS.find(t=>t.id==='bellwether'));
+  visit(TOWNS.find(t=>t.id==='bellwether'),outlaw);
   assert.equal(state.chapter,18);
   assert.equal(state.relics.length,8);
   assert.ok(state.flags.victories >= 8);
