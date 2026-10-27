@@ -9,6 +9,10 @@ try {
  await page.addInitScript(()=>{const NativeAudio=window.Audio;window.testVoices=[];window.Audio=function(src){const a=new NativeAudio(src);window.testVoices.push(a);return a;};});
  await page.goto('http://127.0.0.1:4173');
  await page.locator('#new-game').click();
+ await page.locator('.royal-court-scene').waitFor({state:'visible'});
+ await page.waitForFunction(()=>document.querySelector('.royal-court-scene').naturalWidth>0);
+ assert.equal(await page.locator('.royal-cast').isVisible(),false);
+ await page.screenshot({path:'artifacts/royal-court-opening.png'});
  for(let line=0;line<6;line++){
   await page.waitForFunction(n=>window.testVoices.at(-1)?.src.endsWith(`/intro-${n}.mp3`)&&window.testVoices.at(-1).currentTime>0,line);
   assert.equal(await page.evaluate(()=>window.testVoices.filter(a=>!a.paused).length),1);
@@ -23,5 +27,6 @@ try {
  await page.context().setOffline(true);
  const cached=await page.evaluate(async()=>Promise.all([0,1,2,3,4,5].map(async n=>{const r=await fetch(`/assets/intro-${n}.mp3`);return r.ok&&(await r.arrayBuffer()).byteLength>1000;})));
  assert.ok(cached.every(Boolean));assert.deepEqual(errors,[]);
+ assert.ok(await page.evaluate(async()=>{const r=await fetch('/assets/royal-court.webp');return r.ok&&(await r.arrayBuffer()).byteLength>1000;}));
  console.log('Six voice clips play in order; advancing stops previous audio; saved intro resumes; all clips are cached offline.');
 } finally {await browser.close();}
