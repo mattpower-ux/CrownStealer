@@ -29,7 +29,7 @@ function campaign(outlaw) {
   function step(action) {
     assert.ok(++actions < 20000, 'Campaign must finish without unlimited grinding');
     state = act(state, action);
-    assert.ok(state.gold >= 0 && state.food >= 0 && state.hp > 0, 'Resources remain valid');
+    assert.ok(state.gold >= 0 && state.meals >= 0 && state.hp > 0, 'Resources remain valid');
     assert.ok(!state.log.at(-1)?.startsWith('A weary pilgrim'), `Route defeated after ${action.type}: ${JSON.stringify(checkpoints)}`);
     return state;
   }
@@ -70,7 +70,7 @@ function campaign(outlaw) {
       assert.equal(state.mode,'town','Conquered garrison does not respawn');
       if (state.hp < state.maxHp) step({type:'rest'});
     }
-    while (state.food < 70 && state.gold >= 10) step({type:'buy',item:'food'});
+    while (state.meals < 3 && state.gold >= 10) step({type:'buy',item:'food'});
     while (state.potions < 3 && state.gold >= 48) step({type:'buy',item:'potion'});
     // Keep a small food/rest reserve; favor armor when both ranks are equal.
     for (;;) {

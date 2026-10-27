@@ -10,7 +10,7 @@ Run `npm start`, then open `http://localhost:4173`. No npm dependencies are requ
 
 ## Android
 
-The standalone installer is `releases/CrownStealer-0.8.6.apk`, for Android 8 or newer. Transfer it to the tablet, open it, and allow installation from that file source when prompted. All game assets are bundled, and the app requests no internet permission. Save progress is local. Export a save from Settings before uninstalling or clearing app data.
+The standalone installer is `releases/CrownStealer-0.8.7.apk`, for Android 8 or newer. Transfer it to the tablet, open it, and allow installation from that file source when prompted. All game assets are bundled, and the app requests no internet permission. Save progress is local. Export a save from Settings before uninstalling or clearing app data.
 
 See `android/README.md` for the reproducible build and private signing-key backup instructions. A newer APK signed with the same key can update the installed app. The APK signature and bundled file hashes are checked during build; physical Android-device behavior still needs testing.
 
@@ -47,11 +47,11 @@ Version 0.5.0 adds twelve illustrated dealers with matching annoyed portraits (f
 Live game: https://crownstealer.onrender.com/
 Android download: https://crownstealer.onrender.com/download.html
 
-## Version 0.8.6
+## Version 0.8.7
 The six opening court scenes use supplied voice recordings, bundled for offline playback. Subtitles, replay, skip, and saved scene progress remain available. Dungeon combat stays in first-person view, with painted monster cutouts, impact flashes and a victory fade; wilderness combat uses the tactical map after its encounter introduction.
 
 
 ## Treasure and equipment
-Version 0.8.6 adds 700 procedural loot variants (420 weapons, 60 armor pieces, 60 rings, 60 necklaces and 100 potions), alongside existing campaign items. Each dungeon floor contains 2–5 persistent chests. Every chest rolls 2% legendary, 7% epic, 25% rare and 66% common, independently of depth; equipment tier and gold scale with floor depth. Chests cannot be rerolled or looted twice by saving/reloading.
+Version 0.8.7 adds 700 procedural loot variants (420 weapons, 60 armor pieces, 60 rings, 60 necklaces and 100 potions), alongside existing campaign items. Each dungeon floor contains 2–5 persistent chests. Every chest rolls 2% legendary, 7% epic, 25% rare and 66% common, independently of depth; equipment tier and gold scale with floor depth. Chests cannot be rerolled or looted twice by saving/reloading.
 
 Use Open chest while standing on its square. Press I to equip weapons, armor, rings or necklaces, or drink potions. Strength lasts for enemy turns; invisibility expires over enemy turns or travel steps. Fire/frost add damage, frost can skip an enemy attack, and specialist items offer accuracy, life drain, lightning, protection, regeneration or evasion. All towns' Markets buy unequipped loot at half value and sell a local selection of equipment and potions. Story relics cannot be sold. Save checkpoints include chest progress, equipment and potion effects.

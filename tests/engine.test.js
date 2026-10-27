@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createGame,act,saveGame,loadGame,makeDungeon,worldTile} from '../public/game/engine.js';
 import {DUNGEONS,TOWNS} from '../public/game/content.js';
-test('new game movement is immutable and consumes provisions',()=>{const s=createGame('Mara');const n=act(s,{type:'move',dx:1,dy:0});assert.equal(s.turns,0);assert.equal(n.turns,1);assert.ok(n.food<s.food);assert.equal(n.x,s.x+1);});
+test('new game movement is immutable and does not consume meals',()=>{const s=createGame('Mara');const n=act(s,{type:'move',dx:1,dy:0});assert.equal(s.turns,0);assert.equal(n.turns,1);assert.equal(n.meals,s.meals);assert.equal(n.x,s.x+1);});
 test('unaffordable purchases never debit gold',()=>{const s={...createGame('Mara'),mode:'town',gold:0};const n=act(s,{type:'buy',item:'weapon'});assert.equal(n.gold,0);assert.equal(n.weapon,1);});
 test('seeded actions replay identically',()=>{let a=createGame('A'),b=createGame('A');for(let i=0;i<10;i++){a=act(a,{type:'move',dx:i%2?1:-1,dy:0});b=act(b,{type:'move',dx:i%2?1:-1,dy:0});}assert.deepEqual(a,b);});
 test('save validates numeric corruption and round trips',()=>{const s=createGame('A');const loaded=loadGame(saveGame(s));assert.ok(Number.isFinite(loaded.savedAt));delete loaded.savedAt;assert.deepEqual(loaded,s);assert.throws(()=>loadGame('{"version":1}'));assert.throws(()=>loadGame(JSON.stringify({...s,gold:-100})));assert.throws(()=>loadGame(JSON.stringify({...s,mode:'nonsense'})));});

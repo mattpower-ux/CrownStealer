@@ -6,7 +6,7 @@ export const LOCATION_THEMES=Object.freeze(Object.fromEntries([
  ...REGIONS.map((r,i)=>['land:'+r.id,compose(i,'land')]),
  ...TOWNS.map((t,i)=>['town:'+t.id,compose(i,'town')]),
  ...DUNGEONS.map((d,i)=>['dungeon:'+i,compose(i,'dungeon')]),
- ['dungeon:cell',compose(8,'dungeon')],['dungeon:sewer',compose(9,'dungeon')]
+ ['dungeon:elf-village',compose(10,'dungeon')],['dungeon:cell',compose(8,'dungeon')],['dungeon:sewer',compose(9,'dungeon')]
 ]));
-export function musicScene(s,panel){if(panel==='casino')return 'casino';if(!s)return 'title';if(s.mode==='battle')return 'battle';if(s.mode==='ending')return 'victory';if(s.mode==='dungeon')return 'dungeon:'+(s.dungeon?.royal||s.dungeon?.index||0);if(s.mode==='town')return 'town:'+s.location;return 'land:'+s.region;}
+export function musicScene(s,panel){if(panel==='casino')return 'casino';if(!s)return 'title';if(s.mode==='battle')return 'battle';if(s.mode==='ending')return 'victory';if(s.mode==='dungeon')return 'dungeon:'+(s.dungeon?.site||s.dungeon?.royal||s.dungeon?.index||0);if(s.mode==='town')return 'town:'+s.location;return 'land:'+s.region;}
 
