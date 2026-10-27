@@ -47,3 +47,6 @@ VersionCode3; same signing certificate. v2/v3 signature and alignment verified;1
 - 58 Node tests pass, including casino rules, all-in rounds, ejection and exact save-facing preservation.
 - Chrome: all town activities reachable by keyboard/touch; four casino games; mid-hand reload; dealer annoyed portrait held four seconds then crossfaded; mobile layout, combat and offline checks.
 - Physical Android tablet runtime remains untested.
+
+## Version 0.5.1 verification (2026-10-27)
+Painted transparent dungeon enemy reveal before first combat action; persists across save/reload. 59 Node tests pass; Chrome verifies reveal, tactical transition, phone sizing and offline WebP. APK 2,726,268 bytes, versionCode7; v2/v3 signature valid; 28 bundled files hash-verified. SHA256 7e042ae11f1a0980ee96748b892c4aa2bcc07dfbad9f12d320ebea5c04a32859. Physical tablet still untested.

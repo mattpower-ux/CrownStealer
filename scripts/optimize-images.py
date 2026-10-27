@@ -3,7 +3,7 @@ from PIL import Image
 import json
 root=Path(__file__).resolve().parent.parent
 source=root/'art-source';source.mkdir(exist_ok=True)
-limits={'cover':1600,'creatures':1024,'terrain':1024,'adventurer':256,'biome-trees':512,'towns':1024,'fair':256,'vault':256,'buildings':1024,'dealers':1024,'dealers-annoyed':1024}
+limits={'cover':1600,'creatures':1024,'terrain':1024,'adventurer':256,'biome-trees':512,'towns':1024,'fair':256,'vault':256,'buildings':1024,'dealers':1024,'dealers-annoyed':1024,'dungeon-monsters':1536}
 report=[]
 for name,limit in limits.items():
  path=root/'public/assets'/f'{name}.png'

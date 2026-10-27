@@ -34,7 +34,7 @@ export function nextObjective(s){const d=DUNGEONS.find(d=>!s.relics.includes(d.i
 function encounter(s,boss=false,guard=false){
  const pools=[[0,1,2],[3,4,5],[6,7],[8,9,10]];const pool=pools[s.region];const template=ENEMIES[pool[Math.floor(rand(s)*pool.length)]];
  const hp=boss?65+s.region*32:guard?50+s.region*25:22+s.region*15+s.level*3;
- s.returnMode=s.mode;s.flags.guarded=false;s.flags.combo=0;s.enemy={name:boss?DUNGEONS[s.dungeon.index].boss:guard?'Royal bailiff':template.name,hp,maxHp:hp,attack:boss?10+s.region*4:5+s.region*3,gold:boss?95:15+s.region*12,weakness:template.weakness||'quick strikes',boss,guard};s.mode='battle';note(s,`${s.enemy.name} bars your way. Weakness: ${s.enemy.weakness}. ${boss?'There will be no quiet passage.':'Fight, defend, use magic, or retreat.'}`);
+ s.returnMode=s.mode;s.flags.guarded=false;s.flags.combo=0;s.enemy={firstContact:s.mode==='dungeon',name:boss?DUNGEONS[s.dungeon.index].boss:guard?'Royal bailiff':template.name,hp,maxHp:hp,attack:boss?10+s.region*4:5+s.region*3,gold:boss?95:15+s.region*12,weakness:template.weakness||'quick strikes',boss,guard};s.mode='battle';note(s,`${s.enemy.name} bars your way. Weakness: ${s.enemy.weakness}. ${boss?'There will be no quiet passage.':'Fight, defend, use magic, or retreat.'}`);
 }
 function recover(s){s.hp=s.maxHp;s.gold=Math.floor(s.gold*.8);s.food=Math.max(s.food,25);s.enemy=null;s.dungeon=null;s.mode='world';const town=TOWNS.find(t=>t.region===s.region);s.x=town.x-1;s.y=town.y;note(s,'A weary pilgrim drags you to safety. You lose a fifth of your gold, but your story continues.');}
 function clock(s,food=.25){s.turns++;s.food=Math.max(0,s.food-food);if(s.food===0){s.hp-=2;note(s,'Your empty pack offers little encouragement. Find provisions.');}if(s.hp<=0)recover(s);}
@@ -42,6 +42,7 @@ function enemyTurn(s,defending=false,events=[]){if(!s.enemy)return;const damage=
 function victory(s){const e=s.enemy;s.gold+=e.gold;s.xp+=e.boss?60:20;s.flags.victories++;if(e.boss||s.flags.victories%3===1){const pool=Object.keys(WEAPONS).slice(1+s.region*2,3+s.region*2);const found=pool.find(id=>!s.bag?.includes(id));if(found){s.bag??=['road-sword'];s.pendingLoot??=[];s.bag.push(found);s.pendingLoot.push(found);note(s,`You found ${WEAPONS[found].name}.`);}}if(e.boss)s.flags['boss:'+s.dungeon.index]=true;if(e.guard){s.wanted[s.region]=Math.max(0,s.wanted[s.region]-1);s.flags['garrison:'+s.region]=true;s.reputation-=3;}note(s,`${e.name} is defeated. You find ${e.gold} gold.`);s.mode=s.returnMode;s.enemy=null;while(s.xp>=s.level*50){s.xp-=s.level*50;s.level++;s.maxHp+=14;s.hp=Math.min(s.maxHp,s.hp+30);note(s,`Level ${s.level}. Rumors of your competence are becoming difficult to deny.`);}}
 export function act(input,action,events=[]){
  const s=actInner(input,action,events);
+ if(input.mode==='battle'&&s.enemy&&(events.length||action?.type==='flee'))s.enemy.firstContact=false;
  if(s.mode==='town'&&s.gold===0&&!s.casino?.active){const t=TOWNS.find(t=>t.id===s.location)||TOWNS.find(t=>t.region===s.region);s.mode='world';s.location=null;s.x=t.x-1;s.y=t.y;note(s,'Being escorted out of the town. Return when you have some gold in your possession.');}
  return s;
 }

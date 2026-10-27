@@ -97,5 +97,14 @@
       1024,
       768
     ]
+  },
+  {
+    "asset": "dungeon-monsters.webp",
+    "originalBytes": 2479960,
+    "optimizedBytes": 617234,
+    "dimensions": [
+      1448,
+      1086
+    ]
   }
 ]

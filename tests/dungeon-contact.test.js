@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {createGame,act,saveGame,loadGame} from '../public/game/engine.js';
+test('a dungeon contact persists its painted reveal until a combat action',()=>{let s=createGame();s.mode='dungeon';s.dungeon={index:0,floor:0,x:1,y:1,dir:2};let seed=0;while(((Math.imul(seed,1664525)+1013904223)>>>0)/4294967296>=.055)seed++;s.rng=seed;s=act(s,{type:'forward'});assert.equal(s.mode,'battle');assert.equal(s.enemy.firstContact,true);s=loadGame(saveGame(s));assert.equal(s.enemy.firstContact,true);const noAction=act(s,{type:'heal'});assert.equal(noAction.enemy.firstContact,true);s=act(s,{type:'guard'});assert.equal(s.enemy.firstContact,false);});
