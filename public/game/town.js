@@ -1,12 +1,13 @@
 // Shared town geometry keeps entrances, collision, touch movement and art aligned.
 export const TOWN_SIZE=13;
 export const TOWN_PLACES=[
- {id:'inn',name:'The Lantern Inn',x:3,y:5,art:0,bx:2,by:2,bw:3,bh:3},
- {id:'shop',name:'Market',x:9,y:5,art:1,bx:8,by:2,bw:3,bh:3},
- {id:'casino',name:'The Gilded Goose',x:3,y:9,art:2,bx:2,by:6,bw:3,bh:3},
- {id:'court',name:'Court & Watch',x:9,y:9,art:3,bx:8,by:6,bw:3,bh:3},
- {id:'quests',name:'Notice Board',x:6,y:7,art:4,bx:6,by:6,bw:1,bh:1},
- {id:'talk',name:'Townspeople',x:6,y:4,art:-1},
+ {id:'inn',name:'The Lantern Inn',x:3,y:5,art:0,bx:2,by:3,bw:2,bh:2},
+ {id:'shop',name:'Market',x:9,y:5,art:1,bx:8,by:3,bw:2,bh:2},
+ {id:'casino',name:'The Gilded Goose',x:3,y:9,art:2,bx:2,by:7,bw:2,bh:2},
+ {id:'court',name:'Court & Watch',x:9,y:9,art:3,bx:8,by:7,bw:2,bh:2},
+ {id:'quests',name:'Story House',x:3,y:11,art:0,bx:2,by:9,bw:2,bh:2},
+ {id:'talk',name:'Town Hall',x:6,y:4,art:3,bx:5,by:2,bw:2,bh:2},
+ {id:'fortune',name:'Fortune Teller',x:10,y:11,art:5,bx:9,by:9,bw:2,bh:2},
  {id:'gate',name:'Leave town',x:6,y:12,art:7}
 ];
 export function townPosition(s){return s.townPosition||{x:6,y:11};}
