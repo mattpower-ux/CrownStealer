@@ -1,3 +1,5 @@
+import {drawDungeonChests} from './chest-render.js';
+import {dungeonChests} from './treasure.js';
 import {dungeonLadders} from './dungeon-ladders.js';
 import {silhouetteComponents} from './sprite-bounds.js';
 import {MONSTER_BY_ID,ENEMIES} from './bestiary.js';
@@ -93,8 +95,9 @@ function dungeon(c,w,h,s,time){const d=s.dungeon;if(!d)return;const m=dungeonMap
  const glow=c.createRadialGradient(w*.18,h*.68,5,w*.18,h*.68,w*.65);glow.addColorStop(0,'#e5a84021');glow.addColorStop(1,'#d9a34400');c.fillStyle=glow;c.fillRect(0,0,w,h);
  // Ladders are part of the ray-hit wall texture, so intervening walls occlude them.
  const here=ladders.find(l=>l.x===d.x&&l.y===d.y);if(here)label(c,(here.direction==='up'?'↑ ASCENT':'↓ DESCENT')+' · wall ladder',w/2,52,14,here.direction==='up'?'#a6e4ef':'#ffe1a0');
+ drawDungeonChests(c,w,h,s,m,dx,dy);
  // A clear floor map makes touch navigation usable without a separate overlay.
- const z=Math.min(7,w/65),mx=w-15*z-18,my=18;c.fillStyle='#06100de6';c.fillRect(mx-7,my-7,15*z+14,15*z+14);for(let y=0;y<15;y++)for(let x=0;x<15;x++){c.fillStyle=m[y][x]===1?'#354239':m[y][x]===2?'#c8a35f':'#101c19';c.fillRect(mx+x*z,my+y*z,z-1,z-1);}circle(c,mx+(d.x+.5)*z,my+(d.y+.5)*z,z*.4,'#f4db9c');c.strokeStyle='#f4db9c';c.beginPath();c.moveTo(mx+(d.x+.5)*z,my+(d.y+.5)*z);c.lineTo(mx+(d.x+.5+dx)*z,my+(d.y+.5+dy)*z);c.stroke();
+ const z=Math.min(7,w/65),mx=w-15*z-18,my=18;c.fillStyle='#06100de6';c.fillRect(mx-7,my-7,15*z+14,15*z+14);for(let y=0;y<15;y++)for(let x=0;x<15;x++){c.fillStyle=m[y][x]===1?'#354239':m[y][x]===2?'#c8a35f':'#101c19';c.fillRect(mx+x*z,my+y*z,z-1,z-1);}for(const chest of dungeonChests(s,m)){c.fillStyle=chest.opened?'#66523a':'#f1b84e';c.fillRect(mx+chest.x*z+1,my+chest.y*z+1,z-2,z-2);}circle(c,mx+(d.x+.5)*z,my+(d.y+.5)*z,z*.4,'#f4db9c');c.strokeStyle='#f4db9c';c.beginPath();c.moveTo(mx+(d.x+.5)*z,my+(d.y+.5)*z);c.lineTo(mx+(d.x+.5+dx)*z,my+(d.y+.5+dy)*z);c.stroke();
  label(c,['NORTH','EAST','SOUTH','WEST'][d.dir],w/2,28,12,'#bfad85');
 }
 const monsterAtlases=Object.fromEntries(['dungeon-monsters','monsters-hearth','monsters-cinder','monsters-tide','monsters-star','monsters-wild'].map(key=>{const img=new Image();img.src='/assets/'+key+'.webp';return [key,img];}));

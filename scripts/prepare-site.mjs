@@ -1,9 +1,9 @@
 import {cp,mkdir,readFile,writeFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 const root=new URL('../',import.meta.url),out=new URL('dist/',root);
-const apk=await readFile(new URL('releases/CrownStealer-0.7.4.apk',root));
+const apk=await readFile(new URL('releases/CrownStealer-0.8.0.apk',root));
 const checksum=createHash('sha256').update(apk).digest('hex');
-const expected=(await readFile(new URL('releases/CrownStealer-0.7.4.apk.sha256',root),'utf8')).split(/\s/)[0];
+const expected=(await readFile(new URL('releases/CrownStealer-0.8.0.apk.sha256',root),'utf8')).split(/\s/)[0];
 if(checksum!==expected)throw Error('APK checksum does not match release verification.');
 await mkdir(new URL('downloads/',out),{recursive:true});
 await cp(new URL('public/',root),out,{recursive:true});
