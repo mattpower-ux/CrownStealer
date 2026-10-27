@@ -70,5 +70,32 @@
       256,
       205
     ]
+  },
+  {
+    "asset": "buildings.webp",
+    "originalBytes": 2246624,
+    "optimizedBytes": 183524,
+    "dimensions": [
+      1024,
+      512
+    ]
+  },
+  {
+    "asset": "dealers.webp",
+    "originalBytes": 2969309,
+    "optimizedBytes": 188350,
+    "dimensions": [
+      1024,
+      768
+    ]
+  },
+  {
+    "asset": "dealers-annoyed.webp",
+    "originalBytes": 2708610,
+    "optimizedBytes": 171110,
+    "dimensions": [
+      1024,
+      768
+    ]
   }
 ]

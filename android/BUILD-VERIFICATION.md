@@ -39,3 +39,11 @@ VersionCode3; same signing certificate. v2/v3 signature and alignment verified;1
 - 48 Node tests pass; Chrome tests pass for four biome maps, arrow movement, dungeon sidestepping, encounters and offline audio. Native routing/MIME: 20 checks pass.
 - Artwork converted to WebP with transparent icons sized for map display; original masters retained locally outside distribution.
 - Physical Android tablet testing remains pending.
+
+## Version 0.5.0 verification (2026-10-27)
+- APK: releases/CrownStealer-0.5.0.apk; 2,107,690 bytes; versionCode 6.
+- SHA-256: c679784397229d2362fed5361097764c6c8df521aa61608cca621774c9d8a4c2.
+- Original signing key retained; v2/v3 valid, all 27 bundled files hash-verified; native routing/MIME 20 checks pass.
+- 58 Node tests pass, including casino rules, all-in rounds, ejection and exact save-facing preservation.
+- Chrome: all town activities reachable by keyboard/touch; four casino games; mid-hand reload; dealer annoyed portrait held four seconds then crossfaded; mobile layout, combat and offline checks.
+- Physical Android tablet runtime remains untested.

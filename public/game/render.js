@@ -1,3 +1,4 @@
+import {TOWN_SIZE,TOWN_PLACES,townPosition} from './town.js';
 import {REGIONS,TOWNS,DUNGEONS} from './content.js';
 import {worldTile,makeDungeon,DIRS} from './engine.js';
 const sprites=new Image();sprites.src='/assets/creatures.webp';
@@ -47,7 +48,7 @@ function tree(c,x,y,s,shade=0){c.fillStyle='#0b191a66';c.beginPath();c.ellipse(x
 function village(c,x,y,s,castle=false){c.fillStyle='#071e1b66';c.beginPath();c.ellipse(x,y+s*.2,s*.8,s*.24,0,0,7);c.fill();for(const [dx,dy,k] of [[-.38,.05,.6],[.3,.1,.7],[0,-.2,.9]]){const a=x+dx*s,b=y+dy*s,w=s*.42*k;c.fillStyle=castle?'#b1ab8f':'#c1b28c';c.fillRect(a-w/2,b-w/2,w,w*.8);path(c,[[a-w*.65,b-w*.5],[a,b-w],[a+w*.65,b-w*.5]],castle?'#6a7770':'#83533e');c.fillStyle='#eac776';c.fillRect(a-w*.12,b-w*.2,w*.18,w*.25);}if(castle){c.fillStyle='#bab69b';c.fillRect(x-s*.08,y-s*.9,s*.16,s*.8);path(c,[[x-s*.15,y-s*.9],[x,y-s*1.2],[x+s*.15,y-s*.9]],'#52685d');}}
 function label(c,text,x,y,size=12,color='#f0e3bd'){c.font=`${size}px Georgia`;c.textAlign='center';c.shadowColor='#071411';c.shadowBlur=4;c.fillStyle=color;c.fillText(text,x,y);c.shadowBlur=0;}
 export function render(canvas,s,time=0,fx=null,reduced=false){const rect=canvas.getBoundingClientRect();const dpr=Math.min(devicePixelRatio||1,2);const w=Math.max(1,rect.width),h=Math.max(1,rect.height);if(canvas.width!==Math.round(w*dpr)||canvas.height!==Math.round(h*dpr)){canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);}const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);
- canvas.dataset.view=s.mode==='battle'?'battle-map':s.mode==='dungeon'?'dungeon-3d':'world-map';
+ canvas.dataset.view=s.mode==='battle'?'battle-map':s.mode==='dungeon'?'dungeon-3d':s.mode==='town'?'town-map':'world-map';
  if(s.mode==='battle')battle(c,w,h,s,time,fx,reduced);else if(s.mode==='dungeon')dungeon(c,w,h,s,reduced?0:time);else if(s.mode==='town')town(c,w,h,s,reduced?0:time);else world(c,w,h,s,reduced?0:time);
  const v=c.createRadialGradient(w/2,h/2,h*.18,w/2,h/2,Math.max(w,h)*.65);v.addColorStop(0,'#00110b00');v.addColorStop(1,'#030e0ccc');c.fillStyle=v;c.fillRect(0,0,w,h);
 }
@@ -58,7 +59,29 @@ function world(c,w,h,s,time){const p=REGIONS[s.region].palette;const size=Math.m
  const px=(s.x+.5)*size,py=(s.y+.5)*size;drawAdventurer(c,px,py,size*1.9);c.restore();
  label(c,'N',w-33,35,15,'#d1b57c');c.strokeStyle='#d1b57c';c.beginPath();c.moveTo(w-33,42);c.lineTo(w-33,66);c.stroke();path(c,[[w-33,39],[w-38,49],[w-28,49]],'#d1b57c');
 }
-function town(c,w,h,s,time){if(cover.complete&&cover.naturalWidth){const scale=Math.max(w/cover.width,h/cover.height);c.drawImage(cover,(w-cover.width*scale)/2,(h-cover.height*scale)/2,cover.width*scale,cover.height*scale);}else{c.fillStyle='#263d32';c.fillRect(0,0,w,h);}c.fillStyle='#0b1d1a44';c.fillRect(0,0,w,h);for(let i=0;i<12;i++)circle(c,(i*97+time*.006)%w,h*.4+Math.sin(i+time*.001)*h*.2,1,'#f5d18a66');}
+const buildings=new Image();buildings.src='/assets/buildings.webp';
+function buildingArt(c,index,x,y,w,h){if(buildings.complete&&buildings.naturalWidth){const sw=buildings.width/4,sh=buildings.height/2;c.drawImage(buildings,index%4*sw,Math.floor(index/4)*sh,sw,sh,x,y,w,h);}else village(c,x+w/2,y+h/2,Math.min(w,h)*.5,index===3);}
+function town(c,w,h,s,time){
+ const size=Math.min(w/TOWN_SIZE,h/TOWN_SIZE),ox=(w-size*TOWN_SIZE)/2,oy=(h-size*TOWN_SIZE)/2,b=BIOMES[s.region];
+ c.fillStyle='#182b24';c.fillRect(0,0,w,h);c.save();c.translate(ox,oy);
+ for(let y=0;y<TOWN_SIZE;y++)for(let x=0;x<TOWN_SIZE;x++){
+  const boundary=x===0||y===0||x===12||y===12,road=[3,6,9].includes(x)||[5,9,11].includes(y);
+  c.fillStyle=boundary?'#626654':road?'#9a937c':b.ground;c.fillRect(x*size,y*size,size+.5,size+.5);
+  if(road&&!boundary){for(let row=0;row<5;row++)for(let col=0;col<5;col++){c.fillStyle=(row+col+x+y)%3?'#b4ac9255':'#666d5c44';c.fillRect((x+col/5+(row%2)*.04)*size,(y+row/5)*size,size*.17,size*.16);}}
+  if(boundary){c.strokeStyle='#27382c';c.lineWidth=1;c.strokeRect(x*size,y*size,size,size);c.fillStyle='#9d9e80';c.fillRect(x*size+size*.1,y*size+size*.1,size*.3,size*.25);}
+ }
+ // Gardens, a fountain and modest homes between the main service streets.
+ for(const [x,y] of [[1,5],[11,5],[1,9],[11,9]]){circle(c,(x+.5)*size,(y+.5)*size,size*.32,'#526943');circle(c,(x+.4)*size,(y+.4)*size,size*.2,'#7b8c55');}
+ circle(c,6.5*size,9.5*size,size*.36,'#c0b999');circle(c,6.5*size,9.5*size,size*.27,'#497e83');circle(c,6.5*size,9.5*size,size*.08,'#c8d8ba');
+ for(const place of TOWN_PLACES){
+  if(place.id==='gate'){c.fillStyle='#9a937c';c.fillRect(6*size,12*size,size,size);buildingArt(c,7,5.8*size,11.6*size,size*1.4,size*1.2);continue;}
+  if(place.art>=0){const bw=(place.bw||1)*size,bh=(place.bh||1)*size;buildingArt(c,place.art,place.bx*size,place.by*size,bw,bh);}
+  else{c.save();c.filter='sepia(.7)';drawAdventurer(c,(place.x+.5)*size,(place.y-.25)*size,size*1.1);c.restore();}
+  const xx=(place.x+.5)*size,yy=(place.y+.5)*size;c.strokeStyle='#f0cf87';c.lineWidth=2;c.beginPath();c.ellipse(xx,yy,size*.28,size*.13,0,0,Math.PI*2);c.stroke();
+  label(c,place.name,xx,place.y*size-size*.08,Math.max(9,Math.min(14,size*.27)),'#fff0c6');
+ }
+ const pos=townPosition(s);drawAdventurer(c,(pos.x+.5)*size,(pos.y+.5)*size,size*1.25);c.restore();
+}
 function dungeon(c,w,h,s,time){const d=s.dungeon;if(!d)return;const m=makeDungeon(d.index,d.floor);const ceiling=c.createLinearGradient(0,0,0,h);ceiling.addColorStop(0,'#071015');ceiling.addColorStop(.5,'#151b1b');ceiling.addColorStop(.51,'#232821');ceiling.addColorStop(1,'#111816');c.fillStyle=ceiling;c.fillRect(0,0,w,h);const [dx,dy]=DIRS[d.dir];const angle=Math.atan2(dy,dx),fov=Math.PI/2.6,step=3;
  for(let col=0;col<w;col+=step){const a=angle+Math.atan((col/w-.5)*2*Math.tan(fov/2));const vx=Math.cos(a),vy=Math.sin(a);let dist=.02,x=d.x+.5,y=d.y+.5;while(dist<18){x=d.x+.5+vx*dist;y=d.y+.5+vy*dist;if(m[Math.floor(y)]?.[Math.floor(x)]===1||m[Math.floor(y)]?.[Math.floor(x)]===undefined)break;dist+=.025;}const corrected=dist*Math.cos(a-angle),height=Math.min(h*2,h*.85/corrected),top=(h-height)/2;const fracX=x-Math.floor(x),fracY=y-Math.floor(y),vertical=fracX<.04||fracX>.96,tex=vertical?fracY:fracX;const light=clamp(1-dist/11,.09,.95)*(vertical?.77:1);for(let yy=Math.max(0,top);yy<Math.min(h,top+height);yy+=3){const v=(yy-top)/height;const row=Math.floor(v*8);const mortar=(v*8)%1<.06||((tex*3+(row%2)*.5)%1)<.045;const grain=Math.sin(tex*190+v*140)*4;const base=mortar?28:78+grain;c.fillStyle=`rgb(${Math.floor((base+10)*light)},${Math.floor((base+13)*light)},${Math.floor((base+9)*light)})`;c.fillRect(col,yy,step+1,3.5);}}
  const glow=c.createRadialGradient(w*.18,h*.68,5,w*.18,h*.68,w*.65);glow.addColorStop(0,'#e5a84021');glow.addColorStop(1,'#d9a34400');c.fillStyle=glow;c.fillRect(0,0,w,h);
