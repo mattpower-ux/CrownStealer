@@ -1,3 +1,4 @@
+import {regionTrails,drawTrailCurve} from './trails.js';
 import {areaFor,areaSites,areaTile,branchGates} from './exploration.js';
 import {drawTownScenery} from './town-scenery.js';
 import {drawGearAvatar} from './gear-avatar.js';
@@ -30,7 +31,7 @@ const BIOMES=[
  {ground:'#92b59b',light:'#bad0a1',road:'#8b9792',edge:'#566a65'},
  {ground:'#d0dce1',light:'#ffffff',road:'#a4b7c1',edge:'#8b9fac'}
 ];
-function roadAt(region,x,y){return ((x===16&&(y===0||y===23))||(y===12&&((x===31&&region<4)||(x===0)))||x>0&&x<31&&y>0&&y<23)&&(x===16||y===12||[...TOWNS,...DUNGEONS,...WILD_SITES.filter(p=>p.kind==='fountain'||p.kind==='forest')].some(p=>p.region===region&&y===p.y&&x>=Math.min(16,p.x)&&x<=Math.max(16,p.x)));}
+function roadAt(region,x,y){return ((x===16&&(y===0||y===23))||(y===12&&((x===31&&region<4)||(x===0)))||x>0&&x<31&&y>0&&y<23)&&(x===16||y===12||TOWNS.some(p=>p.region===region&&y===p.y&&x>=Math.min(16,p.x)&&x<=Math.max(16,p.x)));}
 function groundTile(c,region,gx,gy,x,y,size){
  const key=`${region}:${gx}:${gy}`;
  let tile=groundTiles.get(key);
@@ -230,11 +231,9 @@ function drawShip(c,w,h,s){
 }
 
 function drawTrails(c,region,size){
- const sites=[...DUNGEONS,...WILD_SITES.filter(p=>['fountain','forest','dragon'].includes(p.kind))].filter(p=>p.region===region);
  c.save();c.lineJoin='round';c.lineCap='round';
- for(const p of sites){const x=(p.x+.5)*size,y=(p.y+.5)*size,main=16.5*size;
-  // Narrow dirt trails join the central trunk road; broken highlights suggest foot wear.
-  for(const [width,color]of [[.30,'#776444'],[.22,'#d2ba83']]){c.lineWidth=size*width;c.strokeStyle=color;c.beginPath();c.moveTo(main,y);c.lineTo(x,y);c.stroke();}
-  c.strokeStyle='#f0ddb0';c.lineWidth=Math.max(1,size*.04);c.setLineDash([size*.12,size*.21]);c.beginPath();c.moveTo(main,y-size*.035);c.lineTo(x,y-size*.035);c.stroke();c.setLineDash([]);
+ for(const {points}of regionTrails(region)){
+  for(const [width,color]of [[.38,'#756546'],[.28,'#cbb181']]){c.lineWidth=size*width;c.strokeStyle=color;drawTrailCurve(c,points,size);}
+  c.strokeStyle='#e7d4a4';c.lineWidth=Math.max(1,size*.045);c.setLineDash([size*.07,size*.29]);drawTrailCurve(c,points,size);c.setLineDash([]);
  }c.restore();
 }

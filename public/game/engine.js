@@ -1,3 +1,4 @@
+import {gossipFor} from './gossip.js';
 import {sellPrice} from './treasure.js';
 import {dungeonFloors} from './dungeon-depths.js';
 import {AREAS,areaFor,areaSites,branchGates,shipMap,expeditionName,explorationAction} from './exploration.js';
@@ -27,7 +28,7 @@ export function worldTile(region,x,y){
  const points=[...TOWNS,...DUNGEONS].filter(p=>p.region===region);
  if(WILD_SITES.some(p=>p.region===region&&Math.abs(x-p.x)<=1&&Math.abs(y-p.y)<=1))return 'grass';
  if(points.some(p=>Math.abs(x-p.x)<=1&&Math.abs(y-p.y)<=1))return 'grass';
- if(x===16||y===12||points.some(p=>(y===p.y&&x>=Math.min(16,p.x)&&x<=Math.max(16,p.x))))return 'road';
+ if(x===16||y===12||TOWNS.filter(p=>p.region===region).some(p=>(y===p.y&&x>=Math.min(16,p.x)&&x<=Math.max(16,p.x))))return 'road';
  const n=((x*73856093)^(y*19349663)^(region*83492791))>>>0;
  if(mountainTile(region,x,y))return 'mountain';if(n%7<3)return 'forest';return 'grass';
 }
@@ -162,7 +163,7 @@ function actInner(input,action,events=[]){
   const town=TOWNS.find(t=>t.id===s.location)||TOWNS.find(t=>t.region===s.region);
   if(a.type==='talk'&&town.id==='bellwether'&&s.flags.princessImprisoned){note(s,'The chamberlain bows. Bunnyfoot remains imprisoned by your order.');return s;}
   if(a.type==='talk'&&town.id==='bellwether'&&s.flags.royalQuest==='escaped'){if(s.flags['garrison:0']){s.flags.royalQuest='audience';note(s,'The guards have yielded. Princess Bunnyfoot grants you an audience. Visit Court & travel to choose your future.');}else note(s,'Malachi the Ineffable refuses an audience. Defeat his level-50 royal guards before demanding to see Bunnyfoot.');return s;}
-  if(a.type==='talk'){note(s,`${town.npc}: ${town.rumor}`);const n=s.relics.length;if(n===1)advance(s,2);if(n===2&&town.id==='bellwether'){advance(s,4);s.flags.courtBriefing=true;}if(n===4)advance(s,8);if(n===5)advance(s,11);if(n===7)advance(s,15);if(n===8&&town.id==='bellwether')advance(s,18);note(s,town.quest);}
+  if(a.type==='talk'){s.flags['gossip:'+town.id]=(s.flags['gossip:'+town.id]||0)+1;const gossip=gossipFor(s);note(s,gossip.subject+': '+gossip.text);const n=s.relics.length;if(n===1)advance(s,2);if(n===2&&town.id==='bellwether'){advance(s,4);s.flags.courtBriefing=true;}if(n===4)advance(s,8);if(n===5)advance(s,11);if(n===7)advance(s,15);if(n===8&&town.id==='bellwether')advance(s,18);}
   if(a.type==='rest'){const price=s.wanted[s.region]>=3?20:8;if(s.gold>=price){s.gold-=price;s.hp=s.maxHp;note(s,'A bed, a bowl of soup, and eight hours without prophecy. Health restored.');}else{ s.hp=Math.min(s.maxHp,s.hp+20);note(s,'You work in the kitchens for a meal and a bench. Some health restored.');}}
   if(a.type==='buyItem'||a.type==='sellItem'){const item=itemById(a.id,s);if(!item||item.kind==='relic'||item.id==='holy-pepper-grenade')return s;if(s.wanted[s.region]>=4&&!s.flags['townGarrison:'+s.location]){note(s,'Settle your bounty before trading.');return s;}if(a.type==='buyItem'){if(!merchantStock(s.region,s.location).includes(a.id)||s.gold<item.value){note(s,'You cannot afford this item.');return s;}s.gold-=item.value;s.bag.push(a.id);note(s,'Purchased '+item.name+'.');}else{const index=s.bag.indexOf(a.id);if(index<0)return s;if(equipmentKeys.some(k=>s[k]===a.id)){note(s,'Unequip this item before selling it.');return s;}s.bag.splice(index,1);s.pendingLoot=s.pendingLoot.filter(id=>id!==a.id||s.bag.includes(id));const price=sellPrice(item);s.gold+=price;note(s,'Sold '+item.name+' for '+price+' gold.');}return s;}
   if(a.type==='buy'){
@@ -206,7 +207,7 @@ export function loadGame(json){
  if(s.dungeon?.site&&(s.dungeon.site!=='elf-village'||s.dungeon.floor<0||s.dungeon.floor>3||s.dungeon.index!==0||s.dungeon.royal))throw Error('Invalid forest site.');
  if(s.flags.fountainDay!==undefined&&(!Number.isInteger(s.flags.fountainDay)||s.flags.fountainDay<0))throw Error('Invalid fountain day.');
  if(s.dungeon?.royal&&!['cell','sewer'].includes(s.dungeon.royal))throw Error('Invalid royal dungeon.');
- for(const [key,value] of Object.entries(s.flags)){if(key.startsWith('palaceBan:')&&(!TOWNS.some(t=>t.id===key.slice(10)&&t.id!=='bellwether')||typeof value!=='boolean'))throw Error('Invalid palace ban.');} 
+ for(const [key,value] of Object.entries(s.flags)){if(key.startsWith('gossip:')&&(!TOWNS.some(t=>t.id===key.slice(7))||!Number.isSafeInteger(value)||value<0))throw Error('Invalid gossip progress.');if(key.startsWith('palaceBan:')&&(!TOWNS.some(t=>t.id===key.slice(10)&&t.id!=='bellwether')||typeof value!=='boolean'))throw Error('Invalid palace ban.');}
  for(const [key,value] of Object.entries(s.flags))if(key.startsWith('palaceWins:')&&(!TOWNS.some(t=>t.id===key.slice(11)&&t.id!=='bellwether')||!Number.isInteger(value)||value<0||value>5))throw Error('Invalid palace guard progress.');
  if(s.flags.royalGuardWins!==undefined&&(!Number.isInteger(s.flags.royalGuardWins)||s.flags.royalGuardWins<0||s.flags.royalGuardWins>10000))throw Error('Invalid royal guard progress.');
  if(s.flags.royalQuest&&!['opening','banished','imprisoned','sewers','escaped','audience','resolved'].includes(s.flags.royalQuest))throw Error('Invalid royal quest.');

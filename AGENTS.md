@@ -1,5 +1,9 @@
 # Project instructions
 
+## Current delivery preference — October 28, 2026
+
+Matt explicitly requested no further APK builds until he asks. Continue browser preview changes and testing while the game is being refined. Keep the existing downloadable APK unchanged; do not increment Android versionCode or run the Android build for web-only updates. This supersedes the APK requirement below until Matt requests another APK.
+
 ## Deployment required for every release build
 
 Matt explicitly requires all game builds to deploy. A successful local build is not completion.
