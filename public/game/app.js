@@ -23,6 +23,15 @@ const SETTINGS='crownstealer-settings-v1';
 let activeSlot=1;try{activeSlot=selectedSlot(localStorage);}catch{}
 let {save:SAVE,checkpoint:CHECKPOINT}=developerMode?PREVIEW_KEYS:slotKeys(activeSlot);
 let inventorySelection=null;
+let displayedDungeonLevel=null,levelBannerTimer;
+function updateLevelBanner(){
+ const d=state?.dungeon,inDungeon=d&&(state.mode==='dungeon'||state.mode==='battle'&&state.returnMode==='dungeon');
+ const key=inDungeon?`${d.site||d.royal||d.index}:${d.floor}`:null;
+ if(key===displayedDungeonLevel)return;displayedDungeonLevel=key;clearTimeout(levelBannerTimer);
+ const banner=$('level-banner');banner.hidden=!key;if(!key)return;
+ banner.textContent=`LEVEL ${d.floor+1}`;levelBannerTimer=setTimeout(()=>{banner.hidden=true;},3000);
+}
+
 let dealerReactionUntil=0,dealerReactionTimer;
 let state=null,activePanel=null,frame=0,lastFrame=0,toastTimer,installPrompt=null;
 let volumes={music:.35,effects:.55};try{const v=JSON.parse(localStorage.getItem(SETTINGS));if(v&&Number.isFinite(v.music)&&Number.isFinite(v.effects))volumes={music:Math.max(0,Math.min(1,v.music)),effects:Math.max(0,Math.min(1,v.effects))};}catch{}
@@ -31,10 +40,10 @@ function toast(message){$('toast').textContent=message;$('toast').classList.add(
 function persist(){try{localStorage.setItem(SAVE,saveGame(state));$('save-status').textContent='Progress saved on this device';}catch{$('save-status').textContent='Storage unavailable — export your save from Settings';}}
 function hasSave(){try{return !!localStorage.getItem(SAVE);}catch{return false;}}
 $('continue-game').hidden=!hasSave();
-function start(s){finishCombat();cancelAnimationFrame(frame);state=s;$('title-screen').hidden=true;$('game').hidden=false;update();audio.unlock().then(()=>sceneMusic());frame=requestAnimationFrame(draw);if(state.flags.borderTauntPending)openPanel('borderTaunt');else if(state.flags.guardTauntPending)openPanel('guardTaunt');else if(state.flags.royalQuest==='opening')openPanel('royalIntro');else if(state.mode==='ending')openPanel('ending');else if(state.casino?.active)openPanel('casino');else showLoot();}
+function start(s){displayedDungeonLevel=null;finishCombat();cancelAnimationFrame(frame);state=s;$('title-screen').hidden=true;$('game').hidden=false;update();audio.unlock().then(()=>sceneMusic());frame=requestAnimationFrame(draw);if(state.flags.borderTauntPending)openPanel('borderTaunt');else if(state.flags.guardTauntPending)openPanel('guardTaunt');else if(state.flags.royalQuest==='opening')openPanel('royalIntro');else if(state.mode==='ending')openPanel('ending');else if(state.casino?.active)openPanel('casino');else showLoot();}
 $('new-game').onclick=()=>{if(hasSave()){openPanel('new');return;}beginNewAdventurer();};
 $('continue-game').onclick=()=>{try{start(loadGame(localStorage.getItem(SAVE)));}catch(e){toast('Cannot read save: '+e.message);}};
-$('home').onclick=()=>{finishCombat();persist();$('game').hidden=true;$('title-screen').hidden=false;refreshSlotPicker();audio.setScene('title');cancelAnimationFrame(frame);};
+$('home').onclick=()=>{clearTimeout(levelBannerTimer);$('level-banner').hidden=true;displayedDungeonLevel=null;finishCombat();persist();$('game').hidden=true;$('title-screen').hidden=false;refreshSlotPicker();audio.setScene('title');cancelAnimationFrame(frame);};
 $('title-music').onclick=()=>{audio.setScene('title');audio.unlock();};
 $('title-settings').onclick=()=>openPanel('settings');
 function sceneMusic(){audio.setScene($('game').hidden?'title':musicScene(state,activePanel));}
@@ -42,6 +51,7 @@ function dispatch(a){if(!state||combatView)return;if(state.mode==='town'&&a.type
 function interactTown(){if(state.casino?.active){openPanel('casino');return;}const place=townPlace(state);if(!place){toast('Walk onto a gold entrance marker to visit a building.');return;}openPanel(place.id);}
 function button(label,action,cls=''){return `<button class="${cls}" data-action='${esc(JSON.stringify(action))}'>${label}</button>`;}
 function update(){
+ updateLevelBanner();
  document.querySelector('.portrait').innerHTML=avatarMarkup(state);
  $('hero-label').textContent=state.name;$('level-label').textContent=`Level ${state.level} · ${state.relics.length}/8 relics`;$('health-label').textContent=`${state.hp} / ${state.maxHp}`;$('health-bar').style.width=state.hp/state.maxHp*100+'%';$('gold').textContent=state.gold;$('region-kicker').textContent=REGIONS[state.region].subtitle;$('place-name').textContent=(state.mode==='dungeon'||state.mode==='battle'&&state.returnMode==='dungeon')?dungeonName(state.dungeon):state.mode==='town'?TOWNS.find(t=>t.id===state.location)?.name:REGIONS[state.region].name;$('chapter-title').textContent=state.flags.royalQuest&&state.flags.royalQuest!=='resolved'?'The Princess and the Knave':CHAPTERS[state.chapter].title;$('objective').textContent=nextObjective(state);
  $('mode-badge').textContent=state.mode==='dungeon'?(state.dungeon.site?`ELVEN VILLAGE · LEVEL ${state.dungeon.floor+1} OF 4`:`DEPTH ${state.dungeon.floor+1} · FIRST-PERSON EXPLORATION`):state.mode==='battle'?(state.returnMode==='dungeon'?'ENCOUNTER · DUNGEON COMBAT':state.enemy.firstContact?'ENCOUNTER · STUDY YOUR FOE':'ENCOUNTER · TACTICAL MAP'):state.mode==='town'?'TOWN STREETS · WALK TO AN ENTRANCE':'THE OVERLAND ROAD';
