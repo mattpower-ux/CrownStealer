@@ -9,3 +9,10 @@ test('roulette rejects invalid bets and tiddlywinks takes three deliberate shots
 import {blackjackTotal,pokerResult} from '../public/game/casino.js';
 test('card rules count aces flexibly and distinguish poker hands',()=>{assert.equal(blackjackTotal([12,25,8]),12);assert.deepEqual(pokerResult([8,9,10,11,12]),['Royal flush',250]);assert.deepEqual(pokerResult([12,0,1,2,3]),['Straight flush',50]);assert.deepEqual(pokerResult([9,22,0,14,28]),['Jacks or better',1]);});
 test('corrupted casino cards cannot be imported',()=>{const s=act(town(),{type:'gamble',game:'poker',bet:5});s.casino.hand[0]=99;assert.throws(()=>loadGame(saveGame(s)),/casino/i);});
+import {dealerVoice,DEALER_TAUNT} from '../public/game/casino.js';
+test('winning 21 pays two to one profit plus the stake, including three-card 21 and naturals',()=>{
+ let s=town(95);s.casino={game:'blackjack',bet:5,active:true,town:s.location,hand:[6,1,9],dealer:[15,32,37],deck:[],message:''};s=act(s,{type:'casinoStand'});assert.equal(s.casino.payout,15);assert.equal(s.casino.profit,10);assert.equal(s.gold,110);assert.equal(act(s,{type:'casinoStand'}).gold,110);
+ let found=false;for(let rng=1;rng<200&&!found;rng++){let t=town();t.rng=rng;t=act(t,{type:'gamble',game:'blackjack',bet:5});if(blackjackTotal(t.casino.hand)===21&&blackjackTotal(t.casino.dealer)!==21){assert.equal(t.casino.payout,15);found=true;}}assert.ok(found);
+});
+test('21 versus 21 remains a push and ordinary wins keep their existing payout',()=>{for(const [hand,dealer,expected]of [[[6,1,9],[12,8],5],[[8,7],[8,6],10]]){let s=town(95);s.casino={game:'blackjack',bet:5,active:true,town:s.location,hand,dealer,deck:[],message:''};s=act(s,{type:'casinoStand'});assert.equal(s.casino.payout,expected);}});
+test('taunt uses the requested words and matches each pictured dealer',()=>{assert.equal(DEALER_TAUNT,'Well, big spender, ready to try again?');for(const i of [0,3,5,7,9,11])assert.equal(dealerVoice(TOWNS[i].id),'male');for(const i of [1,2,4,6,8,10])assert.equal(dealerVoice(TOWNS[i].id),'female');});

@@ -1,3 +1,6 @@
+import {TOWNS} from './content.js';
+export const DEALER_TAUNT='Well, big spender, ready to try again?';
+export const dealerVoice=town=>[0,3,5,7,9,11].includes(TOWNS.findIndex(t=>t.id===town))?'male':'female';
 export const DEALERS=['Oswin Copperthumb','Lady Maribel','Madam Vell','Rafi Sandglass','Brinna Brass','Uncle Saffron','Captain Nessa','Old Perrin','Mira Pearl','Hollis Frost','Professor Selene','Vey the Quiet'];
 export const RED=new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
 const rank=c=>c%13+2;
@@ -14,7 +17,7 @@ export function casinoAction(s,a,random,note){
   if(!Number.isSafeInteger(bet)||bet<1||bet>Math.min(100,s.gold)||!games.includes(a.game)){note('Choose a whole-number wager from 1 to 100 within your purse.');return;}
   if(a.game==='roulette'&&!['red','black','odd','even',...Array.from({length:37},(_,i)=>String(i))].includes(String(a.choice))){note('Choose red, black, odd, even, or a number from 0 to 36.');return;}
   s.gold-=bet;r=s.casino={game:a.game,bet,active:true,town:s.location,message:'Your wager is on the table.'};
-  if(a.game==='blackjack'||a.game==='poker'){r.deck=shuffled(random);r.hand=r.deck.splice(0,a.game==='poker'?5:2);if(a.game==='poker'){r.held=[false,false,false,false,false];r.message='Select the cards to hold, then draw once.';}else{r.dealer=r.deck.splice(0,2);if(blackjackTotal(r.hand)===21||blackjackTotal(r.dealer)===21){const yours=blackjackTotal(r.hand),dealer=blackjackTotal(r.dealer);finish(yours===dealer?1:yours===21?2.5:0,yours===dealer?'Both have blackjack: push.':yours===21?'Blackjack!':'Dealer blackjack.');}else r.message='Hit for another card or stand. Dealer stands on all 17s.';}}
+  if(a.game==='blackjack'||a.game==='poker'){r.deck=shuffled(random);r.hand=r.deck.splice(0,a.game==='poker'?5:2);if(a.game==='poker'){r.held=[false,false,false,false,false];r.message='Select the cards to hold, then draw once.';}else{r.dealer=r.deck.splice(0,2);if(blackjackTotal(r.hand)===21||blackjackTotal(r.dealer)===21){const yours=blackjackTotal(r.hand),dealer=blackjackTotal(r.dealer);finish(yours===dealer?1:yours===21?3:0,yours===dealer?'Both have blackjack: push.':yours===21?'Blackjack!':'Dealer blackjack.');}else r.message='Hit for another card or stand. Dealer stands on all 17s.';}}
   if(a.game==='roulette'){const n=Math.floor(random()*37),choice=String(a.choice),color=n===0?'green':RED.has(n)?'red':'black';r.number=n;r.choice=choice;const straight=/^\d+$/.test(choice),win=straight?Number(choice)===n:n!==0&&(choice===color||choice===(n%2?'odd':'even'));finish(win?(straight?36:2):0,`The wheel lands on ${n} ${color}.`);}
   if(a.game==='tiddlywinks'){r.shots=0;r.hits=0;r.target=40+Math.floor(random()*41);r.wind=Math.floor(random()*17)-8;r.message='Three winks. Land at least two in the cup to win.';}
   return;
@@ -22,7 +25,7 @@ export function casinoAction(s,a,random,note){
  if(!r?.active)return;
  if(r.game==='blackjack'){
   if(a.type==='casinoHit'){r.hand.push(r.deck.shift());if(blackjackTotal(r.hand)>21)finish(0,'You bust with '+blackjackTotal(r.hand)+'.');else r.message='Your total is '+blackjackTotal(r.hand)+'. Hit or stand.';}
-  if(a.type==='casinoStand'){while(blackjackTotal(r.dealer)<17)r.dealer.push(r.deck.shift());const yours=blackjackTotal(r.hand),dealer=blackjackTotal(r.dealer);finish(dealer>21||yours>dealer?2:yours===dealer?1:0,`You: ${yours}. Dealer: ${dealer}. ${yours===dealer?'Push.':dealer>21?'Dealer busts.':''}`);}
+  if(a.type==='casinoStand'){while(blackjackTotal(r.dealer)<17)r.dealer.push(r.deck.shift());const yours=blackjackTotal(r.hand),dealer=blackjackTotal(r.dealer);finish(dealer>21||yours>dealer?(yours===21?3:2):yours===dealer?1:0,`You: ${yours}. Dealer: ${dealer}. ${yours===dealer?'Push.':dealer>21?'Dealer busts.':''}`);}
  }
  if(r.game==='poker'){
   if(a.type==='casinoHold'&&Number.isInteger(a.index)&&a.index>=0&&a.index<5)r.held[a.index]=!r.held[a.index];

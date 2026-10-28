@@ -1,3 +1,4 @@
+import {dealerVoice} from './casino.js';
 import {gossipView} from './gossip.js';
 import {sellPrice} from './treasure.js';
 import {areaFor,PLANETS} from './exploration.js';
@@ -228,7 +229,7 @@ function playPennilessVoice(){stopIntroVoice();if(activePanel!=='guardTaunt')ret
 
 function playBlackjackTaunt(){
  stopIntroVoice();if(activePanel!=='casino'||document.hidden)return;
- const clip=new Audio('/assets/blackjack-taunt.mp3');introVoice=clip;clip.volume=volumes.effects;
+ const clip=new Audio('/assets/dealer-retry-'+dealerVoice(state.location)+'.mp3');introVoice=clip;clip.volume=volumes.effects;
  audio.setVolumes(volumes.music*.25,volumes.effects);
  const restore=()=>{if(introVoice===clip){introVoice=null;audio.setVolumes(volumes.music,volumes.effects);}};
  clip.onended=restore;clip.onerror=restore;clip.play().catch(restore);
