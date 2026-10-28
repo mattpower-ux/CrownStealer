@@ -7,7 +7,7 @@ export function pokerResult(cards){const rs=cards.map(rank).sort((a,b)=>a-b),gro
 function shuffled(random){const deck=Array.from({length:52},(_,i)=>i);for(let i=51;i>0;i--){const j=Math.floor(random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}return deck;}
 export function casinoAction(s,a,random,note){
  let r=s.casino;
- const finish=(mult,text)=>{const payout=Math.floor(r.bet*mult);s.gold+=payout;r.active=false;r.won=payout>r.bet;r.resultId=(s.flags.casinoResults||0)+1;s.flags.casinoResults=r.resultId;r.message=`${text} ${payout?'Returned '+payout+' gold.':'Your wager is lost.'}`;note(r.message);};
+ const finish=(mult,text)=>{const payout=Math.floor(r.bet*mult);s.gold+=payout;r.payout=payout;r.profit=payout-r.bet;r.active=false;r.won=payout>r.bet;r.resultId=(s.flags.casinoResults||0)+1;s.flags.casinoResults=r.resultId;r.message=`${text} ${payout?'Returned '+payout+' gold.':'Your wager is lost.'}`;note(r.message);};
  if(a.type==='gamble'){
   if(r?.active){note('Finish your current game before placing another wager.');return;}
   const bet=Number(a.bet),games=['blackjack','poker','roulette','tiddlywinks'];

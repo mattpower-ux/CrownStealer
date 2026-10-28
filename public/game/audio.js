@@ -206,6 +206,7 @@ export class AudioDirector {
       case 'block': this.brush(now, .07, .12, 'effects', 4000); tone(880, 0, .18, .13, 420, 'square'); break;
       case 'victory': [60, 64, 67, 72].forEach((note, i) => tone(hz(note), i * .08, .25, .09)); break;
       case 'hurt': tone(210, 0, .21, .16, 70, 'sawtooth'); break;
+      case 'applause': for(let i=0;i<42;i++)this.brush(now+i*.047+(i%3)*.009,.055+(i%4)*.012,.045*(1-i/60),'effects',1100+(i%7)*370); [72,76,79,84].forEach((n,i)=>tone(hz(n),i*.09,.35,.055)); break;
       case 'coin': tone(988, 0, .12, .10); tone(1319, .08, .24, .09); break;
       case 'door': this.brush(now, .18, .11, 'effects', 450); tone(110, 0, .20, .12, 55); break;
       case 'magic': [64, 71, 76, 83, 88].forEach((note, i) => tone(hz(note), i * .055, .26, .09)); break;
