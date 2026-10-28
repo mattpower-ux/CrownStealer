@@ -201,7 +201,7 @@ export class AudioDirector {
     switch (name) {
       case 'encounter': return this.playEncounter();
       case 'step': this.brush(now, .055, .07, 'effects', 700); break;
-      case 'hit': this.brush(now, .12, .18, 'effects', 2200); tone(170, 0, .12, .14, 55); break;
+      case 'hit': this.brush(now, .035, .055, 'effects', 3600); tone(1319, .025, .12, .13); tone(2093, .105, .38, .12); tone(2637, .11, .25, .045); break;
       case 'miss': this.brush(now, .15, .09, 'effects', 1600); break;
       case 'block': this.brush(now, .07, .12, 'effects', 4000); tone(880, 0, .18, .13, 420, 'square'); break;
       case 'victory': [60, 64, 67, 72].forEach((note, i) => tone(hz(note), i * .08, .25, .09)); break;

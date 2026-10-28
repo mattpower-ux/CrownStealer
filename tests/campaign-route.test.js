@@ -24,6 +24,8 @@ function pathTo(start, target, passable) {
 // directions; it does not skip encounters, terrain, food costs, or purchases.
 function campaign(outlaw) {
   let state = createGame(outlaw ? 'Outlaw route' : 'Honorable route');
+  // Migration fixture: an adventurer who earned the old Tithe Vault relic keeps it.
+  state.relics=['tithe-vault'];state.level=12;state.hp=state.maxHp=234;state.gold=1500;state.weapon=6;state.armor=6;state.potions=20;
   let actions = 0, battles = 0;
   const checkpoints = [];
   function step(action) {
@@ -86,8 +88,9 @@ function campaign(outlaw) {
     const towns = TOWNS.filter(t=>t.region===region);
     for (const [i,town] of towns.entries()) { visit(town,outlaw&&i===0); leave(); }
     for (const dungeon of DUNGEONS.filter(d=>d.region===region)) {
+      if(state.relics.includes(dungeon.id))continue;
       walkTo(dungeon); step({type:'enter'});
-      for (let floor=0;floor<3;floor++) {
+      for (let floor=0;floor<(dungeon.id==='widows-bell'?10:3);floor++) {
         const map = makeDungeon(state.dungeon.index,floor);
         const route = pathTo([1,1],[13,13],(x,y)=>map[y]?.[x]!==undefined&&map[y][x]!==1);
         for (const [x,y] of route) {
@@ -133,7 +136,7 @@ function campaign(outlaw) {
   return {actions,battles,turns:state.turns,level:state.level,quests:state.quests.length,checkpoints};
 }
 
-for (const outlaw of [false,true]) test(`complete ${outlaw?'outlaw':'honorable'} campaign through movement, economy, combat and saves`, t=>{
+for (const outlaw of [false,true]) test(`migrated veteran ${outlaw?'outlaw':'honorable'} campaign through movement, economy, combat and saves`, t=>{
   const result=campaign(outlaw);
   t.diagnostic(JSON.stringify(result));
 });
