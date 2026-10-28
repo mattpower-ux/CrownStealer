@@ -211,6 +211,7 @@ export class AudioDirector {
       this.tone(frequency, now + delay, length, type, amplitude, 'effects', end);
     switch (name) {
       case 'encounter': return this.playEncounter();
+      case 'vomit': for(let i=0;i<7;i++)tone(140+i%2*60,i*.08,.13,.10,45,'sawtooth');this.brush(now+.1,.5,.035,'effects',500);break;
       case 'whinny': tone(420,0,.22,.10,1100,'sawtooth');for(let i=0;i<9;i++)tone(1000-i*60,.2+i*.085,.10,.085,650-i*35,'triangle');this.brush(now+.85,.18,.035,'effects',900);break;
       case 'step': this.brush(now, .055, .07, 'effects', 700); break;
       case 'hit': this.brush(now, .035, .055, 'effects', 3600); tone(1319, .025, .12, .13); tone(2093, .105, .38, .12); tone(2637, .11, .25, .045); break;

@@ -1,3 +1,4 @@
+import {travelSteps} from './junk-loot.js';
 import {wildernessChance} from './world-clock.js';
 // Branch wilderness and orbital exploration use the existing save and combat systems.
 export const PLANETS=['Aurelia, the Glass Desert','Mycelion, the Singing Mire','Nix, the Violet Ice'];
@@ -21,7 +22,7 @@ export function explorationAction(s,a,{note,encounter,clock,random}){
  }
  if(s.mode!=='world')return false;
  if(!area){const gate=branchGates(s.region).find(p=>p.x===s.x&&p.y===s.y);if(gate&&(a.type==='enter'||a.type==='move'&&(s.x+a.dx===0||s.y+a.dy===0||s.y+a.dy===23))){s.exploration??={artifacts:[]};s.exploration.home={region:s.region,x:gate.x,y:gate.y};travel(gate.area);return true;}return false;}
- if(a.type==='move'){if(!Number.isInteger(a.dx)||!Number.isInteger(a.dy)||Math.abs(a.dx)+Math.abs(a.dy)!==1)return true;const x=s.x+a.dx,y=s.y+a.dy,t=areaTile(s,x,y);if(t==='water'||t==='mountain'){note(s,'Find a path around the barrier.');return true;}s.x=x;s.y=y;clock(s);if(!areaSites(s).some(p=>p.x===x&&p.y===y)&&random()<wildernessChance(s,.07))encounter(s);return true;}
+ if(a.type==='move'){if(!Number.isInteger(a.dx)||!Number.isInteger(a.dy)||Math.abs(a.dx)+Math.abs(a.dy)!==1)return true;const steps=travelSteps(s);if(!steps){note(s,'Your snowshoes drag away from snow.');return true;}for(let step=0;step<steps;step++){const x=s.x+a.dx,y=s.y+a.dy,t=areaTile(s,x,y);if(t==='water'||t==='mountain'){note(s,'Find a path around the barrier.');return true;}s.x=x;s.y=y;clock(s);if(!areaSites(s).some(p=>p.x===x&&p.y===y)&&random()<wildernessChance(s,.07))encounter(s);if(s.mode!=='world'||areaSites(s).some(p=>p.x===x&&p.y===y))return true;}return true;}
  if(a.type==='enter'){const p=areaSites(s).find(p=>p.x===s.x&&p.y===s.y);if(!p){note(s,'Explore the caves and strange landmarks.');return true;}
   if(p.kind==='returnGate'){if(area.kind==='planet')board();else{const h=s.exploration.home;s.exploration.area=null;s.region=h.region;s.x=h.x;s.y=h.y;note(s,'You return through the gate.');}return true;}
   if(p.kind==='artifact'){s.exploration.artifacts??=[];if(s.exploration.artifacts.includes(p.id))note(s,'Only a strange circular imprint remains.');else{s.exploration.artifacts.push(p.id);note(s,'Alien artifact collected: '+s.exploration.artifacts.length+'/10.');if(s.exploration.artifacts.length===10)board();}return true;}

@@ -1,0 +1,2 @@
+export function secretAlcove(d,map){if(d.royal||d.site||d.ship||d.expedition||(d.floor+1)%5!==0)return null;if(d.secretRoom)return d.secretRoom;const cells=[];for(let y=2;y<13;y+=2)for(let x=2;x<13;x+=2){if(map[y]?.[x]!==1)continue;const open=[[1,0],[-1,0],[0,1],[0,-1]].filter(([dx,dy])=>map[y+dy]?.[x+dx]!==1).length;if(open===1)cells.push({x,y});}return cells.length?cells[(d.index*11+d.floor*7)%cells.length]:null;}
+export function secretMap(d,map){if(!d.secretRoom)return map;const copy=map.map(row=>[...row]);copy[d.secretRoom.y][d.secretRoom.x]=0;return copy;}
