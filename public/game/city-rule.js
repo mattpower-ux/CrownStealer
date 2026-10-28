@@ -1,5 +1,5 @@
 import {TOWNS} from './content.js';
-import {gameDay,DAY_STEPS} from './wild-sites.js';
+import {gameDay} from './wild-sites.js';
 export const MAYORS=['Osbert Quill','Lady Prudence Pout','Barnaby Ribbons','Vera Redbrick','Magnus Rivet','Saffron Haggles','Coraline Whelk','Tobias Wick','Dame Periwinkle','Asta Snowcap','Edmund Cog','Morrow Grey'];
 export const DISPUTES=[
  {title:'The Kielbasa Incident',text:'A dog has peed on a man’s Kielbasa Cart. The dog’s owner calls it a review. The sausage seller demands justice.',choices:['Order the owner to clean the cart','Declare the dog an unlicensed food critic','Buy everyone fresh sausages · 10 gold'],reply:['The owner scrubs. The dog receives a stern look and remains unmoved.','The dog is fined one biscuit. The sausage guild promises to remember this.','The crowd cheers. The dog joins the queue.']},
@@ -27,7 +27,7 @@ export function cityAction(s,a,note,startGuard){
  if(!city)return true;
  if(a.type==='cityRebuild'){if(city.destroyed&&s.gold>=500){s.gold-=500;city.destroyed=false;city.paidThrough=gameDay(s);note(s,'The townspeople rebuild. Shops reopen and the monthly income clock resumes.');}else note(s,'Rebuilding requires 500 gold.');return true;}
  if(city.destroyed)return true;
- if(a.type==='cityRest'){s.turns+=DAY_STEPS;s.hp=s.maxHp;city.case=city.disputes%DISPUTES.length;note(s,'Giacomo wakes you at '+['2 a.m.','midnight','4 a.m.'][city.disputes%3]+': “Your Worship! Another emergency. And the king sends his regards.” '+DISPUTES[city.case].text);}
+ if(a.type==='cityRest'){s.turns++;s.hp=s.maxHp;city.case=city.disputes%DISPUTES.length;note(s,'Giacomo wakes you at '+['2 a.m.','midnight','4 a.m.'][city.disputes%3]+': “Your Worship! Another emergency. And the king sends his regards.” '+DISPUTES[city.case].text);}
  if(a.type==='cityDispute'&&city.case!==null&&Number.isInteger(a.choice)&&a.choice>=0&&a.choice<3){if(a.choice===2&&s.gold<10){note(s,'You need 10 gold to settle this from your purse.');return true;}if(a.choice===2)s.gold-=10;s.reputation+=a.choice===1?-1:1;note(s,DISPUTES[city.case].reply[a.choice]);city.disputes++;city.case=null;}
  if(['demand','refused'].includes(city.tribute)){
   if(a.type==='cityPay'&&city.tribute==='demand'&&gameDay(s)<city.deadline){if(s.gold>=300){s.gold-=300;city.tribute='paid';note(s,'The two guards take 300 gold and withdraw their threat.');}else note(s,'The guards demand the full 300 gold.');}

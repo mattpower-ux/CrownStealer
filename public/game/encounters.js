@@ -1,10 +1,11 @@
+import {nightEnemy} from './world-clock.js';
 import {GROVE_ENEMIES} from './wild-sites.js';
 import {ENEMIES,DUNGEON_LEVELS,monsterStats} from './bestiary.js';
 import {DUNGEONS} from './content.js';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export const wildernessTarget=s=>clamp(1+s.region*2+Math.floor((s.level-1)*.5),1,24);
 export function encounterPool(s){return s.mode==='dungeon'&&s.dungeon.site==='elf-village'?GROVE_ENEMIES:s.mode==='dungeon'?ENEMIES.filter(m=>m.dungeon===s.dungeon.index||m.legacyDungeon===s.dungeon.index):ENEMIES.filter(m=>m.wild&&m.region===s.region);}
-export function buildEncounter(s,roll,boss=false,guard=false){
+function baseEncounter(s,roll,boss=false,guard=false){
  if(guard)return {speciesId:'royal-pursuer',name:"King Malachi the Ineffable's Royal Guard",level:50,hp:900,maxHp:900,attack:110,armor:45,element:'fire',gold:170,xp:200,kind:'armored',weakness:'ember magic',boss:false,guard:true,firstContact:true};
  if(boss&&s.dungeon?.expedition){const level=8+s.region*8+s.dungeon.floor*2;return {speciesId:'royal-pursuer',name:s.dungeon.expedition.startsWith('planet-')?'Alien Vault Sentinel':'Forgotten Cave Guardian',level,hp:100+level*10,maxHp:100+level*10,attack:10+level*2,armor:Math.floor(level/2),gold:level*3,xp:level*15,kind:'armored',weakness:'ember magic',boss:true,firstContact:true};}
  if(boss&&s.dungeon?.site==='elf-village')return {speciesId:'haghilda',name:'Haghilda the Snot',level:12,hp:260,maxHp:260,attack:29,armor:8,gold:350,xp:260,kind:'brute',weakness:'The Holy Pepper Grenade',boss:true,guard:false,firstContact:true};
@@ -17,3 +18,5 @@ export function buildEncounter(s,roll,boss=false,guard=false){
  const level=inDungeon?m.level+(s.dungeon.index===1&&!s.dungeon.site?s.dungeon.floor:s.dungeon.floor*2):clamp(Math.round(m.level*.35+target*.65),1,26),stats=monsterStats(m,level);
  return {...stats,gold:level+Math.floor(clamp((roll*7919)%1,0,.999999)*(2*level+3)),speciesId:m.id,name:m.name,level,maxHp:stats.hp,kind:m.kind,weakness:m.weakness,boss:false,guard:false,firstContact:true};
 }
+
+export function buildEncounter(s,roll,boss=false,guard=false){return nightEnemy(s,baseEncounter(s,roll,boss,guard));}
