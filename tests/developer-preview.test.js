@@ -1,0 +1,8 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {PREVIEW_KEYS,previewCharacter,previewJump,previewEncounter,previewDestinations,previewMonsters} from '../public/game/developer-preview.js';
+import {act,loadGame,saveGame,dungeonNavigation} from '../public/game/engine.js';
+import {slotKeys} from '../public/game/save-slots.js';
+test('every preview destination and floor saves and reloads',()=>{for(const d of previewDestinations)for(let f=1;f<=(d.floors||1);f++){const s=loadGame(saveGame(previewJump(previewCharacter(),d.id,f)));assert.equal(s.region,d.region);if(s.dungeon){assert.equal(s.dungeon.floor,f-1);assert.ok(dungeonNavigation(s.dungeon).forward);}}});
+test('every preview monster can be staged and saved in a dungeon',()=>{for(const m of previewMonsters){const s=loadGame(saveGame(previewEncounter(previewJump(previewCharacter(),'elf',4),m.id)));assert.equal(s.returnMode,'dungeon');assert.equal(s.enemy.speciesId,m.id);}});
+test('preview protection is explicit and never stored in saved state',()=>{let s=previewEncounter(previewCharacter(),'royal-pursuer');s.previewRules={invulnerable:true};const normal=act(s,{type:'guard'});assert.ok(normal.hp<s.hp);const protectedState=act(s,{type:'guard'},[],{invulnerable:true});assert.equal(protectedState.hp,s.hp);assert.equal(protectedState.previewRules,undefined);for(const id of [1,2,3])assert.notEqual(PREVIEW_KEYS.save,slotKeys(id).save);});
+test('random encounters can be suppressed in preview',()=>{let s=previewJump(previewCharacter(),'dungeon:0',1);for(let i=0;i<150;i++){const next=act(s,{type:i%2?'back':'forward'},[],{noRandom:true});assert.equal(next.mode,'dungeon');s=next;}});
