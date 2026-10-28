@@ -22,9 +22,9 @@ function drawForestLandmarks(c,w,h,s,map,dx,dy){
  const marks=[{x:s.dungeon.floor===3?7:13,y:s.dungeon.floor===3?7:13,door:s.dungeon.floor!==3,label:s.dungeon.floor===3?'Haghilda’s sky chamber':'Root door · climb up'},{x:1,y:1,door:true,label:s.dungeon.floor?'Tree door · climb down':'Way out'}];
  if(s.dungeon.floor===2)marks.push({x:7,y:7,label:s.flags.pepperFound?'Fallen elf · searched':'Fallen elf · search the body'});
  for(const m of marks){const rx=m.x-s.dungeon.x,ry=m.y-s.dungeon.y,here=rx===0&&ry===0,depth=here?1:rx*dx+ry*dy,side=-rx*dy+ry*dx;if(depth<=0||Math.abs(side/depth)>.7)continue;let blocked=false;const distance=Math.hypot(rx,ry);for(let t=.15;t<distance;t+=.15)if(map[Math.floor(s.dungeon.y+.5+ry*t/distance)]?.[Math.floor(s.dungeon.x+.5+rx*t/distance)]===1){blocked=true;break;}if(blocked)continue;
- const scale=Math.min(h*.65,h*.6/depth),x=w*.5+side/depth*w*.72,base=here?h*.87:h*.5+h*.4/depth;c.save();c.translate(x,base);
+ const scale=Math.min(h*.65,h*.6/depth),x=w*.5+side/depth*w*.72,base=here?h*(m.door?.87:.77):h*.5+h*.4/depth;c.save();c.translate(x,base);
  if(m.door){c.fillStyle='#1b2016';c.beginPath();c.roundRect(-scale*.22,-scale*.75,scale*.44,scale*.75,[scale*.2,scale*.2,0,0]);c.fill();c.strokeStyle='#b8a16c';c.lineWidth=scale*.025;c.stroke();c.strokeStyle='#6e5438';for(let k=-2;k<=2;k++){c.beginPath();c.moveTo(k*scale*.07,-scale*.55);c.lineTo(k*scale*.07,0);c.stroke();}c.fillStyle='#e9cb79';c.beginPath();c.arc(scale*.12,-scale*.28,scale*.025,0,7);c.fill();c.font=Math.max(12,scale*.11)+'px Georgia';c.fillStyle='#efdeb0';c.textAlign='center';c.fillText(m.x===1?'↓':'↑',0,-scale*.92);}
- else if(s.dungeon.floor!==3){c.fillStyle='#11201677';c.beginPath();c.ellipse(0,0,scale*.5,scale*.12,0,0,7);c.fill();c.fillStyle='#557354';c.beginPath();c.moveTo(-scale*.4,-scale*.04);c.lineTo(scale*.23,-scale*.15);c.lineTo(scale*.4,scale*.06);c.lineTo(-scale*.25,scale*.1);c.closePath();c.fill();c.fillStyle='#c3ab87';c.beginPath();c.ellipse(-scale*.36,-scale*.07,scale*.09,scale*.07,0,0,7);c.fill();c.fillStyle='#8c9478';c.fillRect(-scale*.5,-scale*.1,scale*.15,scale*.05);}
+ else if(s.dungeon.floor!==3)drawFallenElf(c,scale);
  if(depth<3){c.fillStyle='#f4dfaf';c.font='14px Georgia';c.textAlign='center';c.fillText(m.label,0,24);}c.restore();
  }
 }
@@ -40,4 +40,25 @@ function rootTexture(level){
  // Quantize antialiased edges to the six-color palette.
  const pixels=c.getImageData(0,0,64,64),palette=[[37,48,35],[23,30,22],[102,84,57],[146,115,75],[82,99,58]];for(let i=0;i<pixels.data.length;i+=4){let best=palette[0],distance=Infinity;for(const rgb of palette){const d=rgb.reduce((sum,n,k)=>sum+(n-pixels.data[i+k])**2,0);if(d<distance){distance=d;best=rgb;}}pixels.data.set([...best,255],i);}c.putImageData(pixels,0,0);
  rootTextures.set(level,canvas);return canvas;
+}
+
+// A readable, prone skeleton on a torn elven cloak, anchored to the floor.
+function drawFallenElf(c,scale){
+ c.save();c.scale(scale/300,scale/300);
+ c.fillStyle='#07100966';c.beginPath();c.ellipse(0,5,147,30,0,0,Math.PI*2);c.fill();
+ c.fillStyle='#395744';c.strokeStyle='#21372c';c.lineWidth=3;c.beginPath();c.moveTo(-126,-24);c.lineTo(-53,-51);c.lineTo(39,-27);c.lineTo(104,17);c.lineTo(43,8);c.lineTo(57,27);c.lineTo(-25,16);c.lineTo(-109,25);c.closePath();c.fill();c.stroke();
+ const bone=(points,width=6)=>{for(const [w,color]of [[width+3,'#544735'],[width,'#e4d5a5']]){c.strokeStyle=color;c.lineWidth=w;c.lineCap='round';c.lineJoin='round';c.beginPath();points.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.stroke();}};
+ // Spine, ribs, pelvis and splayed limbs keep the body horizontal.
+ bone([[-72,-12],[-45,-10],[-12,-4],[20,2]],7);
+ for(let i=0;i<5;i++){const x=-58+i*11;bone([[x+7,-10],[x,-28],[x+12,-31]],4);bone([[x+7,-8],[x,9],[x+11,13]],4);}
+ bone([[12,-6],[27,-13],[39,0],[28,14],[14,9],[12,-6]],7);
+ bone([[28,-7],[64,-21],[101,-9],[119,-14]],8);bone([[30,10],[66,21],[108,15],[125,23]],8);
+ bone([[-61,-25],[-65,-43],[-34,-49]],6);bone([[-60,9],[-46,28],[-15,32]],6);
+ for(let i=0;i<4;i++){bone([[-34,-49],[-21+i*3,-53+i*3]],2);bone([[-15,32],[-4+i*3,29+i*3]],2);}
+ c.fillStyle='#e9dcaf';c.strokeStyle='#544735';c.lineWidth=3;c.beginPath();c.ellipse(-96,-13,22,19,-.2,0,Math.PI*2);c.fill();c.stroke();
+ c.fillStyle='#25291e';for(const x of [-105,-89]){c.beginPath();c.ellipse(x,-17,5,6,0,0,Math.PI*2);c.fill();}c.beginPath();c.moveTo(-98,-8);c.lineTo(-93,-8);c.lineTo(-95,-2);c.fill();bone([[-106,4],[-87,6]],5);
+ c.strokeStyle='#685943';c.lineWidth=2;for(let x=-104;x<-88;x+=4){c.beginPath();c.moveTo(x,1);c.lineTo(x,8);c.stroke();}
+ // Leaf-shaped circlet identifies the former elven inhabitant.
+ c.strokeStyle='#b7a05e';c.lineWidth=3;c.beginPath();c.moveTo(-117,-23);c.lineTo(-104,-32);c.lineTo(-86,-31);c.stroke();c.fillStyle='#86aa77';c.beginPath();c.ellipse(-104,-33,7,3,-.5,0,Math.PI*2);c.fill();
+ c.restore();
 }
