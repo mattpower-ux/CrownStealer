@@ -19,7 +19,9 @@ function drawAdventurer(c,x,y,size,flash=0){c.save();c.fillStyle='#05150a77';c.b
 const cover=new Image();cover.src='/assets/cover.webp';
 const terrain=new Image();terrain.src='/assets/terrain.webp';
 function tileArt(c,index,x,y,size){if(!terrain.complete||!terrain.naturalWidth)return false;const sw=terrain.width/4,sh=terrain.height/2;c.drawImage(terrain,(index%4)*sw,Math.floor(index/4)*sh,sw,sh,x,y,size+0.5,size+0.5);return true;}
-const canopies=new Image();canopies.src='/assets/biome-trees.webp';
+// Small cached pixel tiles keep terrain detail inexpensive on tablets.
+const groundTiles=new Map();
+terrain.addEventListener('load',()=>groundTiles.clear());
 const BIOMES=[
  {ground:'#6e7846',light:'#c4bd77',road:'#a58a60',edge:'#796743'},
  {ground:'#bd895b',light:'#edc28c',road:'#97775f',edge:'#80604e'},
@@ -28,16 +30,28 @@ const BIOMES=[
 ];
 function roadAt(region,x,y){return x>0&&x<31&&y>0&&y<23&&(x===16||y===12||[...TOWNS,...DUNGEONS].some(p=>p.region===region&&y===p.y&&x>=Math.min(16,p.x)&&x<=Math.max(16,p.x)));}
 function groundTile(c,region,gx,gy,x,y,size){
+ const key=`${region}:${gx}:${gy}`;
+ let tile=groundTiles.get(key);
+ if(!tile){tile=document.createElement('canvas');tile.width=tile.height=48;paintGroundTile(tile.getContext('2d'),region,gx,gy,0,0,48);groundTiles.set(key,tile);}
+ // Water art may still be loading on the first frame.
+ if(worldTile(region,gx,gy)==='water'&&!terrain.complete)groundTiles.delete(key);
+ c.save();c.imageSmoothingEnabled=false;c.drawImage(tile,x,y,size+.5,size+.5);c.restore();
+}
+function paintGroundTile(c,region,gx,gy,x,y,size){
  const t=worldTile(region,gx,gy),b=BIOMES[region];
  if(t==='water'){tileArt(c,3,x,y,size);c.fillStyle=REGIONS[region].palette.water+'55';c.fillRect(x,y,size+.5,size+.5);return;}
  c.fillStyle=b.ground;c.fillRect(x,y,size+.5,size+.5);
  let seed=((gx*73856093)^(gy*19349663)^(region*83492791))>>>0;
  const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
- for(let i=0;i<18;i++){c.fillStyle=i%2?b.light+'40':'#23332820';const xx=x+random()*size,yy=y+random()*size;c.fillRect(xx,yy,Math.max(.6,size*.045),Math.max(.5,size*.018));}
+ // Broken patches, tufts and occasional flowers, all fixed to map coordinates.
+ for(let i=0;i<6;i++){c.fillStyle=i%2?b.light+'18':'#23332816';c.fillRect(Math.floor(random()*40),Math.floor(random()*42),4+Math.floor(random()*10),2+Math.floor(random()*5));}
+ for(let i=0;i<26;i++){const xx=Math.floor(random()*46),yy=Math.floor(random()*46);c.fillStyle=i%3?b.light+'70':'#23332845';c.fillRect(xx,yy,2,1);if(i%4===0&&region!==1){c.fillRect(xx+1,yy-2,1,3);c.fillRect(xx-1,yy-1,1,2);}}
+ if(random()<.24&&region!==3){c.fillStyle=region===1?'#d8ae77':'#ded39a';for(let i=0;i<3;i++)c.fillRect(Math.floor(random()*44)+2,Math.floor(random()*44)+2,1,1);}
  if(roadAt(region,gx,gy)){
   c.save();c.beginPath();c.rect(x,y,size+.5,size+.5);c.clip();
   const links=DIRS.filter(([dx,dy])=>roadAt(region,gx+dx,gy+dy));
   for(const [width,color] of [[.65,b.edge],[.53,b.road]]){c.strokeStyle=color;c.lineWidth=size*width;c.lineCap='round';c.beginPath();for(const [dx,dy] of links){c.moveTo(x+size/2,y+size/2);c.lineTo(x+size*(.5+dx*.65),y+size*(.5+dy*.65));}c.stroke();}
+  for(let i=0;i<16;i++){c.fillStyle=i%2?b.road+'88':b.light+'40';c.fillRect(Math.floor(random()*size),Math.floor(random()*size),2,1);}
   c.beginPath();for(const [dx,dy] of links){if(dx)c.rect(x+(dx<0?0:.5)*size,y+size*.26,size*.5,size*.48);else c.rect(x+size*.26,y+(dy<0?0:.5)*size,size*.48,size*.5);}c.clip();
   for(let row=0;row<9;row++)for(let col=0;col<9;col++){const xx=x+(col+(row%2)*.5)*size/9,yy=y+row*size/9;
    c.fillStyle=region===2?(random()>.5?'#c2c8b7':'#748680'):region===3?'#e5edf088':region===1?'#d5c2a0':'#d6b27a50';
@@ -46,9 +60,19 @@ function groundTile(c,region,gx,gy,x,y,size){
  }
  if(t==='mountain'){path(c,[[x,y+size],[x+size*.48,y],[x+size,y+size]],'#747e7d','#535f5d');path(c,[[x+size*.48,y],[x+size*.55,y+size*.83],[x+size,y+size]],'#515f60');path(c,[[x+size*.48,y],[x+size*.24,y+size*.49],[x+size*.41,y+size*.39],[x+size*.52,y+size*.51],[x+size*.61,y+size*.38],[x+size*.74,y+size*.5]],'#eef3e6');}
  if(t==='forest'){
-  if(canopies.complete&&canopies.naturalWidth){const sw=canopies.width/2,sh=canopies.height/2;const scale=.88+random()*.1,dx=random()*(1-scale),dy=random()*(1-scale);c.drawImage(canopies,region%2*sw,Math.floor(region/2)*sh,sw,sh,x+dx*size,y+dy*size,size*scale,size*scale);}
-  else tree(c,x+size*.5,y+size*.5,size);
+  const palettes=[['#263c28','#365333','#4c6b39','#779347'],['#574930','#75663c','#91804b','#b1a16b'],['#244d44','#356555','#54856a','#85a17a'],['#3b5b57','#598079','#9bb5ac','#e0e9dc']];
+  const colors=palettes[region];
+  // Several overlapping, stepped crowns replace the identical round canopy stamp.
+  const crowns=3+Math.floor(random()*3);
+  for(let j=0;j<crowns;j++){
+   const cx=10+Math.floor(random()*27),cy=10+Math.floor(random()*25),r=6+Math.floor(random()*5);
+   c.fillStyle='#18261e55';c.fillRect(cx-r+3,cy+r-2,r*2,5);
+   c.fillStyle='#57452e';c.fillRect(cx,cy+3,2,r+3);
+   for(let row=-r;row<=r;row+=2){const width=Math.floor(Math.sqrt(Math.max(0,r*r-row*row)))+Math.floor(random()*3);c.fillStyle=colors[0];c.fillRect(cx-width,cy+row,width*2,2);}
+   for(let k=0;k<15;k++){const dx=Math.floor(random()*r*1.6-r*.8),dy=Math.floor(random()*r*1.6-r*.8);if(dx*dx+dy*dy>r*r*.8)continue;c.fillStyle=colors[dy<0?2+(k%3===0?1:0):1];c.fillRect(cx+dx,cy+dy,2+Math.floor(random()*3),2);}
+  }
  }
+
 }
 const settlements=new Image();settlements.src='/assets/town-architecture.webp';
 const vault=new Image();vault.src='/assets/vault.webp';
