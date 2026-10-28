@@ -214,7 +214,12 @@ export class AudioDirector {
       case 'vomit': for(let i=0;i<7;i++)tone(140+i%2*60,i*.08,.13,.10,45,'sawtooth');this.brush(now+.1,.5,.035,'effects',500);break;
       case 'whinny': tone(420,0,.22,.10,1100,'sawtooth');for(let i=0;i<9;i++)tone(1000-i*60,.2+i*.085,.10,.085,650-i*35,'triangle');this.brush(now+.85,.18,.035,'effects',900);break;
       case 'step': this.brush(now, .055, .07, 'effects', 700); break;
-      case 'hit': this.brush(now, .035, .055, 'effects', 3600); tone(1319, .025, .12, .13); tone(2093, .105, .38, .12); tone(2637, .11, .25, .045); break;
+      case 'hit':
+        // A stronger impact and cha-ching, with quieter inharmonic partials for a steel ring.
+        this.brush(now, .035, .09, 'effects', 3600);
+        tone(1319, .025, .12, .21); tone(2093, .105, .38, .20); tone(2637, .11, .25, .065);
+        tone(3187, .018, .44, .06, 3150, 'sine'); tone(4379, .024, .24, .03, undefined, 'sine');
+        break;
       case 'miss': this.brush(now, .15, .09, 'effects', 1600); break;
       case 'block': this.brush(now, .07, .12, 'effects', 4000); tone(880, 0, .18, .13, 420, 'square'); break;
       case 'victory': [60, 64, 67, 72].forEach((note, i) => tone(hz(note), i * .08, .25, .09)); break;
