@@ -19,6 +19,7 @@ function drawAdventurer(c,x,y,size,flash=0){c.save();c.fillStyle='#05150a77';c.b
 const cover=new Image();cover.src='/assets/cover.webp';
 const terrain=new Image();terrain.src='/assets/terrain.webp';
 function tileArt(c,index,x,y,size){if(!terrain.complete||!terrain.naturalWidth)return false;const sw=terrain.width/4,sh=terrain.height/2;c.drawImage(terrain,(index%4)*sw,Math.floor(index/4)*sh,sw,sh,x,y,size+0.5,size+0.5);return true;}
+const canopies=new Image();canopies.src='/assets/biome-trees.webp';
 // Small cached pixel tiles keep terrain detail inexpensive on tablets.
 const groundTiles=new Map();
 terrain.addEventListener('load',()=>groundTiles.clear());
@@ -28,7 +29,7 @@ const BIOMES=[
  {ground:'#71917a',light:'#bad0a1',road:'#8b9792',edge:'#566a65'},
  {ground:'#d0dce1',light:'#ffffff',road:'#a4b7c1',edge:'#8b9fac'}
 ];
-function roadAt(region,x,y){return x>0&&x<31&&y>0&&y<23&&(x===16||y===12||[...TOWNS,...DUNGEONS].some(p=>p.region===region&&y===p.y&&x>=Math.min(16,p.x)&&x<=Math.max(16,p.x)));}
+function roadAt(region,x,y){return ((y===12&&((x===31&&region<3)||(x===0&&region>0)))||x>0&&x<31&&y>0&&y<23)&&(x===16||y===12||[...TOWNS,...DUNGEONS].some(p=>p.region===region&&y===p.y&&x>=Math.min(16,p.x)&&x<=Math.max(16,p.x)));}
 function groundTile(c,region,gx,gy,x,y,size){
  const key=`${region}:${gx}:${gy}`;
  let tile=groundTiles.get(key);
@@ -39,7 +40,7 @@ function groundTile(c,region,gx,gy,x,y,size){
 }
 function paintGroundTile(c,region,gx,gy,x,y,size){
  const t=worldTile(region,gx,gy),b=BIOMES[region];
- if(t==='water'){tileArt(c,3,x,y,size);c.fillStyle=REGIONS[region].palette.water+'55';c.fillRect(x,y,size+.5,size+.5);return;}
+ if(t==='water'&&!(gy===12&&((gx===31&&region<3)||(gx===0&&region>0)))){tileArt(c,3,x,y,size);c.fillStyle=REGIONS[region].palette.water+'55';c.fillRect(x,y,size+.5,size+.5);return;}
  c.fillStyle=b.ground;c.fillRect(x,y,size+.5,size+.5);
  let seed=((gx*73856093)^(gy*19349663)^(region*83492791))>>>0;
  const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
@@ -54,18 +55,18 @@ function paintGroundTile(c,region,gx,gy,x,y,size){
   for(let i=0;i<16;i++){c.fillStyle=i%2?b.road+'88':b.light+'40';c.fillRect(Math.floor(random()*size),Math.floor(random()*size),2,1);}
   c.beginPath();for(const [dx,dy] of links){if(dx)c.rect(x+(dx<0?0:.5)*size,y+size*.26,size*.5,size*.48);else c.rect(x+size*.26,y+(dy<0?0:.5)*size,size*.48,size*.5);}c.clip();
   for(let row=0;row<9;row++)for(let col=0;col<9;col++){const xx=x+(col+(row%2)*.5)*size/9,yy=y+row*size/9;
-   c.fillStyle=region===2?(random()>.5?'#c2c8b7':'#748680'):region===3?'#e5edf088':region===1?'#d5c2a0':'#d6b27a50';
-   if(region===2)c.fillRect(xx,yy,size*.085,size*.075);else if(random()>.55)c.fillRect(xx,yy,size*.035,size*.025);
+   c.fillStyle=region===2?(random()>.5?'#c2c8b7':'#748680'):region===3?'#e5edf088':region===1?'#d5c2a0':'#d6b27ab0';
+   if(region===2)c.fillRect(xx,yy,size*.085,size*.075);else if(random()>.25){c.fillRect(Math.floor(xx),Math.floor(yy),2,1);c.fillStyle=b.edge+'aa';c.fillRect(Math.floor(xx)+1,Math.floor(yy)+1,2,1);}
   }c.restore();
  }
- if(t==='mountain'){path(c,[[x,y+size],[x+size*.48,y],[x+size,y+size]],'#747e7d','#535f5d');path(c,[[x+size*.48,y],[x+size*.55,y+size*.83],[x+size,y+size]],'#515f60');path(c,[[x+size*.48,y],[x+size*.24,y+size*.49],[x+size*.41,y+size*.39],[x+size*.52,y+size*.51],[x+size*.61,y+size*.38],[x+size*.74,y+size*.5]],'#eef3e6');}
+ if(t==='mountain'){c.fillStyle='#626f66';c.fillRect(x,y+size*.5,size,size*.5);for(const [dx,dy] of DIRS){if(worldTile(region,gx+dx,gy+dy)==='mountain')path(c,[[x+size*.5,y+size*.25],[x+size*(.5+dx),y+size*(.7+dy*.5)],[x+size*.5,y+size]],'#6b786f');}path(c,[[x,y+size],[x+size*.48,y],[x+size,y+size]],'#747e7d','#535f5d');path(c,[[x+size*.48,y],[x+size*.55,y+size*.83],[x+size,y+size]],'#515f60');path(c,[[x+size*.48,y],[x+size*.24,y+size*.49],[x+size*.41,y+size*.39],[x+size*.52,y+size*.51],[x+size*.61,y+size*.38],[x+size*.74,y+size*.5]],'#eef3e6');}
  if(t==='forest'){
   const palettes=[['#263c28','#365333','#4c6b39','#779347'],['#574930','#75663c','#91804b','#b1a16b'],['#244d44','#356555','#54856a','#85a17a'],['#3b5b57','#598079','#9bb5ac','#e0e9dc']];
   const colors=palettes[region];
   // Several overlapping, stepped crowns replace the identical round canopy stamp.
-  const crowns=3+Math.floor(random()*3);
+  const crowns=7+Math.floor(random()*4);
   for(let j=0;j<crowns;j++){
-   const cx=10+Math.floor(random()*27),cy=10+Math.floor(random()*25),r=6+Math.floor(random()*5);
+   const cx=7+Math.floor(random()*34),cy=7+Math.floor(random()*32),r=10+Math.floor(random()*6);
    c.fillStyle='#18261e55';c.fillRect(cx-r+3,cy+r-2,r*2,5);
    c.fillStyle='#57452e';c.fillRect(cx,cy+3,2,r+3);
    for(let row=-r;row<=r;row+=2){const width=Math.floor(Math.sqrt(Math.max(0,r*r-row*row)))+Math.floor(random()*3);c.fillStyle=colors[0];c.fillRect(cx-width,cy+row,width*2,2);}
