@@ -1,3 +1,4 @@
+import {CHARACTER_FACES} from './character-faces.js';
 import {gossipFor} from './gossip.js';
 import {sellPrice} from './treasure.js';
 import {dungeonFloors} from './dungeon-depths.js';
@@ -16,10 +17,10 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function rand(s){s.rng=(Math.imul(s.rng,1664525)+1013904223)>>>0;return s.rng/4294967296;}
 function note(s,text){s.log.push(text);s.log=s.log.slice(-60);}
 function advance(s,chapter){if(chapter>s.chapter){s.chapter=chapter;note(s,CHAPTERS[chapter].text);}}
-export function createGame(name='Wanderer'){
- const town=TOWNS[0];return {cities:{},treasureSeed:hash(String(name)),openedChests:[],buffs:{},equippedRing2:null,equippedHands:null,equippedHead:null,equippedBoots:null,equippedShield:null,equippedRing:null,equippedNecklace:null,version:1,bag:['road-sword','travel-armor','scroll-return'],equipped:'road-sword',equippedArmor:'travel-armor',equipmentVersion:1,pendingLoot:[],name:String(name).trim().slice(0,24)||'Wanderer',region:0,x:town.x-1,y:town.y,mode:'world',location:null,hp:80,maxHp:80,gold:65,meals:3,level:1,xp:0,weapon:1,armor:1,potions:3,chapter:0,relics:[],quests:[],wanted:[0,0,0,0],reputation:0,flags:{victories:0,transport:false},log:['The crown has called for a hero. Unfortunately, it has found you.',CHAPTERS[0].text],rng:187441,turns:0,dungeon:null,enemy:null,returnMode:'world',ending:null};
+export function createGame(name='Wanderer',gender='him'){
+ const town=TOWNS[0];return {gender:CHARACTER_FACES.some(f=>f.id===gender)?gender:'him',cities:{},treasureSeed:hash(String(name)),openedChests:[],buffs:{},equippedRing2:null,equippedHands:null,equippedHead:null,equippedBoots:null,equippedShield:null,equippedRing:null,equippedNecklace:null,version:1,bag:['road-sword','travel-armor','scroll-return'],equipped:'road-sword',equippedArmor:'travel-armor',equipmentVersion:1,pendingLoot:[],name:String(name).trim().slice(0,24)||'Wanderer',region:0,x:town.x-1,y:town.y,mode:'world',location:null,hp:80,maxHp:80,gold:65,meals:3,level:1,xp:0,weapon:1,armor:1,potions:3,chapter:0,relics:[],quests:[],wanted:[0,0,0,0],reputation:0,flags:{victories:0,transport:false},log:['The crown has called for a hero. Unfortunately, it has found you.',CHAPTERS[0].text],rng:187441,turns:0,dungeon:null,enemy:null,returnMode:'world',ending:null};
 }
-export function createRoyalGame(name){const s=createGame(name),court=TOWNS[1];s.mode='town';s.location=court.id;s.x=court.x;s.y=court.y;s.townPosition={x:6,y:11};s.gold=1;s.meals=1;s.potions=0;s.bag=['rusty-sword','travel-armor','scroll-return'];s.equipped='rusty-sword';s.equippedArmor=null;s.flags.royalQuest='opening';s.flags.royalIntroLine=0;s.log=[ROYAL_INTRO[0].text];return s;}
+export function createRoyalGame(name,gender){const s=createGame(name,gender),court=TOWNS[1];s.mode='town';s.location=court.id;s.x=court.x;s.y=court.y;s.townPosition={x:6,y:11};s.gold=1;s.meals=1;s.potions=0;s.bag=['rusty-sword','travel-armor','scroll-return'];s.equipped='rusty-sword';s.equippedArmor=null;s.flags.royalQuest='opening';s.flags.royalEntranceSeen=false;s.flags.royalIntroLine=0;s.log=[ROYAL_INTRO[0].text];return s;}
 export function dungeonMap(d){return d.ship?shipMap():d.site==='elf-village'?forestMap(d.floor):d.royal==='cell'?royalCell():makeDungeon(d.expedition?100+hash(d.expedition)%10000:d.royal==='sewer'?8:d.index,d.floor);}
 export function dungeonName(d){return d.ship?'Alien Starship':d.expedition?expeditionName(d)+' · Level '+(d.floor+1):d.site==='elf-village'?'The Abandoned Elven Village · Level '+(d.floor+1):d.royal==='cell'?'The Royal Dungeon':d.royal==='sewer'?'The Royal Sewers':DUNGEONS[d.index].name;}
 function banishRoyal(s){const c=TOWNS[1];s.flags.royalQuest='banished';s.flags.royalIntroLine=ROYAL_INTRO.length-1;s.mode='world';s.location=null;s.x=c.x-1;s.y=c.y;s.dungeon=null;note(s,'You are kicked outside Bellwether with a rusty sword, a moldy meal and one gold piece. Return with 500 gold. Rock Troll toes are not required.');}
@@ -85,6 +86,7 @@ function actInner(input,action,events=[]){
  if(explorationAction(s,a,{note,encounter,clock,random:()=>rand(s)}))return s;
  if(a.type==='acknowledgeBorder'){delete s.flags.borderTauntPending;return s;}
  if(s.flags.royalQuest==='opening'){
+  if(a.type==='royalEntranceEnd'){s.flags.royalEntranceSeen=true;return s;}
   if(a.type==='royalIntroNext'){s.flags.royalIntroLine++;if(s.flags.royalIntroLine>=ROYAL_INTRO.length)banishRoyal(s);}
   else if(a.type==='royalIntroSkip')banishRoyal(s);
   return s;
@@ -185,6 +187,8 @@ export function availableActions(s){if(s.mode==='battle')return ['attack','guard
 export function saveGame(s){return JSON.stringify({...s,savedAt:Date.now()});}
 export function loadGame(json){
  const s=JSON.parse(json);if(!s||s.version!==1||typeof s.name!=='string'||s.name.length>24)throw Error('This is not a valid Bar the Gates save.');
+ if(s.flags?.royalEntranceSeen!==undefined&&typeof s.flags.royalEntranceSeen!=='boolean')throw Error('Invalid royal entrance progress.');
+ s.gender??='him';if(!CHARACTER_FACES.some(f=>f.id===s.gender))throw Error('Invalid character gender / face.');
  validateCities(s);
  s.meals??=Math.min(999,Math.max(0,Math.floor(s.food||0)));delete s.food;
  if(s.exploration){const e=s.exploration;if(e.area!==null&&!AREAS.some(a=>a.id===e.area&&a.region===s.region))throw Error('Invalid exploration area.');if(!Array.isArray(e.artifacts)||e.artifacts.length>12||new Set(e.artifacts).size!==e.artifacts.length||e.artifacts.some(id=>!AREAS.some(a=>a.kind==='wild'&&a.id===id)))throw Error('Invalid artifacts.');if(e.home&&(!Number.isInteger(e.home.region)||e.home.region<0||e.home.region>3||!Number.isInteger(e.home.x)||e.home.x<1||e.home.x>30||!Number.isInteger(e.home.y)||e.home.y<1||e.home.y>22))throw Error('Invalid home route.');}
