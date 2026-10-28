@@ -99,7 +99,7 @@ function town(c,w,h,s,time){
    c.fillStyle='#12251feb';c.fillRect((place.bx-.35)*size,(place.y-.32)*size,2.9*size,.5*size);
    label(c,'The Gilded Goose',(place.bx+1.1)*size,(place.y-.12)*size,Math.max(9,Math.min(14,size*.24)),'#ffe1a0');
    label(c,'GAMBLING HOUSE',(place.bx+1.1)*size,(place.y+.1)*size,Math.max(8,Math.min(12,size*.19)),'#ffe1a0');
-  }else label(c,place.id==='inn'&&s.cities?.[s.location]?'Your house · Giacamo':place.name,xx,place.y*size-size*.08,Math.max(9,Math.min(14,size*.27)),'#fff0c6');
+  }else label(c,place.id==='inn'&&s.cities?.[s.location]?'Your house · Giacomo':place.name,xx,place.y*size-size*.08,Math.max(9,Math.min(14,size*.27)),'#fff0c6');
  }
  const pos=townPosition(s);drawAdventurer(c,(pos.x+.5)*size,(pos.y+.5)*size,size*1.25);c.restore();
 }
