@@ -1,1 +1,1 @@
-{"name":"crownstealer","version":"0.8.38","private":true,"type":"module","scripts":{"start":"node server.mjs","test":"node --test tests/*.test.js"},"engines":{"node":">=22"},"apkVersion":"0.8.29"}
+{"name":"crownstealer","version":"0.8.39","private":true,"type":"module","scripts":{"start":"node server.mjs","test":"node --test tests/*.test.js"},"engines":{"node":">=22"},"apkVersion":"0.8.29"}
