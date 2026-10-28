@@ -1,4 +1,4 @@
-# Born to Rule
+# Bar the Gates
 
 An original, offline fantasy RPG inspired by the exploration, dungeon crawling, gambling, and royal satire of early computer RPGs. This is a playable development build, not yet a playtested 15–25 hour release.
 

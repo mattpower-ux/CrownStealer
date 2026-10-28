@@ -174,3 +174,16 @@ test('hiding and reopening the tab before the first gesture still allows sound a
   await director.destroy();
 });
 
+
+
+test('dungeon scores last over two minutes and vary across sixteen phrases',()=>{
+ for(const [name,theme] of Object.entries(audio.THEMES).filter(([name])=>name.startsWith('dungeon:'))){
+  assert.ok(theme.melody.length*30/theme.bpm>120,name);
+  const phrases=Array.from({length:16},(_,i)=>JSON.stringify(theme.melody.slice(i*16,i*16+16)));
+  assert.ok(new Set(phrases).size>=12,name);
+  assert.equal(theme.ambient,true);
+ }
+});
+test('dungeon music resumes its position after combat',async()=>{
+ const h=harness(),director=new audio.AudioDirector(h.options);director.setScene('dungeon:0');await director.unlock();director.beat=75;director.setScene('battle');director.setScene('dungeon:0');assert.ok(director.beat>=75&&director.beat<78);await director.destroy();
+});

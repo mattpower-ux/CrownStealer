@@ -1,4 +1,4 @@
-// Original campaign for Born to Rule. All locations use the 32 x 24 world grid.
+// Original campaign for Bar the Gates. All locations use the 32 x 24 world grid.
 // Quest targets are cumulative counts (victory/relic) or a gold contribution.
 export const REGIONS = [
   {

@@ -1,5 +1,5 @@
 import {LOCATION_THEMES} from './location-music.js';
-// Original Born to Rule score. MIDI pitches; null marks a breath.
+// Original Bar the Gates score. MIDI pitches; null marks a breath.
 // Soft triangle leads, plucked bass and low-level brushed noise keep long loops restful.
 export const THEMES = Object.freeze({
   ...LOCATION_THEMES,
@@ -36,6 +36,7 @@ export class AudioDirector {
     this.destroyed = false;
     this.unlocking = null;
     this.transport = 0;
+    this.positions = new Map();
   }
 
   async unlock() {
@@ -88,6 +89,7 @@ export class AudioDirector {
 
   setScene(name) {
     if (this.destroyed || !Object.hasOwn(THEMES, name) || name === this.scene) return;
+    this.positions.set(this.scene,this.beat||0);
     this.scene = name;
     if(name!=='title')this.titlePlayer?.pause();
     this.encounterGeneration++;
@@ -99,7 +101,7 @@ export class AudioDirector {
   start() {
     if (this.timer !== null || this.paused || this.destroyed || this.context.state !== 'running') return;
     if(this.scene==='title'&&this.titlePlayer&&!this.titleUnavailable){if(this.titlePlayer.paused)this.titlePlayer.play().catch(()=>{this.titleUnavailable=true;if(this.scene==='title'&&!this.paused&&!this.destroyed)this.start();});return;}
-    this.beat = 0;
+    this.beat = this.positions.get(this.scene)||0;
     this.nextNote = this.context.currentTime + .035;
     this.schedule();
     this.timer = this.interval(() => this.schedule(), 50);
@@ -121,6 +123,15 @@ export class AudioDirector {
       const root = theme.roots[Math.floor(i / 8) % theme.roots.length];
       const when = this.nextNote;
       const note = theme.melody[i];
+      if(theme.ambient){
+        // Low unresolved drones, irregular answering notes, and distant metallic whispers.
+        const cycle=Math.floor(this.beat/theme.melody.length);
+        if(note!==null&&(cycle+i)%5!==3)this.tone(hz(note+(cycle%3===2?-12:0)),when,step*(2.8+i%4*.4),'triangle',.055*theme.gain,'music');
+        if(i%16===0){this.tone(hz(root),when,step*15.5,'sine',.1*theme.gain,'music');this.tone(hz(root+7),when+.2,step*11,'sine',.025*theme.gain,'music');}
+        if(i%32===21)this.tone(hz(root+25),when,step*5,'sine',.025*theme.gain,'music');
+        if(i%23===7)this.brush(when,.18,.018,'music',420+(i%7)*90);
+        this.beat++;this.nextNote+=step;continue;
+      }
       if (note !== null) this.tone(hz(note), when, step * (theme.noteLength||.86), theme.lead || 'triangle', (theme.lead==='sawtooth'?.035:.085) * theme.gain, 'music');
       if (i % 4 === 0) this.tone(hz(root + (i % 8 === 4 ? 7 : 0)), when, step * 2.5, theme.bass||'triangle', .07 * theme.gain, 'music');
       if (i % 8 === 0) {
@@ -232,6 +243,7 @@ export class AudioDirector {
   }
 
   async suspend() {
+    this.positions.set(this.scene,this.beat||0);
     this.paused = true;
     this.titlePlayer?.pause();
     this.transport++;

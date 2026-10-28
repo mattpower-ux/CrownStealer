@@ -24,7 +24,7 @@ test('all dungeon entrances and floor arrivals face a walkable corridor',()=>{
 });
 test('an old save facing the entrance wall is repaired on load',()=>{const s=createGame('A');s.mode='dungeon';s.dungeon={index:0,floor:0,x:1,y:1,dir:1};const n=loadGame(JSON.stringify(s));assert.equal(n.dungeon.dir,2);});
 test('boss encounter imports require the dungeon context',()=>{const s={...createGame('A'),mode:'battle',returnMode:'world',enemy:{name:'Bad boss',hp:1,maxHp:10,attack:1,gold:1,boss:true}};assert.throws(()=>loadGame(JSON.stringify(s)));});
-test('defeated garrison stays defeated',()=>{let s={...createGame('A'),mode:'town',location:TOWNS[0].id};s.flags['garrison:0']=true;s.wanted[0]=5;s=act(s,{type:'challenge'});assert.equal(s.mode,'town');s=act(s,{type:'steal'});assert.equal(s.mode,'town');});
+test('defeated garrison stays defeated',()=>{let s={...createGame('A'),mode:'town',location:TOWNS[0].id};s.flags['townGarrison:'+s.location]=true;s.wanted[0]=5;s=act(s,{type:'challenge'});assert.equal(s.mode,'town');s=act(s,{type:'steal'});assert.equal(s.mode,'town');});
 test('town conversations do not narrate an unearned first relic',()=>{const s={...createGame('A'),mode:'town',location:TOWNS[0].id};assert.equal(act(s,{type:'talk'}).chapter,0);});
 test('final court and ending chapters are reachable',()=>{let s={...createGame('A'),mode:'town',location:TOWNS[1].id,relics:DUNGEONS.map(d=>d.id),chapter:16};s=act(s,{type:'talk'});assert.equal(s.chapter,18);s=act(s,{type:'ending',choice:'alliance'});assert.equal(s.chapter,19);assert.equal(s.mode,'ending');s=act(s,{type:'continue'});assert.equal(s.mode,'world');assert.equal(s.flags.legacy,'alliance');});
 

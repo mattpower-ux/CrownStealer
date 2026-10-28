@@ -65,7 +65,7 @@ function campaign(outlaw) {
     if (challenge && state.level < 14) step({type:'steal'});
     else if (challenge) {
       for (let i=0;i<4;i++) { step({type:'steal'}); fight(); }
-      assert.equal(state.flags['garrison:'+state.region],true);
+      assert.equal(state.flags['townGarrison:'+state.location],true);
       const victories = state.flags.victories;
       step({type:'challenge'});
       assert.equal(state.flags.victories,victories);

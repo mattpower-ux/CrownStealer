@@ -19,8 +19,24 @@ export function drawTownScenery(c,size,region,townIndex){
   // Connected lanes lead to every service entrance, with a wider central square.
   const road=(x,y)=>x>0&&x<12&&y>0&&y<13&&(Math.abs(x-6.5)<.58||[5.5,8.5,11.5].some(v=>Math.abs(y-v)<.48&&x>2.5&&x<10.7)||x>4.4&&x<8&&y>5&&y<10.5);
   for(let y=.04;y<13;y+=.15)for(let x=.04;x<13;x+=.21){const xx=x+(Math.round(y/.15)%2)*.1;if(!road(xx,y))continue;g.fillStyle=dirt;g.fillRect(xx-.035,y-.035,.25,.19);g.fillStyle=['#b2ab90','#98967e','#c1b99e','#a7a38a'][Math.floor(rand()*4)];g.beginPath();g.roundRect(xx,y,.17+rand()*.025,.11,.025);g.fill();}
-  // Stone perimeter with a clear southern gate.
-  for(let i=0;i<13;i++)for(const [x,y] of [[i,0],[i,12],[0,i],[12,i]]){if(y===12&&x===6)continue;g.fillStyle='#5f6955';g.fillRect(x,y,1,1);for(let r=0;r<4;r++)for(let col=0;col<3;col++){g.fillStyle=(r+col+i)%2?'#91927a':'#7e846e';g.fillRect(x+col*.34+(r%2)*.025,y+r*.25,.3,.2);}g.fillStyle='#343e2c44';g.fillRect(x,y+.85,1,.15);}
+  // Raised stone ramparts: only the south gate interrupts the boundary.
+  const wall=(x,y,w,h)=>{
+   g.fillStyle='#17211e66';g.fillRect(x+.09,y+.12,w,h);
+   g.fillStyle='#434c48';g.fillRect(x,y,w,h);
+   for(let row=0;row<Math.ceil(h/.18);row++)for(let col=0;col<Math.ceil(w/.3);col++){
+    const xx=x+col*.3,yy=y+row*.18;g.fillStyle=(row+col)%2?'#92988b':'#798477';
+    g.fillRect(xx+.02,yy+.02,Math.min(.26,x+w-xx-.02),Math.min(.14,y+h-yy-.02));
+   }
+   g.fillStyle='#bdbeaa';g.fillRect(x,y,w,.07);
+   g.fillStyle='#d1cbb4';for(let k=0;k<w;k+=.35)g.fillRect(x+k,y-.11,Math.min(.19,w-k),.18);
+  };
+  wall(0,.18,13,.66);wall(0,.84,.7,11.45);wall(12.3,.84,.7,11.45);
+  wall(0,12.3,6,.7);wall(7,12.3,6,.7);
+  for(const [x,y] of [[0,.2],[12.05,.2],[0,12],[12.05,12],[5.05,12],[7,12]]){
+   wall(x,y,.95,.9);g.strokeStyle='#353d36';g.lineWidth=.04;g.strokeRect(x,y,.95,.9);
+   g.fillStyle='#26332e';g.fillRect(x+.4,y+.32,.12,.32);
+  }
+  g.fillStyle='#d3bf87';g.fillRect(6,12.3,1,.7);
   for(const [x,y] of [[1.4,1.6],[3.3,1.4],[8.5,1.5],[10.8,1.6],[1.3,4.2],[11.5,4.2],[1.3,7.4],[11.5,7.4],[1.4,10.6],[11.6,10.5]])tree(g,x,y,townIndex,region===3);
   garden(g,1.1,8.8);garden(g,10.8,2.1);
   for(const [x,y] of [[4.2,4.5],[7.8,4.5],[4.2,7.5],[10.2,7.5],[4.2,10.5]]){barrel(g,x,y);barrel(g,x+.22,y+.07);}
