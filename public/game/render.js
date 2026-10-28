@@ -1,3 +1,4 @@
+import {drawDungeonIcon} from './dungeon-icons.js';
 import {regionTrails,drawTrailCurve} from './trails.js';
 import {areaFor,areaSites,areaTile,branchGates} from './exploration.js';
 import {drawTownScenery} from './town-scenery.js';
@@ -97,7 +98,7 @@ function world(c,w,h,s,time){if(areaFor(s)){drawArea(c,w,h,s);return;}const p=RE
  for(let y=0;y<24;y++)for(let x=0;x<32;x++)groundTile(c,s.region,x,y,x*size,y*size,size);
  drawTrails(c,s.region,size);
  for(const t of TOWNS.filter(t=>t.region===s.region)){c.save();if(s.cities?.[t.id]?.destroyed)c.filter='grayscale(1) brightness(.4)';settlementIcon(c,t,(t.x+.5)*size,(t.y+.5)*size,size*2);c.restore();label(c,(s.cities?.[t.id]?.destroyed?'Ruins of ':'')+t.name,(t.x+.5)*size,(t.y+1.6)*size,Math.max(10,size*.42));}
- for(const d of DUNGEONS.filter(d=>d.region===s.region)){const x=(d.x+.5)*size,y=(d.y+.5)*size;if(d.id==='tithe-vault'&&vault.complete&&vault.naturalWidth){c.drawImage(vault,x-size*.8,y-size,size*1.6,size*1.6);label(c,d.name,x,y+size*1.1,Math.max(10,size*.4));continue;}path(c,[[x-size*.5,y+size*.3],[x-size*.4,y-size*.4],[x+size*.25,y-size*.7],[x+size*.6,y+size*.3]],'#718276','#a7a988');c.fillStyle='#101b18';c.beginPath();c.arc(x,y,size*.24,Math.PI,0);c.fillRect(x-size*.24,y,size*.48,size*.3);c.fill();circle(c,x,y+size*.1,size*.07,s.relics.includes(d.id)?'#bcd492':'#edb767');label(c,d.name,x,y+size*1.1,Math.max(10,size*.4));}
+ for(const d of DUNGEONS.filter(d=>d.region===s.region)){const x=(d.x+.5)*size,y=(d.y+.5)*size;if(d.id==='tithe-vault'&&vault.complete&&vault.naturalWidth){c.drawImage(vault,x-size*.8,y-size,size*1.6,size*1.6);label(c,d.name,x,y+size*1.1,Math.max(10,size*.4));continue;}drawDungeonIcon(c,{...d,index:DUNGEONS.indexOf(d)},x,y,size,s.relics.includes(d.id));label(c,d.name,x,y+size*1.1,Math.max(10,size*.4));}
  for(const site of [...WILD_SITES.filter(p=>p.region===s.region&&(p.kind!=='gate'||p.x!==1)),...branchGates(s.region)])drawWildSite(c,site,(site.x+.5)*size,(site.y+.5)*size,size);
  const px=(s.x+.5)*size,py=(s.y+.5)*size;drawAdventurer(c,px,py,size*1.9);c.restore();
  label(c,'N',w-33,35,15,'#d1b57c');c.strokeStyle='#d1b57c';c.beginPath();c.moveTo(w-33,42);c.lineTo(w-33,66);c.stroke();path(c,[[w-33,39],[w-38,49],[w-28,49]],'#d1b57c');
@@ -219,7 +220,7 @@ function drawArea(c,w,h,s){
  const a=areaFor(s),sites=areaSites(s),size=Math.min(w/32,h/24),ox=(w-size*32)/2,oy=(h-size*24)/2;
  c.fillStyle=a.kind==='planet'?['#28243d','#243c39','#2b3151'][Number(a.id.at(-1))]:'#183c48';c.fillRect(0,0,w,h);c.save();c.translate(ox,oy);
  for(let y=1;y<23;y++)for(let x=1;x<31;x++){const t=areaTile(s,x,y);c.fillStyle=BIOMES[a.region].ground;c.fillRect(x*size,y*size,size+1,size+1);if(x===16||y===7){c.fillStyle=BIOMES[a.region].road;c.fillRect((x+.2)*size,(y+.2)*size,size*.8,size*.8);}else if(t==='forest')tree(c,(x+.5)*size,(y+.5)*size,size*.85,a.kind==='planet');else if(t==='mountain')path(c,[[x*size,(y+1)*size],[(x+.5)*size,y*size],[(x+1)*size,(y+1)*size]],'#92a4a5','#596f75');}
- for(const p of sites){const x=(p.x+.5)*size,y=(p.y+.5)*size;if(p.kind==='artifact'){if(s.exploration.artifacts.includes(p.id))continue;path(c,[[x,y-size],[x+size*.6,y],[x,y+size*.5],[x-size*.6,y]],'#9fe9e0','#fff4b8');circle(c,x,y-size*.2,size*.2,'#fbf7bf');}else if(p.kind==='returnGate'){c.fillStyle='#abb59a';c.fillRect(x-size*.6,y-size*.6,size*1.2,size*.2);c.fillRect(x-size*.6,y-size*.5,size*.2,size);c.fillRect(x+size*.4,y-size*.5,size*.2,size);}else{path(c,[[x-size,y+size*.5],[x-size*.5,y-size*.6],[x+size*.4,y-size],[x+size,y+size*.5]],'#778c80','#b8c7aa');circle(c,x,y,size*.4,'#122228');}label(c,p.name,x,y+size*1.1,Math.max(10,size*.35));}
+ for(const p of sites){const x=(p.x+.5)*size,y=(p.y+.5)*size;if(p.kind==='artifact'){if(s.exploration.artifacts.includes(p.id))continue;path(c,[[x,y-size],[x+size*.6,y],[x,y+size*.5],[x-size*.6,y]],'#9fe9e0','#fff4b8');circle(c,x,y-size*.2,size*.2,'#fbf7bf');}else if(p.kind==='returnGate'){c.fillStyle='#abb59a';c.fillRect(x-size*.6,y-size*.6,size*1.2,size*.2);c.fillRect(x-size*.6,y-size*.5,size*.2,size);c.fillRect(x+size*.4,y-size*.5,size*.2,size);}else{drawDungeonIcon(c,{...p,region:a.region},x,y,size,!!s.flags['expedition:'+p.expedition]);}label(c,p.name,x,y+size*1.1,Math.max(10,size*.35));}
  drawAdventurer(c,(s.x+.5)*size,(s.y+.5)*size,size*1.8);c.restore();
 }
 function drawShip(c,w,h,s){

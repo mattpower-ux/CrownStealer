@@ -1,0 +1,33 @@
+// Small canvas illustrations share a 64-unit grid: no bitmap downloads or per-frame generation.
+export const DUNGEON_ICONS=['vault','bell-tower','tribunal','aqueduct','coral-shrine','rib-cave','clock-tomb','ash-palace'];
+export function dungeonIconKind(site){if(site.expedition){const parts=site.expedition.split('-');const area=Number(parts[1])||0,cave=Number(parts.at(-1))||0;return site.expedition.startsWith('planet-')?['alien-vault','crystal-cave','alien-tower'][(area+cave)%3]:['cave','barrow','ruined-tower','crypt'][(area+cave)%4];}return DUNGEON_ICONS[site.index]||DUNGEON_ICONS[['tithe-vault','widows-bell','brass-tribunal','ember-aqueduct','drowned-conservatory','leviathan-pump','clockwork-sepulchre','parliament-of-ash'].indexOf(site.id)]||'cave';}
+export function drawDungeonIcon(c,site,x,y,size,claimed=false){
+ const kind=dungeonIconKind(site),k=size*1.85/64;c.save();c.translate(x-32*k,y-43*k);c.scale(k,k);c.lineJoin='round';c.lineCap='round';c.lineWidth=1.5;
+ const region=site.region??Math.floor((site.index||0)/2),stone=['#8c8a72','#a17a60','#7d9d9c','#8b91a0'][region]||'#909784',light=['#c0baa0','#d6aa7d','#b4d2c2','#c9d6dd'][region]||'#bac6b8',dark='#34433e',door='#14221f';
+ const rect=(x,y,w,h,fill,stroke)=>{c.fillStyle=fill;c.fillRect(x,y,w,h);if(stroke){c.strokeStyle=stroke;c.strokeRect(x,y,w,h);}};
+ const poly=(points,fill,stroke=dark)=>{c.beginPath();points.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.closePath();c.fillStyle=fill;c.fill();if(stroke){c.strokeStyle=stroke;c.stroke();}};
+ const line=(points,color=dark,width=1.5)=>{c.beginPath();c.lineWidth=width;c.strokeStyle=color;points.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.stroke();c.lineWidth=1.5;};
+ const arch=(x,y,w,h,fill=door)=>{c.beginPath();c.moveTo(x,y+h);c.lineTo(x,y+w/2);c.arc(x+w/2,y+w/2,w/2,Math.PI,0);c.lineTo(x+w,y+h);c.closePath();c.fillStyle=fill;c.fill();};
+ const bricks=(x,y,w,h)=>{for(let row=0;row<h;row+=7){line([[x,y+row],[x+w,y+row]],dark,1);for(let col=(row%14?4:11);col<w;col+=14)line([[x+col,y+row],[x+col,y+Math.min(h,row+7)]],dark,1);}};
+ c.fillStyle='#18322144';c.beginPath();c.ellipse(32,54,29,7,0,0,Math.PI*2);c.fill();
+ if(kind==='bell-tower'||kind==='ruined-tower'||kind==='alien-tower'){
+  const alien=kind==='alien-tower';poly([[18,52],[19,14],[44,14],[46,52]],alien?'#65778b':stone);poly([[15,15],[19,5],[25,9],[30,3],[35,9],[46,7],[48,15]],alien?'#afc9d8':light);bricks(21,20,20,28);arch(25,33,13,20);rect(26,19,12,10,door);if(kind==='bell-tower'){poly([[28,22],[28,27],[25,29],[38,29],[35,27],[35,22]],'#ccad59');line([[31,20],[31,23]],'#d8c47a');}if(alien){rect(28,17,7,14,'#82ebe1');line([[23,8],[39,8]],'#d3f8ee',2);}poly([[13,52],[49,52],[53,57],[10,57]],light);
+ }else if(kind==='tribunal'||kind==='ash-palace'){
+  const palace=kind==='ash-palace';rect(12,23,40,29,palace?'#626475':stone,dark);poly([[6,24],[31,7],[58,24]],palace?'#5b4864':light);poly([[18,20],[31,12],[45,20]],palace?'#b0a0b6':stone);for(const xx of [14,23,39,48]){rect(xx,26,3,24,light);rect(xx-1,25,5,3,light);}arch(28,32,9,21);for(let i=0;i<3;i++)rect(7-i*2,52+i*3,50+i*4,3,i%2?stone:light);if(palace){poly([[8,48],[8,15],[13,7],[18,15],[18,48]],'#757184');poly([[47,48],[47,15],[52,5],[57,15],[57,48]],'#757184');rect(11,20,4,10,'#bba7c9');rect(50,20,4,10,'#bba7c9');}else{line([[32,10],[32,17]],dark);line([[26,14],[38,14]],dark);}
+ }else if(kind==='aqueduct'){
+  rect(5,23,54,28,stone,dark);for(const xx of [9,27,45]){arch(xx,30,11,23);rect(xx-2,27,15,4,light);}rect(3,20,58,7,light,dark);poly([[4,16],[60,16],[58,21],[6,21]],'#70918b');line([[8,17],[56,17]],'#aecac0',2);poly([[6,51],[58,51],[61,56],[3,56]],light);rect(50,6,8,15,stone,dark);poly([[49,5],[59,5],[56,10],[51,10]],'#ddaa6b');line([[18,47],[23,52],[20,56]],'#7fa6a5',3);
+ }else if(kind==='coral-shrine'){
+  poly([[7,53],[11,36],[18,30],[18,20],[24,14],[39,14],[45,23],[46,35],[55,41],[58,54]],stone);c.fillStyle=light;c.beginPath();c.arc(32,26,15,Math.PI,0);c.fill();rect(17,26,30,23,light);arch(25,30,14,23);for(const xx of [9,51]){line([[xx,48],[xx,23],[xx-5,18]],'#c69089',4);line([[xx,32],[xx+5,26],[xx+5,20]],'#c69089',3);}poly([[17,54],[47,54],[51,58],[13,58]],'#a1bcb0');rect(29,10,6,5,'#d1e3c9');
+ }else if(kind==='rib-cave'){
+  poly([[3,52],[7,32],[20,19],[36,16],[53,31],[61,53]],'#5a7470');poly([[11,51],[17,34],[30,27],[42,30],[53,51]],door);for(let i=0;i<5;i++){const xx=12+i*9,top=27-Math.sin(i/4*Math.PI)*9;line([[xx-3,51],[xx-5,top+12],[xx,top],[xx+5,top+12],[xx+4,51]],'#d3ccb0',3);}poly([[24,16],[27,9],[36,9],[41,17],[36,23],[27,23]],'#d3ccb0');rect(28,16,3,3,door);rect(35,16,3,3,door);
+ }else if(kind==='clock-tomb'){
+  rect(9,25,46,29,stone,dark);poly([[6,26],[15,16],[49,16],[58,26]],light);arch(24,33,16,22);rect(17,10,30,23,stone,dark);c.fillStyle='#d3c991';c.beginPath();c.arc(32,21,9,0,Math.PI*2);c.fill();line([[32,15],[32,21],[37,24]],'#44514d',2);for(const xx of [8,53]){rect(xx,33,3,21,light);rect(xx-2,30,7,4,light);}line([[21,42],[17,47],[19,51]],dark);
+ }else if(kind==='crypt'||kind==='vault'||kind==='barrow'){
+  if(kind==='barrow')poly([[3,54],[9,31],[22,20],[41,18],[55,30],[62,54]],'#697947');rect(9,37,9,17,stone,dark);rect(47,37,9,17,stone,dark);arch(17,24,30,31,stone);arch(22,29,20,26);for(let i=0;i<5;i++)line([[25+i*3.5,34],[25+i*3.5,53]],'#9a9b83',1.4);line([[23,44],[41,44]],'#9a9b83');if(kind==='crypt'){line([[32,12],[32,24]],light,3);line([[27,17],[37,17]],light,3);}else if(kind==='barrow'){poly([[3,53],[13,47],[18,53]],'#90a356');poly([[47,54],[53,46],[62,54]],'#90a356');}else{rect(29,39,6,9,'#c9a65c');rect(31,41,2,4,door);}
+ }else if(kind==='alien-vault'){
+  poly([[7,53],[12,23],[22,13],[44,13],[54,26],[58,53]],'#617386');poly([[16,51],[19,27],[29,20],[39,23],[47,51]],'#152e3c');line([[15,26],[24,17],[43,17]],'#a8e6dd',3);line([[21,50],[24,30],[34,25],[43,50]],'#75dbcf',2);rect(48,34,4,12,'#d7b2db');
+ }else{
+  const crystal=kind==='crystal-cave';poly([[3,54],[9,34],[8,26],[21,12],[35,16],[43,10],[54,30],[61,54]],crystal?'#8587a9':stone);poly([[15,53],[18,36],[28,29],[39,32],[48,53]],door);poly([[9,31],[21,15],[31,19],[23,27]],light);poly([[42,16],[52,32],[48,38],[37,22]],crystal?'#adb6d8':'#626e63');if(crystal)for(const xx of [11,48]){poly([[xx-4,49],[xx-3,32],[xx+2,25],[xx+6,42],[xx+3,53]],'#a2d6d8');line([[xx+2,29],[xx+1,48]],'#e0f7e9');}else{line([[13,41],[9,48]],dark);line([[44,38],[48,43]],dark);}
+ }
+ if(claimed){poly([[28,52],[32,48],[36,52],[32,57]],'#e5c878','#5d502d');}c.restore();
+}
