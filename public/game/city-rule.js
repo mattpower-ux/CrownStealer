@@ -12,7 +12,7 @@ export function cityTick(s,note,random){
  const day=gameDay(s);
  for(const [id,city] of Object.entries(s.cities||{})){
   const town=TOWNS.find(t=>t.id===id);
-  if(city.tribute==='waiting'&&day>=city.claimed+7){city.tribute='demand';note(s,'Giacomo’s message from '+town.name+': two level-20 royal guards demand 300 gold. Pay 300 gold before refusing, or send 1,000 gold to the King through Giacomo by day '+(city.deadline+1)+'. Refusal risks a 50% chance they burn the town.');}
+  if(city.tribute==='waiting'&&day>=city.claimed+7){city.tribute='demand';note(s,'Giacomo’s message from '+town.name+': two level-50 royal guards demand 300 gold. Pay 300 gold before refusing, or send 1,000 gold to the King through Giacomo by day '+(city.deadline+1)+'. Refusal risks a 50% chance they burn the town.');}
   if(['demand','refused'].includes(city.tribute)&&day>=city.deadline&&s.enemy?.tributeTown!==id){city.tribute='resolved';city.destroyed=random()<.5;note(s,city.destroyed?town.name+' burns. Shops and monthly income stop until you rebuild. Giacomo saved your house keys, and suspiciously little else.':town.name+' escapes the threatened fire. The guards drank their lamp oil money and went home.');if(city.destroyed&&s.location===id&&s.mode==='town'){s.mode='world';s.location=null;s.x=town.x-1;s.y=town.y;delete s.casino;}if(city.destroyed)city.paidThrough=day;}
   if(!city.destroyed){const months=Math.floor((day-city.paidThrough)/30);if(months>0){const amount=months*500;s.gold=Math.min(10000000,s.gold+amount);city.paidThrough+=months*30;note(s,town.name+' pays '+amount+' gold in mayoral income.');}}
  }

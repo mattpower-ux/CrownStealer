@@ -1,6 +1,6 @@
 export const DAY_STEPS=240;
 export const WILD_SITES=[
- ...Array.from({length:4},(_,region)=>[...(region<3?[{id:`east-gate-${region}`,kind:"gate",region,x:30,y:12,target:region+1,name:"Eastern border gate"}]:[]),...(region>0?[{id:`west-gate-${region}`,kind:"gate",region,x:1,y:12,target:region-1,name:"Western border gate"}]:[])]).flat(),
+ ...Array.from({length:4},(_,region)=>[...(region<4?[{id:`east-gate-${region}`,kind:"gate",region,x:30,y:12,target:(region+1)%4,name:"Eastern border gate"}]:[]),...(region>0?[{id:`west-gate-${region}`,kind:"gate",region,x:1,y:12,target:region-1,name:"Western border gate"}]:[])]).flat(),
  {id:'dragon-bones',kind:'dragon',region:0,x:28,y:19,name:'Ancient dragon bones'},
  {id:'wayside-fountain',kind:'fountain',region:0,x:14,y:9,name:'Wayside Fountain'},
  {id:'elf-village',kind:'forest',region:0,x:7,y:17,name:'Ruined tree fort',description:'Beyond the broken ladder lies an abandoned elven village. Goblin footprints cross the moss; immense webs hang between its empty homes.'}

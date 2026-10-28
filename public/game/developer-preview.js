@@ -1,3 +1,4 @@
+import {dungeonFloors} from './dungeon-depths.js';
 import {createGame,dungeonMap,dungeonNavigation} from './engine.js';
 import {REGIONS,TOWNS,DUNGEONS} from './content.js';
 import {ENEMIES} from './bestiary.js';
@@ -8,7 +9,7 @@ export const PREVIEW_KEYS={save:'crownstealer-developer-save-v1',checkpoint:'cro
 export const previewDestinations=[
  ...REGIONS.map((r,i)=>({id:'land:'+i,name:r.name,region:i})),
  ...TOWNS.map(t=>({id:'town:'+t.id,name:t.name,region:t.region})),
- ...DUNGEONS.map((d,i)=>({id:'dungeon:'+i,name:d.name,region:d.region,floors:i===1?10:3})),
+ ...DUNGEONS.map((d,i)=>({id:'dungeon:'+i,name:d.name,region:d.region,floors:dungeonFloors({index:i})})),
  {id:'elf',name:'Abandoned Elven Village',region:0,floors:4},
  {id:'cell',name:'Royal dungeon cell',region:0,floors:1},
  {id:'sewer',name:'Royal sewers',region:0,floors:1}
@@ -29,7 +30,7 @@ export function previewJump(input,id,floor=1){
 export const previewMonsters=[...ENEMIES,...GROVE_ENEMIES,
  {id:'haghilda',name:'Haghilda the Snot',level:12,hp:260,attack:29,armor:8,gold:350,xp:150},
  {id:'ghost-dragon',name:'Ghost Dragon',level:12,hp:220,attack:28,armor:9,gold:260,xp:150},
- {id:'royal-pursuer',name:'Royal Guard',level:20,hp:320,attack:45,armor:18,gold:170,xp:200},
+ {id:'royal-pursuer',name:'Royal Guard',level:50,hp:900,attack:110,armor:45,gold:170,xp:200},
  {id:'rock-troll',name:'Rock Troll',level:12,hp:260,attack:29,armor:10,gold:250,xp:150}
 ];
 export function previewEncounter(input,id){const monster=previewMonsters.find(m=>m.id===id);if(!monster)throw Error('Choose a monster.');const s=structuredClone(input);if(s.mode==='battle')s.mode=s.returnMode;clearEncounter(s);s.returnMode=s.mode;if(s.dungeon){for(let i=0;i<4&&!dungeonNavigation(s.dungeon).forward;i++)s.dungeon.dir=(s.dungeon.dir+1)%4;}s.enemy={...monster,speciesId:id,hp:monster.hp||80,maxHp:monster.hp||80,attack:monster.attack||12,armor:monster.armor||0,gold:monster.gold||20,xp:monster.xp||20,weakness:monster.weakness||'Experiment with your gear',boss:false,guard:false,firstContact:true};s.mode='battle';return s;}

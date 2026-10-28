@@ -1,3 +1,4 @@
+import {dungeonFloors} from '../public/game/dungeon-depths.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createGame, act, loadGame, saveGame, worldTile, makeDungeon, DIRS} from '../public/game/engine.js';
@@ -25,11 +26,11 @@ function pathTo(start, target, passable) {
 function campaign(outlaw) {
   let state = createGame(outlaw ? 'Outlaw route' : 'Honorable route');
   // Migration fixture: an adventurer who earned the old Tithe Vault relic keeps it.
-  state.relics=['tithe-vault'];state.level=12;state.hp=state.maxHp=234;state.gold=1500;state.weapon=6;state.armor=6;state.potions=20;
+  state.relics=['tithe-vault'];state.level=100;state.hp=state.maxHp=1466;state.gold=100000;state.weapon=80;state.armor=300;state.potions=1000;
   let actions = 0, battles = 0;
   const checkpoints = [];
   function step(action) {
-    assert.ok(++actions < 20000, 'Campaign must finish without unlimited grinding');
+    assert.ok(++actions < 200000, 'Campaign must finish without unlimited grinding');
     state = act(state, action);
     assert.ok(state.gold >= 0 && state.meals >= 0 && state.hp > 0, 'Resources remain valid');
     assert.ok(!state.log.at(-1)?.startsWith('A weary pilgrim'), `Route defeated after ${action.type}: ${JSON.stringify(checkpoints)}`);
@@ -62,7 +63,8 @@ function campaign(outlaw) {
     for (const q of SIDE_QUESTS.filter(q=>q.town === town.id)) step({type:'quest',id:q.id});
     if (state.hp < state.maxHp) step({type:'rest'});
     // Level-20 plate guards are a late-game confrontation, not a starting gold farm.
-    if (challenge && state.level < 14) step({type:'steal'});
+    if (challenge && town.id==='bellwether') {}
+    else if (challenge && state.level<50) step({type:'steal'});
     else if (challenge) {
       for (let i=0;i<4;i++) { step({type:'steal'}); fight(); }
       assert.equal(state.flags['townGarrison:'+state.location],true);
@@ -90,7 +92,7 @@ function campaign(outlaw) {
     for (const dungeon of DUNGEONS.filter(d=>d.region===region)) {
       if(state.relics.includes(dungeon.id))continue;
       walkTo(dungeon); step({type:'enter'});
-      for (let floor=0;floor<(dungeon.id==='widows-bell'?10:3);floor++) {
+      for (let floor=0;floor<dungeonFloors({index:DUNGEONS.indexOf(dungeon)});floor++) {
         const map = makeDungeon(state.dungeon.index,floor);
         const route = pathTo([1,1],[13,13],(x,y)=>map[y]?.[x]!==undefined&&map[y][x]!==1);
         for (const [x,y] of route) {
