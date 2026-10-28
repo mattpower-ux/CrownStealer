@@ -1,4 +1,4 @@
-// Original CrownStealer species. Reference organization: RPG MO monster habitat/stat tables.
+// Original Born to Rule species. Reference organization: RPG MO monster habitat/stat tables.
 export const DUNGEON_LEVELS=[1,2,4,5,7,8,10,11];
 export const TRAITS={swift:'Quick-footed: harder to hit',brute:'Brute: greater health and striking power',armored:'Armored: physical damage is reduced',spectral:'Spectral: vulnerable to ember magic'};
 const definitions=[

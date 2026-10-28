@@ -1,10 +1,10 @@
-// Original campaign for CrownStealer. All locations use the 32 x 24 world grid.
+// Original campaign for Born to Rule. All locations use the 32 x 24 world grid.
 // Quest targets are cumulative counts (victory/relic) or a gold contribution.
 export const REGIONS = [
   {
     id: 0, name: 'The Hearthmarch', subtitle: 'A kingdom living on borrowed fire',
     palette: { water: '#173749', land: '#746d43', forest: '#344f3e', mountain: '#746b68', accent: '#edb45e' },
-    description: 'Orchards, hungry villages and the white towers of Bellwether surround the dying royal furnace. King Malachi the Ineffable IV insists the smoke is a seasonal phenomenon. It has been winter for three years.'
+    description: 'Orchards, hungry villages and the white towers of Bellwether surround the dying royal furnace. King Malachi the Ineffable insists the smoke is a seasonal phenomenon. It has been winter for three years.'
   },
   {
     id: 1, name: 'The Cinder Dominion', subtitle: 'The other half of the same wounded world',
@@ -144,7 +144,7 @@ export const CHAPTERS = [
   },
   {
     title: 'His Majesty Requests Applause',
-    text: 'King Malachi the Ineffable IV receives you beneath a painting of himself receiving somebody else. He congratulates you on proving the efficiency of royal administration. Princess Bunnyfoot corrects him: you have proved a considerable number of murders. Captain Brann closes the doors before the courtiers can applaud the wrong sentence. Malachi the Ineffable remembers his father\'s furnace as the thing which ended the winter, and cannot understand why gratitude has an expiry date. Bunnyfoot has examined its pipes. They do not end beneath the palace. Ilex, the court magician, recommends that nobody touch anything until he has had an opportunity to leave the room. Brann produces a road pass for Redhaven, then puts a second unsealed copy inside your boot. He says the first is for officials; the second is for the day officials become the problem.',
+    text: 'King Malachi the Ineffable receives you beneath a painting of himself receiving somebody else. He congratulates you on proving the efficiency of royal administration. Princess Bunnyfoot corrects him: you have proved a considerable number of murders. Captain Brann closes the doors before the courtiers can applaud the wrong sentence. Malachi the Ineffable remembers his father\'s furnace as the thing which ended the winter, and cannot understand why gratitude has an expiry date. Bunnyfoot has examined its pipes. They do not end beneath the palace. Ilex, the court magician, recommends that nobody touch anything until he has had an opportunity to leave the room. Brann produces a road pass for Redhaven, then puts a second unsealed copy inside your boot. He says the first is for officials; the second is for the day officials become the problem.',
     objective: 'Bring the first two relics to court, hear Bunnyfoot\'s findings and open the road into the Cinder Dominion.'
   },
   {

@@ -181,7 +181,7 @@ public final class MainActivity extends Activity {
         game.evaluateJavascript("(function(){if(typeof window.CrownStealerAndroidBack==='function' && window.CrownStealerAndroidBack())return true;var d=document.querySelector('dialog[open]');if(d){d.close();return true;}return false;})()", handled -> {
             if (!"true".equals(handled) && !exitDialogVisible && !isFinishing()) {
                 exitDialogVisible = true;
-                new AlertDialog.Builder(this).setTitle("Leave CrownStealer?")
+                new AlertDialog.Builder(this).setTitle("Leave Born to Rule?")
                     .setMessage("Your autosave stays on this device.")
                     .setNegativeButton("Keep playing", null)
                     .setPositiveButton("Exit", (dialog, which) -> finish())

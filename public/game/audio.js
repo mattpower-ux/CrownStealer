@@ -1,5 +1,5 @@
 import {LOCATION_THEMES} from './location-music.js';
-// Original CrownStealer score. MIDI pitches; null marks a breath.
+// Original Born to Rule score. MIDI pitches; null marks a breath.
 // Soft triangle leads, plucked bass and low-level brushed noise keep long loops restful.
 export const THEMES = Object.freeze({
   ...LOCATION_THEMES,
@@ -8,7 +8,7 @@ export const THEMES = Object.freeze({
   town: { bpm: 92, melody: [72,76,79,null,81,79,76,null,74,77,81,79,77,null,74,null,76,79,83,81,79,null,76,72,74,76,77,74,72,null,67,null], roots: [48,41,45,43], mood: 'warm', gain: .75 },
   casino: { bpm: 128, melody: [74,null,77,81,80,81,77,null,76,79,null,82,81,79,76,null,77,81,84,null,83,84,81,77,76,null,73,76,74,69,72,null], roots: [38,43,41,45], mood: 'swing', gain: .75 },
   dungeon: { bpm: 62, melody: [57,null,null,64,60,null,59,null,57,null,56,null,52,null,null,null,60,null,64,null,65,null,64,60,59,null,56,null,57,null,null,null], roots: [33,29,32,33], mood: 'hushed', gain: .65 },
-  battle: { bpm: 132, melody: [62,null,69,69,74,null,73,69,67,69,71,null,69,66,62,null,66,69,74,78,76,null,74,73,71,69,67,66,62,null,69,null], roots: [38,43,47,45], mood: 'heroic', third:4, gain: .8 },
+  battle: { bpm: 132, melody: [62,null,69,69,74,null,73,69,67,69,71,null,69,66,62,null,66,69,74,78,76,null,74,73,71,69,67,66,62,null,69,null], roots: [38,43,47,45], mood: 'heroic', third:4, lead:'sawtooth', bass:'triangle', gain: .8 },
   victory: { bpm: 112, melody: [72,null,72,76,79,null,84,null,83,79,76,79,81,null,79,null,77,81,84,86,88,null,84,81,79,76,74,71,72,null,null,null], roots: [48,45,41,43], mood: 'bright', gain: .85 },
 });
 
@@ -121,13 +121,15 @@ export class AudioDirector {
       const root = theme.roots[Math.floor(i / 8) % theme.roots.length];
       const when = this.nextNote;
       const note = theme.melody[i];
-      if (note !== null) this.tone(hz(note), when, step * .86, theme.lead || 'triangle', .085 * theme.gain, 'music');
-      if (i % 4 === 0) this.tone(hz(root + (i % 8 === 4 ? 7 : 0)), when, step * 2.5, 'triangle', .10 * theme.gain, 'music');
+      if (note !== null) this.tone(hz(note), when, step * (theme.noteLength||.86), theme.lead || 'triangle', (theme.lead==='sawtooth'?.035:.085) * theme.gain, 'music');
+      if (i % 4 === 0) this.tone(hz(root + (i % 8 === 4 ? 7 : 0)), when, step * 2.5, theme.bass||'triangle', .07 * theme.gain, 'music');
       if (i % 8 === 0) {
         const third = theme.third ?? (['town', 'victory'].includes(this.scene) ? 4 : 3);
         for (const offset of [12, 12 + third, 19]) this.tone(hz(root + offset), when, step * 6.8, 'sine', .022 * theme.gain, 'music');
       }
-      if (theme.mood !== 'hushed') {
+      if(theme.drone&&i%8===0)this.tone(hz(root-12),when,step*7.8,'sine',.09*theme.gain,'music');
+      if(theme.bells&&note!==null&&i%4===0)this.tone(hz(note+12),when,step*1.8,'sine',.035*theme.gain,'music');
+      if (theme.drums??(theme.mood !== 'hushed')) {
         if (i % 4 === 0) this.tone(92, when, .10, 'sine', .10, 'music', 38);
         if (i % 4 === 2) this.brush(when, .075, .025, 'music', 1100);
         if (i % 2 === 1) this.brush(when, .028, .012, 'music', 5500);

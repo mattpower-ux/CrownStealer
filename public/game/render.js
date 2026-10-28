@@ -1,3 +1,4 @@
+import {drawTownScenery} from './town-scenery.js';
 import {drawGearAvatar} from './gear-avatar.js';
 let renderedHero=null;
 import {WILD_SITES,GROVE_ENEMIES} from './wild-sites.js';
@@ -78,15 +79,8 @@ function buildingArt(c,index,x,y,w,h){if(buildings.complete&&buildings.naturalWi
 function town(c,w,h,s,time){
  const size=Math.min(w/TOWN_SIZE,h/TOWN_SIZE),ox=(w-size*TOWN_SIZE)/2,oy=(h-size*TOWN_SIZE)/2,b=BIOMES[s.region];
  c.fillStyle='#182b24';c.fillRect(0,0,w,h);c.save();c.translate(ox,oy);
- for(let y=0;y<TOWN_SIZE;y++)for(let x=0;x<TOWN_SIZE;x++){
-  const boundary=x===0||y===0||x===12||y===12,road=[3,6,9].includes(x)||[5,9,11].includes(y);
-  c.fillStyle=boundary?'#626654':road?'#9a937c':b.ground;c.fillRect(x*size,y*size,size+.5,size+.5);
-  if(road&&!boundary){for(let row=0;row<5;row++)for(let col=0;col<5;col++){c.fillStyle=(row+col+x+y)%3?'#b4ac9255':'#666d5c44';c.fillRect((x+col/5+(row%2)*.04)*size,(y+row/5)*size,size*.17,size*.16);}}
-  if(boundary){c.strokeStyle='#27382c';c.lineWidth=1;c.strokeRect(x*size,y*size,size,size);c.fillStyle='#9d9e80';c.fillRect(x*size+size*.1,y*size+size*.1,size*.3,size*.25);}
- }
- // Gardens, a fountain and modest homes between the main service streets.
- for(const [x,y] of [[1,5],[11,5],[1,9],[11,9]]){circle(c,(x+.5)*size,(y+.5)*size,size*.32,'#526943');circle(c,(x+.4)*size,(y+.4)*size,size*.2,'#7b8c55');}
- circle(c,6.5*size,9.5*size,size*.36,'#c0b999');circle(c,6.5*size,9.5*size,size*.27,'#497e83');circle(c,6.5*size,9.5*size,size*.08,'#c8d8ba');
+ drawTownScenery(c,size,s.region,Math.max(0,TOWNS.findIndex(t=>t.id===s.location)));
+ if(canopies.complete&&canopies.naturalWidth){const sw=canopies.width/2,sh=canopies.height/2;for(const [x,y] of [[1.2,1.3],[3.2,1.3],[8.5,1.3],[10.8,1.3],[1.2,4],[11.5,4],[1.2,7.2],[11.5,7.2],[1.2,10.3],[11.5,10.3]])c.drawImage(canopies,s.region%2*sw,Math.floor(s.region/2)*sh,sw,sh,(x-.35)*size,(y-.5)*size,.9*size,.9*size);}
  for(const place of TOWN_PLACES){
   if(place.id==='gate'){c.fillStyle='#9a937c';c.fillRect(6*size,12*size,size,size);buildingArt(c,7,5.8*size,11.6*size,size*1.4,size*1.2);continue;}
   if(place.id==='fortune'&&fair.complete&&fair.naturalWidth){c.drawImage(fair,place.bx*size,place.by*size,place.bw*size,place.bh*size);}
@@ -109,8 +103,9 @@ function dungeon(c,w,h,s,time){const d=s.dungeon;if(!d)return;if(d.site==='elf-v
 }
 const monsterAtlases=Object.fromEntries(['monsters-grove','dungeon-monsters','monsters-hearth','monsters-cinder','monsters-tide','monsters-star','monsters-wild'].map(key=>{const img=new Image();img.src='/assets/'+key+'.webp';return [key,img];}));
 const monsterBounds=new Map();
+const haghilda=new Image();haghilda.src='/assets/haghilda.webp';
 const ghostDragon=new Image();ghostDragon.src='/assets/ghost-dragon.webp';
-function paintMonster(c,enemy,x,y,w,h,dungeonIndex=0){if(enemy.speciesId==='ghost-dragon'&&ghostDragon.complete&&ghostDragon.naturalWidth){c.drawImage(ghostDragon,x,y,w,h);return true;}const species=GROVE_ENEMIES.find(m=>m.id===enemy.speciesId)||MONSTER_BY_ID[enemy.speciesId]||ENEMIES.find(m=>m.name===enemy.name);const art=species?.art||{sheet:'dungeon-monsters',index:enemy.guard?11:enemy.boss?[2,2,4,4,7,6,8,10][dungeonIndex]:9};const img=monsterAtlases[art.sheet];if(!img?.complete||!img.naturalWidth)return false;const cols=['monsters-wild','monsters-grove'].includes(art.sheet)?2:4,rows=['monsters-wild','monsters-grove'].includes(art.sheet)?1:3,sw=img.width/cols,sh=img.height/rows,key=art.sheet+':'+art.index;
+function paintMonster(c,enemy,x,y,w,h,dungeonIndex=0){if(enemy.speciesId==='haghilda'&&haghilda.complete&&haghilda.naturalWidth){c.drawImage(haghilda,x,y,w,h);return true;}if(enemy.speciesId==='ghost-dragon'&&ghostDragon.complete&&ghostDragon.naturalWidth){c.drawImage(ghostDragon,x,y,w,h);return true;}const species=GROVE_ENEMIES.find(m=>m.id===enemy.speciesId)||MONSTER_BY_ID[enemy.speciesId]||ENEMIES.find(m=>m.name===enemy.name);const art=species?.art||{sheet:'dungeon-monsters',index:enemy.guard?11:enemy.boss?[2,2,4,4,7,6,8,10][dungeonIndex]:9};const img=monsterAtlases[art.sheet];if(!img?.complete||!img.naturalWidth)return false;const cols=['monsters-wild','monsters-grove'].includes(art.sheet)?2:4,rows=['monsters-wild','monsters-grove'].includes(art.sheet)?1:3,sw=img.width/cols,sh=img.height/rows,key=art.sheet+':'+art.index;
  if(!monsterBounds.has(art.sheet)){
   const sample=document.createElement('canvas');sample.width=img.width;sample.height=img.height;const sc=sample.getContext('2d',{willReadFrequently:true});sc.drawImage(img,0,0);
   for(const bounds of silhouetteComponents(sc.getImageData(0,0,img.width,img.height).data,img.width,img.height)){
