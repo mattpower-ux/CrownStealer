@@ -12,6 +12,7 @@ export const THEMES = Object.freeze({
   victory: { bpm: 112, melody: [72,null,72,76,79,null,84,null,83,79,76,79,81,null,79,null,77,81,84,86,88,null,84,81,79,76,74,71,72,null,null,null], roots: [48,45,41,43], mood: 'bright', gain: .85 },
 });
 
+export const recordedMusic=scene=>scene==='land:0'?'/assets/countryside-wander.mp3':scene==='dungeon'||scene.startsWith('dungeon:')?'/assets/whispers-beneath-stone.mp3':null;
 const hz = midi => 440 * 2 ** ((midi - 69) / 12);
 const volume = (value, fallback) => Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : fallback;
 
@@ -20,6 +21,7 @@ export class AudioDirector {
     this.Context = options.AudioContext === undefined ? globalThis.AudioContext || globalThis.webkitAudioContext : options.AudioContext;
     this.MediaAudio = options.Audio === undefined ? globalThis.Audio : options.Audio;
     this.titlePlayer = null;
+    this.backgroundPlayers=new Map();this.backgroundUnavailable=new Set();
     this.titleUnavailable = false;
     this.interval = options.setInterval || globalThis.setInterval.bind(globalThis);
     this.clear = options.clearInterval || globalThis.clearInterval.bind(globalThis);
@@ -81,9 +83,10 @@ export class AudioDirector {
     this.musicVolume = volume(music, this.musicVolume);
     this.effectsVolume = volume(effects, this.effectsVolume);
     if(this.titlePlayer)this.titlePlayer.volume=this.musicVolume;
+    for(const player of this.backgroundPlayers.values())player.volume=this.musicVolume*.5;
     if (!this.context || this.destroyed) return;
     const now = this.context.currentTime;
-    this.music.gain.setTargetAtTime(this.musicVolume, now, .035);
+    this.music.gain.setTargetAtTime(this.musicVolume*(this.scene==='battle'?.45:1), now, .035);
     this.effects.gain.setTargetAtTime(this.effectsVolume, now, .035);
   }
 
@@ -92,6 +95,8 @@ export class AudioDirector {
     this.positions.set(this.scene,this.beat||0);
     this.scene = name;
     if(name!=='title')this.titlePlayer?.pause();
+    for(const player of this.backgroundPlayers.values())player.pause();
+    this.setVolumes(this.musicVolume,this.effectsVolume);
     this.encounterGeneration++;
     this.stopSchedule();
     this.retire('music');
@@ -101,6 +106,14 @@ export class AudioDirector {
   start() {
     if (this.timer !== null || this.paused || this.destroyed || this.context.state !== 'running') return;
     if(this.scene==='title'&&this.titlePlayer&&!this.titleUnavailable){if(this.titlePlayer.paused)this.titlePlayer.play().catch(()=>{this.titleUnavailable=true;if(this.scene==='title'&&!this.paused&&!this.destroyed)this.start();});return;}
+    const recording=recordedMusic(this.scene);
+    if(recording&&this.MediaAudio&&!this.backgroundUnavailable.has(recording)){
+      let player=this.backgroundPlayers.get(recording);
+      if(!player){player=new this.MediaAudio(recording);player.loop=true;player.preload='none';this.backgroundPlayers.set(recording,player);player.onerror=()=>{this.backgroundUnavailable.add(recording);if(recordedMusic(this.scene)===recording&&!this.paused&&!this.destroyed)this.start();};}
+      player.volume=this.musicVolume*.5;
+      if(player.paused)player.play().catch(error=>{if(error?.name==='AbortError')return;this.backgroundUnavailable.add(recording);if(recordedMusic(this.scene)===recording&&!this.paused&&!this.destroyed)this.start();});
+      return;
+    }
     this.beat = this.positions.get(this.scene)||0;
     this.nextNote = this.context.currentTime + .035;
     this.schedule();
@@ -207,8 +220,9 @@ export class AudioDirector {
   effect(name) {
     if (!this.context || this.paused || this.destroyed || this.context.state !== 'running') return;
     const now = this.context.currentTime + .005;
+    const combatGain=['hit','hurt','block','magic','miss'].includes(name)?2.2:1;
     const tone = (frequency, delay, length, amplitude = .14, end, type = 'triangle') =>
-      this.tone(frequency, now + delay, length, type, amplitude, 'effects', end);
+      this.tone(frequency, now + delay, length, type, amplitude*combatGain, 'effects', end);
     switch (name) {
       case 'encounter': return this.playEncounter();
       case 'roulette': for(let i=0;i<42;i++)this.brush(now+Math.pow(i/41,1.5)*2.9,.025,.035,'effects',3200);break;
@@ -217,12 +231,12 @@ export class AudioDirector {
       case 'step': this.brush(now, .055, .07, 'effects', 700); break;
       case 'hit':
         // A stronger impact and cha-ching, with quieter inharmonic partials for a steel ring.
-        this.brush(now, .035, .09, 'effects', 3600);
+        this.brush(now, .035, .198, 'effects', 3600);
         tone(1319, .025, .12, .21); tone(2093, .105, .38, .20); tone(2637, .11, .25, .065);
         tone(3187, .018, .44, .06, 3150, 'sine'); tone(4379, .024, .24, .03, undefined, 'sine');
         break;
-      case 'miss': this.brush(now, .15, .09, 'effects', 1600); break;
-      case 'block': this.brush(now, .07, .12, 'effects', 4000); tone(880, 0, .18, .13, 420, 'square'); break;
+      case 'miss': this.brush(now, .15, .198, 'effects', 1600); break;
+      case 'block': this.brush(now, .07, .264, 'effects', 4000); tone(880, 0, .18, .13, 420, 'square'); break;
       case 'victory': [60, 64, 67, 72].forEach((note, i) => tone(hz(note), i * .08, .25, .09)); break;
       case 'hurt': tone(210, 0, .21, .16, 70, 'sawtooth'); break;
       case 'applause': for(let i=0;i<42;i++)this.brush(now+i*.047+(i%3)*.009,.055+(i%4)*.012,.045*(1-i/60),'effects',1100+(i%7)*370); [72,76,79,84].forEach((n,i)=>tone(hz(n),i*.09,.35,.055)); break;
@@ -254,6 +268,7 @@ export class AudioDirector {
     this.positions.set(this.scene,this.beat||0);
     this.paused = true;
     this.titlePlayer?.pause();
+    for(const player of this.backgroundPlayers.values())player.pause();
     this.transport++;
     this.stopSchedule();
     this.retire();
@@ -279,6 +294,7 @@ export class AudioDirector {
     if (this.destroyed) return;
     this.destroyed = true;
     this.titlePlayer?.pause();
+    for(const player of this.backgroundPlayers.values())player.pause();
     this.transport++;
     this.stopSchedule();
     this.retire();

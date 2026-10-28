@@ -187,3 +187,10 @@ test('dungeon scores last over two minutes and vary across sixteen phrases',()=>
 test('dungeon music resumes its position after combat',async()=>{
  const h=harness(),director=new audio.AudioDirector(h.options);director.setScene('dungeon:0');await director.unlock();director.beat=75;director.setScene('battle');director.setScene('dungeon:0');assert.ok(director.beat>=75&&director.beat<78);await director.destroy();
 });
+
+test('supplied countryside and dungeon recordings use half music volume and stop for combat',async()=>{
+ const h=harness(),players=[];class Media{constructor(src){this.src=src;this.paused=true;players.push(this);}play(){this.paused=false;return Promise.resolve();}pause(){this.paused=true;}}
+ h.options.Audio=Media;const d=new audio.AudioDirector(h.options);d.setVolumes(.6,.7);await d.unlock();d.setScene('land:0');let countryside=players.find(p=>p.src==='/assets/countryside-wander.mp3');assert.ok(countryside);assert.equal(countryside.volume,.3);assert.equal(countryside.paused,false);d.setScene('dungeon:0');let dungeon=players.find(p=>p.src==='/assets/whispers-beneath-stone.mp3');assert.ok(dungeon);assert.equal(countryside.paused,true);assert.equal(dungeon.volume,.3);d.setScene('battle');assert.equal(dungeon.paused,true);assert.equal(d.music.gain.value,.27);await d.destroy();
+});
+
+test('an interrupted background play does not permanently disable its recording',async()=>{const h=harness();class Media{constructor(src){this.src=src;this.paused=true;}play(){this.paused=false;return Promise.reject(Object.assign(new Error('paused during load'),{name:'AbortError'}));}pause(){this.paused=true;}}h.options.Audio=Media;const d=new audio.AudioDirector(h.options);await d.unlock();d.setScene('dungeon:0');await d.suspend();await Promise.resolve();assert.equal(d.backgroundUnavailable.has('/assets/whispers-beneath-stone.mp3'),false);await d.resume();assert.equal(d.backgroundPlayers.get('/assets/whispers-beneath-stone.mp3').paused,false);await d.destroy();});
