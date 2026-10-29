@@ -1,3 +1,4 @@
+import {merchantPotionRemaining} from '../public/game/merchant-supplies.js';
 import {dungeonChests} from '../public/game/treasure.js';
 import {dungeonFloors} from '../public/game/dungeon-depths.js';
 import test from 'node:test';
@@ -76,7 +77,7 @@ function campaign(outlaw) {
       if (state.hp < state.maxHp) step({type:'rest'});
     }
     while (state.meals < 3 && state.gold >= 10) step({type:'buy',item:'food'});
-    while (state.potions < 3 && state.gold >= 48) step({type:'buy',item:'potion'});
+    while (state.potions < 3 && state.gold >= 48 && merchantPotionRemaining(state,'potion')>0) step({type:'buy',item:'potion'});
     // Keep a small food/rest reserve; favor armor when both ranks are equal.
     for (;;) {
       const item = state.armor <= state.weapon ? 'armor' : 'weapon';
