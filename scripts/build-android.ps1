@@ -11,7 +11,7 @@ $androidRoot = Join-Path $projectRoot 'android'
 $buildRoot = Join-Path $androidRoot 'build'
 $signingRoot = Join-Path $androidRoot 'signing'
 $releaseRoot = Join-Path $projectRoot 'releases'
-$apkPath = Join-Path $releaseRoot 'CrownStealer-0.8.78.apk'
+$apkPath = Join-Path $releaseRoot 'CrownStealer-0.8.79.apk'
 $platformJar = Join-Path $sdkRoot 'platforms/android-35/android.jar'
 $buildTools = Join-Path $sdkRoot 'build-tools/android-15'
 
@@ -105,6 +105,9 @@ try {
             [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($assetArchive, $stagedAsset.FullName, $entryName, [System.IO.Compression.CompressionLevel]::Optimal) | Out-Null
         }
     } finally { $assetArchive.Dispose() }
+    # Normalize ZIP headers after mixing jar and .NET ZIP writers. Android's
+    # dex extractor rejects inconsistent local/central flags in mixed archives.
+    Invoke-CheckedTool 'python' @((Join-Path $PSScriptRoot 'normalize-apk.py'), $unsigned)
     Invoke-CheckedTool (Join-Path $buildTools 'zipalign.exe') @('-f', '-p', '4', $unsigned, $aligned)
 
     $keystore = Join-Path $signingRoot 'crownstealer-release.p12'
@@ -146,7 +149,7 @@ try {
         if ($packedAssetCount -ne $assetCount) { throw 'APK contains stale or unexpected bundled assets. Run build again.' }
     } finally { $archiveCheck.Dispose() }
     $sha256 = (Get-FileHash -LiteralPath $apkPath -Algorithm SHA256).Hash.ToLowerInvariant()
-    [System.IO.File]::WriteAllText((Join-Path $releaseRoot 'CrownStealer-0.8.78.apk.sha256'), "$sha256  CrownStealer-0.8.78.apk`n", [System.Text.Encoding]::ASCII)
+    [System.IO.File]::WriteAllText((Join-Path $releaseRoot 'CrownStealer-0.8.79.apk.sha256'), "$sha256  CrownStealer-0.8.79.apk`n", [System.Text.Encoding]::ASCII)
     Write-Host "Built $apkPath"
     Write-Host "Verified $assetCount bundled assets. SHA-256: $sha256"
 } finally {
@@ -154,5 +157,7 @@ try {
     $env:JAVA_HOME = $originalJavaHome
     $env:PATH = $originalPath
 }
+
+
 
 
