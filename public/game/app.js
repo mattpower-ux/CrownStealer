@@ -287,6 +287,7 @@ if(developerMode){
  try{
  if(action==='rules'){previewRules={invulnerable:$('preview-invulnerable').checked,noRandom:$('preview-no-random').checked};try{localStorage.setItem('crownstealer-developer-rules-v1',JSON.stringify(previewRules));}catch{}toast('Preview rules updated');return;}
  let next=structuredClone(state);
+ if(action==='destination')next=previewJump(next,e.target.closest('[data-preview]').dataset.destination);
  if(action==='jump')next=previewJump(next,$('preview-destination').value,Number($('preview-floor').value));
  if(action==='encounter')next=previewEncounter(next,$('preview-monster').value);
  if(action==='stats'){next.level=Math.max(1,Math.min(100,Math.floor(Number($('preview-level').value)||1)));next.gold=Math.max(0,Math.min(1000000,Math.floor(Number($('preview-gold').value)||0)));next.maxHp=80+(next.level-1)*14;next.hp=next.maxHp;next.xp=0;}
