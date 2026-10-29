@@ -3,6 +3,7 @@ import {LOCATION_THEMES} from './location-music.js';
 // Soft triangle leads, plucked bass and low-level brushed noise keep long loops restful.
 export const THEMES = Object.freeze({
   ...LOCATION_THEMES,
+  snow:{...LOCATION_THEMES['land:3'],melody:LOCATION_THEMES['land:3'].melody.map(n=>n===null?null:n+1)},
   desert: {...LOCATION_THEMES['land:1'],melody:LOCATION_THEMES['land:1'].melody.map(n=>n===null?null:n-1)},
   title: { bpm: 76, melody: [69,null,72,76,74,null,72,69,67,null,64,67,69,72,71,null,69,null,72,76,79,null,76,74,72,71,69,67,64,null,67,null], roots: [45,41,48,43], mood: 'hushed', gain: .8 },
   overworld: { bpm: 104, melody: [67,71,74,null,76,74,71,69,67,null,64,67,69,71,74,null,76,79,78,74,71,null,69,67,64,67,69,71,69,null,67,null], roots: [43,40,48,38], mood: 'walking', gain: .85 },
@@ -13,7 +14,7 @@ export const THEMES = Object.freeze({
   victory: { bpm: 112, melody: [72,null,72,76,79,null,84,null,83,79,76,79,81,null,79,null,77,81,84,86,88,null,84,81,79,76,74,71,72,null,null,null], roots: [48,45,41,43], mood: 'bright', gain: .85 },
 });
 
-export const recordedMusic=scene=>scene==='desert'?'/assets/sands-beyond-the-horizon.mp3':scene==='land:0'?'/assets/countryside-wander.mp3':scene==='dungeon'||scene.startsWith('dungeon:')?'/assets/whispers-beneath-stone.mp3':null;
+export const recordedMusic=scene=>scene==='snow'?'/assets/against-the-whiteout.mp3':scene==='desert'?'/assets/sands-beyond-the-horizon.mp3':scene==='land:0'?'/assets/countryside-wander.mp3':scene==='dungeon'||scene.startsWith('dungeon:')?'/assets/whispers-beneath-stone.mp3':null;
 const hz = midi => 440 * 2 ** ((midi - 69) / 12);
 const volume = (value, fallback) => Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : fallback;
 
