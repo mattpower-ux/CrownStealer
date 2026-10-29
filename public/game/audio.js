@@ -226,6 +226,7 @@ export class AudioDirector {
     const tone = (frequency, delay, length, amplitude = .14, end, type = 'triangle') =>
       this.tone(frequency, now + delay, length, type, amplitude*combatGain, 'effects', end);
     switch (name) {
+      case 'launch': for(let i=0;i<12;i++)this.brush(now+i*.25,.65,.10+Math.sin(i/12*Math.PI)*.12,'effects',350+i*320);tone(55,0,3.6,.12,240,'sawtooth');break;
       case 'encounter': return this.playEncounter();
       case 'roulette': for(let i=0;i<42;i++)this.brush(now+Math.pow(i/41,1.5)*2.9,.025,.035,'effects',3200);break;
       case 'vomit': for(let i=0;i<7;i++)tone(140+i%2*60,i*.08,.13,.10,45,'sawtooth');this.brush(now+.1,.5,.035,'effects',500);break;
