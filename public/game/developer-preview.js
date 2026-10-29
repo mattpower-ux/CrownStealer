@@ -1,3 +1,4 @@
+import {AREAS} from './exploration.js';
 import {dungeonFloors} from './dungeon-depths.js';
 import {createGame,dungeonMap,dungeonNavigation} from './engine.js';
 import {REGIONS,TOWNS,DUNGEONS} from './content.js';
@@ -10,20 +11,23 @@ export const previewDestinations=[
  ...REGIONS.map((r,i)=>({id:'land:'+i,name:r.name,region:i})),
  ...TOWNS.map(t=>({id:'town:'+t.id,name:t.name,region:t.region})),
  ...DUNGEONS.map((d,i)=>({id:'dungeon:'+i,name:d.name,region:d.region,floors:dungeonFloors({index:i})})),
+ {id:'ship',name:'Alien Spacecraft · Command Deck',region:0,floors:1},
+ ...AREAS.filter(a=>a.kind==='planet').flatMap(a=>[{id:'area:'+a.id,name:a.name,region:a.region},...Array.from({length:3},(_,i)=>({id:'expedition:'+a.id+'-cave-'+i,name:a.name+' · '+['Prism Vault','Spore Catacombs','Echo Laboratory'][i],region:a.region,floors:3}))]),
  {id:'elf',name:'Abandoned Elven Village',region:0,floors:4},
  {id:'cell',name:'Royal dungeon cell',region:0,floors:1},
  {id:'sewer',name:'Royal sewers',region:0,floors:1}
 ];
 export function previewCharacter(){const s=createGame('Preview adventurer');s.level=12;s.maxHp=s.hp=234;s.gold=5000;return s;}
-function clearEncounter(s){s.enemy=null;s.ending=null;s.pendingLoot=[];delete s.casino;delete s.flags.borderTauntPending;delete s.flags.guardTauntPending;delete s.flags.royalQuest;delete s.flags.goldLoot;return s;}
+function clearEncounter(s){if(s.spellEffects)s.spellEffects.stunnedTurns=0;for(const key of ['rescuePending','rescueMessage','boatReveal','gagReveal','gossipGuardTown'])delete s.flags[key];s.enemy=null;s.ending=null;s.pendingLoot=[];delete s.casino;delete s.flags.borderTauntPending;delete s.flags.guardTauntPending;delete s.flags.royalQuest;delete s.flags.goldLoot;return s;}
 export function previewJump(input,id,floor=1){
  const target=previewDestinations.find(d=>d.id===id);if(!target)throw Error('Choose a destination.');
  const s=clearEncounter(structuredClone(input));s.region=target.region;s.mode='world';s.returnMode='world';s.dungeon=null;s.location=null;s.x=5;s.y=7;
+ if(id.startsWith('area:')){s.exploration={...(s.exploration||{artifacts:[]}),area:id.slice(5),home:{region:0,x:5,y:7}};s.x=16;s.y=21;}else if(s.exploration)s.exploration.area=null;
  if(id.startsWith('town:')){const t=TOWNS.find(t=>t.id===id.slice(5));s.mode='town';s.location=t.id;s.x=t.x;s.y=t.y;s.townPosition={x:6,y:11};}
- if(target.floors){const index=id.startsWith('dungeon:')?Number(id.slice(8)):0;const d={index,floor:Math.max(0,Math.min(target.floors-1,Math.floor(floor||1)-1)),x:1,y:1,dir:1};if(id==='elf')d.site='elf-village';if(['cell','sewer'].includes(id))d.royal=id;
+ if(target.floors){const index=id.startsWith('dungeon:')?Number(id.slice(8)):0;const d={index,floor:Math.max(0,Math.min(target.floors-1,Math.floor(floor||1)-1)),x:1,y:1,dir:1};if(id==='ship'){d.ship=true;d.x=7;d.y=12;d.dir=0;s.exploration={...(s.exploration||{artifacts:[]}),area:null,home:{region:0,x:5,y:7}};}if(id.startsWith('expedition:')){d.expedition=id.slice(11);const a=AREAS.find(a=>d.expedition.startsWith(a.id+'-cave-'));d.index=a.region*2;s.exploration={...(s.exploration||{artifacts:[]}),area:a.id,home:{region:0,x:5,y:7}};}if(id==='elf')d.site='elf-village';if(['cell','sewer'].includes(id))d.royal=id;
  const map=dungeonMap(d);if(map[d.y]?.[d.x]===1){outer:for(let y=0;y<map.length;y++)for(let x=0;x<map[y].length;x++)if(map[y][x]!==1){d.x=x;d.y=y;break outer;}}
  for(let dir=0;dir<4;dir++){d.dir=dir;if(dungeonNavigation(d).forward)break;}d.dir%=4;
- s.mode='dungeon';s.dungeon=d;s.location=id==='elf'?'elf-village':DUNGEONS[index].id;const point=id==='elf'?{x:7,y:17}:DUNGEONS[index];s.x=point.x;s.y=point.y;
+ s.mode='dungeon';s.dungeon=d;s.location=id==='ship'?null:id==='elf'?'elf-village':DUNGEONS[d.index].id;const point=id==='elf'?{x:7,y:17}:DUNGEONS[index];s.x=point.x;s.y=point.y;
  }
  s.returnMode=s.mode;s.log.push('Developer preview: arrived at '+target.name+'.');return s;
 }
