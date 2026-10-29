@@ -1,0 +1,4 @@
+// One persistent quest item, derived from the unique monument discoveries in the save.
+export const artifactPieces=s=>Math.min(10,new Set(s.exploration?.artifacts||[]).size);
+export function alienDiskItem(s){const pieces=artifactPieces(s);return {id:'alien-disk',kind:'quest',name:'Ancient Alien Disk',pieces,notForSale:true,unique:true,description:pieces===10?'Ten blue-metal pieces form a complete alien disk. It has summoned a spacecraft; its control station can take you to three distant planets.':'A blue-metal disk is assembling itself from fragments found at ancient alien monuments. Find all ten pieces to awaken its mysterious signal.'};}
+export const alienDiskArt=pieces=>`<img class="item-art alien-disk-art" src="/assets/alien-disk-${Math.max(0,Math.min(10,Math.floor(pieces||0)))}.svg" alt="Ancient Alien Disk: ${pieces} of 10 pieces assembled" width="256" height="256">`;
