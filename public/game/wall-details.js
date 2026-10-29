@@ -1,6 +1,8 @@
+import {sewerWallInk} from './sewer-scenery.js';
 import {seaweedInk} from './nautical.js';
 export function wallDetailKind(x,y,dungeon){return Math.abs(Math.imul(x+1,17)+Math.imul(y+1,31)+dungeon*13)%23;}
 export function wallDetail(kind,u,v,time,dungeonIndex){
+ if(dungeonIndex===8)return sewerWallInk(kind,u,v,time);
  if(dungeonIndex===6&&kind>=4&&kind<=8)return clockworkWallDetail(kind,u,v,time);
  if(dungeonIndex===4)return seaweedInk(kind,u,v);
  if(kind<4&&v>.22&&v<.72){const cut=u-(v-.22)*.44;for(const x of [.26,.38,.5]){if(Math.abs(cut-x)<.012)return '#101614';if(Math.abs(cut-x-.018)<.007)return '#74786a';}}
