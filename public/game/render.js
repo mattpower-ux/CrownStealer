@@ -104,7 +104,7 @@ function world(c,w,h,s,time){if(areaFor(s)){drawArea(c,w,h,s);return;}const p=RE
  for(const t of TOWNS.filter(t=>t.region===s.region)){c.save();if(s.cities?.[t.id]?.destroyed)c.filter='grayscale(1) brightness(.4)';settlementIcon(c,t,(t.x+.5)*size,(t.y+.5)*size,size*2);c.restore();label(c,(s.cities?.[t.id]?.destroyed?'Ruins of ':'')+t.name,(t.x+.5)*size,(t.y+1.6)*size,Math.max(10,size*.42));}
  for(const d of DUNGEONS.filter(d=>d.region===s.region)){const x=(d.x+.5)*size,y=(d.y+.5)*size;if(d.id==='tithe-vault'&&vault.complete&&vault.naturalWidth){c.drawImage(vault,x-size*.8,y-size,size*1.6,size*1.6);drawCemeteryStones(c,x,y+size*.3,size);label(c,d.name,x,y+size*1.1,Math.max(10,size*.4));continue;}drawDungeonIcon(c,{...d,index:DUNGEONS.indexOf(d)},x,y,size,s.relics.includes(d.id));label(c,d.name,x,y+size*1.1,Math.max(10,size*.4));}
  for(const site of [...WILD_SITES.filter(p=>p.region===s.region&&(p.kind!=='gate'||p.x!==1)),...branchGates(s.region)])drawWildSite(c,site,(site.x+.5)*size,(site.y+.5)*size,size);
- const px=(s.x+.5)*size,py=(s.y+.5)*size;if(worldTile(s.region,s.x,s.y)==='water'&&s.flags.rowboatReady)drawRowboat(c,px,py,size);drawAdventurer(c,px,py,size*(worldTile(s.region,s.x,s.y)==='water'?1.25:1.9));c.restore();
+ drawMetalTrees(c,s,size);const px=(s.x+.5)*size,py=(s.y+.5)*size;if(worldTile(s.region,s.x,s.y)==='water'&&s.flags.rowboatReady)drawRowboat(c,px,py,size);drawAdventurer(c,px,py,size*(worldTile(s.region,s.x,s.y)==='water'?1.25:1.9));c.restore();
  label(c,'N',w-33,35,15,'#d1b57c');c.strokeStyle='#d1b57c';c.beginPath();c.moveTo(w-33,42);c.lineTo(w-33,66);c.stroke();path(c,[[w-33,39],[w-38,49],[w-28,49]],'#d1b57c');
 }
 const casinoBuilding=new Image();casinoBuilding.src='/assets/gambling-house.webp';
@@ -228,7 +228,7 @@ function drawArea(c,w,h,s){
  c.fillStyle=a.kind==='planet'?['#28243d','#243c39','#2b3151'][Number(a.id.at(-1))]:'#183c48';c.fillRect(0,0,w,h);c.save();c.translate(ox,oy);
  for(let y=1;y<23;y++)for(let x=1;x<31;x++){const t=areaTile(s,x,y);c.fillStyle=BIOMES[a.region].ground;c.fillRect(x*size,y*size,size+1,size+1);if(t==='water'){c.fillStyle='#448b99';c.fillRect(x*size,y*size,size+1,size+1);}else if(x===16||y===7){c.fillStyle=BIOMES[a.region].road;c.fillRect((x+.2)*size,(y+.2)*size,size*.8,size*.8);}else if(t==='forest')tree(c,(x+.5)*size,(y+.5)*size,size*.85,a.kind==='planet');else if(t==='mountain')path(c,[[x*size,(y+1)*size],[(x+.5)*size,y*size],[(x+1)*size,(y+1)*size]],'#92a4a5','#596f75');}
  for(const p of sites){const x=(p.x+.5)*size,y=(p.y+.5)*size;if(p.kind==='artifact'){if(s.exploration.artifacts.includes(p.id))continue;path(c,[[x,y-size],[x+size*.6,y],[x,y+size*.5],[x-size*.6,y]],'#9fe9e0','#fff4b8');circle(c,x,y-size*.2,size*.2,'#fbf7bf');}else if(p.kind==='returnGate'){c.fillStyle='#abb59a';c.fillRect(x-size*.6,y-size*.6,size*1.2,size*.2);c.fillRect(x-size*.6,y-size*.5,size*.2,size);c.fillRect(x+size*.4,y-size*.5,size*.2,size);}else{drawDungeonIcon(c,{...p,region:a.region},x,y,size,!!s.flags['expedition:'+p.expedition]);}label(c,p.name,x,y+size*1.1,Math.max(10,size*.35));}
- if(areaTile(s,s.x,s.y)==='water'&&s.flags.rowboatReady)drawRowboat(c,(s.x+.5)*size,(s.y+.5)*size,size);drawAdventurer(c,(s.x+.5)*size,(s.y+.5)*size,size*(areaTile(s,s.x,s.y)==='water'?1.25:1.8));c.restore();
+ drawMetalTrees(c,s,size);if(areaTile(s,s.x,s.y)==='water'&&s.flags.rowboatReady)drawRowboat(c,(s.x+.5)*size,(s.y+.5)*size,size);drawAdventurer(c,(s.x+.5)*size,(s.y+.5)*size,size*(areaTile(s,s.x,s.y)==='water'?1.25:1.8));c.restore();
 }
 function drawShip(c,w,h,s){
  const d=s.dungeon,m=dungeonMap(d),[dx,dy]=DIRS[d.dir],angle=Math.atan2(dy,dx),fov=Math.PI/2.6;
@@ -248,3 +248,5 @@ function drawTrails(c,region,size){
   c.strokeStyle='#e7d4a4';c.lineWidth=Math.max(1,size*.045);c.setLineDash([size*.07,size*.29]);drawTrailCurve(c,points,size);c.setLineDash([]);
  }c.restore();
 }
+
+function drawMetalTrees(c,s,size){const prefix='metalTree:'+String(s.exploration?.area||s.region)+':';for(const key of Object.keys(s.flags)){if(!key.startsWith(prefix)||!s.flags[key])continue;const [tx,ty]=key.slice(prefix.length).split(':').map(Number),x=(tx+.5)*size,y=(ty+.5)*size;c.save();c.strokeStyle='#d1e8ed';c.lineWidth=size*.14;c.beginPath();c.moveTo(x,y+size*.4);c.lineTo(x,y-size*.7);c.moveTo(x,y);c.lineTo(x-size*.4,y-size*.35);c.moveTo(x,y-size*.2);c.lineTo(x+size*.4,y-size*.55);c.stroke();for(let i=0;i<7;i++){const a=i*Math.PI*2/7;path(c,[[x+Math.cos(a)*size*.48,y-size*.5+Math.sin(a)*size*.3],[x+Math.cos(a)*size*.7,y-size*.5+Math.sin(a)*size*.5],[x+Math.cos(a+.6)*size*.48,y-size*.5+Math.sin(a+.6)*size*.3]],i%2?'#d0a76a':'#a9dbe1','#487a80');}c.restore();}}
