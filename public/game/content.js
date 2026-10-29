@@ -124,7 +124,7 @@ export const DUNGEONS = [
 export const CHAPTERS = [
   {
     title: 'A Bowl Against the Winter',
-    text: 'You arrive in Mothbridge with a weapon worth less than the bread you have been avoiding buying. Nell Soot feeds you anyway. Outside, the royal tax wagon rolls past a queue of people too hungry to heckle it properly. Its driver carries a warrant for grain the village never grew. Nell says the king has always collected money, but only lately begun collecting tomorrow. The hearth behind her burns blue when the wagon passes. A girl offers you a moth preserved in wax: it was the last thing to fly out of the sealed granary. You can sell your strength, trust your luck at Gallows Fair, or make yourself useful to people who remember their debts. A good meal can sharpen your fighting spirit, but courage does not require a packed lunch.',
+    text: 'You arrive in Mothbridge with a weapon worth less than the bread you have been avoiding buying. Nell Soot feeds you anyway. Outside, the royal tax wagon rolls past a queue of people too hungry to heckle it properly. Its driver carries a warrant for grain the village never grew. Nell says the king has always collected money, but only lately begun collecting tomorrow. The hearth behind her burns blue when the wagon passes. A peasant girl holds out a basket of moths preserved in wax. “Tuppence each!” she says. One was the last thing to fly out of the sealed granary. You can sell your strength, trust your luck at Gallows Fair, or make yourself useful to people who remember their debts. A good meal can sharpen your fighting spirit, but courage does not require a packed lunch.',
     objective: 'Speak to Nell in Mothbridge, prepare your equipment and follow the tithe road to the vault east of town.'
   },
   {
