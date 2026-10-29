@@ -1,3 +1,4 @@
+import {drawSaltChoirIcon} from './salt-choir-art.js';
 import {shipWallInk} from './spaceship-scenery.js';
 import {SEWER_WALL,drawSewerChannel} from './sewer-scenery.js';
 import {drawFishBones,drawRowboat} from './nautical.js';
@@ -116,8 +117,9 @@ function town(c,w,h,s,time){
  drawTownScenery(c,size,s.region,Math.max(0,TOWNS.findIndex(t=>t.id===s.location)));
  if(canopies.complete&&canopies.naturalWidth){const sw=canopies.width/2,sh=canopies.height/2;for(const [x,y] of [[1.2,1.3],[3.2,1.3],[8.5,1.3],[10.8,1.3],[1.2,4],[11.5,4],[1.2,7.2],[11.5,7.2],[1.2,10.3],[11.5,10.3]])c.drawImage(canopies,s.region%2*sw,Math.floor(s.region/2)*sh,sw,sh,(x-.35)*size,(y-.5)*size,.9*size,.9*size);}
  for(const place of TOWN_PLACES){
-  if(place.id==='gate'){c.fillStyle='#9a937c';c.fillRect(6*size,12*size,size,size);buildingArt(c,7,5.8*size,11.6*size,size*1.4,size*1.2);label(c,'TOWN GATE · EXIT',6.5*size,12.95*size,Math.max(9,size*.2),'#ffe1a0');continue;}
-  if(place.id==='talk'&&settlements.complete&&settlements.naturalWidth){
+  if(place.id==='gate'){c.fillStyle='#9a937c';c.fillRect(6*size,12*size,size,size);if(!(s.location==='salt-choir'&&drawSaltChoirIcon(c,'gate',5.65*size,11.45*size,size*1.7,size*1.45)))buildingArt(c,7,5.8*size,11.6*size,size*1.4,size*1.2);label(c,'TOWN GATE · EXIT',6.5*size,12.95*size,Math.max(9,size*.2),'#ffe1a0');continue;}
+  if(place.id!=='talk'&&s.location==='salt-choir'&&drawSaltChoirIcon(c,place.id,place.bx*size,place.by*size,place.bw*size,place.bh*size)){}
+  else if(place.id==='talk'&&settlements.complete&&settlements.naturalWidth){
    const i=Math.max(0,TOWNS.findIndex(t=>t.id===s.location)),sw=settlements.width/4,sh=settlements.height/3;
    c.drawImage(settlements,i%4*sw,Math.floor(i/4)*sh,sw,sh,place.bx*size,place.by*size,place.bw*size,place.bh*size);
   }

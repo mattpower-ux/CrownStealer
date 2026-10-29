@@ -1,3 +1,4 @@
+import {drawSaltChoirIcon,saltChoirReady} from './salt-choir-art.js';
 // Static, seeded town scenery: one small cached canvas, no additional image downloads.
 const cache=new Map();
 function ellipse(c,x,y,rx,ry,color){c.fillStyle=color;c.beginPath();c.ellipse(x,y,rx,ry,0,0,Math.PI*2);c.fill();}
@@ -9,7 +10,7 @@ function person(c,x,y,color){ellipse(c,x,y+.12,.08,.035,'#18302566');c.fillStyle
 function garden(c,x,y){c.fillStyle='#68513a';c.fillRect(x,y,.65,1.2);for(let row=0;row<5;row++)for(let col=0;col<3;col++){ellipse(c,x+.12+col*.2,y+.13+row*.23,.06,.035,'#314e30');ellipse(c,x+.1+col*.2,y+.1+row*.23,.035,.05,'#79934b');}fence(c,x-.04,y+1.25,.75);}
 function tree(c,x,y,seed,snow){ellipse(c,x+.06,y+.19,.29,.1,'#1c2f2844');c.fillStyle='#62503c';c.fillRect(x-.045,y-.12,.09,.35);for(let k=0;k<8;k++){const a=k*2.4+seed,r=k%2?.17:.08;ellipse(c,x+Math.cos(a)*r,y-.25+Math.sin(a)*r,.17,.14,snow?(k%2?'#e5e9d6':'#a4b6a1'):(k%2?'#718a46':'#4e6838'));}}
 export function drawTownScenery(c,size,region,townIndex){
- const key=region+':'+townIndex;
+ const key=region+':'+townIndex+(townIndex===6?':'+saltChoirReady():'');
  if(!cache.has(key)){
   const canvas=document.createElement('canvas');canvas.width=canvas.height=1040;const g=canvas.getContext('2d');g.scale(80,80);
   let seed=973+townIndex*103;const rand=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
@@ -22,9 +23,9 @@ export function drawTownScenery(c,size,region,townIndex){
   // Raised stone ramparts: only the south gate interrupts the boundary.
   const wall=(x,y,w,h)=>{
    g.fillStyle='#17211e66';g.fillRect(x+.09,y+.12,w,h);
-   g.fillStyle='#434c48';g.fillRect(x,y,w,h);
+   g.fillStyle=townIndex===6?'#856e68':'#434c48';g.fillRect(x,y,w,h);
    for(let row=0;row<Math.ceil(h/.18);row++)for(let col=0;col<Math.ceil(w/.3);col++){
-    const xx=x+col*.3,yy=y+row*.18;g.fillStyle=(row+col)%2?'#92988b':'#798477';
+    const xx=x+col*.3,yy=y+row*.18;g.fillStyle=townIndex===6?((row+col)%2?'#bd9b89':'#aa8d81'):(row+col)%2?'#92988b':'#798477';
     g.fillRect(xx+.02,yy+.02,Math.min(.26,x+w-xx-.02),Math.min(.14,y+h-yy-.02));
    }
    g.fillStyle='#bdbeaa';g.fillRect(x,y,w,.07);
@@ -41,10 +42,10 @@ export function drawTownScenery(c,size,region,townIndex){
   garden(g,1.1,8.8);garden(g,10.8,2.1);
   for(const [x,y] of [[4.2,4.5],[7.8,4.5],[4.2,7.5],[10.2,7.5],[4.2,10.5]]){barrel(g,x,y);barrel(g,x+.22,y+.07);}
   const cloth=['#9d5444','#647a69','#b39553','#666d8c'][townIndex%4];
-  stall(g,5.1,6.1,cloth);stall(g,7.7,7.1,'#8a7754');stall(g,5.1,9.5,'#71845e');
+  if(townIndex===6&&saltChoirReady()){for(const [x,y]of [[4.6,5.6],[7.2,6.6],[4.6,9]])drawSaltChoirIcon(g,'shop',x,y,1.1,1.1);}else{stall(g,5.1,6.1,cloth);stall(g,7.7,7.1,'#8a7754');stall(g,5.1,9.5,'#71845e');}
   for(const [x,y] of [[1.2,5.8],[10.8,8.6]])fence(g,x,y,.9);
   // The well sits beside the central walking lane, leaving it visually clear.
-  ellipse(g,7.5,9.65,.45,.16,'#243b3055');ellipse(g,7.5,9.48,.32,.21,'#b3ad8e');g.fillStyle='#8a8d78';g.fillRect(7.18,9.21,.64,.28);ellipse(g,7.5,9.21,.32,.18,'#c7c2a5');ellipse(g,7.5,9.21,.24,.12,'#2d5659');g.fillStyle='#665136';g.fillRect(7.17,8.78,.05,.48);g.fillRect(7.78,8.78,.05,.48);polygon(g,[[7.06,8.83],[7.5,8.58],[7.92,8.83]],'#8b6344');
+  if(townIndex===6&&saltChoirReady())drawSaltChoirIcon(g,'well',6.9,8.5,1.2,1.2);else{ellipse(g,7.5,9.65,.45,.16,'#243b3055');ellipse(g,7.5,9.48,.32,.21,'#b3ad8e');g.fillStyle='#8a8d78';g.fillRect(7.18,9.21,.64,.28);ellipse(g,7.5,9.21,.32,.18,'#c7c2a5');ellipse(g,7.5,9.21,.24,.12,'#2d5659');g.fillStyle='#665136';g.fillRect(7.17,8.78,.05,.48);g.fillRect(7.78,8.78,.05,.48);polygon(g,[[7.06,8.83],[7.5,8.58],[7.92,8.83]],'#8b6344');}
   for(const [x,y,col] of [[4.65,5.45,'#876246'],[7.1,8.4,'#697d9c'],[5.8,10.5,'#a5814f'],[10.5,5.5,'#7d5265'],[4.4,8.7,'#65774f']])person(g,x,y,col);
   // Flowers and log piles fill margins instead of cluttering doorways.
   for(let i=0;i<10;i++){const x=10.9+rand()*.7,y=10.9+rand()*.35;ellipse(g,x,y,.025,.025,['#d4bb69','#bc8172','#e7ddab'][i%3]);}
