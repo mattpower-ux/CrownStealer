@@ -1,3 +1,4 @@
+import {drawOceanBuilding} from './ocean-buildings.js';
 import {drawSaltChoirIcon} from './salt-choir-art.js';
 import {shipWallInk} from './spaceship-scenery.js';
 import {SEWER_WALL,drawSewerChannel} from './sewer-scenery.js';
@@ -118,7 +119,8 @@ function town(c,w,h,s,time){
  if(canopies.complete&&canopies.naturalWidth){const sw=canopies.width/2,sh=canopies.height/2;for(const [x,y] of [[1.2,1.3],[3.2,1.3],[8.5,1.3],[10.8,1.3],[1.2,4],[11.5,4],[1.2,7.2],[11.5,7.2],[1.2,10.3],[11.5,10.3]])c.drawImage(canopies,s.region%2*sw,Math.floor(s.region/2)*sh,sw,sh,(x-.35)*size,(y-.5)*size,.9*size,.9*size);}
  for(const place of TOWN_PLACES){
   if(place.id==='gate'){c.fillStyle='#9a937c';c.fillRect(6*size,12*size,size,size);if(!(s.location==='salt-choir'&&drawSaltChoirIcon(c,'gate',5.65*size,11.45*size,size*1.7,size*1.45)))buildingArt(c,7,5.8*size,11.6*size,size*1.4,size*1.2);label(c,'TOWN GATE · EXIT',6.5*size,12.95*size,Math.max(9,size*.2),'#ffe1a0');continue;}
-  if(place.id!=='talk'&&s.location==='salt-choir'&&drawSaltChoirIcon(c,place.id,place.bx*size,place.by*size,place.bw*size,place.bh*size)){}
+  if(s.region===2&&drawOceanBuilding(c,place.id,place.bx*size,place.by*size,place.bw*size,place.bh*size)){} 
+  else if(place.id!=='talk'&&s.location==='salt-choir'&&drawSaltChoirIcon(c,place.id,place.bx*size,place.by*size,place.bw*size,place.bh*size)){}
   else if(place.id==='talk'&&settlements.complete&&settlements.naturalWidth){
    const i=Math.max(0,TOWNS.findIndex(t=>t.id===s.location)),sw=settlements.width/4,sh=settlements.height/3;
    c.drawImage(settlements,i%4*sw,Math.floor(i/4)*sh,sw,sh,place.bx*size,place.by*size,place.bw*size,place.bh*size);
@@ -250,3 +252,4 @@ function drawTrails(c,region,size){
 }
 
 function drawMetalTrees(c,s,size){const prefix='metalTree:'+String(s.exploration?.area||s.region)+':';for(const key of Object.keys(s.flags)){if(!key.startsWith(prefix)||!s.flags[key])continue;const [tx,ty]=key.slice(prefix.length).split(':').map(Number),x=(tx+.5)*size,y=(ty+.5)*size;c.save();c.strokeStyle='#d1e8ed';c.lineWidth=size*.14;c.beginPath();c.moveTo(x,y+size*.4);c.lineTo(x,y-size*.7);c.moveTo(x,y);c.lineTo(x-size*.4,y-size*.35);c.moveTo(x,y-size*.2);c.lineTo(x+size*.4,y-size*.55);c.stroke();for(let i=0;i<7;i++){const a=i*Math.PI*2/7;path(c,[[x+Math.cos(a)*size*.48,y-size*.5+Math.sin(a)*size*.3],[x+Math.cos(a)*size*.7,y-size*.5+Math.sin(a)*size*.5],[x+Math.cos(a+.6)*size*.48,y-size*.5+Math.sin(a+.6)*size*.3]],i%2?'#d0a76a':'#a9dbe1','#487a80');}c.restore();}}
+

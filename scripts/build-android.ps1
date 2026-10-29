@@ -11,7 +11,7 @@ $androidRoot = Join-Path $projectRoot 'android'
 $buildRoot = Join-Path $androidRoot 'build'
 $signingRoot = Join-Path $androidRoot 'signing'
 $releaseRoot = Join-Path $projectRoot 'releases'
-$apkPath = Join-Path $releaseRoot 'CrownStealer-0.8.29.apk'
+$apkPath = Join-Path $releaseRoot 'CrownStealer-0.8.78.apk'
 $platformJar = Join-Path $sdkRoot 'platforms/android-35/android.jar'
 $buildTools = Join-Path $sdkRoot 'build-tools/android-15'
 
@@ -95,6 +95,7 @@ try {
     Invoke-CheckedTool (Join-Path $JavaHome 'bin/jar.exe') @('uf', $unsigned, '-C', (Join-Path $buildRoot 'dex'), 'classes.dex')
     # aapt2 on Windows writes backslashes in nested -A asset names. Add explicit
     # portable ZIP entry names so Android AssetManager can resolve /game/*.js.
+    Add-Type -AssemblyName System.IO.Compression
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     $stagedAssets = Join-Path $buildRoot 'assets'
     $assetArchive = [System.IO.Compression.ZipFile]::Open($unsigned, [System.IO.Compression.ZipArchiveMode]::Update)
@@ -123,6 +124,7 @@ try {
     Invoke-CheckedTool (Join-Path $buildTools 'apksigner.bat') @('verify', '--verbose', '--print-certs', $apkPath)
     Invoke-CheckedTool (Join-Path $buildTools 'zipalign.exe') @('-c', '-p', '4', $apkPath)
 
+    Add-Type -AssemblyName System.IO.Compression
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     $archiveCheck = [System.IO.Compression.ZipFile]::OpenRead($apkPath)
     try {
@@ -144,7 +146,7 @@ try {
         if ($packedAssetCount -ne $assetCount) { throw 'APK contains stale or unexpected bundled assets. Run build again.' }
     } finally { $archiveCheck.Dispose() }
     $sha256 = (Get-FileHash -LiteralPath $apkPath -Algorithm SHA256).Hash.ToLowerInvariant()
-    [System.IO.File]::WriteAllText((Join-Path $releaseRoot 'CrownStealer-0.8.29.apk.sha256'), "$sha256  CrownStealer-0.8.29.apk`n", [System.Text.Encoding]::ASCII)
+    [System.IO.File]::WriteAllText((Join-Path $releaseRoot 'CrownStealer-0.8.78.apk.sha256'), "$sha256  CrownStealer-0.8.78.apk`n", [System.Text.Encoding]::ASCII)
     Write-Host "Built $apkPath"
     Write-Host "Verified $assetCount bundled assets. SHA-256: $sha256"
 } finally {
@@ -152,3 +154,5 @@ try {
     $env:JAVA_HOME = $originalJavaHome
     $env:PATH = $originalPath
 }
+
+
