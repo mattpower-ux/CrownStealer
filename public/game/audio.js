@@ -307,3 +307,6 @@ export class AudioDirector {
     }
   }
 }
+
+// Keep gate dialogue above the score, including when the effects slider is at maximum.
+export function boostGateVoice(clip,director,effectsVolume){const context=director.context;if(context?.state==='running'&&context.createMediaElementSource){const source=context.createMediaElementSource(clip),gain=context.createGain();gain.gain.value=1.5;clip.volume=1;source.connect(gain);gain.connect(director.effects);const disconnect=()=>{source.disconnect();gain.disconnect();};clip.addEventListener('ended',disconnect,{once:true});clip.addEventListener('error',disconnect,{once:true});}else clip.volume=Math.min(1,Math.max(0,effectsVolume)*1.5);}

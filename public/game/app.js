@@ -1,3 +1,4 @@
+import {boostGateVoice} from './audio.js';
 import {spellsView} from './spell-items.js';
 import {GAG_ITEMS,GAG_KEYS,gagActive,pigFaceSvg,HELIUM_REFUSAL} from './gag-potions.js';
 import {ladderPrompt} from './dungeon-ladders.js';
@@ -232,7 +233,7 @@ function showGoldLoot(amount,total){
 }
 
 let introVoice=null,royalDoorTimers=[];
-function playGuardVoice(index){if(state?.flags.pennilessTown){playPennilessVoice();return;}stopIntroVoice();if(activePanel!=='guardTaunt')return;const lines=["“Get lost, SCUM! You've got about as much chance with the Princess as my donkey!”","“HEE HAW! HEE HAW!” Both guards laugh uproariously."];$('guard-dialogue').textContent=lines[index];const clip=new Audio('/assets/guard-'+index+'.mp3');introVoice=clip;clip.volume=volumes.effects;audio.setVolumes(volumes.music*.25,volumes.effects);clip.onended=()=>{if(introVoice!==clip||activePanel!=='guardTaunt')return;if(index===0)playGuardVoice(1);else audio.setVolumes(volumes.music,volumes.effects);};clip.onerror=()=>audio.setVolumes(volumes.music,volumes.effects);clip.play().catch(()=>audio.setVolumes(volumes.music,volumes.effects));}
+function playGuardVoice(index){if(state?.flags.pennilessTown){playPennilessVoice();return;}stopIntroVoice();if(activePanel!=='guardTaunt')return;const lines=["“Get lost, SCUM! You've got about as much chance with the Princess as my donkey!”","“HEE HAW! HEE HAW!” Both guards laugh uproariously."];$('guard-dialogue').textContent=lines[index];const clip=new Audio('/assets/guard-'+index+'.mp3');introVoice=clip;boostGateVoice(clip,audio,volumes.effects);audio.setVolumes(volumes.music*.25,volumes.effects);clip.onended=()=>{if(introVoice!==clip||activePanel!=='guardTaunt')return;if(index===0)playGuardVoice(1);else audio.setVolumes(volumes.music,volumes.effects);};clip.onerror=()=>audio.setVolumes(volumes.music,volumes.effects);clip.play().catch(()=>audio.setVolumes(volumes.music,volumes.effects));}
 
 function hasCheckpoint(key=CHECKPOINT){try{return !!localStorage.getItem(key);}catch{return false;}}
 function saveCheckpoint(){try{const source=state||loadGame(localStorage.getItem(SAVE));localStorage.setItem(CHECKPOINT,saveGame(source));$('load-checkpoint-title').hidden=false;toast('Checkpoint saved. Autosave will not overwrite it.');}catch(e){toast('Could not save checkpoint: '+e.message);}}
@@ -260,9 +261,9 @@ function updateCombatPanel(s,message){const active=s?.mode==='battle'&&s.enemy;$
 
 function playFortuneVoice(){stopIntroVoice();if(activePanel!=='fortune')return;const clip=new Audio('/assets/fortune-teller-voice.mp3');introVoice=clip;clip.volume=volumes.effects;audio.setVolumes(volumes.music*.25,volumes.effects);const restore=()=>{if(introVoice===clip)audio.setVolumes(volumes.music,volumes.effects);};clip.onended=restore;clip.onerror=restore;clip.play().catch(restore);}
 
-function playBorderVoice(){stopIntroVoice();if(activePanel!=='borderTaunt')return;const index=Number.isInteger(state.flags.borderVoice)?Math.abs(state.flags.borderVoice)%3:0,clip=new Audio('/assets/border-'+index+'.mp3');introVoice=clip;clip.volume=volumes.effects;audio.setVolumes(volumes.music*.25,volumes.effects);const restore=()=>{if(introVoice===clip)audio.setVolumes(volumes.music,volumes.effects);};clip.onended=restore;clip.onerror=restore;clip.play().catch(restore);}
+function playBorderVoice(){stopIntroVoice();if(activePanel!=='borderTaunt')return;const index=Number.isInteger(state.flags.borderVoice)?Math.abs(state.flags.borderVoice)%3:0,clip=new Audio('/assets/border-'+index+'.mp3');introVoice=clip;boostGateVoice(clip,audio,volumes.effects);audio.setVolumes(volumes.music*.25,volumes.effects);const restore=()=>{if(introVoice===clip)audio.setVolumes(volumes.music,volumes.effects);};clip.onended=restore;clip.onerror=restore;clip.play().catch(restore);}
 
-function playPennilessVoice(){stopIntroVoice();if(activePanel!=='guardTaunt')return;const index=Number.isInteger(state.flags.pennilessVoice)?Math.abs(state.flags.pennilessVoice)%3:0,clip=new Audio('/assets/penniless-'+index+'.mp3');introVoice=clip;$('guard-dialogue').textContent='No gold? No entry.';clip.volume=volumes.effects;audio.setVolumes(volumes.music*.25,volumes.effects);const restore=()=>{if(introVoice===clip)audio.setVolumes(volumes.music,volumes.effects);};clip.onended=restore;clip.onerror=restore;clip.play().catch(restore);}
+function playPennilessVoice(){stopIntroVoice();if(activePanel!=='guardTaunt')return;const index=Number.isInteger(state.flags.pennilessVoice)?Math.abs(state.flags.pennilessVoice)%3:0,clip=new Audio('/assets/penniless-'+index+'.mp3');introVoice=clip;$('guard-dialogue').textContent='No gold? No entry.';boostGateVoice(clip,audio,volumes.effects);audio.setVolumes(volumes.music*.25,volumes.effects);const restore=()=>{if(introVoice===clip)audio.setVolumes(volumes.music,volumes.effects);};clip.onended=restore;clip.onerror=restore;clip.play().catch(restore);}
 
 function playBlackjackTaunt(){
  stopIntroVoice();if(activePanel!=='casino'||document.hidden)return;
