@@ -104,7 +104,7 @@ function actInner(input,action,events=[]){
  if(a.type==='acknowledgeGag'){delete s.flags.gagReveal;return s;}
  if(a.type==='leaveTravelMerchant'){delete s.flags.travelMerchant;return s;}
  if(a.type==='buyCureAll'){const merchant=s.flags.travelMerchant;if(s.mode!=='world'||s.region!==2||!merchant||merchant.x!==s.x||merchant.y!==s.y||merchant.sold||s.gold<5000)return s;s.gold-=5000;s.bag.push('potion-cure-all');merchant.sold=true;note(s,'You purchase a Potion of Cure-All for 5,000 gold.');return s;}
- if(alienAction(s,a,note)){if(s.mode==='battle')enemyTurn(s,false,events);return s;}
+ const alienResult=alienAction(s,a,note,resetPalaceAttempt);if(alienResult){if(alienResult==='spent'&&s.mode==='battle')enemyTurn(s,false,events);return s;}
  if(a.type==='useItem'&&castSpellItem(s,a.id,{random:()=>rand(s),note,events,enemyTurn,victory,resetAttempt:resetPalaceAttempt}))return s;
  if(a.type==='useItem'&&GAG_ITEMS[a.id]){const index=s.bag.indexOf(a.id);if(index<0||s.mode==='ending'||s.flags.royalQuest==='opening')return s;s.bag.splice(index,1);s.pendingLoot=s.pendingLoot.filter(id=>id!==a.id||s.bag.includes(id));note(s,applyGag(s,GAG_ITEMS[a.id]));if(s.mode==='battle')enemyTurn(s,false,events);return s;}
  if(cityAction(s,a,note,state=>encounter(state,false,true)))return s;
