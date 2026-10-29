@@ -1,3 +1,4 @@
+import {dungeonChests} from '../public/game/treasure.js';
 import {dungeonFloors} from '../public/game/dungeon-depths.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -52,7 +53,7 @@ function campaign(outlaw) {
   function walkTo(point) {
     assert.equal(state.mode, 'world');
     assert.equal(state.region, point.region);
-    const route = pathTo([state.x, state.y], [point.x, point.y], (x,y) => !['water','mountain'].includes(worldTile(state.region,x,y)));
+    const route = pathTo([state.x, state.y], [point.x, point.y], (x,y) => x>=1&&x<=30&&y>=1&&y<=22&&worldTile(state.region,x,y)!=='mountain'&&(worldTile(state.region,x,y)!=='water'||state.flags.rowboatReady));
     for (const [x,y] of route) { step({type:'move',dx:x-state.x,dy:y-state.y}); fight(); }
     assert.deepEqual([state.x,state.y],[point.x,point.y]);
   }
@@ -103,12 +104,14 @@ function campaign(outlaw) {
           step({type:'forward'}); fight();
           assert.deepEqual([state.dungeon.x,state.dungeon.y],[x,y]);
         }
+        if(dungeon.id==='drowned-conservatory'&&floor===19){const chest=dungeonChests(state,map).find(c=>c.items.includes('boat-amulet'));for(const target of [[chest.x,chest.y],[13,13]]){const detour=pathTo([state.dungeon.x,state.dungeon.y],target,(x,y)=>map[y]?.[x]!==undefined&&map[y][x]!==1);for(const [x,y]of detour){const dir=DIRS.findIndex(d=>d[0]===x-state.dungeon.x&&d[1]===y-state.dungeon.y);while(state.dungeon.dir!==dir)step({type:'turn',delta:1});step({type:'forward'});fight();}if(target[0]===chest.x&&target[1]===chest.y)step({type:'openChest'});}assert.ok(state.bag.includes('boat-amulet'));}
         step({type:'descend'}); fight();
       }
       assert.equal(state.mode,'dungeon');
       step({type:'descend'});
       assert.ok(state.relics.includes(dungeon.id));
       assert.equal(state.mode,'world');
+      if(dungeon.id==='drowned-conservatory'){step({type:'useItem',id:'boat-amulet'});step({type:'acknowledgeBoat'});}
       assert.deepEqual([state.x,state.y],[dungeon.x,dungeon.y],'Relic return preserves the dungeon entrance');
       checkpoints.push({relic:dungeon.id,level:state.level,gold:state.gold,weapon:state.weapon,armor:state.armor,turns:state.turns});
       visit(towns[0]); leave();

@@ -148,8 +148,9 @@ function dungeon(c,w,h,s,time){const d=s.dungeon;if(!d)return;if(d.ship){drawShi
 const monsterAtlases=Object.fromEntries(['monsters-depth','monsters-grove','dungeon-monsters','monsters-hearth','monsters-cinder','monsters-tide','monsters-star','monsters-wild'].map(key=>{const img=new Image();img.src='/assets/'+key+'.webp';return [key,img];}));
 const monsterBounds=new Map();
 const haghilda=new Image();haghilda.src='/assets/haghilda.webp';
+const levityBoss=new Image();levityBoss.src='/assets/leviathan-levity.webp';
 const ghostDragon=new Image();ghostDragon.src='/assets/ghost-dragon.webp';
-function paintMonster(c,enemy,x,y,w,h,dungeonIndex=0){if(enemy.speciesId==='haghilda'&&haghilda.complete&&haghilda.naturalWidth){c.drawImage(haghilda,x,y,w,h);return true;}if(enemy.speciesId==='ghost-dragon'&&ghostDragon.complete&&ghostDragon.naturalWidth){c.drawImage(ghostDragon,x,y,w,h);return true;}const species=GROVE_ENEMIES.find(m=>m.id===enemy.speciesId)||MONSTER_BY_ID[enemy.speciesId]||ENEMIES.find(m=>m.name===enemy.name);const art=species?.art||{sheet:'dungeon-monsters',index:enemy.guard?11:enemy.boss?[2,2,4,4,7,6,8,10][dungeonIndex]:9};const img=monsterAtlases[art.sheet];if(!img?.complete||!img.naturalWidth)return false;const cols=['monsters-wild','monsters-grove'].includes(art.sheet)?2:4,rows=['monsters-wild','monsters-grove'].includes(art.sheet)?1:3,sw=img.width/cols,sh=img.height/rows,key=art.sheet+':'+art.index;
+function paintMonster(c,enemy,x,y,w,h,dungeonIndex=0){if(enemy.speciesId==='leviathan-levity'&&levityBoss.complete&&levityBoss.naturalWidth){c.drawImage(levityBoss,x,y,w,h);return true;}if(enemy.speciesId==='haghilda'&&haghilda.complete&&haghilda.naturalWidth){c.drawImage(haghilda,x,y,w,h);return true;}if(enemy.speciesId==='ghost-dragon'&&ghostDragon.complete&&ghostDragon.naturalWidth){c.drawImage(ghostDragon,x,y,w,h);return true;}const species=GROVE_ENEMIES.find(m=>m.id===enemy.speciesId)||MONSTER_BY_ID[enemy.speciesId]||ENEMIES.find(m=>m.name===enemy.name);const art=species?.art||{sheet:'dungeon-monsters',index:enemy.guard?11:enemy.boss?[2,2,4,4,7,6,8,10][dungeonIndex]:9};const img=monsterAtlases[art.sheet];if(!img?.complete||!img.naturalWidth)return false;const cols=['monsters-wild','monsters-grove'].includes(art.sheet)?2:4,rows=['monsters-wild','monsters-grove'].includes(art.sheet)?1:3,sw=img.width/cols,sh=img.height/rows,key=art.sheet+':'+art.index;
  if(!monsterBounds.has(art.sheet)){
   const sample=document.createElement('canvas');sample.width=img.width;sample.height=img.height;const sc=sample.getContext('2d',{willReadFrequently:true});sc.drawImage(img,0,0);
   for(const bounds of silhouetteComponents(sc.getImageData(0,0,img.width,img.height).data,img.width,img.height)){
@@ -236,7 +237,7 @@ function drawShip(c,w,h,s){
 
 function drawTrails(c,region,size){
  c.save();c.lineJoin='round';c.lineCap='round';
- for(const {points}of regionTrails(region)){
+ for(const {site,points}of regionTrails(region)){if(site.id==='leviathan-pump')continue;
   for(const [width,color]of [[.38,'#756546'],[.28,'#cbb181']]){c.lineWidth=size*width;c.strokeStyle=color;drawTrailCurve(c,points,size);}
   c.strokeStyle='#e7d4a4';c.lineWidth=Math.max(1,size*.045);c.setLineDash([size*.07,size*.29]);drawTrailCurve(c,points,size);c.setLineDash([]);
  }c.restore();
