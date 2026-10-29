@@ -31,3 +31,5 @@ export function drawDungeonIcon(c,site,x,y,size,claimed=false){
  }
  if(claimed){poly([[28,52],[32,48],[36,52],[32,57]],'#e5c878','#5d502d');}c.restore();
 }
+
+export function drawCemeteryStones(c,x,y,size){c.save();c.translate(x,y);c.scale(size/64,size/64);c.lineWidth=1.5;c.strokeStyle='#34433e';for(const [xx,yy,tilt]of [[-48,8,-.13],[40,13,.12]]){c.save();c.translate(xx,yy);c.rotate(tilt);c.fillStyle='#a7a99a';c.beginPath();c.moveTo(-8,8);c.lineTo(-8,-8);c.arc(0,-8,8,Math.PI,0);c.lineTo(8,8);c.closePath();c.fill();c.stroke();c.strokeStyle='#535e54';c.beginPath();c.moveTo(0,-11);c.lineTo(0,0);c.moveTo(-4,-7);c.lineTo(4,-7);c.moveTo(-5,4);c.lineTo(4,4);c.stroke();c.restore();}c.restore();}

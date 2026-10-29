@@ -1,4 +1,4 @@
-import {drawDungeonIcon} from './dungeon-icons.js';
+import {drawCemeteryStones,drawDungeonIcon} from './dungeon-icons.js';
 import {regionTrails,drawTrailCurve} from './trails.js';
 import {areaFor,areaSites,areaTile,branchGates} from './exploration.js';
 import {drawTownScenery} from './town-scenery.js';
@@ -98,7 +98,7 @@ function world(c,w,h,s,time){if(areaFor(s)){drawArea(c,w,h,s);return;}const p=RE
  for(let y=0;y<24;y++)for(let x=0;x<32;x++)groundTile(c,s.region,x,y,x*size,y*size,size);
  drawTrails(c,s.region,size);
  for(const t of TOWNS.filter(t=>t.region===s.region)){c.save();if(s.cities?.[t.id]?.destroyed)c.filter='grayscale(1) brightness(.4)';settlementIcon(c,t,(t.x+.5)*size,(t.y+.5)*size,size*2);c.restore();label(c,(s.cities?.[t.id]?.destroyed?'Ruins of ':'')+t.name,(t.x+.5)*size,(t.y+1.6)*size,Math.max(10,size*.42));}
- for(const d of DUNGEONS.filter(d=>d.region===s.region)){const x=(d.x+.5)*size,y=(d.y+.5)*size;if(d.id==='tithe-vault'&&vault.complete&&vault.naturalWidth){c.drawImage(vault,x-size*.8,y-size,size*1.6,size*1.6);label(c,d.name,x,y+size*1.1,Math.max(10,size*.4));continue;}drawDungeonIcon(c,{...d,index:DUNGEONS.indexOf(d)},x,y,size,s.relics.includes(d.id));label(c,d.name,x,y+size*1.1,Math.max(10,size*.4));}
+ for(const d of DUNGEONS.filter(d=>d.region===s.region)){const x=(d.x+.5)*size,y=(d.y+.5)*size;if(d.id==='tithe-vault'&&vault.complete&&vault.naturalWidth){c.drawImage(vault,x-size*.8,y-size,size*1.6,size*1.6);drawCemeteryStones(c,x,y+size*.3,size);label(c,d.name,x,y+size*1.1,Math.max(10,size*.4));continue;}drawDungeonIcon(c,{...d,index:DUNGEONS.indexOf(d)},x,y,size,s.relics.includes(d.id));label(c,d.name,x,y+size*1.1,Math.max(10,size*.4));}
  for(const site of [...WILD_SITES.filter(p=>p.region===s.region&&(p.kind!=='gate'||p.x!==1)),...branchGates(s.region)])drawWildSite(c,site,(site.x+.5)*size,(site.y+.5)*size,size);
  const px=(s.x+.5)*size,py=(s.y+.5)*size;drawAdventurer(c,px,py,size*1.9);c.restore();
  label(c,'N',w-33,35,15,'#d1b57c');c.strokeStyle='#d1b57c';c.beginPath();c.moveTo(w-33,42);c.lineTo(w-33,66);c.stroke();path(c,[[w-33,39],[w-38,49],[w-28,49]],'#d1b57c');
@@ -193,7 +193,7 @@ function battle(c,w,h,s,time,fx,reduced){
  for(let row=0;row<11;row++)for(let col=0;col<15;col++){
   const gx=originX+col,gy=originY+row,t=tile(gx,gy),x=ox+col*size,y=oy+row*size;
   if(inDungeon){c.fillStyle=t==='wall'?DUNGEON_WALLS[s.dungeon.index].map:DUNGEON_WALLS[s.dungeon.index].floor;c.fillRect(x,y,size,size);c.strokeStyle=t==='wall'?'#82907c55':'#a2ac7b19';c.strokeRect(x+1,y+1,size-2,size-2);if(t==='stairs')label(c,'STAIRS',x+size/2,y+size*.6,Math.max(7,size*.18),'#d7bf83');}
-  else{groundTile(c,s.region,gx,gy,x,y,size);const town=TOWNS.find(p=>p.region===s.region&&p.x===gx&&p.y===gy);if(town)settlementIcon(c,town,x+size/2,y+size/2,size*1.3);const ruin=DUNGEONS.find(p=>p.region===s.region&&p.x===gx&&p.y===gy);if(ruin){if(ruin.id==='tithe-vault'&&vault.complete&&vault.naturalWidth)c.drawImage(vault,x,y,size,size);else tileArt(c,6,x,y,size);}}
+  else{groundTile(c,s.region,gx,gy,x,y,size);const town=TOWNS.find(p=>p.region===s.region&&p.x===gx&&p.y===gy);if(town)settlementIcon(c,town,x+size/2,y+size/2,size*1.3);const ruin=DUNGEONS.find(p=>p.region===s.region&&p.x===gx&&p.y===gy);if(ruin){if(ruin.id==='tithe-vault'&&vault.complete&&vault.naturalWidth){c.drawImage(vault,x,y,size,size);drawCemeteryStones(c,x+size/2,y+size*.7,size*.65);}else tileArt(c,6,x,y,size);}}
   c.strokeStyle='#06150b18';c.strokeRect(x,y,size,size);
  }
  const heroX=ox+7.5*size,heroY=oy+5.5*size,enemyX=ox+(ex-originX+.5)*size,enemyY=oy+(ey-originY+.5)*size;
