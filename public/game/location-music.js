@@ -1,3 +1,4 @@
+import {areaFor} from './exploration.js';
 import {REGIONS,TOWNS,DUNGEONS} from './content.js';
 // Original short motifs; each location gets its own contour, harmony and pauses.
 const motifs=[[0,2,4,2,5,4,1,0],[4,3,1,2,0,2,3,1],[0,4,3,5,2,1,4,0],[2,1,0,3,4,6,5,2],[0,1,3,2,4,2,5,3],[4,2,0,1,3,5,2,0]];
@@ -8,7 +9,7 @@ export const LOCATION_THEMES=Object.freeze(Object.fromEntries([
  ...DUNGEONS.map((d,i)=>['dungeon:'+i,compose(i,'dungeon')]),
  ['dungeon:elf-village',compose(10,'dungeon')],['dungeon:cell',compose(8,'dungeon')],['dungeon:sewer',compose(9,'dungeon')]
 ]));
-export function musicScene(s,panel){if(panel==='casino')return 'casino';if(!s)return 'title';if(s.mode==='battle')return 'battle';if(s.mode==='ending')return 'victory';if(s.mode==='dungeon')return 'dungeon:'+(s.dungeon?.site||s.dungeon?.royal||s.dungeon?.index||0);if(s.mode==='town')return s.location==='bellwether'?'title':'town:'+s.location;return 'land:'+s.region;}
+export function musicScene(s,panel){if(panel==='casino')return 'casino';if(!s)return 'title';if(s.mode==='battle')return 'battle';if(s.mode==='ending')return 'victory';if(s.mode==='dungeon')return 'dungeon:'+(s.dungeon?.site||s.dungeon?.royal||s.dungeon?.index||0);if(s.mode==='town')return s.location==='bellwether'?'title':'town:'+s.location;const area=areaFor(s);if(area?['planet-0','wild-2','wild-3','wild-4','wild-8'].includes(area.id):s.region===1)return 'desert';return 'land:'+s.region;}
 
 
 // Sixteen evolving phrases, rather than a four-bar tune. No recorded audio assets.
