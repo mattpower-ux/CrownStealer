@@ -95,3 +95,5 @@ dialog[data-panel="inn"]{width:min(1100px,94vw)}
 .geared-avatar .avatar-base{position:absolute;display:block;background-image:url('/assets/adventurer-identities.webp');background-size:300% 100%;background-repeat:no-repeat}
 
 .journal-illustration{margin:18px 0 24px}.journal-illustration img{display:block;width:100%;max-height:430px;object-fit:contain;border-radius:8px}.journal-illustration figcaption{font-size:15px;color:#d8bd7c;text-align:center;margin-top:8px}
+
+.gem-art{object-fit:contain}.loot-card>.gem-art{width:100%;height:auto;max-height:220px;filter:drop-shadow(0 0 16px #edce7133)}
