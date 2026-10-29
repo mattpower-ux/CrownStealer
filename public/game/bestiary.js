@@ -1,6 +1,6 @@
 // Original Bar the Gates species. Reference organization: RPG MO monster habitat/stat tables.
 export const DUNGEON_LEVELS=[1,2,4,5,7,8,10,11];
-export const TRAITS={swift:'Quick-footed: harder to hit',brute:'Brute: greater health and striking power',armored:'Armored: physical damage is reduced',spectral:'Spectral: vulnerable to ember magic'};
+export const TRAITS={swift:'Quick-footed: harder to hit',brute:'Brute: greater health and striking power',armored:'Armored: physical damage is reduced',spectral:'Spectral: vulnerable to steady pressure'};
 const definitions=[
   {
     "id": "tithe-rat",
@@ -824,5 +824,5 @@ const definitions=[
 // Ordinary foes use 75% of a same-level adventurer's baseline health and strike.
 // Baseline: 80 HP (+14/level), equipped starter strike averages 10 + 2*level.
 export function monsterStats(species,level){const kind=species.kind;return {hp:Math.round((80+14*(level-1))*.75*(kind==='brute'?1.1:1)),attack:Math.round((10+level*2)*.75),armor:kind==='armored'?2+Math.floor(level*.4):Math.floor(level*.12),gold:level,xp:14+level*4};}
-export const ENEMIES=definitions.map(m=>({...m,...monsterStats(m,m.level),weakness:m.kind==='spectral'?'ember magic':m.kind==='brute'?'guard then counter':m.kind==='armored'?'steady pressure':'quick strikes'}));
+export const ENEMIES=definitions.map(m=>({...m,...monsterStats(m,m.level),weakness:m.kind==='spectral'?'steady pressure':m.kind==='brute'?'guard then counter':m.kind==='armored'?'steady pressure':'quick strikes'}));
 export const MONSTER_BY_ID=Object.fromEntries(ENEMIES.map(m=>[m.id,m]));

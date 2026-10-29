@@ -11,6 +11,6 @@ export function forestMap(floor=0){const m=Array.from({length:15},()=>Array(15).
 export const GROVE_ENEMIES=[
  ['grove-goblin','Grove Goblin',2,'swift',0],['goblin-looter','Goblin Relic Looter',3,'brute',0],['goblin-wardbreaker','Goblin Wardbreaker',4,'armored',0],
  ['giant-grove-spider','Giant Grove Spider',2,'swift',1],['silverweb-spider','Silverweb Spider',3,'swift',1],['elder-webmother','Elder Webmother',5,'brute',1]
-].map(([id,name,level,kind,index])=>({id,name,level,kind,weakness:kind==='swift'?'quick strikes':kind==='armored'?'ember magic':'steady pressure',art:{sheet:'monsters-grove',index}}));
+].map(([id,name,level,kind,index])=>({id,name,level,kind,weakness:kind==='swift'?'quick strikes':kind==='armored'?'steady pressure':'steady pressure',art:{sheet:'monsters-grove',index}}));
 
 export function mountainTile(region,x,y){return [[5,3],[25,3],[25,21]].some(([cx,cy],i)=>{cx+=(region%2)*(i===1?-2:1);return Math.abs(x-cx)+Math.abs(y-cy)<=2;});}
