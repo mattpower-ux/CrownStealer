@@ -5,7 +5,7 @@ import {secretAlcove,secretMap} from './secret-alcoves.js';
 import {HOUR_MS,DAY_MS,worldTimeMs,prepareClock,expireBuffs,advanceClock,setTimedBuff,wildernessChance,nightEnemy} from './world-clock.js';
 import {CHARACTER_FACES} from './character-faces.js';
 import {gossipFor} from './gossip.js';
-import {sellPrice} from './treasure.js';
+import {sellPrice,migrateRangedGear} from './treasure.js';
 import {dungeonFloors} from './dungeon-depths.js';
 import {AREAS,areaFor,areaSites,branchGates,shipMap,expeditionName,explorationAction} from './exploration.js';
 import {cityOf,cityTick,cityAction,validateCities} from './city-rule.js';
@@ -92,7 +92,7 @@ export function act(input,action,events=[],previewRules={}){
  return s;
 }
 function actInner(input,action,events=[]){
- const s=structuredClone(input);prepareWands(s);const a={...(action||{})};if(a.type==='useItem'&&SPELL_ITEMS[a.id]?.kind==='wand')a.id=s.bag.find(id=>id.startsWith(a.id+'~'))||a.id;prepareClock(s);expireBuffs(s);if(a.type==='clockTick'){advanceClock(s,a.elapsedMs);return s;}
+ const s=structuredClone(input);migrateRangedGear(s);prepareWands(s);const a={...(action||{})};if(a.type==='useItem'&&SPELL_ITEMS[a.id]?.kind==='wand')a.id=s.bag.find(id=>id.startsWith(a.id+'~'))||a.id;prepareClock(s);expireBuffs(s);if(a.type==='clockTick'){advanceClock(s,a.elapsedMs);return s;}
  if(gagActive(s,'helium')&&(['talk','gossipBegin','gossipNext','gossipGuardPay','payGovernor','buy','buyItem','sellItem','rest','pardon','quest','gamble','buyCureAll'].includes(a.type)||a.type?.startsWith('city'))){note(s,HELIUM_REFUSAL);return s;}
  if(a.type==='acknowledgeGag'){delete s.flags.gagReveal;return s;}
  if(a.type==='leaveTravelMerchant'){delete s.flags.travelMerchant;return s;}
@@ -220,7 +220,7 @@ export function saveGame(s){return JSON.stringify({...s,savedAt:Date.now()});}
 export function loadGame(json){
  const s=JSON.parse(json);if(!s||s.version!==1||typeof s.name!=='string'||s.name.length>24)throw Error('This is not a valid Bar the Gates save.');
  if(s.flags?.royalEntranceSeen!==undefined&&typeof s.flags.royalEntranceSeen!=='boolean')throw Error('Invalid royal entrance progress.');
- validateSpellState(s);prepareWands(s);s.gender??='him';if(!CHARACTER_FACES.some(f=>f.id===s.gender))throw Error('Invalid character gender / face.');
+ migrateRangedGear(s);validateSpellState(s);prepareWands(s);s.gender??='him';if(!CHARACTER_FACES.some(f=>f.id===s.gender))throw Error('Invalid character gender / face.');
  validateCities(s);
  if(s.worldTimeMs!==undefined&&(!Number.isSafeInteger(s.worldTimeMs)||s.worldTimeMs<0||s.worldTimeMs>1e15))throw Error('Invalid world clock.');if(s.buffExpiry!==undefined&&(!s.buffExpiry||Array.isArray(s.buffExpiry)||typeof s.buffExpiry!=='object'||Object.entries(s.buffExpiry).some(([key,value])=>!['strength','invisibility','meal','pigFace','tiny','helium'].includes(key)||!Number.isSafeInteger(value)||value<0||value>1e15)))throw Error('Invalid timed effects.');
  s.meals??=Math.min(999,Math.max(0,Math.floor(s.food||0)));delete s.food;

@@ -50,8 +50,8 @@ export const gearPower=s=>equippedAccessories(s).reduce((n,i)=>n+(i.power||0),0)
 
 // Planet-specific discoveries: one weapon, one meal and one suit per planet.
 for(let planet=0;planet<3;planet++)for(let slot=0;slot<3;slot++){
- const id=`alien-${planet}-${slot}`,name=[['Prism Sabre','Sunfruit Ration','Glassweave Suit'],['Spore Launcher','Singing Truffle','Mycelial Mantle'],['Void Pike','Frostberry Nectar','Aurora Raiment']][planet][slot];
- TREASURE_ITEMS[id]={id,name,unique:true,alien:true,kind:slot===0?'weapon':slot===1?'potion':'armor',shape:slot===0?['sword','crossbow','spear'][planet]:slot===1?'food':'armor',rarity:'epic',tier:3,color:['#ffd77e','#a7e49e','#b0b6ff'][planet],value:600+planet*200,damage:[28+planet*10,42+planet*12],toHit:8+planet,element:['fire','frost','frost'][planet],elementDamage:8+planet*4,protection:15+planet*5,rank:8+planet,effect:'strength',duration:12,power:18+planet*6,description:slot===0?'Alien weapon with an elemental energy edge.':slot===1?'Alien food: adds '+(18+planet*6)+' damage for 60 game minutes.':'Alien clothing that absorbs '+(15+planet*5)+' damage.'};
+ const id=`alien-${planet}-${slot}`,name=[['Prism Sabre','Sunfruit Ration','Glassweave Suit'],['Spore Mace','Singing Truffle','Mycelial Mantle'],['Void Pike','Frostberry Nectar','Aurora Raiment']][planet][slot];
+ TREASURE_ITEMS[id]={id,name,unique:true,alien:true,kind:slot===0?'weapon':slot===1?'potion':'armor',shape:slot===0?['sword','mace','spear'][planet]:slot===1?'food':'armor',rarity:'epic',tier:3,color:['#ffd77e','#a7e49e','#b0b6ff'][planet],value:600+planet*200,damage:[28+planet*10,42+planet*12],toHit:8+planet,element:['fire','frost','frost'][planet],elementDamage:8+planet*4,protection:15+planet*5,rank:8+planet,effect:'strength',duration:12,power:18+planet*6,description:slot===0?'Alien weapon with an elemental energy edge.':slot===1?'Alien food: adds '+(18+planet*6)+' damage for 60 game minutes.':'Alien clothing that absorbs '+(15+planet*5)+' damage.'};
 }
 
 Object.assign(TREASURE_ITEMS,JUNK_ITEMS);
@@ -60,3 +60,8 @@ Object.assign(TREASURE_ITEMS,JUNK_ITEMS);
 for(const item of Object.values(TREASURE_ITEMS))if(item.kind==='weapon'&&item.family==='wand'){
  item.kind='wand';item.spellItem=true;item.spell=item.stormDamage?'lightning-strike':item.element==='frost'?'frost-ray':item.element==='fire'?'fireball':'lightning-strike';item.spellLevel=[3,8,15][item.tier-1];item.maxCharges=5+item.tier*2+RARITIES.indexOf(item.rarity);item.description='Any character level. Spell level '+item.spellLevel+'. '+item.maxCharges+' charges when new; cannot be recharged. '+({fireball:'Deals 20–30 fire damage.','frost-ray':'Deals 10–18 frost damage and prevents the next enemy attack.','lightning-strike':'Deals 5–10 damage per wand spell level.'}[item.spell]);SPELL_ITEMS[item.id]=item;
 }
+
+// Retire ranged gear until ranged combat exists. Preserve older saves with melee replacements.
+const retiredRanged=new Map();
+for(const [id,item]of Object.entries(TREASURE_ITEMS))if(['bow','crossbow'].includes(item.family)){const replacement=id.startsWith('elven-')?id.replace('-bow','-sword'):id.replace('-crossbow-','-axe-').replace('-bow-','-spear-');if(!TREASURE_ITEMS[replacement])throw Error('Missing melee replacement for '+id);retiredRanged.set(id,replacement);delete TREASURE_ITEMS[id];}
+export function migrateRangedGear(s){for(const key of ['bag','pendingLoot'])if(Array.isArray(s[key]))s[key]=s[key].map(id=>retiredRanged.get(id)||id);if(retiredRanged.has(s.equipped))s.equipped=retiredRanged.get(s.equipped);return s;}
