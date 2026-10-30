@@ -41,7 +41,7 @@ export function castSpellItem(s,id,{random,note,events,enemyTurn,victory,resetAt
  else if(['vaporize','incinerate'].includes(item.spell))amount=random()<Math.max(.05,.95-Math.max(0,s.enemy.level-charges)*.1)?s.enemy.hp:10;
  else if(def.damage){amount=(def.damage[0]+Math.floor(random()*(def.damage[1]-def.damage[0]+1)))*(def.scales?power:1);if(['frost-ray','stun-ray'].includes(item.spell))s.enemy.frozen=1;}
  if(amount&&s.enemy&&!def.utility){s.enemy.hp-=amount;note(s,def.name+' deals '+amount+' damage.');}
- events.push({kind:def.utility?'heal':'magic',target:def.utility?'hero':'enemy',amount,sound:'magic',hpAfter:def.utility?s.hp:undefined});
+ events.push({kind:def.utility?'heal':'magic',target:def.utility?'hero':'enemy',amount,sound:item.spell==='fireball'?'fire-whoosh':/lightning|stun-ray/.test(item.spell)?'lightning-crackle':'magic',spell:item.spell,hpAfter:def.utility?s.hp:undefined});
  if(s.enemy?.hp<=0){events.push({kind:'victory',target:'enemy',amount:0,sound:'victory'});victory(s);}else if(s.mode==='battle')enemyTurn(s,false,events);return true;}
 
 export function randomSpellDrop(level,roll,choice){if(roll>=.08)return null;const tier=Math.min(3,Math.max(1,Math.ceil(level/6))),pool=Object.values(SPELL_ITEMS).filter(i=>!i.alien).filter(i=>i.kind==='scroll'?i.minLevel<=Math.max(3,level):i.tier===tier&&(roll<.0005?i.rarity==='legendary':i.rarity!=='legendary'));return pool[Math.min(pool.length-1,Math.floor(choice*pool.length))]?.id||null;}

@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {casinoAction} from '../public/game/casino.js';
+const state=(hand,deck)=>({gold:90,flags:{},casino:{game:'blackjack',bet:10,active:true,hand,dealer:[8,7],deck,message:'',town:'mothbridge'}});
+test('double down pays four original wagers on 21 and stakes two on loss',()=>{let s=state([3,4],[8]);casinoAction(s,{type:'casinoDouble'},()=>.5,()=>{});assert.equal(s.casino.payout,40);assert.equal(s.gold,120);assert.equal(s.casino.profit,20);s=state([8,7],[9]);casinoAction(s,{type:'casinoDouble'},()=>.5,()=>{});assert.equal(s.gold,80);assert.equal(s.casino.profit,-20);});
+test('double down is unavailable after another card or without its extra stake',()=>{for(const [cards,gold]of [[[2,3,4],90],[[2,3],0]]){const s=state(cards,[7]);s.gold=gold;casinoAction(s,{type:'casinoDouble'},()=>.5,()=>{});assert.equal(s.gold,gold);assert.equal(s.casino.active,true);}});

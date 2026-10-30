@@ -1,4 +1,4 @@
-export const HOUR_MS=3600000,DAY_MS=24*HOUR_MS,TIME_SCALE=24;
+export const HOUR_MS=3600000,DAY_MS=24*HOUR_MS,TIME_SCALE=48;
 export const worldTimeMs=s=>s.worldTimeMs??Math.floor((s.turns||0)*DAY_MS/240);
 export const gameDay=s=>Math.floor(worldTimeMs(s)/DAY_MS);
 export const isNight=s=>{const hour=Math.floor(worldTimeMs(s)%DAY_MS/HOUR_MS);return hour>=20||hour<6;};
@@ -10,3 +10,4 @@ export function advanceClock(s,realMs){if(!Number.isFinite(realMs)||realMs<0||re
 export function setTimedBuff(s,effect,durationMinutes){prepareClock(s);s.buffExpiry[effect]=s.worldTimeMs+durationMinutes*60000;}
 export function buffTimeLeft(s,effect){return Math.max(0,Math.ceil(((s.buffExpiry?.[effect]||0)-worldTimeMs(s))/60000));}
 export function nightEnemy(s,enemy){if(s.mode!=='world'||!isNight(s)||enemy.guard)return enemy;return {...enemy,hp:Math.ceil(enemy.hp*1.25),maxHp:Math.ceil(enemy.maxHp*1.25),attack:Math.ceil(enemy.attack*1.25),armor:Math.ceil((enemy.armor||0)*1.25),nightEmpowered:true};}
+

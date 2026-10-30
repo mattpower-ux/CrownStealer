@@ -10,7 +10,7 @@ export function pokerResult(cards){const rs=cards.map(rank).sort((a,b)=>a-b),gro
 function shuffled(random){const deck=Array.from({length:52},(_,i)=>i);for(let i=51;i>0;i--){const j=Math.floor(random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}return deck;}
 export function casinoAction(s,a,random,note){
  let r=s.casino;
- const finish=(mult,text)=>{const payout=Math.floor(r.bet*mult);s.gold+=payout;r.payout=payout;r.profit=payout-r.bet;r.active=false;r.won=payout>r.bet;r.resultId=(s.flags.casinoResults||0)+1;s.flags.casinoResults=r.resultId;r.message=`${text} ${payout?'Returned '+payout+' gold.':'Your wager is lost.'}`;note(r.message);};
+ const finish=(mult,text)=>{const payout=Math.floor(r.bet*mult);s.gold+=payout;r.payout=payout;r.profit=payout-(r.stake||r.bet);r.active=false;r.won=payout>(r.stake||r.bet);r.resultId=(s.flags.casinoResults||0)+1;s.flags.casinoResults=r.resultId;r.message=`${text} ${payout?'Returned '+payout+' gold.':'Your wager is lost.'}`;note(r.message);};
  if(a.type==='gamble'){
   if(r?.active){note('Finish your current game before placing another wager.');return;}
   const bet=Number(a.bet),games=['blackjack','poker','roulette','tiddlywinks'];
@@ -25,6 +25,7 @@ export function casinoAction(s,a,random,note){
  if(!r?.active)return;
  if(r.game==='roulette'&&a.type==='casinoRouletteReveal'&&r.spinning){const n=r.number,choice=r.choice,color=n===0?'green':RED.has(n)?'red':'black',straight=/^\d+$/.test(choice),win=straight?Number(choice)===n:n!==0&&(choice===color||choice===(n%2?'odd':'even'));r.spinning=false;finish(win?(straight?36:2):0,`The wheel lands on ${n} ${color}.`);return;}
  if(r.game==='blackjack'){
+  if(a.type==='casinoDouble'){if(r.hand.length!==2||r.doubled||s.gold<r.bet){note('Double down requires your first two cards and another wager in your purse.');return;}s.gold-=r.bet;r.stake=r.bet*2;r.doubled=true;r.hand.push(r.deck.shift());while(blackjackTotal(r.dealer)<17)r.dealer.push(r.deck.shift());const yours=blackjackTotal(r.hand),dealer=blackjackTotal(r.dealer);finish(yours>21?0:yours===21?4:yours===dealer?2:dealer>21||yours>dealer?4:0,`Double down: you ${yours}, dealer ${dealer}.`);return;}
   if(a.type==='casinoHit'){r.hand.push(r.deck.shift());if(blackjackTotal(r.hand)>21)finish(0,'You bust with '+blackjackTotal(r.hand)+'.');else r.message='Your total is '+blackjackTotal(r.hand)+'. Hit or stand.';}
   if(a.type==='casinoStand'){while(blackjackTotal(r.dealer)<17)r.dealer.push(r.deck.shift());const yours=blackjackTotal(r.hand),dealer=blackjackTotal(r.dealer);finish(dealer>21||yours>dealer?(yours===21?3:2):yours===dealer?1:0,`You: ${yours}. Dealer: ${dealer}. ${yours===dealer?'Push.':dealer>21?'Dealer busts.':''}`);}
  }
@@ -38,7 +39,7 @@ export function casinoAction(s,a,random,note){
   if(r.shots===3)finish(r.hits>=2?3:0,`${r.hits}/3 winks in the cup.`);else{r.message=`${hit?'In the cup!':'Miss.'} Landed at ${landing}. ${r.hits} hits, ${3-r.shots} shots left.`;r.wind=Math.floor(random()*17)-8;}
  }
 }
-export function validCasino(r,s){if(r==null)return true;if(!r||!['blackjack','poker','roulette','tiddlywinks'].includes(r.game)||typeof r.active!=='boolean'||!Number.isInteger(r.bet)||r.bet<1||r.bet>100||typeof r.message!=='string'||r.message.length>1000)return false;if(r.active&&(s.mode!=='town'||r.town!==s.location))return false;
+export function validCasino(r,s){if(r==null)return true;if(!r||!['blackjack','poker','roulette','tiddlywinks'].includes(r.game)||typeof r.active!=='boolean'||!Number.isInteger(r.bet)||r.bet<1||r.bet>100||typeof r.message!=='string'||r.message.length>1000)return false;if(r.stake!==undefined&&(r.doubled!==true||r.stake!==r.bet*2||r.active))return false;if(r.active&&(s.mode!=='town'||r.town!==s.location))return false;
  if(['blackjack','poker'].includes(r.game)){if(!Array.isArray(r.deck)||!Array.isArray(r.hand)||r.hand.length<2||r.hand.length>22)return false;const all=[...r.deck,...r.hand,...(r.dealer||[])];if(all.length>52||new Set(all).size!==all.length||all.some(c=>!Number.isInteger(c)||c<0||c>51))return false;if(r.game==='blackjack'&&(!Array.isArray(r.dealer)||r.dealer.length<2||r.dealer.length>22))return false;if(r.game==='poker'&&(r.hand.length!==5||!Array.isArray(r.held)||r.held.length!==5||r.held.some(h=>typeof h!=='boolean')))return false;}
  if(r.game==='roulette'&&(!Number.isInteger(r.number)||r.number<0||r.number>36||!['red','black','odd','even',...Array.from({length:37},(_,i)=>String(i))].includes(r.choice)||r.active&&r.spinning!==true))return false;
  if(r.game==='tiddlywinks'&&(!Number.isInteger(r.shots)||r.shots<0||r.shots>3||!Number.isInteger(r.hits)||r.hits<0||r.hits>r.shots||!Number.isInteger(r.target)||r.target<40||r.target>80||!Number.isInteger(r.wind)||Math.abs(r.wind)>8))return false;return true;}
