@@ -6,7 +6,8 @@ import {GROVE_ENEMIES} from './wild-sites.js';
 import {ENEMIES,DUNGEON_LEVELS,monsterStats} from './bestiary.js';
 import {DUNGEONS} from './content.js';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-export const wildernessTarget=s=>clamp(1+s.region*2+Math.floor((s.level-1)*.5),1,24);
+export const REGION_MIN_LEVELS=[1,8,16,26],REGION_MAX_TARGETS=[24,32,44,58],REGION_DUNGEON_BONUS=[0,4,9,16];
+export const wildernessTarget=s=>{const region=clamp(s.region||0,0,3);return clamp(REGION_MIN_LEVELS[region]+Math.floor((s.level-1)*.5),REGION_MIN_LEVELS[region],REGION_MAX_TARGETS[region]);};
 export function encounterPool(s){if(s.dungeon?.site==='firedrak')return [{id:'firedrak-imp',name:'Firedrak Imp',level:5,kind:'swift',element:'fire',weakness:'quick strikes'},{id:'firedrak-elemental',name:'Fire Elemental',level:8,kind:'brute',element:'fire',weakness:'steady pressure'}];if(s.mode==='dungeon'&&planetaryDungeon(s.dungeon))return planetaryPool(s.dungeon,ENEMIES);return s.mode==='dungeon'&&s.dungeon.site==='elf-village'?GROVE_ENEMIES:s.mode==='dungeon'?depthPool(s,ENEMIES.filter(m=>m.dungeon===s.dungeon.index||m.legacyDungeon===s.dungeon.index),dungeonFloors(s.dungeon)):ENEMIES.filter(m=>m.wild&&m.region===s.region);}
 function baseEncounter(s,roll,boss=false,guard=false){
  if(boss&&s.dungeon?.site==='firedrak')return {speciesId:'drake-defiler',name:'Drake the Defiler',level:25,hp:650,maxHp:650,attack:60,armor:18,gold:300,xp:500,kind:'caster',element:'fire',weakness:'steady pressure',boss:true,firstContact:true};
@@ -22,7 +23,8 @@ function baseEncounter(s,roll,boss=false,guard=false){
  const weights=pool.map(m=>(inDungeon&&!s.dungeon.site&&!planetaryDungeon(s.dungeon)?depthWeight(s,m,dungeonFloors(s.dungeon)):inDungeon?1:1/(1+Math.abs(m.level-target))**2)*(m.id===last&&pool.length>1?0:1));
  let ticket=clamp(roll,0,.999999)*weights.reduce((a,b)=>a+b,0),m=pool.at(-1);for(let i=0;i<pool.length;i++){ticket-=weights[i];if(ticket<0){m=pool[i];break;}}
  // Depth has an absolute difficulty; revisiting does not secretly scale a dungeon to the hero.
- const level=inDungeon?m.level+(s.dungeon.index===1&&!s.dungeon.site?s.dungeon.floor:s.dungeon.floor*2):clamp(Math.round(m.level*.35+target*.65),1,26),stats=monsterStats(m,level);
+ const region=clamp(s.region||0,0,3),regionalBonus=inDungeon&&!planetaryDungeon(s.dungeon)?REGION_DUNGEON_BONUS[region]:0;
+ const level=inDungeon?m.level+regionalBonus+(s.dungeon.index===1&&!s.dungeon.site?s.dungeon.floor:s.dungeon.floor*2):clamp(Math.round(m.level*.35+target*.65),REGION_MIN_LEVELS[region],REGION_MAX_TARGETS[region]+2),stats=monsterStats(m,level);
  return {...stats,gold:level+Math.floor(clamp((roll*7919)%1,0,.999999)*(2*level+3)),speciesId:m.id,name:m.name,level,maxHp:stats.hp,kind:m.kind,element:m.element,attackType:m.attackType,undead:!!m.undead,weakness:m.weakness,boss:false,guard:false,firstContact:true};
 }
 

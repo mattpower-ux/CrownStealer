@@ -50,6 +50,9 @@ function campaign(outlaw) {
       else if (state.enemy.weakness === 'guard then counter' && !state.flags.guarded) step({type:'guard'});
       else step({type:'attack'});
     }
+    // Stronger distant lands require recovering before the next encounter;
+    // the legacy 45-HP emergency threshold is unsafe against their larger hits.
+    while(state.potions&&state.hp<state.maxHp-45)step({type:'heal'});
   }
   function walkTo(point) {
     assert.equal(state.mode, 'world');
