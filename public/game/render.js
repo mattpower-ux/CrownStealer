@@ -141,7 +141,7 @@ function town(c,w,h,s,time){
   else if(place.art>=0){const bw=(place.bw||1)*size,bh=(place.bh||1)*size;buildingArt(c,place.art,place.bx*size,place.by*size,bw,bh);}
   else{c.save();c.filter='sepia(.7)';drawAdventurer(c,(place.x+.5)*size,(place.y-.25)*size,size*1.1);c.restore();}
   const xx=(place.x+.5)*size,yy=(place.y+.5)*size;c.strokeStyle='#f0cf87';c.lineWidth=2;c.beginPath();c.ellipse(xx,yy,size*.28,size*.13,0,0,Math.PI*2);c.stroke();
-  const signName=place.id==='court'?(s.location==='bellwether'?'Royal Palace':'Governor’s Palace'):place.id==='inn'&&s.cities?.[s.location]?'Your house · Giacomo':place.name;
+  const signName=place.id==='court'?(s.location==='bellwether'?'Royal Palace':'Governor\u2019s Palace'):place.id==='inn'&&s.cities?.[s.location]?'Your house · Giacomo':place.name;
   townSign(c,signName,xx,place.y*size-size*.08,size,s.region);
  }
  const pos=townPosition(s);drawAdventurer(c,(pos.x+.5)*size,(pos.y+.5)*size,size*1.25);c.restore();
