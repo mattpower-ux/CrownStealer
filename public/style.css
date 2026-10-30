@@ -174,3 +174,5 @@ dialog[data-panel="inventory"]{width:calc(100vw - 24px)!important;max-width:1400
 .paper-hero{inset:25% 20% 0}.gear-slot{height:23%}.gear-slot button{height:calc(100% - 17px);max-height:75px;width:auto;max-width:100%;margin:auto;aspect-ratio:1}
 
 .bag-cell.gear-upgrade{border:3px solid #ffd65a!important;box-shadow:inset 0 0 8px #f6c95455,0 0 5px #edbd4b66}.bag-cell.gear-upgrade[aria-pressed="true"]{outline:2px solid #fff3c2}
+
+.mount-item-art{display:block;width:100%;height:100%;min-height:45px;background-image:url(/assets/mounts.webp);background-size:400% 100%;background-repeat:no-repeat}.detail-icon .mount-item-art{height:55px}
