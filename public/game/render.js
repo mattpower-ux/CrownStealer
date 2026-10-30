@@ -1,3 +1,4 @@
+import {townSign} from './town-signs.js';
 let areaGroundCache=null;
 const townGrounds=new Image();townGrounds.src='/assets/town-grounds.webp';
 import {townPlaces} from './town.js';
@@ -126,7 +127,7 @@ function town(c,w,h,s,time){
  if(canopies.complete&&canopies.naturalWidth){const sw=canopies.width/2,sh=canopies.height/2;for(const [x,y] of [[1.2,1.3],[3.2,1.3],[8.5,1.3],[10.8,1.3],[1.2,4],[11.5,4],[1.2,7.2],[11.5,7.2],[1.2,10.3],[11.5,10.3]])c.drawImage(canopies,s.region%2*sw,Math.floor(s.region/2)*sh,sw,sh,(x-.35)*size,(y-.5)*size,.9*size,.9*size);}
  for(const place of townPlaces(s)){
   if(place.id==='gate'){c.fillStyle='#9a937c';c.fillRect(6*size,12*size,size,size);if(!(s.location==='salt-choir'&&drawSaltChoirIcon(c,'gate',5.65*size,11.45*size,size*1.7,size*1.45)))buildingArt(c,7,5.8*size,11.6*size,size*1.4,size*1.2);label(c,'TOWN GATE Â· EXIT',6.5*size,12.95*size,Math.max(9,size*.2),'#ffe1a0');continue;}
-  if(place.id==='court'&&s.location==='bellwether'&&settlements.complete&&settlements.naturalWidth){const sw=settlements.width/4,sh=settlements.height/3;c.save();c.shadowColor='#edcf76';c.shadowBlur=12;c.drawImage(settlements,sw,0,sw,sh,(place.bx-.6)*size,(place.by-1)*size,(place.bw+1.2)*size,(place.bh+1)*size);c.restore();label(c,'ROYAL PALACE',(place.bx+1)*size,(place.by+2)*size,Math.max(12,size*.25),'#ffe5a3');}
+  if(place.id==='court'&&s.location==='bellwether'&&settlements.complete&&settlements.naturalWidth){const sw=settlements.width/4,sh=settlements.height/3;c.save();c.shadowColor='#edcf76';c.shadowBlur=12;c.drawImage(settlements,sw,0,sw,sh,(place.bx-.6)*size,(place.by-1)*size,(place.bw+1.2)*size,(place.bh+1)*size);c.restore();}
   else if(regionalBuilding(c,s.region,place.id,place.bx*size,place.by*size,place.bw*size,place.bh*size)){}
   else if(s.region===2&&drawOceanBuilding(c,place.id,place.bx*size,place.by*size,place.bw*size,place.bh*size)){} 
   else if(place.id!=='talk'&&s.location==='salt-choir'&&drawSaltChoirIcon(c,place.id,place.bx*size,place.by*size,place.bw*size,place.bh*size)){}
@@ -140,11 +141,8 @@ function town(c,w,h,s,time){
   else if(place.art>=0){const bw=(place.bw||1)*size,bh=(place.bh||1)*size;buildingArt(c,place.art,place.bx*size,place.by*size,bw,bh);}
   else{c.save();c.filter='sepia(.7)';drawAdventurer(c,(place.x+.5)*size,(place.y-.25)*size,size*1.1);c.restore();}
   const xx=(place.x+.5)*size,yy=(place.y+.5)*size;c.strokeStyle='#f0cf87';c.lineWidth=2;c.beginPath();c.ellipse(xx,yy,size*.28,size*.13,0,0,Math.PI*2);c.stroke();
-  if(place.id==='casino'){
-   c.fillStyle='#12251feb';c.fillRect((place.bx-.35)*size,(place.y-.32)*size,2.9*size,.5*size);
-   label(c,'The Gilded Goose',(place.bx+1.1)*size,(place.y-.12)*size,Math.max(9,Math.min(14,size*.24)),'#ffe1a0');
-   label(c,'GAMBLING HOUSE',(place.bx+1.1)*size,(place.y+.1)*size,Math.max(8,Math.min(12,size*.19)),'#ffe1a0');
-  }else label(c,place.id==='inn'&&s.cities?.[s.location]?'Your house Â· Giacomo':place.name,xx,place.y*size-size*.08,Math.max(9,Math.min(14,size*.27)),'#fff0c6');
+  const signName=place.id==='court'?(s.location==='bellwether'?'Royal Palace':'Governor’s Palace'):place.id==='inn'&&s.cities?.[s.location]?'Your house · Giacomo':place.name;
+  townSign(c,signName,xx,place.y*size-size*.08,size,s.region);
  }
  const pos=townPosition(s);drawAdventurer(c,(pos.x+.5)*size,(pos.y+.5)*size,size*1.25);c.restore();
 }
