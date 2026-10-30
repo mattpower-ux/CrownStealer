@@ -1,0 +1,9 @@
+# Dragon and regional art update
+
+The four occupied regions now use separate painted ground surfaces and overlapping forest and mountain silhouettes. The renderer caches the composed 1280x960 terrain. Gameplay locations, road connections and collision tiles remain authoritative.
+
+New art generated using the built-in image generation tool: dragon greeting (friendly saddled green dragon licking the hero with dreadful breath), Firedrak sprites (imp, fire elemental, Drake the Defiler), and four region ground surfaces (meadow, desert, coastal limestone, snow). Prompts specified cartoon fantasy style, no UI text, and transparent isolated silhouettes for monsters. Source PNG masters remain in the Codex generated_images folder. Runtime derivatives are public/assets/dragon-greeting.webp, dragon-mount.webp, firedrak-monsters.webp and region-ground-rich.webp; all optimized WebP. The existing mount sheet was repacked into equal cells to avoid distorted portraits.
+
+Dragon gameplay: homeworld flight skips gate locks, while alien access requirements remain. Every third outdoor enemy turn invokes 100 fire support. Defeat captures the selected dragon; Firedrak Mountain at Cinder Dominion (27,17) has ten levels and a level-25 Drake boss. Waiting-dragon fights operate in a separate saved state; hero dungeon coordinates and HP are preserved. Outside attacks are eligible after twelve dungeon moves, with a 12% check per subsequent move until an attack occurs. The dragon has 350 HP; bite, fire breath and guard can be ordered. Fire breath has a three-round cycle.
+
+The map upgrade also includes public/assets/landmarks-rich.webp: a transparent 4x3 atlas of eight themed dungeon entrances, Firedrak, border gate, fountain and alien monument, generated with the built-in image tool and optimized as WebP.

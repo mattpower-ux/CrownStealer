@@ -1,7 +1,10 @@
+const illustratedLandmarks=typeof Image==='undefined'?null:new Image();if(illustratedLandmarks)illustratedLandmarks.src='/assets/landmarks-rich.webp';
+export function drawLandmark(c,index,x,y,size){if(!illustratedLandmarks?.complete||!illustratedLandmarks.naturalWidth)return false;const sw=illustratedLandmarks.width/4,sh=illustratedLandmarks.height/3;c.drawImage(illustratedLandmarks,index%4*sw,Math.floor(index/4)*sh,sw,sh,x-size*.95,y-size*1.35,size*1.9,size*1.9);return true;}
 // Small canvas illustrations share a 64-unit grid: no bitmap downloads or per-frame generation.
 export const DUNGEON_ICONS=['vault','bell-tower','tribunal','aqueduct','coral-shrine','rib-cave','clock-tomb','ash-palace'];
 export function dungeonIconKind(site){if(site.expedition){const parts=site.expedition.split('-');const area=Number(parts[1])||0,cave=Number(parts.at(-1))||0;return site.expedition.startsWith('planet-')?['alien-vault','crystal-cave','alien-tower'][(area+cave)%3]:['cave','barrow','ruined-tower','crypt'][(area+cave)%4];}return DUNGEON_ICONS[site.index]||DUNGEON_ICONS[['tithe-vault','widows-bell','brass-tribunal','ember-aqueduct','drowned-conservatory','leviathan-pump','clockwork-sepulchre','parliament-of-ash'].indexOf(site.id)]||'cave';}
 export function drawDungeonIcon(c,site,x,y,size,claimed=false){
+ const iconIndex=Number.isInteger(site.index)?site.index:['tithe-vault','widows-bell','brass-tribunal','ember-aqueduct','drowned-conservatory','leviathan-pump','clockwork-sepulchre','parliament-of-ash'].indexOf(site.id);if(!site.expedition&&iconIndex>=0&&iconIndex<8&&drawLandmark(c,iconIndex,x,y,size))return;
  const kind=dungeonIconKind(site),k=size*1.85/64;c.save();c.translate(x-32*k,y-43*k);c.scale(k,k);c.lineJoin='round';c.lineCap='round';c.lineWidth=1.5;
  const region=site.region??Math.floor((site.index||0)/2),stone=['#8c8a72','#a17a60','#7d9d9c','#8b91a0'][region]||'#909784',light=['#c0baa0','#d6aa7d','#b4d2c2','#c9d6dd'][region]||'#bac6b8',dark='#34433e',door='#14221f';
  const rect=(x,y,w,h,fill,stroke)=>{c.fillStyle=fill;c.fillRect(x,y,w,h);if(stroke){c.strokeStyle=stroke;c.strokeRect(x,y,w,h);}};

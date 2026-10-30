@@ -226,6 +226,7 @@ export class AudioDirector {
     const tone = (frequency, delay, length, amplitude = .14, end, type = 'triangle') =>
       this.tone(frequency, now + delay, length, type, amplitude*combatGain, 'effects', end);
     switch (name) {
+      case 'dragon-greep': tone(220,0,.16,.32,700,'sawtooth');tone(780,.14,.85,.32,1450,'sawtooth');tone(1500,.2,.7,.11,2400,'sine');tone(470,.95,.2,.22,160,'triangle');break;
       case 'launch': for(let i=0;i<12;i++)this.brush(now+i*.25,.65,.10+Math.sin(i/12*Math.PI)*.12,'effects',350+i*320);tone(55,0,3.6,.12,240,'sawtooth');break;
       case 'encounter': return this.playEncounter();
       case 'roulette': for(let i=0;i<42;i++)this.brush(now+Math.pow(i/41,1.5)*2.9,.025,.035,'effects',3200);break;

@@ -1,6 +1,7 @@
 export {gameDay} from './world-clock.js';
 export const DAY_STEPS=240;
 export const WILD_SITES=[
+ {id:'firedrak-mountain',kind:'firedrak',region:1,x:27,y:17,name:'Firedrak Mountain'},
  ...Array.from({length:4},(_,region)=>[...(region<4?[{id:`east-gate-${region}`,kind:"gate",region,x:30,y:12,target:(region+1)%4,name:"Eastern border gate"}]:[]),...(region>0?[{id:`west-gate-${region}`,kind:"gate",region,x:1,y:12,target:region-1,name:"Western border gate"}]:[])]).flat(),
  {id:'dragon-bones',kind:'dragon',region:0,x:28,y:19,name:'Ancient dragon bones'},
  {id:'wayside-fountain',kind:'fountain',region:0,x:14,y:9,name:'Wayside Fountain'},

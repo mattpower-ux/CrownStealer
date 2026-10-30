@@ -6,7 +6,7 @@ export function dungeonLadders(d,map){
 }
 
 export function ladderPrompt(s,map){
- const d=s?.dungeon;if(s?.mode!=='dungeon'||!d||d.ship||d.site)return null;
+ const d=s?.dungeon;if(s?.mode!=='dungeon'||!d||d.ship||d.site==='elf-village')return null;
  const ladder=dungeonLadders(d,map).find(l=>l.x===d.x&&l.y===d.y);
  return ladder?{...ladder,upAction:d.royal==='sewer'?'descend':'leave'}:null;
 }
