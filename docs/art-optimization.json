@@ -1,0 +1,574 @@
+[
+  {
+    "file": "adventurer-identities.webp",
+    "dimensions": [
+      1536,
+      512
+    ],
+    "before": 125036,
+    "after": 96864,
+    "rgb_rms": 3.26,
+    "alpha_preserved": true
+  },
+  {
+    "file": "biome-trees.webp",
+    "dimensions": [
+      512,
+      512
+    ],
+    "before": 134630,
+    "after": 117010,
+    "rgb_rms": 5.11,
+    "alpha_preserved": true
+  },
+  {
+    "file": "border-guards.webp",
+    "dimensions": [
+      1050,
+      700
+    ],
+    "before": 164068,
+    "after": 148106,
+    "rgb_rms": 3.41,
+    "alpha_preserved": true
+  },
+  {
+    "file": "buildings.webp",
+    "dimensions": [
+      1024,
+      512
+    ],
+    "before": 183524,
+    "after": 154492,
+    "rgb_rms": 4.64,
+    "alpha_preserved": true
+  },
+  {
+    "file": "cover-comic.webp",
+    "dimensions": [
+      1600,
+      1067
+    ],
+    "before": 311902,
+    "after": 272612,
+    "rgb_rms": 3.33,
+    "alpha_preserved": true
+  },
+  {
+    "file": "cover.webp",
+    "dimensions": [
+      1536,
+      1024
+    ],
+    "before": 335930,
+    "after": 234816,
+    "rgb_rms": 4.08,
+    "alpha_preserved": true
+  },
+  {
+    "file": "creatures.webp",
+    "dimensions": [
+      1024,
+      683
+    ],
+    "before": 350712,
+    "after": 300902,
+    "rgb_rms": 5.15,
+    "alpha_preserved": true
+  },
+  {
+    "file": "dealers-annoyed.webp",
+    "dimensions": [
+      1024,
+      768
+    ],
+    "before": 171110,
+    "after": 124222,
+    "rgb_rms": 4.3,
+    "alpha_preserved": true
+  },
+  {
+    "file": "dealers.webp",
+    "dimensions": [
+      1024,
+      768
+    ],
+    "before": 188350,
+    "after": 137138,
+    "rgb_rms": 4.5,
+    "alpha_preserved": true
+  },
+  {
+    "file": "dungeon-monsters.webp",
+    "dimensions": [
+      1448,
+      1086
+    ],
+    "before": 606982,
+    "after": 518984,
+    "rgb_rms": 4.37,
+    "alpha_preserved": true
+  },
+  {
+    "file": "elf-tree-fort.webp",
+    "dimensions": [
+      512,
+      512
+    ],
+    "before": 144886,
+    "after": 135786,
+    "rgb_rms": 4.49,
+    "alpha_preserved": true
+  },
+  {
+    "file": "ghost-dragon.webp",
+    "dimensions": [
+      640,
+      640
+    ],
+    "before": 164146,
+    "after": 153370,
+    "rgb_rms": 4.58,
+    "alpha_preserved": true
+  },
+  {
+    "file": "gossip-guard.webp",
+    "dimensions": [
+      900,
+      600
+    ],
+    "before": 109338,
+    "after": 94816,
+    "rgb_rms": 3.55,
+    "alpha_preserved": true
+  },
+  {
+    "file": "haghilda.webp",
+    "dimensions": [
+      585,
+      640
+    ],
+    "before": 153246,
+    "after": 119348,
+    "rgb_rms": 5.26,
+    "alpha_preserved": true
+  },
+  {
+    "file": "inn-room.webp",
+    "dimensions": [
+      960,
+      640
+    ],
+    "before": 122194,
+    "after": 103182,
+    "rgb_rms": 3.62,
+    "alpha_preserved": true
+  },
+  {
+    "file": "innkeepers.webp",
+    "dimensions": [
+      1920,
+      1080
+    ],
+    "before": 418374,
+    "after": 356354,
+    "rgb_rms": 3.71,
+    "alpha_preserved": true
+  },
+  {
+    "file": "leviathan-levity.webp",
+    "dimensions": [
+      640,
+      640
+    ],
+    "before": 138328,
+    "after": 121378,
+    "rgb_rms": 4.33,
+    "alpha_preserved": true
+  },
+  {
+    "file": "merchants.webp",
+    "dimensions": [
+      1024,
+      768
+    ],
+    "before": 169050,
+    "after": 157048,
+    "rgb_rms": 2.99,
+    "alpha_preserved": true
+  },
+  {
+    "file": "monsters-cinder.webp",
+    "dimensions": [
+      1448,
+      1086
+    ],
+    "before": 696022,
+    "after": 597420,
+    "rgb_rms": 4.74,
+    "alpha_preserved": true
+  },
+  {
+    "file": "monsters-depth.webp",
+    "dimensions": [
+      1536,
+      1152
+    ],
+    "before": 750506,
+    "after": 662872,
+    "rgb_rms": 5.1,
+    "alpha_preserved": true
+  },
+  {
+    "file": "monsters-hearth.webp",
+    "dimensions": [
+      1448,
+      1086
+    ],
+    "before": 539912,
+    "after": 444726,
+    "rgb_rms": 4.95,
+    "alpha_preserved": true
+  },
+  {
+    "file": "monsters-planets.webp",
+    "dimensions": [
+      1536,
+      768
+    ],
+    "before": 263238,
+    "after": 239074,
+    "rgb_rms": 3.8,
+    "alpha_preserved": true
+  },
+  {
+    "file": "monsters-star.webp",
+    "dimensions": [
+      1448,
+      1086
+    ],
+    "before": 672336,
+    "after": 587808,
+    "rgb_rms": 4.87,
+    "alpha_preserved": true
+  },
+  {
+    "file": "monsters-tide.webp",
+    "dimensions": [
+      1448,
+      1086
+    ],
+    "before": 745652,
+    "after": 657674,
+    "rgb_rms": 4.54,
+    "alpha_preserved": true
+  },
+  {
+    "file": "monsters-wild.webp",
+    "dimensions": [
+      1536,
+      768
+    ],
+    "before": 365212,
+    "after": 313918,
+    "rgb_rms": 4.3,
+    "alpha_preserved": true
+  },
+  {
+    "file": "mounts.webp",
+    "dimensions": [
+      1200,
+      400
+    ],
+    "before": 146594,
+    "after": 130052,
+    "rgb_rms": 4.12,
+    "alpha_preserved": true
+  },
+  {
+    "file": "mouse-adventurer.webp",
+    "dimensions": [
+      960,
+      640
+    ],
+    "before": 113232,
+    "after": 100350,
+    "rgb_rms": 3.45,
+    "alpha_preserved": true
+  },
+  {
+    "file": "palace-ash-market.webp",
+    "dimensions": [
+      1279,
+      720
+    ],
+    "before": 196796,
+    "after": 171634,
+    "rgb_rms": 3.76,
+    "alpha_preserved": true
+  },
+  {
+    "file": "palace-bellwether.webp",
+    "dimensions": [
+      1279,
+      720
+    ],
+    "before": 260496,
+    "after": 231162,
+    "rgb_rms": 4.18,
+    "alpha_preserved": true
+  },
+  {
+    "file": "palace-gallows-fair.webp",
+    "dimensions": [
+      1279,
+      720
+    ],
+    "before": 219348,
+    "after": 193968,
+    "rgb_rms": 3.65,
+    "alpha_preserved": true
+  },
+  {
+    "file": "palace-hinge-town.webp",
+    "dimensions": [
+      1280,
+      720
+    ],
+    "before": 242800,
+    "after": 216516,
+    "rgb_rms": 3.77,
+    "alpha_preserved": true
+  },
+  {
+    "file": "palace-iron-choir.webp",
+    "dimensions": [
+      1279,
+      720
+    ],
+    "before": 196020,
+    "after": 165620,
+    "rgb_rms": 3.83,
+    "alpha_preserved": true
+  },
+  {
+    "file": "palace-lantern-raft.webp",
+    "dimensions": [
+      1279,
+      720
+    ],
+    "before": 244284,
+    "after": 211554,
+    "rgb_rms": 4.11,
+    "alpha_preserved": true
+  },
+  {
+    "file": "palace-last-dawn.webp",
+    "dimensions": [
+      1279,
+      720
+    ],
+    "before": 216670,
+    "after": 192162,
+    "rgb_rms": 3.59,
+    "alpha_preserved": true
+  },
+  {
+    "file": "palace-mothbridge.webp",
+    "dimensions": [
+      1279,
+      720
+    ],
+    "before": 230626,
+    "after": 199368,
+    "rgb_rms": 3.99,
+    "alpha_preserved": true
+  },
+  {
+    "file": "palace-noonless-quay.webp",
+    "dimensions": [
+      1279,
+      720
+    ],
+    "before": 219004,
+    "after": 195606,
+    "rgb_rms": 3.57,
+    "alpha_preserved": true
+  },
+  {
+    "file": "palace-pearl-defiance.webp",
+    "dimensions": [
+      1279,
+      720
+    ],
+    "before": 235904,
+    "after": 204204,
+    "rgb_rms": 4.01,
+    "alpha_preserved": true
+  },
+  {
+    "file": "palace-redhaven.webp",
+    "dimensions": [
+      1279,
+      720
+    ],
+    "before": 166038,
+    "after": 141908,
+    "rgb_rms": 3.45,
+    "alpha_preserved": true
+  },
+  {
+    "file": "palace-salt-choir.webp",
+    "dimensions": [
+      1279,
+      720
+    ],
+    "before": 212384,
+    "after": 181090,
+    "rgb_rms": 3.99,
+    "alpha_preserved": true
+  },
+  {
+    "file": "pilgrim-rescue.webp",
+    "dimensions": [
+      960,
+      640
+    ],
+    "before": 145140,
+    "after": 124876,
+    "rgb_rms": 3.93,
+    "alpha_preserved": true
+  },
+  {
+    "file": "regional-buildings.webp",
+    "dimensions": [
+      1152,
+      768
+    ],
+    "before": 479304,
+    "after": 414070,
+    "rgb_rms": 5.69,
+    "alpha_preserved": true
+  },
+  {
+    "file": "royal-court.webp",
+    "dimensions": [
+      1200,
+      800
+    ],
+    "before": 228796,
+    "after": 185746,
+    "rgb_rms": 4.31,
+    "alpha_preserved": true
+  },
+  {
+    "file": "royal-doorway.webp",
+    "dimensions": [
+      1280,
+      720
+    ],
+    "before": 210910,
+    "after": 163984,
+    "rgb_rms": 4.29,
+    "alpha_preserved": true
+  },
+  {
+    "file": "royal-guards.webp",
+    "dimensions": [
+      1200,
+      800
+    ],
+    "before": 215192,
+    "after": 175592,
+    "rgb_rms": 4.14,
+    "alpha_preserved": true
+  },
+  {
+    "file": "royal-portraits.webp",
+    "dimensions": [
+      1024,
+      512
+    ],
+    "before": 159958,
+    "after": 129556,
+    "rgb_rms": 4.36,
+    "alpha_preserved": true
+  },
+  {
+    "file": "salt-choir-buildings.webp",
+    "dimensions": [
+      1536,
+      768
+    ],
+    "before": 408874,
+    "after": 355622,
+    "rgb_rms": 4.46,
+    "alpha_preserved": true
+  },
+  {
+    "file": "terrain-rich.webp",
+    "dimensions": [
+      1024,
+      512
+    ],
+    "before": 238006,
+    "after": 208742,
+    "rgb_rms": 4.84,
+    "alpha_preserved": true
+  },
+  {
+    "file": "terrain.webp",
+    "dimensions": [
+      1024,
+      683
+    ],
+    "before": 290534,
+    "after": 221980,
+    "rgb_rms": 5.42,
+    "alpha_preserved": true
+  },
+  {
+    "file": "town-architecture.webp",
+    "dimensions": [
+      1280,
+      960
+    ],
+    "before": 494282,
+    "after": 420720,
+    "rgb_rms": 5.54,
+    "alpha_preserved": true
+  },
+  {
+    "file": "town-grounds.webp",
+    "dimensions": [
+      1536,
+      960
+    ],
+    "before": 586190,
+    "after": 462820,
+    "rgb_rms": 5.34,
+    "alpha_preserved": true
+  },
+  {
+    "file": "towns.webp",
+    "dimensions": [
+      1024,
+      768
+    ],
+    "before": 308634,
+    "after": 266896,
+    "rgb_rms": 5.47,
+    "alpha_preserved": true
+  },
+  {
+    "file": "waxed-moths.webp",
+    "dimensions": [
+      960,
+      640
+    ],
+    "before": 138302,
+    "after": 119530,
+    "rgb_rms": 3.84,
+    "alpha_preserved": true
+  }
+]
