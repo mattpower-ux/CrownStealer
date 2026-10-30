@@ -428,7 +428,7 @@ function battle(c,w,h,s,time,fx,reduced){
 
  const size=Math.min(w/15,(h-145)/11),ox=(w-size*15)/2,oy=105+(h-145-size*11)/2,originX=px-7,originY=py-5;
 
- c.fillStyle='#0b1b17';c.fillRect(0,0,w,h);
+ c.fillStyle='#0b1b17';c.fillRect(0,0,w,h);c.save();c.translate(-ox*w/(size*15),-oy*(h/(size*11)));c.scale(w/(size*15),h/(size*11));
 
  for(let row=0;row<11;row++)for(let col=0;col<15;col++){
 
@@ -442,11 +442,12 @@ function battle(c,w,h,s,time,fx,reduced){
 
  }
 
- const heroX=ox+7.5*size,heroY=oy+5.5*size,enemyX=ox+(ex-originX+.5)*size,enemyY=oy+(ey-originY+.5)*size;
+ c.restore();
+ const combatIcon=Math.min(144,Math.max(75,size*.95*3),h*.24,w*.16),heroX=w/2-combatIcon*1.15,heroY=oy+5.5*size,enemyX=w/2+combatIcon*1.15,enemyY=heroY;
 
  const age=fx?time-fx.start:9999,impact=age>=0&&age<350,pulse=impact?Math.sin(Math.PI*age/350):0;
 
- const enemyHit=impact&&fx.target==='enemy',heroHit=impact&&fx.target==='hero',icon=Math.min(48,Math.max(25,size*.95));
+ const enemyHit=impact&&fx.target==='enemy',heroHit=impact&&fx.target==='hero',icon=combatIcon;
 
  circle(c,heroX,heroY,icon*.58,'#c9af6455');drawAdventurer(c,heroX,heroY,icon*1.35,heroHit&&!reduced?pulse:0);
 
@@ -488,7 +489,7 @@ function drawArea(c,w,h,s){
 
  c.fillStyle=a.kind==='planet'?['#28243d','#243c39','#2b3151'][Number(a.id.at(-1))]:'#183c48';c.fillRect(0,0,w,h);c.save();c.scale(w/(size*32),1);c.translate(ox,oy);
 
- if(!areaGroundCache||areaGroundCache.key!==a.id||areaGroundCache.ready!==!!richTerrain.naturalWidth){const image=document.createElement('canvas');image.width=1024;image.height=768;const g=image.getContext('2d'),cell=32;if(regionGround.naturalWidth){const sw=regionGround.width/2,sh=regionGround.height/2;g.drawImage(regionGround,a.region%2*sw,Math.floor(a.region/2)*sh,sw,sh,0,0,1024,768);}for(let y=1;y<23;y++)for(let x=1;x<31;x++){const t=areaTile(s,x,y);g.fillStyle=t==='water'?'#448b99':BIOMES[a.region].ground;if(t==='water')g.fillRect(x*cell,y*cell,cell+1,cell+1);for(let n=0;n<18;n++){g.fillStyle=n%2?'#f3e5b737':'#253d2833';g.fillRect(x*cell+(x*7+y*11+n*17)%31,y*cell+(x*13+y*3+n*7)%31,2,1);}if(x===16||y===7){g.fillStyle=BIOMES[a.region].road;g.fillRect((x+.15)*cell,(y+.15)*cell,cell*.85,cell*.85);for(let n=0;n<12;n++){g.fillStyle=n%2?'#dbcda37a':'#6a77664a';g.fillRect(x*cell+5+(n%4)*6,y*cell+5+Math.floor(n/4)*7,5,5);}}else if((t==='forest'||t==='mountain')&&richTerrain.naturalWidth){const sw=richTerrain.width/4;g.drawImage(richTerrain,a.region*sw,t==='mountain'?sw:0,sw,sw,(x+.5)*cell-cell*.7,(y+1)*cell-cell*1.5,cell*1.4,cell*1.5);}else if(t==='forest')tree(g,(x+.5)*cell,(y+.5)*cell,cell*.85,a.kind==='planet');}areaGroundCache={key:a.id,ready:!!richTerrain.naturalWidth,image};}c.drawImage(areaGroundCache.image,0,0,32*size,24*size);
+ if(!areaGroundCache||areaGroundCache.key!==a.id||areaGroundCache.ready!==!!richTerrain.naturalWidth){const image=document.createElement('canvas');image.width=1024;image.height=768;const g=image.getContext('2d'),cell=32;if(regionGround.naturalWidth){const sw=regionGround.width/2,sh=regionGround.height/2;g.drawImage(regionGround,a.region%2*sw,Math.floor(a.region/2)*sh,sw,sh,0,0,1024,768);}for(let y=1;y<23;y++)for(let x=1;x<31;x++){const t=areaTile(s,x,y);g.fillStyle=t==='water'?'#448b99':BIOMES[a.region].ground;if(t==='water')g.fillRect(x*cell,y*cell,cell+1,cell+1);for(let n=0;n<18;n++){g.fillStyle=n%2?'#f3e5b737':'#253d2833';g.fillRect(x*cell+(x*7+y*11+n*17)%31,y*cell+(x*13+y*3+n*7)%31,2,1);}if(x===16||y===7){g.fillStyle=BIOMES[a.region].road;g.fillRect(x*cell+(x===16?cell*.2:0),y*cell+(y===7?cell*.2:0),x===16?cell*.6:cell,y===7?cell*.6:cell);for(let n=0;n<18;n++){g.fillStyle=n%2?'#ead3a77a':'#795f3c42';g.fillRect(x*cell+8+(n*17+x*3)%17,y*cell+8+(n*11+y*3)%17,2,1);}}else if((t==='forest'||t==='mountain')&&richTerrain.naturalWidth){const sw=richTerrain.width/4;g.drawImage(richTerrain,a.region*sw,t==='mountain'?sw:0,sw,sw,(x+.5)*cell-cell*.7,(y+1)*cell-cell*1.5,cell*1.4,cell*1.5);}else if(t==='forest')tree(g,(x+.5)*cell,(y+.5)*cell,cell*.85,a.kind==='planet');}areaGroundCache={key:a.id,ready:!!richTerrain.naturalWidth,image};}c.drawImage(areaGroundCache.image,0,0,32*size,24*size);
 
  for(const p of sites){const x=(p.x+.5)*size,y=(p.y+.5)*size;if(p.kind==='artifact'){if(s.exploration.artifacts.includes(p.id))continue;path(c,[[x,y-size],[x+size*.6,y],[x,y+size*.5],[x-size*.6,y]],'#9fe9e0','#fff4b8');circle(c,x,y-size*.2,size*.2,'#fbf7bf');}else if(p.kind==='landedShip'){c.fillStyle='#7db8bb';c.beginPath();c.ellipse(x,y,size*.9,size*.3,0,0,Math.PI*2);c.fill();c.fillStyle='#b5ecec';c.beginPath();c.ellipse(x,y-size*.2,size*.4,size*.35,0,Math.PI,0);c.fill();for(const dx of [-.5,0,.5])circle(c,x+size*dx,y,size*.08,'#fff3ac');}else if(p.kind==='returnGate'){c.fillStyle='#abb59a';c.fillRect(x-size*.6,y-size*.6,size*1.2,size*.2);c.fillRect(x-size*.6,y-size*.5,size*.2,size);c.fillRect(x+size*.4,y-size*.5,size*.2,size);}else{drawDungeonIcon(c,{...p,region:a.region},x,y,size,!!s.flags['expedition:'+p.expedition]);}label(c,p.name,x,y+size*1.1,Math.max(10,size*.35));}
 

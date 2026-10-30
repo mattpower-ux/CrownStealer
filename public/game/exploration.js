@@ -18,7 +18,7 @@ export function explorationAction(s,a,{note,encounter,clock,random}){
  const board=()=>{s.exploration??={artifacts:[]};s.exploration.area=null;s.mode='dungeon';s.returnMode='dungeon';s.dungeon={index:s.region*2,floor:0,x:7,y:12,dir:0,ship:true};s.location=null;note(s,'A column of light lifts you into an alien starship. Find the control station at (7, 5) to choose another planet. Returning home requires a planetary teleporter or P-Hopper.');};
  if(a.type==='boardShip'&&s.exploration?.artifacts?.length>=10&&s.mode==='world'&&!area){s.exploration.home??={region:s.region,x:s.x,y:s.y};board();return true;}
  if(ship&&s.mode==='dungeon'){
-  if(a.type==='navigatePlanet'&&s.dungeon.x===7&&s.dungeon.y===5&&Number.isInteger(a.planet)&&a.planet>=0&&a.planet<3){s.region=a.planet+1;travel('planet-'+a.planet);return true;}
+  if(a.type==='navigatePlanet'&&Math.abs(s.dungeon.x-7)+Math.abs(s.dungeon.y-5)<=7&&Number.isInteger(a.planet)&&a.planet>=0&&a.planet<3){s.region=a.planet+1;travel('planet-'+a.planet);return true;}
   if(a.type==='returnHome'){note(s,'The ship cannot return home. Find a planetary teleporter or P-Hopper.');return true;}
   if(a.type==='descend'||a.type==='leave'){note(s,'Use the control station at (7, 5).');return true;}
  }
