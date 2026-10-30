@@ -226,6 +226,9 @@ export class AudioDirector {
     const tone = (frequency, delay, length, amplitude = .14, end, type = 'triangle') =>
       this.tone(frequency, now + delay, length, type, amplitude*combatGain, 'effects', end);
     switch (name) {
+      case 'hal-panic': for(let i=0;i<12;i++)tone(220+(i%3)*160,i*.16,.18,.14,80,'square');break;
+      case 'hal-explode': this.brush(now,1.1,.5,'effects',800);tone(90,0,.9,.4,22,'sawtooth');break;
+      case 'hal-crush': this.brush(now,.85,.28,'effects',280);tone(180,0,1,.24,35,'sawtooth');break;
       case 'dragon-greep': tone(220,0,.16,.32,700,'sawtooth');tone(780,.14,.85,.32,1450,'sawtooth');tone(1500,.2,.7,.11,2400,'sine');tone(470,.95,.2,.22,160,'triangle');break;
       case 'launch': for(let i=0;i<12;i++)this.brush(now+i*.25,.65,.10+Math.sin(i/12*Math.PI)*.12,'effects',350+i*320);tone(55,0,3.6,.12,240,'sawtooth');break;
       case 'encounter': return this.playEncounter();

@@ -8,10 +8,10 @@ test('all nine planet dungeons use alien beings, stronger species arrive with de
  const s=planet(),e=buildEncounter(s,0),rat=monsterStats(MONSTER_BY_ID['tithe-rat'],1);assert.equal(e.speciesId,'space-tribble');for(const key of ['hp','attack','armor'])assert.equal(e[key],rat[key]);
 });
 test('each final planetary dungeon has its named boss, persists combat and awards its normal alien treasure',()=>{
- for(const [p,name] of ['Hal 2000','AGI Seven','Rosie the Riveter'].entries()){let s=planet(p,2);s=act(s,{type:'descend'});assert.equal(s.enemy.name,name);assert.equal(s.enemy.boss,true);s=loadGame(saveGame(s));s.hp=s.maxHp=10000;s.enemy.hp=1;for(let i=0;i<10&&s.mode==='battle';i++)s=act(s,{type:'attack'});assert.equal(s.flags[`expedition:planet-${p}-cave-2`],true);assert.ok(s.bag.some(id=>id.startsWith(['disintegration-ray','crown-obedience','visage-transformer'][p])));assert.equal(s.mode,'dungeon');}
+ for(const [p,name] of ['Hal 2000','AGI Seven','Rosie the Riveter'].entries()){let s=planet(p,2);s=act(s,{type:'descend'});assert.equal(s.enemy.name,name);assert.equal(s.enemy.boss,true);s=loadGame(saveGame(s));s.hp=s.maxHp=10000;if(p===0){s.flags.halChallenge={phase:'blackjack',game:'blackjack',round:1,hand:[21,5],computer:[8,4],deck:[10],message:'FIRST ONE TO BUST WILL TERMINATE.'};s=act(s,{type:'halStand'});s=act(s,{type:'halFinish'});}else{s.enemy.hp=1;for(let i=0;i<10&&s.mode==='battle';i++)s=act(s,{type:'attack'});}assert.equal(s.flags[`expedition:planet-${p}-cave-2`],true);assert.ok(s.bag.some(id=>id.startsWith(['disintegration-ray','crown-obedience','visage-transformer'][p])));assert.equal(s.mode,'dungeon');}
 });
-test('brainbots shock and Hal attacks the mind through physical armor',()=>{
- for(const [id,word] of [['space-brainbot',/electric/i],['space-hal',/mind|mental/i]]){let s=planet();s.mode='battle';s.hp=s.maxHp=10000;s.enemy={...MONSTER_BY_ID[id],speciesId:id,hp:9999,maxHp:9999,boss:true,guard:false,firstContact:true};s.equippedArmor='travel-armor';s.armor=1000;const before=s.hp;s=act(s,{type:'guard'});assert.ok(s.log.some(l=>word.test(l)));if(id==='space-hal')assert.ok(before-s.hp>1);}
+test('brainbots shock and Hal requires his game instead of ordinary combat',()=>{
+ for(const [id,word] of [['space-brainbot',/electric/i],['space-hal',/Hal controls this room/i]]){let s=planet();s.mode='battle';s.hp=s.maxHp=10000;s.enemy={...MONSTER_BY_ID[id],speciesId:id,hp:9999,maxHp:9999,boss:true,guard:false,firstContact:true};s.equippedArmor='travel-armor';s.armor=1000;const before=s.hp;s=act(s,{type:'guard'});assert.ok(s.log.some(l=>word.test(l)));if(id==='space-hal')assert.equal(before,s.hp);}
 });
 
 test('Rosie cycles through iron, scrub and spanking attacks across save/reload',()=>{

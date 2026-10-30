@@ -19,7 +19,7 @@ export const previewDestinations=[
  {id:'sewer',name:'Royal sewers',region:0,floors:1}
 ];
 export function previewCharacter(){const s=createGame('Preview adventurer');s.level=12;s.maxHp=s.hp=234;s.gold=5000;return s;}
-function clearEncounter(s){delete s.flags.dragonWatch;delete s.flags.dragonNotice;delete s.flags.dragonGreeting;if(s.spellEffects)s.spellEffects.stunnedTurns=0;for(const key of ['rescuePending','rescueMessage','boatReveal','gagReveal','gossipGuardTown'])delete s.flags[key];s.enemy=null;s.ending=null;s.pendingLoot=[];delete s.casino;delete s.flags.borderTauntPending;delete s.flags.guardTauntPending;delete s.flags.royalQuest;delete s.flags.goldLoot;return s;}
+function clearEncounter(s){delete s.flags.halChallenge;delete s.flags.halOutcome;delete s.flags.dragonWatch;delete s.flags.dragonNotice;delete s.flags.dragonGreeting;if(s.spellEffects)s.spellEffects.stunnedTurns=0;for(const key of ['rescuePending','rescueMessage','boatReveal','gagReveal','gossipGuardTown'])delete s.flags[key];s.enemy=null;s.ending=null;s.pendingLoot=[];delete s.casino;delete s.flags.borderTauntPending;delete s.flags.guardTauntPending;delete s.flags.royalQuest;delete s.flags.goldLoot;return s;}
 export function previewJump(input,id,floor=1){
  const target=previewDestinations.find(d=>d.id===id);if(!target)throw Error('Choose a destination.');
  const s=clearEncounter(structuredClone(input));s.region=target.region;s.mode='world';s.returnMode='world';s.dungeon=null;s.location=null;s.x=5;s.y=7;

@@ -1,3 +1,4 @@
+import {halAction,prepareHal,validHalChallenge} from './hal-challenge.js';
 import {dragonFlying,dragonSupport,captureDragon,dragonOrder,waitingDragonCheck} from './dragon.js';
 import {MOUNTS,mountFor} from './mounts.js';
 import {alienAction,alienDrop,bossRelic} from './alien-loot.js';
@@ -85,6 +86,7 @@ function victory(s){s.spellEffects.stunnedTurns=0;const e=s.enemy;const planet=!
 export function act(input,action,events=[],previewRules={}){
  const s=actInner({...input,previewRules},action,events);
  delete s.previewRules;
+ prepareHal(s);
 
 
  if(input.mode==='battle'&&s.enemy&&(events.length||action?.type==='flee'))s.enemy.firstContact=false;
@@ -105,6 +107,7 @@ export function act(input,action,events=[],previewRules={}){
 }
 function actInner(input,action,events=[]){
  const s=structuredClone(input);migrateRangedGear(s);prepareWands(s);const a={...(action||{})};if(a.type==='acknowledgeDragon'){delete s.flags.dragonGreeting;delete s.flags.dragonNotice;return s;}if(a.type==='dragonOrder'){dragonOrder(s,a.order,()=>rand(s));return s;}if(s.flags.dragonWatch?.enemy&&s.mode==='dungeon'){note(s,'Your dragon needs orders outside. Resolve its battle before continuing.');return s;}if(a.type==='acknowledgeRescue'){delete s.flags.rescuePending;delete s.flags.rescueMessage;return s;}if(a.type==='useItem'&&SPELL_ITEMS[a.id]?.kind==='wand')a.id=s.bag.find(id=>id.startsWith(a.id+'~'))||a.id;prepareClock(s);expireBuffs(s);if(a.type==='clockTick'){advanceClock(s,a.elapsedMs);return s;}if(s.mode==='battle'&&s.spellEffects.stunnedTurns>0&&['attack','guard','flee','useItem','alienUse','heal','eat'].includes(a.type)){s.spellEffects.stunnedTurns--;const message='You are stunned by the codfish’s breath and lose this round. '+s.spellEffects.stunnedTurns+' stunned rounds remain.';note(s,message);events.push({kind:'stun',target:'hero',amount:0,sound:'block',message});enemyTurn(s,false,events);return s;}
+ if(halAction(s,a,{random:()=>rand(s),note,victory,recover}))return s;
  if(gagActive(s,'helium')&&(['talk','gossipBegin','gossipNext','gossipGuardPay','payGovernor','buy','buyItem','sellItem','rest','pardon','quest','gamble','buyCureAll'].includes(a.type)||a.type?.startsWith('city'))){note(s,HELIUM_REFUSAL);return s;}
  if(a.type==='acknowledgeGag'){delete s.flags.gagReveal;return s;}
  if(a.type==='leaveTravelMerchant'){delete s.flags.travelMerchant;return s;}
@@ -271,6 +274,7 @@ export function loadGame(json){
  if(s.mode==='dungeon'&&!s.dungeon)throw Error('Missing dungeon.');
  if(s.mode==='battle'){if(!s.enemy||!['world','town','dungeon'].includes(s.returnMode)||s.returnMode==='dungeon'&&!s.dungeon||s.enemy.boss&&(s.returnMode!=='dungeon'||!s.dungeon)||s.returnMode==='town'&&!TOWNS.some(t=>t.id===s.location&&t.region===s.region))throw Error('Invalid encounter.');for(const k of ['hp','maxHp','attack','gold'])if(!Number.isFinite(s.enemy[k])||s.enemy[k]<0||s.enemy[k]>100000)throw Error('Invalid enemy.');if(typeof s.enemy.name!=='string'||s.enemy.name.length>100)throw Error('Invalid enemy name.');}
  if(s.mode==='town'||s.returnMode==='town'){s.townPosition??={x:6,y:11};const p=s.townPosition;if(!p||!Number.isInteger(p.x)||!Number.isInteger(p.y)||p.x<1||p.x>11||p.y<1||p.y>12)throw Error('Invalid town position.');if(!townWalkable(p.x,p.y,s))s.townPosition={x:6,y:11};}
+ if(!validHalChallenge(s))throw Error('Invalid Hal challenge save.');
  if(!validCasino(s.casino,s))throw Error('Invalid casino save.');
  if(s.enemy){for(const key of ['level','armor','xp'])if(s.enemy[key]!==undefined&&(!Number.isInteger(s.enemy[key])||s.enemy[key]<0||s.enemy[key]>100000))throw Error('Invalid enemy '+key);}
  s.bag??=['road-sword'];if(s.equipped===undefined)s.equipped='road-sword';s.pendingLoot??=[];
