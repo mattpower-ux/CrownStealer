@@ -1,3 +1,4 @@
+import {mountFor} from './mounts.js';
 import {gagActive} from './gag-potions.js';
 import {footwearSpeed} from './junk-loot.js';
 import {buffTimeLeft} from './world-clock.js';

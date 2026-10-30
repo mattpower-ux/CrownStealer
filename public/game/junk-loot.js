@@ -1,3 +1,4 @@
+import {mountFor} from './mounts.js';
 const entries=[
  ['cloth-gloves','Cloth Gloves','hands','gloves',12,'+1 defense while worn. Surprisingly good at keeping splinters out.',{protection:1}],
  ['straw-hat','Straw Hat','head','hat',6,'No armor advantage. Keeps the sun off your questionable judgment.',{protection:0}],
@@ -13,7 +14,7 @@ const entries=[
 export const JUNK_ITEMS=Object.fromEntries(entries.map(([id,name,kind,shape,value,description,extra])=>[id,{id,name,kind,shape,value,description,...extra,rarity:'common',tier:1,unique:true,lowLoot:true,color:id==='straw-hat'?'#d5b667':'#b4aa87'}]));
 export function lowLevelLoot(level,roll,pick){return level>=1&&level<=5&&roll<.2?entries[Math.min(9,Math.max(0,Math.floor(pick*10)))][0]:null;}
 export function footwearSpeed(s){if(s.equippedBoots==='snowshoes')return s.mode==='world'&&s.region===3?2:.5;return s.mode==='world'&&s.equippedBoots==='boots-slime-skating'?2:1;}
-export function travelSteps(s){const speed=footwearSpeed(s);s.flags??={};if(speed===.5){s.flags.snowshoeStep=s.flags.snowshoeStep===1?0:1;return s.flags.snowshoeStep===0?1:0;}s.flags.snowshoeStep=0;return speed;}
+export function travelSteps(s){const speed=s.mode==='world'&&mountFor(s)?Math.max(footwearSpeed(s),mountFor(s).speed):footwearSpeed(s);s.flags??={};if(speed===.5){s.flags.snowshoeStep=s.flags.snowshoeStep===1?0:1;return s.flags.snowshoeStep===0?1:0;}s.flags.snowshoeStep=0;return speed;}
 export function junkArt(item){const art={
  hat:'<ellipse cx="100" cy="142" rx="88" ry="25" fill="#b79345"/><path d="M48 137 L61 71 Q100 45 139 71 L152 137 Q100 157 48 137Z" fill="#d6b861"/><path d="M52 120 Q100 140 148 120 L151 135 Q100 153 49 135Z" fill="#6e5840"/><path d="M70 76 L62 119 M90 68 L87 126 M112 68 L116 126 M132 77 L141 119" stroke="#ae8f44"/>',
  gloves:'<path d="M60 184 L48 128 L28 100 Q25 81 40 90 L61 113 L52 49 Q58 34 66 51 L78 98 L77 38 Q85 23 92 42 L99 99 L106 44 Q118 31 122 49 L119 110 L134 69 Q151 58 151 77 L138 146 L132 184Z"/><path d="M57 153 H136 M63 170 H132"/>',
