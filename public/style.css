@@ -164,3 +164,6 @@ dialog[data-panel="loot"]{height:auto!important;min-height:0!important;max-heigh
 dialog[data-panel="loot"]{height:fit-content!important;top:50%!important;bottom:auto!important;transform:translateY(-50%);margin:0 auto!important}#combat-panel.combat-popup{position:fixed!important;left:0!important;right:0!important;bottom:0!important;height:calc((100svh - 48px)*.25)!important;max-height:calc((100svh - 48px)*.25)!important;margin:0!important}
 
 #combat-status{overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;max-height:2.3em}.combat-popup .actions button>span:last-child{line-height:1.1}#combat-buttons .actions button{overflow:hidden}
+
+/* Natural sizing is the default for every ordinary dialog, including confirmations. */
+dialog.content-panel{height:fit-content!important;min-height:0!important;max-height:92svh!important;top:50%!important;bottom:auto!important;transform:translateY(-50%);margin:0 auto!important;overflow:hidden;box-sizing:border-box}dialog.content-panel:not(.paged-panel){display:block!important}dialog.content-panel:not(.paged-panel) #panel-body{height:auto!important;min-height:0!important;flex:none!important}dialog.content-panel.paged-panel{height:92svh!important}dialog.content-panel.paged-panel #panel-body{flex:1!important;min-height:0!important}dialog.content-panel:not([open]){display:none!important}
