@@ -228,7 +228,7 @@ function world(c,w,h,s,time){if(areaFor(s)){drawArea(c,w,h,s);return;}const p=RE
 
  for(const d of DUNGEONS.filter(d=>d.region===s.region)){const x=(d.x+.5)*size,y=(d.y+.5)*size;drawDungeonIcon(c,{...d,index:DUNGEONS.indexOf(d)},x,y,size,s.relics.includes(d.id));label(c,d.name,x,y+size*1.1,Math.max(10,size*.4));}
 
- for(const site of [...WILD_SITES.filter(p=>p.region===s.region&&(p.kind!=='gate'||p.x!==1)),...branchGates(s.region)])drawWildSite(c,site,(site.x+.5)*size,(site.y+.5)*size,size);
+ for(const site of [...WILD_SITES.filter(p=>p.region===s.region),...branchGates(s.region)])drawWildSite(c,site,(site.x+.5)*size,(site.y+.5)*size,size);
 
  drawMetalTrees(c,s,size);const px=(s.x+.5)*size,py=(s.y+.5)*size;if(worldTile(s.region,s.x,s.y)==='water'&&s.flags.rowboatReady)drawRowboat(c,px,py,size);drawAdventurer(c,px,py,size*(worldTile(s.region,s.x,s.y)==='water'?1.25:1.9));c.restore();
 
