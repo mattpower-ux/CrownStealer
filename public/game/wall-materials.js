@@ -8,4 +8,8 @@ export function alienWallInk(kind,u,v){
 }
 
 // Packed native RGBA pixels avoid building CSS rgb strings for every wall sample.
-export function wallMaterialPixel(index,u,v,light){if(!pixels)return null;index=(index+8)%8;const size=atlas.width/4,x=Math.min(size-1,Math.floor(u*size))+index%4*size,y=Math.min(size-1,Math.floor(v*size))+Math.floor(index/4)*size,k=(y*atlas.width+x)*4;return (255<<24)|(Math.floor(pixels[k+2]*light)<<16)|(Math.floor(pixels[k+1]*light)<<8)|Math.floor(pixels[k]*light);}
+export function wallMaterialPixel(index,u,v,light){
+ if(!pixels)return null;index=(index+8)%8;const size=atlas.width/4,fx=Math.max(0,Math.min(size-1,u*(size-1))),fy=Math.max(0,Math.min(size-1,v*(size-1))),x=Math.floor(fx),y=Math.floor(fy),tx=fx-x,ty=fy-y,ox=index%4*size,oy=Math.floor(index/4)*size,k=((oy+y)*atlas.width+ox+x)*4,kx=x<size-1?k+4:k,ky=y<size-1?k+atlas.width*4:k,kxy=y<size-1?kx+atlas.width*4:kx;
+ const a=(1-tx)*(1-ty)*light,b=tx*(1-ty)*light,c=(1-tx)*ty*light,d=tx*ty*light;
+ return (255<<24)|(Math.floor(pixels[k+2]*a+pixels[kx+2]*b+pixels[ky+2]*c+pixels[kxy+2]*d)<<16)|(Math.floor(pixels[k+1]*a+pixels[kx+1]*b+pixels[ky+1]*c+pixels[kxy+1]*d)<<8)|Math.floor(pixels[k]*a+pixels[kx]*b+pixels[ky]*c+pixels[kxy]*d);
+}
