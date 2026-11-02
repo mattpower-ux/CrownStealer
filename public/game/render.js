@@ -5,6 +5,7 @@ import {townSign} from './town-signs.js';
 let areaGroundCache=null;
 
 const townGrounds=new Image();townGrounds.src='/assets/town-grounds.webp';
+const townBackgrounds=new Map();function townBackground(id){if(!townBackgrounds.has(id)){const image=new Image();image.src='/assets/town-ground-'+id+'.webp';townBackgrounds.set(id,image);if(townBackgrounds.size>2)townBackgrounds.delete(townBackgrounds.keys().next().value);}return townBackgrounds.get(id);}
 
 import {townPlaces} from './town.js';
 
@@ -250,9 +251,9 @@ function town(c,w,h,s,time){
 
  c.fillStyle='#182b24';c.fillRect(0,0,w,h);c.save();c.translate(ox,oy);c.scale(w/h,1);
 
- if(townGrounds.complete&&townGrounds.naturalWidth){const sw=townGrounds.width/2,sh=townGrounds.height/2;c.drawImage(townGrounds,s.region%2*sw,Math.floor(s.region/2)*sh,sw,sh,0,0,size*13,size*15);}else drawTownScenery(c,size,s.region,Math.max(0,TOWNS.findIndex(t=>t.id===s.location)));
+ const backdrop=townBackground(s.location),hasBackdrop=backdrop.complete&&backdrop.naturalWidth>0;c.imageSmoothingEnabled=true;c.imageSmoothingQuality='high';if(hasBackdrop)c.drawImage(backdrop,0,0,size*13,size*13);else drawTownScenery(c,size,s.region,Math.max(0,TOWNS.findIndex(t=>t.id===s.location)));
 
- if(canopies.complete&&canopies.naturalWidth){const sw=canopies.width/2,sh=canopies.height/2;for(const [x,y] of [[1.2,1.3],[3.2,1.3],[8.5,1.3],[10.8,1.3],[1.2,4],[11.5,4],[1.2,7.2],[11.5,7.2],[1.2,10.3],[11.5,10.3]])c.drawImage(canopies,s.region%2*sw,Math.floor(s.region/2)*sh,sw,sh,(x-.35)*size,(y-.5)*size,.9*size,.9*size);}
+ if(!hasBackdrop&&canopies.complete&&canopies.naturalWidth){const sw=canopies.width/2,sh=canopies.height/2;for(const [x,y] of [[1.2,1.3],[3.2,1.3],[8.5,1.3],[10.8,1.3],[1.2,4],[11.5,4],[1.2,7.2],[11.5,7.2],[1.2,10.3],[11.5,10.3]])c.drawImage(canopies,s.region%2*sw,Math.floor(s.region/2)*sh,sw,sh,(x-.35)*size,(y-.5)*size,.9*size,.9*size);}
 
  const postedSigns=[];
  for(const place of townPlaces(s)){
