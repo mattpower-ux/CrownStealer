@@ -86,6 +86,8 @@ function victory(s){s.spellEffects.stunnedTurns=0;const e=s.enemy;if(s.dungeon&&
 export function act(input,action,events=[],previewRules={}){
  const s=actInner({...input,previewRules},action,events);
  delete s.previewRules;
+ if(input.mode!=='dungeon'&&s.mode==='dungeon'&&s.dungeon){const d=s.dungeon,cleared=d.expedition?s.flags['expedition:'+d.expedition]:d.site==='elf-village'?s.flags.haghildaDefeated:d.site==='firedrak'?s.flags.drakeDefeated:!d.royal&&!d.ship&&s.flags['boss:'+d.index];if(cleared)note(s,'This place looks eerily familiar, and empty.');}
+
  prepareHal(s);
 
 
@@ -128,6 +130,7 @@ function actInner(input,action,events=[]){
   else if(a.type==='royalIntroSkip')banishRoyal(s);
   return s;
  }
+ if(a.type==='rummageChest'&&s.mode==='dungeon'){const chest=dungeonChests(s,dungeonMap(s.dungeon)).find(c=>c.x===s.dungeon.x&&c.y===s.dungeon.y&&c.opened);if(!chest||s.flags['missedCoins:'+chest.id])return s;const coins=1+Math.floor(rand(s)*2);s.flags['missedCoins:'+chest.id]=true;s.gold+=coins;note(s,'Someone was here before you. They missed a few coins.');return s;}
  if(a.type==='openChest'&&s.mode==='dungeon'){const chest=dungeonChests(s,dungeonMap(s.dungeon)).find(c=>c.x===s.dungeon.x&&c.y===s.dungeon.y&&!c.opened);if(!chest){note(s,'Stand on an unopened chest to search it.');return s;}if(sewerGuardian(s))return s;s.openedChests??=[];s.openedChests.push(chest.id);const loot=chest.items||[chest.item].filter(Boolean);s.bag.push(...loot);s.pendingLoot.push(...loot);s.gold+=chest.gold;note(s,`Chest opened: ${[...loot.map(id=>itemById(id).name),chest.gold+' gold'].join(' and ')}.`);return s;}
  if(a.type==='eat'){if(s.meals<1||s.mode==='ending')return s;s.meals--;s.buffs??={};s.buffs.meal=6;setTimedBuff(s,'meal',30);note(s,'A hearty meal grants +4 damage for 30 game minutes. Eating again refreshes the effect.');if(s.mode==='battle')enemyTurn(s,false,events);return s;}
  if(a.type==='pepper'){if(s.mode!=='battle'||s.enemy.speciesId!=='haghilda'||s.enemy.peppered||!s.bag.includes('holy-pepper-grenade'))return s;s.bag.splice(s.bag.indexOf('holy-pepper-grenade'),1);s.pendingLoot=s.pendingLoot.filter(id=>id!=='holy-pepper-grenade');s.enemy.peppered=true;s.enemy.firstContact=false;note(s,'The Holy Pepper Grenade bursts! Haghilda sneezes violently. Her toxic snot damage is reduced by 50% for this battle.');events.push({kind:'magic',target:'enemy',amount:0,sound:'magic'});enemyTurn(s,false,events);return s;}
