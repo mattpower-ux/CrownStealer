@@ -823,8 +823,8 @@ const definitions=[
     }
   }
 ];
-// Ordinary foes use 75% of a same-level adventurer's baseline health and strike.
-// Baseline: 80 HP (+14/level), equipped starter strike averages 10 + 2*level.
-export function monsterStats(species,level){const kind=species.kind;return {hp:Math.round((80+14*(level-1))*.75*(kind==='brute'?1.1:1)),attack:Math.round((10+level*2)*.75),armor:kind==='armored'?2+Math.floor(level*.4):Math.floor(level*.12),gold:level,xp:14+level*4};}
+// Preserve approachable level-one foes; later strikes outpace flat armor reduction.
+// Monster power depends on its own level, never on the current hero's equipment.
+export function monsterStats(species,level){const kind=species.kind;return {hp:Math.round((80+14*(level-1))*.75*(kind==='brute'?1.1:1)),attack:Math.round(9+2.4*(level-1)+.035*Math.min(49,level-1)**2),armor:kind==='armored'?2+Math.floor(level*.4):Math.floor(level*.12),gold:level,xp:14+level*4};}
 export const ENEMIES=[...definitions,...DEPTH_SPECIES,...PLANET_SPECIES].map(m=>({...m,...monsterStats(m,m.level),weakness:m.kind==='spectral'?'steady pressure':m.kind==='brute'?'guard then counter':m.kind==='armored'?'steady pressure':'quick strikes'}));
 export const MONSTER_BY_ID=Object.fromEntries(ENEMIES.map(m=>[m.id,m]));

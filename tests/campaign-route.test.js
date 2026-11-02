@@ -27,8 +27,10 @@ function pathTo(start, target, passable) {
 // directions; it does not skip encounters, terrain, food costs, or purchases.
 function campaign(outlaw) {
   let state = createGame(outlaw ? 'Outlaw route' : 'Honorable route');
-  // Migration fixture: an adventurer who earned the old Tithe Vault relic keeps it.
-  state.relics=['tithe-vault'];state.level=100;state.hp=state.maxHp=1466;state.gold=100000;state.weapon=80;state.armor=300;state.potions=1000;
+  // Route/migration fixture spans level-200+ enemies on the final 100-floor dungeon.
+  // Keep it overleveled; combat difficulty is measured separately in combat-challenge.test.js.
+  // An adventurer who earned the old Tithe Vault relic keeps it.
+  state.relics=['tithe-vault'];state.level=300;state.hp=state.maxHp=4266;state.gold=100000;state.weapon=80;state.armor=300;state.potions=10000;
   let actions = 0, battles = 0;
   const checkpoints = [];
   function step(action) {
