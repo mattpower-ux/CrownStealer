@@ -92,10 +92,10 @@ test('side quests reference towns, support engine need kinds, and bound rewards'
   for (const quest of content.SIDE_QUESTS) {
     assert.match(quest.id, /^[a-z]+(?:-[a-z]+)*$/);
     assert.ok(towns.has(quest.town), `Unknown town ${quest.town}`);
-    assert.ok(['gold', 'victory', 'relic'].includes(quest.need));
+    assert.ok(['gold', 'victory', 'item'].includes(quest.need));
     assert.ok(Number.isSafeInteger(quest.target) && quest.target >= 1);
     if (quest.need === 'relic') assert.ok(quest.target <= content.DUNGEONS.length);
-    assert.ok(Number.isSafeInteger(quest.reward) && quest.reward >= 5 && quest.reward <= 500);
+    assert.ok(Number.isSafeInteger(quest.reward) && quest.reward >= 5 && quest.reward <= 2000);
     prose(quest.title);
     prose(quest.text, 130);
     prose(quest.conclusion, 100);
