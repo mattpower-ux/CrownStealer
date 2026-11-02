@@ -64,7 +64,21 @@ const sprites=new Image();sprites.src='/assets/creatures.webp';
 
 const adventurer=new Image();adventurer.src='/assets/adventurer.webp';
 
-function drawAdventurer(c,x,y,size,flash=0){c.save();const projection=c.getTransform(),aspect=Math.abs(projection.a/projection.d)||1;c.translate(x,y);c.scale(1/aspect,1);x=0;y=0;const activeMount=renderedHero&&mountFor(renderedHero),outdoors=renderedHero&&(renderedHero.mode==='world'||renderedHero.mode==='battle'&&renderedHero.returnMode==='world');if(activeMount&&outdoors&&(activeMount.index===3?ridingDragon.naturalWidth:mountAtlas.naturalWidth)){c.save();c.fillStyle='#06130c55';c.beginPath();c.ellipse(x,y+size*.35,size*.7,size*.15,0,0,7);c.fill();const dh=size*1.45;if(activeMount.index===3){const dw=dh*ridingDragon.width/ridingDragon.height;c.drawImage(ridingDragon,x-dw/2,y-dh*.52,dw,dh);}else{const cell=mountAtlas.width/4;c.drawImage(mountAtlas,activeMount.index*cell,0,cell,mountAtlas.height,x-dh/2,y-dh*.52,dh,dh);}c.restore();size*=.55;y-=size*.5;}c.save();c.fillStyle='#05150a77';c.beginPath();c.ellipse(x,y+size*.36,size*.27,size*.10,0,0,Math.PI*2);c.fill();if(flash)c.filter=`brightness(${1+flash*1.8})`;if(renderedHero&&drawGearAvatar(c,renderedHero,x,y,size)){}else if(adventurer.complete&&adventurer.naturalWidth)c.drawImage(adventurer,x-size/2,y-size/2,size,size);else{path(c,[[x,y-size*.35],[x-size*.25,y+size*.35],[x+size*.25,y+size*.35]],'#477653','#d5b675');circle(c,x,y-size*.3,size*.12,'#ddc295');c.strokeStyle='#e2e7da';c.lineWidth=2;c.beginPath();c.moveTo(x+size*.2,y);c.lineTo(x+size*.4,y+size*.35);c.stroke();}c.restore();c.restore();}
+
+function drawMountedHero(c,hero,mount,size,flash){
+ const image=mount.index===3?ridingDragon:mountAtlas;if(!image.complete||!image.naturalWidth)return false;
+ const height=size*1.45,width=mount.index===3?height*image.width/image.height:height;
+ c.save();if(flash)c.filter=`brightness(${1+flash*1.8})`;c.fillStyle='#06130c55';c.beginPath();c.ellipse(0,size*.56,size*.65,size*.13,0,0,7);c.fill();
+ if(mount.index===3)c.drawImage(image,-width/2,-height*.52,width,height);else{const cell=image.width/4;c.drawImage(image,mount.index*cell,0,cell,image.height,-width/2,-height*.52,width,height);}
+ const seats=[[.43,.49],[.40,.49],[.38,.40],[.48,.46]],seat=seats[mount.index],sx=(seat[0]-.5)*width,sy=(seat[1]-.52)*height,rider=size*.85;
+ // Bent thigh, hanging shin and forward boot clearly straddle the saddle.
+ c.lineCap='round';c.lineJoin='round';c.strokeStyle='#34251c';c.lineWidth=size*.15;c.beginPath();c.moveTo(sx-size*.04,sy);c.lineTo(sx+size*.19,sy+size*.16);c.lineTo(sx+size*.10,sy+size*.38);c.stroke();c.strokeStyle='#7a5835';c.lineWidth=size*.105;c.stroke();c.strokeStyle='#35271e';c.lineWidth=size*.13;c.beginPath();c.moveTo(sx+size*.10,sy+size*.33);c.lineTo(sx+size*.10,sy+size*.43);c.lineTo(sx+size*.25,sy+size*.43);c.stroke();
+ // Crop the standing avatar at the hips; keep its selected face and equipped torso.
+ c.save();c.beginPath();c.rect(sx-rider*.6,sy-rider*.72,rider*1.2,rider*.78);c.clip();drawGearAvatar(c,hero,sx,sy-rider*.12,rider);c.restore();
+ c.strokeStyle='#493322';c.lineWidth=Math.max(1,size*.018);c.beginPath();c.moveTo(sx+size*.15,sy-size*.13);c.quadraticCurveTo(size*.48,sy+size*.08,size*.55,-size*.15);c.stroke();c.restore();return true;
+}
+
+function drawAdventurer(c,x,y,size,flash=0){c.save();const projection=c.getTransform(),aspect=Math.abs(projection.a/projection.d)||1;c.translate(x,y);c.scale(1/aspect,1);x=0;y=0;const activeMount=renderedHero&&mountFor(renderedHero),outdoors=renderedHero&&(renderedHero.mode==='world'||renderedHero.mode==='battle'&&renderedHero.returnMode==='world');if(activeMount&&outdoors&&drawMountedHero(c,renderedHero,activeMount,size,flash)){c.restore();return;}c.save();c.fillStyle='#05150a77';c.beginPath();c.ellipse(x,y+size*.36,size*.27,size*.10,0,0,Math.PI*2);c.fill();if(flash)c.filter=`brightness(${1+flash*1.8})`;if(renderedHero&&drawGearAvatar(c,renderedHero,x,y,size)){}else if(adventurer.complete&&adventurer.naturalWidth)c.drawImage(adventurer,x-size/2,y-size/2,size,size);else{path(c,[[x,y-size*.35],[x-size*.25,y+size*.35],[x+size*.25,y+size*.35]],'#477653','#d5b675');circle(c,x,y-size*.3,size*.12,'#ddc295');c.strokeStyle='#e2e7da';c.lineWidth=2;c.beginPath();c.moveTo(x+size*.2,y);c.lineTo(x+size*.4,y+size*.35);c.stroke();}c.restore();c.restore();}
 
 const cover=new Image();cover.src='/assets/cover.webp';
 
