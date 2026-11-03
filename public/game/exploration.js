@@ -1,3 +1,4 @@
+import {caveProfile} from './cave-profiles.js';
 import {dragonFlying} from './dragon.js';
 import {inlandWater,waterAccess} from './nautical.js';
 import {travelSteps} from './junk-loot.js';
@@ -8,8 +9,8 @@ const names=['Briar Expanse','Crooked Fen','Whispering Barrens','Copper Wastes',
 export const AREAS=names.map((name,i)=>({id:'wild-'+i,name,region:Math.floor(i/3),kind:'wild',seed:20+i})).concat(PLANETS.map((name,i)=>({id:'planet-'+i,name,region:i+1,kind:'planet',seed:40+i})));
 export const areaFor=s=>AREAS.find(a=>a.id===s.exploration?.area);
 export const branchGates=region=>['north','south','west'].map((direction,i)=>({id:`branch-${region}-${direction}`,kind:'branchGate',name:direction[0].toUpperCase()+direction.slice(1)+' gate · '+names[region*3+i],region,x:direction==='west'?1:16,y:direction==='north'?1:direction==='south'?22:region>0?17:12,area:'wild-'+(region*3+i),direction}));
-export const areaSites=s=>{const a=areaFor(s);if(!a)return [];return [{id:'return',kind:a.kind==='planet'?'landedShip':'returnGate',name:a.kind==='planet'?'Alien spacecraft':'Return to the occupied land',x:16,y:22},...Array.from({length:a.kind==='planet'?3:2},(_,i)=>({id:a.id+'-cave-'+i,kind:'expedition',name:(a.kind==='planet'?['Prism Vault','Spore Catacombs','Echo Laboratory'][i]:['Forgotten Cave','Buried Sanctum'][i]),x:[7,25,16][i],y:[7,7,15][i],index:a.region*2,expedition:a.id+'-cave-'+i})),...(a.kind==='wild'&&Number(a.id.slice(5))<10?[{id:a.id,kind:'artifact',name:'Ancient alien monument',x:16,y:4}]:[])];};
-export const expeditionName=d=>{const a=AREAS.find(a=>d.expedition?.startsWith(a.id+'-cave-'));return a?a.name+' · '+(Number(d.expedition.split('-').at(-1))+1):'Alien Starship';};
+export const areaSites=s=>{const a=areaFor(s);if(!a)return [];return [{id:'return',kind:a.kind==='planet'?'landedShip':'returnGate',name:a.kind==='planet'?'Alien spacecraft':'Return to the occupied land',x:16,y:22},...Array.from({length:a.kind==='planet'?3:2},(_,i)=>({id:a.id+'-cave-'+i,kind:'expedition',name:(a.kind==='planet'?['Prism Vault','Spore Catacombs','Echo Laboratory'][i]:caveProfile(a.id+'-cave-'+i).name),x:[7,25,16][i],y:[7,7,15][i],index:a.region*2,expedition:a.id+'-cave-'+i})),...(a.kind==='wild'&&Number(a.id.slice(5))<10?[{id:a.id,kind:'artifact',name:'Ancient alien monument',x:16,y:4}]:[])];};
+export const expeditionName=d=>{const a=AREAS.find(a=>d.expedition?.startsWith(a.id+'-cave-'));return caveProfile(d.expedition)?.name||(a?a.name+' · '+(Number(d.expedition.split('-').at(-1))+1):'Alien Starship');};
 export function areaTile(s,x,y){if(x<1||x>30||y<1||y>22)return 'water';if(x===16||y===7||areaSites(s).some(p=>Math.abs(p.x-x)<=1&&Math.abs(p.y-y)<=1))return 'grass';if(inlandWater(s.region,x,y,s.exploration?.area))return 'water';const seed=areaFor(s)?.seed||1,n=((x*73856093)^(y*19349663)^seed*83492791)>>>0;return n%9<5?'forest':n%19===0?'mountain':'grass';}
 export function shipMap(){const m=Array.from({length:15},()=>Array(15).fill(1)),room=(x1,y1,x2,y2)=>{for(let y=y1;y<=y2;y++)for(let x=x1;x<=x2;x++)m[y][x]=0;};room(5,1,9,6);room(6,6,8,12);room(1,2,4,5);room(10,2,13,5);room(1,9,4,12);room(10,9,13,12);room(4,4,10,4);room(4,10,10,10);m[1][7]=3;return m;}
 export function explorationAction(s,a,{note,encounter,clock,random}){
@@ -28,7 +29,7 @@ export function explorationAction(s,a,{note,encounter,clock,random}){
  if(a.type==='enter'){const p=areaSites(s).find(p=>p.x===s.x&&p.y===s.y);if(!p){note(s,'Explore the caves and strange landmarks.');return true;}
   if(p.kind==='returnGate'||p.kind==='landedShip'){if(area.kind==='planet')board();else{const h=s.exploration.home;s.exploration.area=null;s.region=h.region;s.x=h.x;s.y=h.y;note(s,'You return through the gate.');}return true;}
   if(p.kind==='artifact'){s.exploration.artifacts??=[];if(s.exploration.artifacts.includes(p.id))note(s,'This place looks eerily familiar. It still smells like your dirty boots.');else if(s.exploration.artifacts.length>=10)note(s,'Your alien disk is already complete.');else{s.exploration.artifacts.push(p.id);s.flags.artifactReveal=true;note(s,'A blue-metal piece locks into your ancient alien disk: '+Math.min(10,s.exploration.artifacts.length)+'/10 pieces.');if(s.exploration.artifacts.length===10)board();}return true;}
-  if(p.kind==='expedition'){s.location=p.id;s.mode='dungeon';s.returnMode='dungeon';s.dungeon={index:p.index,expedition:p.expedition,floor:0,x:1,y:1,dir:1};note(s,'You enter '+p.name+'. Three levels lie below.');return true;}
+  if(p.kind==='expedition'){s.location=p.id;s.mode='dungeon';s.returnMode='dungeon';s.dungeon={index:p.index,expedition:p.expedition,floor:0,x:1,y:1,dir:1};note(s,'You enter '+p.name+'. Three levels lie below.'+(caveProfile(p.expedition)?' '+caveProfile(p.expedition).description:''));return true;}
  }
  return false;
 }
