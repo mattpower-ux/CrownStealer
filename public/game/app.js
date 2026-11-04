@@ -188,8 +188,7 @@ function openPanel(name){if(state&&gagActive(state,'helium')&&['shop','talk','co
  if(name==='inn'&&cityOf(state))body.innerHTML+=cityView(state,button,esc);
  if(name==='atlas')body.innerHTML=`<p>Follow the pale paths between settlements and ruins. Each land holds two relics; both open the road to the next. Tap beside your character to take one step.</p><div class="atlas-list">${REGIONS.map(r=>`<section><span class="eyebrow">${r.id<=Math.floor(state.relics.length/2)?'ROUTE OPEN':'ROUTE SEALED'}</span><h3>${esc(r.name)}</h3><p>${esc(r.description)}</p><ul>${TOWNS.filter(t=>t.region===r.id).map(t=>`<li>Settlement: ${esc(t.name)} (${t.x}, ${t.y})</li>`).join('')}${DUNGEONS.filter(d=>d.region===r.id).map(d=>`<li>${state.relics.includes(d.id)?'✓':'◇'} ${esc(d.name)} (${d.x}, ${d.y})${d.id==='tithe-vault'?' — Hearth Seal now held by Haghilda in the ruined elven village':d.id==='widows-bell'?' — Witness Bell, level 10; guarded by a level-12 Rock Troll':''}</li>`).join('')}</ul></section>`).join('')}</div>`;
  if(name==='shop'){$('panel-title').textContent=townPlace(state)?.id==='shop'?townPlace(state).name:'The traveling market';}
- if(name==='shop')body.innerHTML=`<p>Your purse: <strong>${state.gold} gold</strong>. ${state.log.at(-1)?.startsWith('Purchased')?esc(state.log.at(-1)):''}</p><div class="shop-grid">${[['food','Hearty meals','3 meals · each grants +4 damage for 6 attacks or spells',10],['potion','Bitter tonic','Restores 45 health',18],['weapon','Weapon upgrade','Increase strike damage',45*state.weapon],['armor','Armor upgrade','Reduce incoming damage',40*state.armor],['transport','Packhorse','Fewer wilderness encounters',150]].map(([id,title,desc,cost])=>`<section class="shop-item">${itemArt({id,shape:{food:"food",potion:"potion",weapon:"sword",armor:"armor",transport:"horse"}[id],color:"#d8b778"})}<h3>${title}</h3><p>${desc}</p>${id==='potion'?`<p class="fine">${merchantPotionRemaining(state,'potion')} bottles left</p>`:''}${id==='potion'&&merchantPotionRemaining(state,'potion')===0?'<button disabled>Sold out</button>':button(`${cost} gold`,{type:'buy',item:id})}</section>`).join('')}</div>`;
- if(name==='shop'){const i=Math.max(0,TOWNS.findIndex(t=>t.id===state.location)),m=MERCHANTS[i];body.innerHTML=`<div class="merchant-layout"><aside class="merchant-persona"><div class="merchant-portrait" role="img" aria-label="${esc(m.name)}" style="background-position:${i%4*100/3}% ${Math.floor(i/4)*50}%"></div><h3>${esc(m.name)}</h3><p>${esc(m.line)}</p><section class="merchant-lists merchant-selling">${merchantView(true)}</section><p>Your purse: <strong>${state.gold} gold</strong></p></aside><div class="merchant-lists"><h3>Everyday supplies</h3>${body.innerHTML}${merchantView()}</div></div>`;}
+ if(name==='shop') renderMerchant(body);
  if(name==='fortune')body.innerHTML=`<div class="fortune-visit"><img src="/assets/fortune-teller.webp" alt="Old Mother Mould, a toothless one-eyed fortune teller leering over her crystal ball"><div><p class="eyebrow">YOUR FUTURE IS MOSTLY MUD</p><h3>Old Mother Mould</h3><p class="fortune-speech" role="status">${esc(fortuneFor(state.name))}</p><div class="panel-actions"><button id="replay-fortune">Replay her greeting</button><button id="another-fortune">Another prediction · free</button></div><p class="fine">Her opinions are free. Her manners are missing.</p></div></div>`;
  if(name==='casino'){body.innerHTML=casinoView(state,button,esc,performance.now()<dealerReactionUntil);clearTimeout(rouletteTimer);if(state.casino?.spinning)rouletteTimer=setTimeout(()=>{rouletteTimer=null;if(state?.casino?.spinning&&!document.hidden)dispatch({type:'casinoRouletteReveal'});},ROULETTE_SPIN_MS);}
  if(name==='shop'&&state.location==='mothbridge')body.innerHTML=mountShop(state,button)+body.innerHTML;
@@ -293,7 +292,59 @@ function playRoyalDoorway(){
 }
 function playIntroVoice(){stopIntroVoice();if(state?.flags.royalQuest!=='opening')return;if(state.flags.royalIntroLine===0&&state.flags.royalEntranceSeen===false){playRoyalDoorway();return;}introVoice=new Audio('/assets/intro-'+state.flags.royalIntroLine+'.mp3');introVoice.volume=volumes.effects;audio.setVolumes(volumes.music*.25,volumes.effects);introVoice.onended=()=>audio.setVolumes(volumes.music,volumes.effects);introVoice.onerror=()=>audio.setVolumes(volumes.music,volumes.effects);playNpcClip(introVoice).catch(()=>audio.setVolumes(volumes.music,volumes.effects));}
 
-function merchantView(selling=false){const stock=merchantStock(state.region,state.location,state.level);const bag=[...new Set(state.bag)].map(id=>itemById(id,state)).filter(i=>i&&!i.notForSale&&i.kind!=='relic'&&i.id!=='holy-pepper-grenade');const card=(item,sell)=>{const worn=['equipped','equippedArmor','equippedRing','equippedNecklace','equippedShield','equippedBoots','equippedRing2','equippedHands','equippedHead'].some(k=>state[k]===item.id),price=sell?sellPrice(item):item.value,left=merchantPotionRemaining(state,item);return `<section class="shop-item">${itemArt(item)}<p class="eyebrow rarity-${item.rarity||'common'}">${esc(item.rarity||'common')}</p><h3>${esc(item.name)}</h3><p>${esc(item.description)}</p>${item.damage?`<p>${item.toHit>=0?'+':''}${item.toHit} to hit · ${item.damage.join('–')} damage</p>`:''}${!sell&&Number.isFinite(left)?`<p class="fine">${left} left of this healing type</p>`:''}${!sell&&left===0?'<button disabled>Sold out</button>':sell&&worn?'<p>Equipped — unequip to sell.</p>':button((sell?'Sell':'Buy')+' · '+price+' gold',{type:sell?'sellItem':'buyItem',id:item.id})}</section>`;};return selling?`<h3>SELL YOUR LOOT</h3><p class="fine">Items you carry. Sale prices shown below. Story relics cannot be sold.</p><div class="shop-grid merchant-stock">${bag.map(i=>card(i,true)).join('')||'<p>Your bag is empty.</p>'}</div>`:`<h3>Weapons, potions & enchanted gear</h3><p class="fine">Healing potions: two per type at this merchant. Medium healing appears in realm III; ultra healing in realm IV.</p><div class="shop-grid merchant-stock">${stock.map(id=>card(itemById(id,state),false)).join('')}</div>`;}
+function renderMerchant(body) {
+ const index=Math.max(0,TOWNS.findIndex(t=>t.id===state.location));
+ const merchant=MERCHANTS[index];
+ const supplies=[
+  ['food','Hearty meals','3 meals · each grants +4 damage for 6 attacks or spells',10,'food'],
+  ['potion','Bitter tonic','Restores 45 health',18,'potion'],
+  ['weapon','Weapon upgrade','Increase strike damage',45*state.weapon,'sword'],
+  ['armor','Armor upgrade','Reduce incoming damage',40*state.armor,'armor'],
+  ['transport','Packhorse','Fewer wilderness encounters',150,'horse']
+ ].map(([id,name,description,price,shape])=>({
+  item:{id,name,description,shape,color:'#d8b778'},price,
+  action:{type:'buy',item:id},
+  remaining:id==='potion'?merchantPotionRemaining(state,id):Infinity
+ }));
+ const stock=merchantStock(state.region,state.location,state.level).map(id=>itemById(id,state)).map(item=>({
+  item,price:item.value,action:{type:'buyItem',id:item.id},
+  remaining:merchantPotionRemaining(state,item)
+ }));
+ const loot=[...new Set(state.bag)].map(id=>itemById(id,state))
+  .filter(item=>item&&!item.notForSale&&item.kind!=='relic'&&item.id!=='holy-pepper-grenade')
+  .map(item=>({
+   item,price:sellPrice(item),action:{type:'sellItem',id:item.id},
+   worn:['equipped','equippedArmor','equippedRing','equippedNecklace','equippedShield','equippedBoots','equippedRing2','equippedHands','equippedHead'].some(slot=>state[slot]===item.id)
+  }));
+ const listings=[];
+ const rows=entries=>entries.map(entry=>{
+  const id=listings.push(entry)-1;
+  return `<button type="button" class="merchant-row" data-merchant-item="${id}"><span>${esc(entry.item.name)}</span><strong>${entry.price.toLocaleString()} gold</strong></button>`;
+ }).join('');
+ body.innerHTML=`<div class="merchant-layout"><aside class="merchant-persona">
+  <div class="merchant-portrait" role="img" aria-label="${esc(merchant.name)}" style="background-position:${index%4*100/3}% ${Math.floor(index/4)*50}%"></div>
+  <h3>${esc(merchant.name)}</h3><p>Your purse: <strong>${state.gold.toLocaleString()} gold</strong></p>
+  <h3>Sell your loot</h3>${rows(loot)||'<p>Your bag is empty.</p>'}
+ </aside><div class="merchant-lists"><h3>Everyday supplies</h3>${rows(supplies)}
+  <h3>Weapons, potions & enchanted gear</h3>${rows(stock)}</div></div>
+  <dialog class="merchant-detail" aria-labelledby="merchant-detail-title"></dialog>`;
+ const detail=body.querySelector('.merchant-detail');
+ for(const row of body.querySelectorAll('[data-merchant-item]'))row.onclick=()=>{
+  const {item,price,action,remaining,worn}=listings[Number(row.dataset.merchantItem)];
+  const selling=action.type==='sellItem';
+  const unavailable=worn?'Equipped. Unequip to sell.':remaining===0?'Sold out.':!selling&&price>state.gold?'You cannot afford this item.':'';
+  detail.innerHTML=`<form method="dialog"><button aria-label="Close item details" class="merchant-detail-close">×</button></form>
+   ${itemArt(item)}<h3 id="merchant-detail-title">${esc(item.name)}</h3>
+   ${item.rarity?`<p class="eyebrow">${esc(item.rarity)}</p>`:''}
+   <p>${esc(item.description)}</p>
+   ${item.damage?`<p>${item.toHit>=0?'+':''}${item.toHit} to hit · ${item.damage.join('–')} damage</p>`:''}
+   ${Number.isFinite(remaining)?`<p>${remaining} left</p>`:''}
+   ${unavailable?`<p>${unavailable}</p>`:''}
+   <button type="button" class="primary merchant-trade" ${unavailable?'disabled':''}>${selling?'Sell':'Buy'} · ${price.toLocaleString()} gold</button>`;
+  detail.querySelector('.merchant-trade').onclick=()=>{detail.close();dispatch(action);};
+  detail.showModal();
+ };
+}
 
 function refreshSlotPicker(){selectedGender=null;$('chosen-face').hidden=true;$('chosen-face').innerHTML='';document.querySelectorAll('[name="adventurer-gender"]').forEach(input=>input.checked=false);if(developerMode){$('adventurer-slot').innerHTML='<option>Separate developer character</option>';$('adventurer-slot').disabled=true;$('slot-status').textContent='Developer preview · your three adventurers are untouched';return;}let summaries;try{summaries=SLOT_IDS.map(id=>slotSummary(localStorage,id));}catch{summaries=[null,null,null];}$('adventurer-slot').innerHTML=SLOT_IDS.map((id,i)=>`<option value="${id}">${id}. ${summaries[i]?esc(summaries[i].name)+' · Level '+summaries[i].level:'Empty adventurer slot'}</option>`).join('');$('adventurer-slot').value=String(activeSlot);$('continue-game').hidden=!hasSave();$('load-checkpoint-title').hidden=!hasCheckpoint();$('slot-status').textContent='Slot '+activeSlot+' of 3 · Separate autosave and checkpoint';}
 function beginNewAdventurer(){const fresh=developerMode?{...previewCharacter(),gender:selectedGender}:createRoyalGame($('hero-name').value,selectedGender);try{localStorage.setItem(SAVE,saveGame(fresh));localStorage.removeItem(CHECKPOINT);localStorage.removeItem(CHECKPOINT+'-royal');localStorage.removeItem(SAVE+'-before-restore');}catch{toast('Cannot create an adventurer: device storage is unavailable or full.');return;}start(fresh);refreshSlotPicker();}
