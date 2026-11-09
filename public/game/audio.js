@@ -15,6 +15,7 @@ export const THEMES = Object.freeze({
 });
 
 export const recordedMusic=scene=>scene==='boss'?'/assets/mob-boss.mp3':scene==='dungeon:ship'?'/assets/hollow-signal.mp3':scene==='dungeon:6'?'/assets/the-echoing-clock.mp3':scene==='dungeon:sewer'?'/assets/below-the-grates.mp3':scene==='snow'?'/assets/against-the-whiteout.mp3':scene==='desert'?'/assets/sands-beyond-the-horizon.mp3':scene==='land:0'?'/assets/countryside-wander.mp3':scene==='dungeon'||scene.startsWith('dungeon:')?'/assets/whispers-beneath-stone.mp3':null;
+export const RECORDED_EFFECTS={hit:'sfx-strike',hurt:'sfx-hurt',roulette:'sfx-roulette',cards:'sfx-cards',rescue:'sfx-rescue',dungeonEntrance:'sfx-dungeon',casinoWin:'sfx-casino-win',goldFound:'sfx-gold'};
 const hz = midi => 440 * 2 ** ((midi - 69) / 12);
 const volume = (value, fallback) => Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : fallback;
 
@@ -29,6 +30,7 @@ export class AudioDirector {
     this.clear = options.clearInterval || globalThis.clearInterval.bind(globalThis);
     this.fetch = options.fetch || globalThis.fetch?.bind(globalThis);
     this.encounterReady = null;
+    this.effectBuffers=new Map();
     this.encounterGeneration = 0;
     this.scene = 'title';
     this.musicVolume = .45;
@@ -219,8 +221,22 @@ export class AudioDirector {
     this.voices.add(entry);source.onended=()=>this.disconnect(entry);source.start(this.context.currentTime+.005);
   }
 
-  effect(name) {
+  async playRecordedEffect(name) {
+    const context=this.context,transport=this.transport;
+    let pending=this.effectBuffers.get(name);
+    if(!pending){pending=this.fetch('/assets/'+RECORDED_EFFECTS[name]+'.mp3').then(r=>{if(!r.ok)throw Error('Missing effect');return r.arrayBuffer();}).then(data=>context.decodeAudioData(data)).catch(()=>null);this.effectBuffers.set(name,pending);}
+    const buffer=await pending;
+    if(this.paused||this.destroyed||context!==this.context||transport!==this.transport||context.state!=='running')return;
+    if(!buffer)return this.effect(name,true);
+    const source=context.createBufferSource(),envelope=context.createGain();source.buffer=buffer;
+    envelope.gain.setValueAtTime(['hit','hurt'].includes(name)?1.25:.85,context.currentTime);
+    source.connect(envelope);envelope.connect(this.effects);const entry={source,envelope,bus:'effects'};
+    this.voices.add(entry);source.onended=()=>this.disconnect(entry);source.start(context.currentTime+.005);
+  }
+
+  effect(name,fallback=false) {
     if (!this.context || this.paused || this.destroyed || this.context.state !== 'running') return;
+    if(!fallback&&RECORDED_EFFECTS[name]&&this.fetch&&this.context.decodeAudioData)return this.playRecordedEffect(name);
     const now = this.context.currentTime + .005;
     const combatGain=['hit','hurt','block','magic','miss'].includes(name)?2.2:1;
     const tone = (frequency, delay, length, amplitude = .14, end, type = 'triangle') =>
@@ -250,7 +266,8 @@ export class AudioDirector {
       case 'fire-whoosh': for(let i=0;i<8;i++)this.brush(now+i*.06,.25,.16,'effects',250+i*220);break;
       case 'lightning-crackle': for(let i=0;i<16;i++)this.brush(now+i*.035,.04,.19,'effects',1800+(i%4)*1100);break;
       case 'buzzer': tone(110,0,.35,.25,'sawtooth');tone(103,.12,.4,.19,'sawtooth');break;
-      case 'coin': tone(988, 0, .12, .10); tone(1319, .08, .24, .09); break;
+      case 'townEntrance': tone(784,0,.14,.12);tone(1175,.1,.25,.10);break;
+      case 'casinoWin': case 'goldFound': case 'coin': tone(988, 0, .12, .10); tone(1319, .08, .24, .09); break;
       case 'door': this.brush(now, .18, .11, 'effects', 450); tone(110, 0, .20, .12, 55); break;
       case 'magic': [64, 71, 76, 83, 88].forEach((note, i) => tone(hz(note), i * .055, .26, .09)); break;
       case 'click': tone(660, 0, .045, .06, 440); break;
