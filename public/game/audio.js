@@ -15,7 +15,7 @@ export const THEMES = Object.freeze({
 });
 
 export const recordedMusic=scene=>scene==='boss'?'/assets/mob-boss.mp3':scene==='dungeon:ship'?'/assets/hollow-signal.mp3':scene==='dungeon:6'?'/assets/the-echoing-clock.mp3':scene==='dungeon:sewer'?'/assets/below-the-grates.mp3':scene==='snow'?'/assets/against-the-whiteout.mp3':scene==='desert'?'/assets/sands-beyond-the-horizon.mp3':scene==='land:0'?'/assets/countryside-wander.mp3':scene==='dungeon'||scene.startsWith('dungeon:')?'/assets/whispers-beneath-stone.mp3':null;
-export const RECORDED_EFFECTS={hit:'sfx-strike',hurt:'sfx-hurt',roulette:'sfx-roulette',cards:'sfx-cards',rescue:'sfx-rescue',dungeonEntrance:'sfx-dungeon',casinoWin:'sfx-casino-win',goldFound:'sfx-gold'};
+export const RECORDED_EFFECTS={hit:'sfx-strike',hurt:'sfx-hurt',roulette:'sfx-roulette',cards:'sfx-cards',rescue:'sfx-rescue',dungeonEntrance:'sfx-dungeon',casinoWin:'sfx-casino-win',goldFound:'sfx-gold',townEntrance:'sfx-town',defeat:'sfx-defeat',wolfEncounter:'sfx-wolf'};
 const hz = midi => 440 * 2 ** ((midi - 69) / 12);
 const volume = (value, fallback) => Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : fallback;
 
@@ -222,11 +222,12 @@ export class AudioDirector {
   }
 
   async playRecordedEffect(name) {
-    const context=this.context,transport=this.transport;
+    const context=this.context,transport=this.transport,generation=this.encounterGeneration;
     let pending=this.effectBuffers.get(name);
     if(!pending){pending=this.fetch('/assets/'+RECORDED_EFFECTS[name]+'.mp3').then(r=>{if(!r.ok)throw Error('Missing effect');return r.arrayBuffer();}).then(data=>context.decodeAudioData(data)).catch(()=>null);this.effectBuffers.set(name,pending);}
     const buffer=await pending;
     if(this.paused||this.destroyed||context!==this.context||transport!==this.transport||context.state!=='running')return;
+    if(name==='wolfEncounter'&&(this.scene!=='battle'||generation!==this.encounterGeneration))return;
     if(!buffer)return this.effect(name,true);
     const source=context.createBufferSource(),envelope=context.createGain();source.buffer=buffer;
     envelope.gain.setValueAtTime(['hit','hurt'].includes(name)?1.25:.85,context.currentTime);
@@ -247,6 +248,7 @@ export class AudioDirector {
       case 'hal-crush': this.brush(now,.85,.28,'effects',280);tone(180,0,1,.24,35,'sawtooth');break;
       case 'dragon-greep': tone(220,0,.16,.32,700,'sawtooth');tone(780,.14,.85,.32,1450,'sawtooth');tone(1500,.2,.7,.11,2400,'sine');tone(470,.95,.2,.22,160,'triangle');break;
       case 'launch': for(let i=0;i<12;i++)this.brush(now+i*.25,.65,.10+Math.sin(i/12*Math.PI)*.12,'effects',350+i*320);tone(55,0,3.6,.12,240,'sawtooth');break;
+      case 'wolfEncounter':
       case 'encounter': return this.playEncounter();
       case 'roulette': for(let i=0;i<42;i++)this.brush(now+Math.pow(i/41,1.5)*2.9,.025,.035,'effects',3200);break;
       case 'vomit': for(let i=0;i<7;i++)tone(140+i%2*60,i*.08,.13,.10,45,'sawtooth');this.brush(now+.1,.5,.035,'effects',500);break;
