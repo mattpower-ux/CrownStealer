@@ -15,7 +15,7 @@ export const THEMES = Object.freeze({
 });
 
 export const recordedMusic=scene=>scene==='boss'?'/assets/mob-boss.mp3':scene==='dungeon:ship'?'/assets/hollow-signal.mp3':scene==='dungeon:6'?'/assets/the-echoing-clock.mp3':scene==='dungeon:sewer'?'/assets/below-the-grates.mp3':scene==='snow'?'/assets/against-the-whiteout.mp3':scene==='desert'?'/assets/sands-beyond-the-horizon.mp3':scene==='land:0'?'/assets/countryside-wander.mp3':scene==='dungeon'||scene.startsWith('dungeon:')?'/assets/whispers-beneath-stone.mp3':null;
-export const RECORDED_EFFECTS={hit:'sfx-strike',hurt:'sfx-hurt',roulette:'sfx-roulette',cards:'sfx-cards',rescue:'sfx-rescue',dungeonEntrance:'sfx-dungeon',casinoWin:'sfx-casino-win',goldFound:'sfx-gold',townEntrance:'sfx-town',defeat:'sfx-defeat',wolfEncounter:'sfx-wolf'};
+export const RECORDED_EFFECTS={hit:'sfx-strike',hurt:'sfx-hurt',roulette:'sfx-roulette',cards:'sfx-cards',rescue:'sfx-rescue',dungeonEntrance:'sfx-dungeon',casinoWin:'sfx-casino-win',goldFound:'sfx-gold',townEntrance:'sfx-town',defeat:'sfx-defeat',wolfEncounter:'sfx-wolf','dragon-greep':'sfx-gleep',drakeVoice:'voice-drake'};
 const hz = midi => 440 * 2 ** ((midi - 69) / 12);
 const volume = (value, fallback) => Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : fallback;
 
