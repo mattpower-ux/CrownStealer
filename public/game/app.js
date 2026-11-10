@@ -33,6 +33,7 @@ import {townPosition,townPlace,TOWN_SIZE} from './town.js';
 import {WEAPONS,UNARMED,itemById,itemArt,weaponAccuracy} from './items.js';
 import {REGIONS,TOWNS,DUNGEONS,CHAPTERS,SIDE_QUESTS,LORE,ENDINGS} from './content.js';
 import {createGame,createRoyalGame,act,pointAt,nextObjective,saveGame,loadGame,dungeonNavigation,dungeonName,dungeonMap} from './engine.js';
+import {undead} from './spell-items.js';
 import {render,paintMonster} from './render.js';
 import {AudioDirector} from './audio.js';
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -130,6 +131,7 @@ function update(){updateClockDisplay();
  if(state.mode==='world'&&p?.kind==='town'&&state.flags['palaceBan:'+p.id])$('actions').innerHTML=button('Pay entrance guards · 5,000 gold',{type:'payGovernor'},'primary')+'<span>Barred by this governor. Payment restores entry.</span>';
  if(state.mode==='world'&&p?.kind==='town'&&cityOf(state,p.id)?.destroyed)$('actions').innerHTML=button('Rebuild '+esc(p.name)+' · 500 gold',{type:'cityRebuild'},'primary');
  if(state.mode==='dungeon'){const chest=dungeonChests(state,dungeonMap(state.dungeon)).find(c=>c.x===state.dungeon.x&&c.y===state.dungeon.y);if(chest){const revisit=chest.opened&&state.openedChests.indexOf(chest.id)<(state.flags.chestVisitStart??state.openedChests.length)&&!state.flags['missedCoins:'+chest.id];$('scene-caption').textContent=chest.opened?(revisit?'Someone was here before you. They missed a few coins.':'You already opened this chest.'):'A treasure chest lies at your feet. Open it to claim the contents.';$('actions').insertAdjacentHTML('afterbegin',chest.opened?(revisit?button('Search for missed coins',{type:'rummageChest'},'primary'):''):button('Open chest',{type:'openChest'},'primary'));}}
+ if(state.mode==='battle'&&state.equipped==='holy-avenger'&&(state.enemy.boss||undead(state.enemy)))$('scene-caption').textContent+=' Your Holy Avenger glows.';
  if(state.mode==='dungeon')$('actions').insertAdjacentHTML('beforeend','<button data-save-checkpoint>Save dungeon checkpoint</button>');
  $('context').innerHTML=state.mode==='town'?`<div class="context-box"><b>Find your way</b><p>Inn & market: northern square.<br>Casino & court: southern square.<br>Town hall: northern lane.<br>Story house & fortune teller: by the south gate.<br>Exit: the southern gate.</p></div>`:state.wanted[state.region]>0?`<div class="context-box"><b>Wanted by the crown</b><p>Local bounty: ${state.wanted[state.region]*25} gold. A pardon can be purchased in town.</p></div>`:'';
  if(state.location==='bellwether')$('context').innerHTML+=`<p>Royal guards defeated: ${Math.min(20,state.flags.royalGuardWins||0)} / 20</p>`;
@@ -172,7 +174,7 @@ function openPanel(name){if(state&&gagActive(state,'helium')&&['shop','talk','co
  if(name==='halOutcome'){body.innerHTML=halOutcomeView(button);audio.unlock().then(()=>audio.effect('hal-crush'));}
  if(name==='bossIntro'){
   const enemy=state.enemy;
-  const taunt=enemy.speciesId==='drake-defiler'?'You should have stayed home with your mama. This mountain is MY roost!':enemy.speciesId==='haghilda'?'Run back to the henhouse, little chick. I can smell your fear from here!':enemy.speciesId==='leviathan-levity'?'Your mama warned you about deep water. Now you are the punch line!':enemy.speciesId==='ghost-dragon'?'You should have hidden with the chickens. I will make ash of your courage!';
+  const taunt=enemy.speciesId==='drake-defiler'?'You should have stayed home with your mama. This mountain is MY roost!':enemy.speciesId==='haghilda'?'Run back to the henhouse, little chick. I can smell your fear from here!':enemy.speciesId==='leviathan-levity'?'Your mama warned you about deep water. Now you are the punch line!':enemy.speciesId==='ghost-dragon'?'You should have hidden with the chickens. I will make ash of your courage!':'You should have stayed home with your mama. Your adventure ends here!';
   body.innerHTML='<div class="dragon-greeting"><canvas width="640" height="440" style="width:100%;max-height:55vh;object-fit:contain" aria-label="'+esc(enemy.name)+'"></canvas><h3>'+esc(enemy.name)+'</h3><p>'+esc(taunt)+'</p><button id="face-boss" class="primary">Face the boss</button></div>';
   const canvas=body.querySelector('canvas');
   const draw=()=>{if(activePanel==='bossIntro')paintMonster(canvas.getContext('2d'),enemy,100,0,440,440,state.dungeon?.index||0);};

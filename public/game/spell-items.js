@@ -18,7 +18,13 @@ export const SPELLS={
 };
 SPELLS['stun-ray']={name:'Stun Ray',level:1,damage:[5,10],scales:true,text:'Electric damage, 5–10 per rod level; stuns for one round.'};
 SPELLS['disintegration']={name:'Disintegration Ray',level:1,damage:[300,500],text:'Deals 300–500 damage.'};
+SPELLS['summon-elemental']={name:'Summon Elemental',level:5,damage:[45,70],text:'An elemental strikes for 45–70 damage and keeps the enemy from attacking this turn.'};
+SPELLS['summon-angel']={name:'Summon Angel of Smackdown',level:7,damage:[75,110],text:'The Angel of Smackdown strikes for 75–110 damage and keeps the enemy from attacking for two turns.'};
 export const SPELL_ITEMS={};
+for(const spell of ['summon-elemental','summon-angel']){
+ const def=SPELLS[spell],id='scroll-'+spell;
+ SPELL_ITEMS[id]={id,kind:'scroll',shape:'scroll',spell,minLevel:def.level,spellItem:true,tier:1,rarity:'legendary',name:'Scroll of '+def.name,value:def.level*100,color:'#efcb70',description:'Level '+def.level+' spell. '+def.text+' Consumed on casting.'};
+}
 for(const spell of ['magic-missile','lightning-strike','fireball','invisibility','fear','confusion','healing','ward','cure-poison','immobilize']){const def=SPELLS[spell],id='scroll-'+spell;SPELL_ITEMS[id]={id,kind:'scroll',shape:'scroll',spell,minLevel:def.level,spellItem:true,tier:1,rarity:def.level===1||spell==='ward'||spell==='healing'?'common':'rare',name:'Scroll of '+def.name,value:def.level*35,color:'#d9c791',description:'Level '+def.level+' spell. '+def.text+' Consumed on casting.'};}
 for(let tier=1;tier<=3;tier++)for(const spell of ['frost-ray','fireball','lightning-strike','sledgehammer','immobilize','vaporize','incinerate','charm']){const rare=['vaporize','incinerate','charm'].includes(spell),id='wand-'+spell+'-'+tier,power=[3,8,15][tier-1],charges=5;SPELL_ITEMS[id]={id,kind:'wand',shape:'wand',spell,spellItem:true,spellLevel:power,maxCharges:charges,tier,rarity:rare?'legendary':['common','rare','epic'][tier-1],name:'Wand of '+SPELLS[spell].name+' '+['I','II','III'][tier-1],value:(rare?600:100)*tier,color:rare?'#efd07c':'#9ecbdc',description:'Any character level. Spell level '+power+'. '+charges+' charges when new; only electric wands accept alien batteries. '+SPELLS[spell].text};}
 for(const [id,spell,name,charges] of [['stun-rod','stun-ray','Stun Rod',5],['disintegration-ray','disintegration','Disintegration Ray',3]])SPELL_ITEMS[id]={id,name,kind:'wand',shape:'wand',spell,spellItem:true,alien:true,spellLevel:3,maxCharges:charges,tier:3,rarity:'legendary',value:1500,color:'#82e2e5',description:SPELLS[spell].text+' '+charges+' charges.'};
@@ -39,7 +45,7 @@ export function castSpellItem(s,id,{random,note,events,enemyTurn,victory,resetAt
  else if(item.spell==='confusion')s.enemy.confused=true;
  else if(item.spell==='immobilize')s.enemy.frozen=3;
  else if(['vaporize','incinerate'].includes(item.spell))amount=random()<Math.max(.05,.95-Math.max(0,s.enemy.level-charges)*.1)?s.enemy.hp:10;
- else if(def.damage){amount=(def.damage[0]+Math.floor(random()*(def.damage[1]-def.damage[0]+1)))*(def.scales?power:1);if(['frost-ray','stun-ray'].includes(item.spell))s.enemy.frozen=1;}
+ else if(def.damage){amount=(def.damage[0]+Math.floor(random()*(def.damage[1]-def.damage[0]+1)))*(def.scales?power:1);if(['frost-ray','stun-ray','summon-elemental'].includes(item.spell))s.enemy.frozen=1;else if(item.spell==='summon-angel')s.enemy.frozen=2;}
  if(amount&&s.enemy&&!def.utility){s.enemy.hp-=amount;note(s,def.name+' deals '+amount+' damage.');}
  events.push({kind:def.utility?'heal':'magic',target:def.utility?'hero':'enemy',amount,sound:item.spell==='fireball'?'fire-whoosh':/lightning|stun-ray/.test(item.spell)?'lightning-crackle':'magic',spell:item.spell,hpAfter:def.utility?s.hp:undefined});
  if(s.enemy?.hp<=0){events.push({kind:'victory',target:'enemy',amount:0,sound:'victory'});victory(s);}else if(s.mode==='battle')enemyTurn(s,false,events);return true;}
