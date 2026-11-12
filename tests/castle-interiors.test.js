@@ -6,6 +6,7 @@ import {act, createGame, loadGame, saveGame} from '../public/game/engine.js';
 import {itemById} from '../public/game/items.js';
 import {BALROG_WHIP} from '../public/game/bottomless-pit.js';
 import {ATTRIBUTE_CAP, attributePointsAvailable} from '../public/game/attributes.js';
+import {DAY_MS, buffTimeLeft, gameDay} from '../public/game/world-clock.js';
 import * as castles from '../public/game/castle-interiors.js';
 
 function guest(townId = 'bellwether') {
@@ -509,7 +510,7 @@ test('the full Bellwether floor plan connects the new chambers and preserves ori
       }
     }
   }
-  const names = ['Throne Room','Front Foyer','Royal Armory','Privy Council Room','Royal Fun Room','Chastity Chamber','Guards’ Barracks','Royal Kitchen','Pantry','Banquet Hall','Castle Chapel','Royal Library','Guest Chambers','Servants’ Quarters','Linen Room','Wine Store'];
+  const names = ['Throne Room','Front Foyer','Royal Armory','Privy Council Room','Royal Fun Room','Chastity Chamber','Guards’ Barracks','Royal Kitchen','Pantry','Banquet Hall','Castle Chapel','Royal Library','Guest Chambers','Servants’ Quarters','Royal Bathroom','Wine Store'];
   for (const name of names) {
     const room = layout.rooms.find(room => room.name === name);
     assert.ok(room, name);
@@ -517,9 +518,10 @@ test('the full Bellwether floor plan connects the new chambers and preserves ori
   }
   assert.ok(seen.has('10,13'), 'royal dungeon stair');
   assert.equal(seen.size, layout.tiles.flat().filter(tile => tile !== 'wall').length);
+  assert.equal(layout.rooms.length, 18);
   for (const town of TOWNS.filter(town => town.id !== 'bellwether')) {
     const regional = castles.castleLayout(town.id);
-    assert.equal(layout.rooms.length, 3 * regional.rooms.length, town.id);
+    assert.equal(regional.rooms.length, town.id === 'redhaven' ? 7 : 6, town.id);
     const ratio = seen.size / regional.tiles.flat().filter(tile => tile !== 'wall').length;
     assert.ok(ratio >= 2.8 && ratio <= 3.3, `${town.id} ${ratio}`);
   }
@@ -688,4 +690,128 @@ test('a rare library book grants a permanent capped attribute gain once without 
 
   delete learned.flags['castleBookRead:' + book.id];
   assert.throws(() => loadGame(saveGame(learned)), /Invalid castle state/);
+});
+
+function facingHead(town) {
+  const layout = castles.castleLayout(town);
+  const head = layout.talkingHead;
+  const [x, y] = [[head.x-1, head.y], [head.x+1, head.y], [head.x, head.y-1], [head.x, head.y+1]]
+    .find(([x, y]) => layout.tiles[y]?.[x] === 'vestibule');
+  return {head, hero: palaceAt(town, x, y)};
+}
+
+test('each castle has exactly one reachable wall trophy and all four creatures rotate through the towns', () => {
+  const species = ['Moose', 'Fish', 'Yak', 'Wilderbeast'];
+  for (const [i, town] of TOWNS.entries()) {
+    const layout = castles.castleLayout(town.id);
+    const {head, hero} = facingHead(town.id);
+    assert.equal(head.kind, 'talking-head');
+    assert.equal(head.species, species[i % species.length]);
+    assert.equal(head.artIndex, i % species.length);
+    assert.equal(layout.tiles[head.y][head.x], 'wall');
+    assert.equal(castles.castleInteractionsAt(hero).filter(point => point.kind === 'talking-head').length, 1);
+    assert.ok(![...layout.chests, ...layout.guards, ...layout.patrols, ...layout.books].some(point =>
+      (point.x === head.x && point.y === head.y) || (point.x === hero.castle.x && point.y === hero.castle.y)));
+  }
+});
+
+test('talking trophy declines are silent and Yes can draw a species-specific silence, a greeting, or a gem', () => {
+  const {head, hero} = facingHead('redhaven');
+  const [yes, no] = castles.castleInteractionActions(hero, head.id);
+  assert.equal(yes.label, 'Yes');
+  assert.equal(no.label, 'No');
+  const declined = [];
+  const untouched = act(hero, no.action, declined);
+  assert.equal(untouched.rng, hero.rng);
+  assert.deepEqual(untouched.log, hero.log);
+  assert.deepEqual(declined, []);
+
+  const lines = [
+    [0, 'Did you seriously just talk to a stuffed Wilderbeast?', null],
+    [1024, `Hello ${hero.name}. You’re looking good!`, null],
+    [1600, 'I can’t talk now. Here’s a gem. Now leave me alone!', 'medium-emerald'],
+  ];
+  for (const [rng, text, gift] of lines) {
+    const events = [];
+    const result = act({...hero, rng}, yes.action, events);
+    assert.equal(result.log.at(-1), text);
+    assert.deepEqual(events, [{kind: 'castleHeadReply', id: head.id, text, gift}]);
+    assert.equal(result.bag.length, hero.bag.length + Number(!!gift));
+    if (gift) assert.equal(result.pendingLoot.at(-1), gift);
+  }
+});
+
+test('the talking trophy’s gem limit spans palaces and saves until the next game day', () => {
+  const {head, hero} = facingHead('mothbridge');
+  const first = loadGame(saveGame(act({...hero, rng: 1600}, {type: 'greetCastleHead', id: head.id})));
+  assert.equal(first.flags.castleHeadGemDay, gameDay(first));
+  const other = facingHead('bellwether');
+  const state = {...first, location: other.hero.location, x: other.hero.x, y: other.hero.y, castle: other.hero.castle, rng: 1600};
+  const greet = {type: 'greetCastleHead', id: other.head.id};
+  const repeated = [];
+  const sameDay = act(state, greet, repeated);
+  assert.equal(repeated[0].gift, null);
+  assert.match(repeated[0].text, /^Hello /);
+  assert.deepEqual(sameDay.bag, first.bag);
+
+  const far = act({...state, castle: {...state.castle, x: 9, y: 2}}, greet);
+  assert.equal(far.rng, state.rng);
+  assert.deepEqual(far.bag, state.bag);
+
+  const nextDay = (gameDay(first) + 1) * DAY_MS;
+  const after = loadGame(saveGame(act({...state, worldTimeMs: nextDay}, greet)));
+  assert.equal(after.flags.castleHeadGemDay, gameDay(first) + 1);
+  assert.equal(after.bag.length, first.bag.length + 1);
+  after.flags.castleHeadGemDay++;
+  assert.throws(() => loadGame(saveGame(after)), /Invalid castle state/);
+});
+
+test('healing bathtubs are available from nearby tiles in the two palace bathrooms', () => {
+  const towns = TOWNS.filter(town => castles.castleLayout(town.id).bathtub).map(town => town.id);
+  assert.deepEqual(towns, ['bellwether', 'redhaven']);
+  for (const town of towns) {
+    const layout = castles.castleLayout(town);
+    const bath = layout.bathtub;
+    assert.equal(bath.kind, 'bath');
+    assert.equal(layout.tiles[bath.y][bath.x], bath.room);
+    assert.match(layout.rooms.find(room => room.id === bath.room).name, /Bathroom/);
+    const nearby = palaceAt(town, bath.x - 1, bath.y);
+    assert.equal(castles.castleBathAt(nearby).id, bath.id);
+    assert.deepEqual(castles.castleInteractionActions(nearby, bath.id), [{label: 'Bathe', action: {type: 'batheCastle', id: bath.id}}]);
+    const far = palaceAt(town, layout.entrance.x, layout.entrance.y);
+    far.hp = 1;
+    const result = act(far, {type: 'batheCastle', id: bath.id});
+    assert.equal(result.hp, 1);
+    assert.equal(result.buffExpiry.hairy, undefined);
+  }
+});
+
+test('the bath restores actual maximum health and refreshes a saved cosmetic effect for three game days', () => {
+  const town = 'bellwether';
+  const bath = castles.castleLayout(town).bathtub;
+  const hero = palaceAt(town, bath.x, bath.y);
+  hero.attributes.constitution = 20;
+  hero.hp = 1;
+  const before = act(hero, {type: 'clockTick', elapsedMs: 0});
+  const action = {type: 'batheCastle', id: bath.id};
+  const events = [];
+  const bathed = loadGame(saveGame(act(before, action, events)));
+  const text = 'You feel GREAT, but your testosterone level is through the roof, and likely to stay that way for a few days.';
+  assert.equal(bathed.hp, before.maxHp);
+  assert.equal(bathed.maxHp, before.maxHp);
+  assert.deepEqual(bathed.attributes, before.attributes);
+  assert.equal(bathed.log.at(-1), text);
+  assert.deepEqual(events, [{kind: 'castleBathReply', id: bath.id, text}]);
+  assert.equal(bathed.buffExpiry.hairy, bathed.worldTimeMs + 3 * DAY_MS);
+  assert.equal(buffTimeLeft(bathed, 'hairy'), 3 * 24 * 60);
+
+  const time = bathed.worldTimeMs + DAY_MS;
+  const renewed = act({...bathed, worldTimeMs: time, hp: 1}, action);
+  assert.equal(renewed.buffExpiry.hairy, time + 3 * DAY_MS);
+  assert.equal(renewed.hp, renewed.maxHp);
+  const lastMinute = act({...renewed, worldTimeMs: renewed.buffExpiry.hairy - 60_000}, {type: 'clockTick', elapsedMs: 0});
+  assert.equal(buffTimeLeft(lastMinute, 'hairy'), 1);
+  const expired = loadGame(saveGame(act({...renewed, worldTimeMs: renewed.buffExpiry.hairy}, {type: 'clockTick', elapsedMs: 0})));
+  assert.equal(expired.buffExpiry.hairy, undefined);
+  assert.equal(buffTimeLeft(expired, 'hairy'), 0);
 });

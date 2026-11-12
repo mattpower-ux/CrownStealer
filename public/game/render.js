@@ -405,7 +405,7 @@ const CASTLE_FLOORS={
  'royal-fun':['#74464b','#87535b'],chastity:['#4c665a','#587568'],council:['#575061','#675c70'],
  kitchen:['#6e5844','#82694e'],pantry:['#6b633e','#80754c'],banquet:['#78493e','#90574c'],
  chapel:['#685564','#7e667a'],library:['#4c526e','#59617d'],guest:['#485e72','#556f84'],
- servants:['#5b6148','#6d7359'],linen:['#6a6663','#827b72'],wine:['#594458','#6b526c'],
+ servants:['#5b6148','#6d7359'],linen:['#6a6663','#827b72'],wine:['#594458','#6b526c'],bathroom:['#4e6972','#5b7a82'],
  hall:['#847665','#938573'],door:['#6b5446','#806351'],exit:['#6b5446','#806351'],stair:['#4c6068','#586c76']
 };
 const castleRoyals=new Image();castleRoyals.src='/assets/royal-portraits.webp';
@@ -413,6 +413,8 @@ const governorPortraits=new Image();governorPortraits.src='/assets/regional-rule
 const guardPortraits=new Image();guardPortraits.src='/assets/palace-guards.webp';
 const castleFurnitureArt=new Image();castleFurnitureArt.src='/assets/castle-furniture.webp';
 const castleBookCovers=new Image();castleBookCovers.src='/assets/castle-library-covers.webp';
+const castleHeadArt=new Image();castleHeadArt.src='/assets/talking-trophies.webp';
+const castleBathArt=new Image();castleBathArt.src='/assets/healing-bathtub.webp';
 const governorPortraitTowns=TOWNS.filter(town=>town.id!=='bellwether').map(town=>town.id);
 
 export function castleGovernorPortrait(location){
@@ -454,7 +456,7 @@ function drawCastleTile(c,layout,region,gx,gy,x,y,size){
   }
   return;
  }
- const colors=CASTLE_FLOORS[tile]??CASTLE_FLOORS.hall;
+ const colors=CASTLE_FLOORS[layout.bathtub?.room===tile?'bathroom':tile]??CASTLE_FLOORS.hall;
  c.fillStyle='#2b2628';c.fillRect(x,y,size+.5,size+.5);
  for(let row=0;row<2;row++)for(let col=0;col<2;col++){
   const xx=x+size*(col*.5+.018),yy=y+size*(row*.5+.018);
@@ -624,6 +626,34 @@ function drawCastleBook(c,book,read,size){
  c.restore();
 }
 
+function drawCastleHead(c,head,size,overview=false){
+ const x=(head.x+.5)*size,y=(head.y+.5)*size,aspect=Math.abs(c.getTransform().a/c.getTransform().d)||1;
+ const unit=size*Math.min(1,aspect)*(overview?.94:1.24);
+ c.save();c.translate(x,y);c.scale(unit/aspect,unit);
+ if(castleHeadArt.complete&&castleHeadArt.naturalWidth){
+  const sw=castleHeadArt.width/2,sh=castleHeadArt.height/2;
+  c.drawImage(castleHeadArt,head.artIndex%2*sw,Math.floor(head.artIndex/2)*sh,sw,sh,-.5,-.52,1,1);
+ }else{
+  path(c,[[-.26,-.23],[.26,-.23],[.22,.12],[0,.31],[-.22,.12]],'#805236','#dca465');
+  circle(c,0,0,.12,'#bd8450');
+ }
+ c.restore();
+}
+
+function drawCastleBath(c,bath,size,overview=false){
+ const x=(bath.x+.5)*size,y=(bath.y+.5)*size,aspect=Math.abs(c.getTransform().a/c.getTransform().d)||1;
+ const unit=size*Math.min(1,aspect)*(overview?.95:1.3);
+ c.save();c.translate(x,y);c.scale(unit/aspect,unit);
+ if(castleBathArt.complete&&castleBathArt.naturalWidth){
+  const height=castleBathArt.height/castleBathArt.width;
+  c.drawImage(castleBathArt,-.5,-height/2,1,height);
+ }else{
+  c.fillStyle='#c6995d';c.beginPath();c.ellipse(0,0,.43,.29,0,0,Math.PI*2);c.fill();
+  c.fillStyle='#48839c';c.beginPath();c.ellipse(0,-.04,.34,.19,0,0,Math.PI*2);c.fill();
+ }
+ c.restore();
+}
+
 export function renderCastleOverview(canvas,s){
  const layout=castleLayout(s.location),size=36;
  canvas.width=layout.width*size;
@@ -648,6 +678,8 @@ export function renderCastleOverview(canvas,s){
  }
  for(const chest of layout.chests)drawCastleChest(c,chest,s.flags[chest.id],size);
  for(const book of layout.books??[])drawCastleBook(c,book,s.flags['castleBookRead:'+book.id],size);
+ if(layout.talkingHead)drawCastleHead(c,layout.talkingHead,size,true);
+ if(layout.bathtub)drawCastleBath(c,layout.bathtub,size,true);
  const {x,y}=s.castle;
  circle(c,(x+.5)*size,(y+.5)*size,size*.22,'#162d24');
  circle(c,(x+.5)*size,(y+.5)*size,size*.15,'#a6e0ad');
@@ -669,6 +701,8 @@ function drawCastle(c,w,h,s,layout,time,fx,reduced){
  }
  for(const chest of chests)if(castlePointVisible(s,chest))drawCastleChest(c,chest,s.flags[chest.id],size);
  for(const book of layout.books??[])if(castlePointVisible(s,book))drawCastleBook(c,book,s.flags['castleBookRead:'+book.id],size);
+ if(layout.talkingHead&&castlePointVisible(s,layout.talkingHead))drawCastleHead(c,layout.talkingHead,size);
+ if(layout.bathtub&&castlePointVisible(s,layout.bathtub))drawCastleBath(c,layout.bathtub,size);
  const guards=castleGuards(s);
  const moving=fx?.kind==='castleGuardApproach'?guards.find(guard=>guard.id===fx.guardId):null;
  for(const figure of [...guards,...castleFigures(s)])if(figure.id!==moving?.id&&castlePointVisible(s,figure))drawCastleFigure(c,figure,size,s.location,s.region);

@@ -5,7 +5,9 @@ import {ROYAL_DUNGEON_STAIR} from './royal-dungeon.js';
 import {BALROG_WHIP} from './bottomless-pit.js';
 import {castleTreasuryLoot} from './castle-treasury-loot.js';
 import {castleLibraryBooks} from './castle-library.js';
+import {castleTalkingHead, talkingHeadReply} from './castle-talking-heads.js';
 import {ATTRIBUTE_CAP, attributeLabel, prepareAttributes} from './attributes.js';
+import {gameDay, setTimedBuff} from './world-clock.js';
 
 export const CASTLE_FINE = 2000;
 const WIDTH = 19;
@@ -50,12 +52,14 @@ const royalQuarters = [
   {id: 'library', name: 'Royal Library', x: 42, y: 8, width: 4, height: 4},
   {id: 'guest', name: 'Guest Chambers', x: 48, y: 8, width: 5, height: 4},
   {id: 'servants', name: 'Servants’ Quarters', x: 36, y: 15, width: 4, height: 3},
-  {id: 'linen', name: 'Linen Room', x: 42, y: 15, width: 4, height: 3},
+  {id: 'linen', name: 'Royal Bathroom', x: 42, y: 15, width: 4, height: 3},
   {id: 'wine', name: 'Wine Store', x: 48, y: 15, width: 5, height: 3},
 ];
 const kingDismissal = 'What are you doing here? Guards, get this nitwit out of my sight!';
 const bookReadPrefix = 'castleBookRead:';
 const bookBlessingPrefix = 'castleBookBlessing:';
+const bathReply = 'You feel GREAT, but your testosterone level is through the roof, and likely to stay that way for a few days.';
+const bathRooms = {bellwether: {room: 'linen', x: 44, y: 16}, redhaven: {room: 'bathroom', x: 22, y: 9}};
 const chestOffsets = [[2, 1], [1, 2], [3, 2], [1, 1], [3, 1]];
 
 function palaceChest(town, room, treasurySlot) {
@@ -73,7 +77,8 @@ function palaceChest(town, room, treasurySlot) {
 
 function createLayout(town, index) {
   const royal = town.id === 'bellwether';
-  const width = royal ? ROYAL_WIDTH : WIDTH;
+  const bathAnnex = town.id === 'redhaven';
+  const width = royal ? ROYAL_WIDTH : bathAnnex ? 25 : WIDTH;
   const height = royal ? ROYAL_HEIGHT : HEIGHT;
   const tiles = Array.from({length: height}, () => Array(width).fill('wall'));
   const rooms = [
@@ -84,6 +89,7 @@ function createLayout(town, index) {
       return {...wing, name: (royal && royalWingNames[wing.id]) || wing.name, x, y, width, height};
     }),
     ...(royal ? royalQuarters : []),
+    ...(bathAnnex ? [{id: 'bathroom', name: 'Palace Bathroom', x: 21, y: 8, width: 3, height: 3}] : []),
   ];
   const fill = (x, y, width, height, type) => {
     for (let row = y; row < y + height; row++) {
@@ -102,6 +108,9 @@ function createLayout(town, index) {
     fill(34, 6, 1, 8, 'hall');
     doors.push([23, 4], [23, 8], [28, 6], [33, 6]);
     for (const x of [37, 43, 50]) doors.push([x, 5], [x, 7], [x, 14]);
+  } else if (bathAnnex) {
+    fill(18, 9, 3, 1, 'hall');
+    doors.push([18, 9], [21, 9]);
   }
   for (const room of rooms) fill(room.x, room.y, room.width, room.height, room.id);
   for (const [x, y] of doors) tiles[y][x] = 'door';
@@ -122,8 +131,10 @@ function createLayout(town, index) {
   const king = royal ? {id: 'king', kind: 'king', name: 'King Malachi the Ineffable', ...throne} : null;
   const princess = royal ? {id: 'princess', kind: 'princess', name: 'Princess Bunnyfoot', x: throne.x + 1, y: throne.y} : null;
   const governor = royal ? null : {id: 'governor', kind: 'governor', ...governors[town.id], ...throne};
-  const layout = {width, height, tiles, rooms, chests, entrance, throne, dungeonStair, guards, patrols, king, princess, governor};
-  return {...layout, books: castleLibraryBooks(town.id, layout)};
+  const bathtub = bathRooms[town.id] ? {id: 'castle-bath:' + town.id, kind: 'bath', name: 'Healing Bathtub', ...bathRooms[town.id]} : null;
+  const layout = {width, height, tiles, rooms, chests, entrance, throne, dungeonStair, guards, patrols, king, princess, governor, bathtub};
+  layout.books = castleLibraryBooks(town.id, layout);
+  return {...layout, talkingHead: castleTalkingHead(layout, town)};
 }
 
 const layouts = new Map(TOWNS.map((town, index) => [town.id, createLayout(town, index)]));
@@ -173,13 +184,20 @@ export function castleChestAt(s, target) {
     (target === undefined ? figureDistance(s, chest) === 0 : chest.id === target && figureDistance(s, chest) <= 1)) ?? null;
 }
 
+export function castleBathAt(s) {
+  if (s.mode !== 'town' || !s.castle || s.castle.alarm) return null;
+  const bath = castleLayout(s.location)?.bathtub;
+  return bath && figureDistance(s, bath) <= 1 ? bath : null;
+}
+
 export function castleInteractionsAt(s) {
   if (s.mode !== 'town' || !s.castle || s.castle.alarm) return [];
   const layout = castleLayout(s.location);
   if (!layout) return [];
   const books = layout.books.map(book => ({...book, read: s.flags[bookReadPrefix + book.id] === true,
     blessed: s.flags[bookBlessingPrefix + book.id] === true}));
-  return [...layout.chests.filter(chest => !s.flags[chest.id]), ...books, ...castleFigures(s), ...castleGuards(s)]
+  return [...layout.chests.filter(chest => !s.flags[chest.id]), ...books, ...castleFigures(s), ...castleGuards(s), layout.talkingHead, layout.bathtub]
+    .filter(Boolean)
     .filter(point => figureDistance(s, point) <= 1)
     .sort((a, b) => figureDistance(s, a) - figureDistance(s, b));
 }
@@ -194,6 +212,8 @@ export function castleInteractionActions(s, id) {
   const choice = (label, type) => ({label, action: {type, id: point.id}});
   if (point.kind === 'chest') return [choice('ROB', 'robCastleChest'), choice('LEAVE IT', 'leaveCastleChest')];
   if (point.kind === 'book') return [choice('Read', 'readCastleBook'), choice('Leave It', 'leaveCastleBook')];
+  if (point.kind === 'talking-head') return [choice('Yes', 'greetCastleHead'), choice('No', 'leaveCastleHead')];
+  if (point.kind === 'bath') return [choice('Bathe', 'batheCastle')];
   if (point.kind === 'guard') return [choice('Talk', 'castleTalk'), choice('Attack', 'attackCastleGuard')];
   const leave = choice('Leave the Room', 'castleLeaveRoom');
   const attack = {label: 'Attack', action: {type: 'attackCastleRoyal', target: point.id}};
@@ -399,6 +419,29 @@ export function castleAction(s, action, options) {
     converse(s, action, layout, options);
     return true;
   }
+  if (action.type === 'greetCastleHead' || action.type === 'leaveCastleHead') {
+    const head = layout.talkingHead;
+    if (action.type === 'leaveCastleHead' || !head || action.id !== head.id || s.castle.alarm || figureDistance(s, head) !== 1) return true;
+    const day = gameDay(s);
+    const reply = talkingHeadReply(head, s.name, random(), s.flags.castleHeadGemDay !== day);
+    if (reply.gift) {
+      s.flags.castleHeadGemDay = day;
+      s.bag.push(reply.gift);
+      s.pendingLoot.push(reply.gift);
+    }
+    note(s, reply.text);
+    options.events?.push({kind: 'castleHeadReply', id: head.id, ...reply});
+    return true;
+  }
+  if (action.type === 'batheCastle') {
+    const bath = castleBathAt(s);
+    if (!bath || action.id !== undefined && action.id !== bath.id) return true;
+    s.hp = s.maxHp;
+    setTimedBuff(s, 'hairy', 3 * 24 * 60);
+    note(s, bathReply);
+    options.events?.push({kind: 'castleBathReply', id: bath.id, text: bathReply});
+    return true;
+  }
   if (action.type === 'readCastleBook' || action.type === 'leaveCastleBook') {
     const book = castleInteractionAt(s, action.id);
     if (book?.kind !== 'book') return true;
@@ -455,6 +498,8 @@ export function castleAction(s, action, options) {
 }
 
 export function validCastleState(s) {
+  const giftDay = s.flags.castleHeadGemDay;
+  if (giftDay !== undefined && (!Number.isSafeInteger(giftDay) || giftDay < 0 || giftDay > gameDay(s))) return false;
   if (s.enemy?.castleRobbery && (s.mode !== 'battle' || !s.castle?.alarm || !s.enemy.guard)) return false;
   if (s.castle !== undefined) {
     const {x, y, alarm, guardPositions} = s.castle ?? {};
