@@ -16,6 +16,12 @@ import {BALROG_WHIP} from './bottomless-pit.js';
 import {royalTrialItems} from './royal-trials.js';
 export const RARITIES=['common','rare','epic','legendary'];
 export const rarityFor=roll=>roll<.60?'common':roll<.80?'rare':roll<.95?'epic':'legendary';
+// One bonus step per five defeated NPC levels; rare enchantments stop at +5.
+export const attributeLootBonus=(rarity,npcLevel)=>Math.min(rarity==='rare'?5:Infinity,Math.max(1,Math.floor(npcLevel/5)));
+export function randomAttributeLoot(playerLevel,npcLevel,roll){
+ if(playerLevel<5||npcLevel<5||roll>=.05)return null;
+ return 'ring-wisdom-'+attributeLootBonus('rare',npcLevel);
+}
 const colors=['#b6baa5','#77bbec','#c69aef','#efcb70'];
 export const TREASURE_ITEMS={
  ...royalTrialItems,
@@ -184,3 +190,9 @@ for (const item of Object.values(TREASURE_ITEMS)) {
 }
 
 for(const q of SIDE_QUESTS)if(q.questItem)TREASURE_ITEMS[q.questItem]={id:q.questItem,kind:'quest',unique:true,name:q.keepsakeName,shape:'scroll',rarity:'rare',value:0,description:'A commission keepsake for '+q.title+'. Return it to the Odd Jobs office.'};
+
+// Fixed IDs retain each rolled enchantment through inventory, trading and save/load.
+for(let bonus=1;bonus<=5;bonus++){
+ const id='ring-wisdom-'+bonus;
+ TREASURE_ITEMS[id]={id,name:'Ring of Wisdom +'+bonus,kind:'ring',shape:'ring',rarity:'rare',minLevel:5,tier:1,unique:true,encounterOnly:true,bottomOnly:true,color:'#77bbec',value:100+bonus*60,attributeBonuses:{wisdom:bonus},description:'While worn, +'+bonus+' Wisdom. Found after defeating level '+(bonus*5)+(bonus===5?' or higher':'–'+(bonus*5+4))+' foes. Rare enchantments never exceed +5.'};
+}
