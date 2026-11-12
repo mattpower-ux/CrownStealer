@@ -1,5 +1,6 @@
 // Scrolls are consumed once; wand instances keep independent, non-rechargeable charges.
 import {effectiveLevel} from './attributes.js';
+import {rollAttackDamage} from './combat-belt.js';
 export const SPELLS={
  'magic-missile':{name:'Magic Missile',level:1,damage:[6,12],text:'Deals 6–12 magic damage.'},
  'lightning-strike':{name:'Lightning Strike',level:2,damage:[5,10],scales:true,text:'Deals 5–10 damage per caster level; wands use their spell level.'},
@@ -47,8 +48,9 @@ export function castSpellItem(s,id,{random,note,events,enemyTurn,victory,resetAt
  else if(item.spell==='immobilize')s.enemy.frozen=3;
  else if(['vaporize','incinerate'].includes(item.spell))amount=random()<Math.max(.05,.95-Math.max(0,s.enemy.level-charges)*.1)?s.enemy.hp:10+magicBonus();
  else if(def.damage){amount=(def.damage[0]+Math.floor(random()*(def.damage[1]-def.damage[0]+1)))*(def.scales?power:1)+magicBonus();if(['frost-ray','stun-ray','summon-elemental'].includes(item.spell))s.enemy.frozen=1;else if(item.spell==='summon-angel')s.enemy.frozen=2;}
- if(amount&&s.enemy&&!def.utility){s.enemy.hp-=amount;note(s,def.name+' deals '+amount+' damage.');onDamage(item.spell,amount);}
- events.push({kind:def.utility?'heal':'magic',target:def.utility?'hero':'enemy',amount,sound:item.spell==='fireball'?'fire-whoosh':/lightning|stun-ray/.test(item.spell)?'lightning-crackle':'magic',spell:item.spell,hpAfter:def.utility?s.hp:undefined});
+ let effect={amount};
+ if(amount&&s.enemy&&!def.utility){effect=rollAttackDamage(s,amount,random,note);s.enemy.hp-=effect.amount;note(s,def.name+' deals '+effect.amount+' damage.');onDamage(item.spell,effect.amount);}
+ events.push({kind:def.utility?'heal':'magic',target:def.utility?'hero':'enemy',...effect,sound:item.spell==='fireball'?'fire-whoosh':/lightning|stun-ray/.test(item.spell)?'lightning-crackle':'magic',spell:item.spell,hpAfter:def.utility?s.hp:undefined});
  if(s.enemy?.hp<=0){events.push({kind:'victory',target:'enemy',amount:0,sound:'victory'});victory(s);}else if(s.mode==='battle')enemyTurn(s,false,events);return true;}
 
 export function randomSpellDrop(level,roll,choice){if(roll>=.08)return null;const tier=Math.min(3,Math.max(1,Math.ceil(level/6))),pool=Object.values(SPELL_ITEMS).filter(i=>!i.alien).filter(i=>i.kind==='scroll'?i.minLevel<=Math.max(3,level):i.tier===tier&&(roll<.0005?i.rarity==='legendary':i.rarity!=='legendary'));return pool[Math.min(pool.length-1,Math.floor(choice*pool.length))]?.id||null;}

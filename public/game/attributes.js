@@ -11,7 +11,7 @@ const MINUTE_MS = 60_000;
 const MAX_WORLD_TIME = 1e15;
 const EQUIPPED_SLOTS = [
   'equipped', 'equippedArmor', 'equippedRing', 'equippedRing2', 'equippedNecklace',
-  'equippedHead', 'equippedHands', 'equippedBoots', 'equippedShield',
+  'equippedHead', 'equippedHands', 'equippedBoots', 'equippedShield', 'equippedBelt',
 ];
 
 const isRecord = value => value !== null && typeof value === 'object' && !Array.isArray(value);

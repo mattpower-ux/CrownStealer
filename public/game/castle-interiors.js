@@ -1,3 +1,4 @@
+import {rareGearEffect} from './rare-gear.js';
 import {TOWNS} from './content.js';
 import {townPlace} from './town.js';
 
@@ -131,7 +132,7 @@ export function castleAction(s, action, options) {
     note(s, 'The alarm is still ringing. Get out of the castle.');
     return true;
   }
-  const successChance = .25 + Math.min(50, Math.max(0, dexterity(s))) / 100;
+  const successChance = Math.min(1,.25 + Math.min(50, Math.max(0, dexterity(s))) / 100 + rareGearEffect(s,'lockpickBonus'));
   if (random() < successChance) {
     s.flags[chest.id] = true;
     s.gold = Math.min(10_000_000, s.gold + chest.gold);

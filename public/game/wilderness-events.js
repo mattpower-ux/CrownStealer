@@ -1,3 +1,4 @@
+import {rareGearEffect} from './rare-gear.js';
 export const WILDERNESS_EVENT_CHANCE=.003;
 export const WILDERNESS_EVENTS=['nail','hole','branch','hoard','bawb'];
 const roll=(random,min,max)=>min+Math.floor(random()*(max-min+1));
@@ -29,6 +30,7 @@ export function wildernessEventAction(s,a,ctx){
  if(event.kind==='hoard'&&a.choice==='take'){
   delete s.flags.wildernessEvent;
   if(random()<.5){const gold=roll(random,50,100);s.gold+=gold;note(s,'The hoard is real! You find '+gold+' gold.');if(random()<.5){s.bag.push('small-emerald');s.pendingLoot.push('small-emerald');note(s,'A small emerald gleams beneath the coins.');}}
+  else if(rareGearEffect(s,'disarmBonus')>0&&random()<rareGearEffect(s,'disarmBonus'))note(s,'You spot the bait and disarm the hidden trap.');
   else hurt(s,roll(random,5,10),ctx,'The glittering coins are bait. A hidden trap snaps shut!');return true;
  }
  return true;

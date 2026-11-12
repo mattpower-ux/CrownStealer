@@ -1,3 +1,5 @@
+import {RARE_GEAR_ITEMS} from './rare-gear.js';
+export {attributeLootBonus,randomAttributeLoot} from './rare-gear.js';
 import {cryptChest} from './roadside-crypt.js';
 import {caveProfile,caveLootMatches} from './cave-profiles.js';
 import {dungeonFloors} from './dungeon-depths.js';
@@ -16,12 +18,6 @@ import {BALROG_WHIP} from './bottomless-pit.js';
 import {royalTrialItems} from './royal-trials.js';
 export const RARITIES=['common','rare','epic','legendary'];
 export const rarityFor=roll=>roll<.60?'common':roll<.80?'rare':roll<.95?'epic':'legendary';
-// One bonus step per five defeated NPC levels; rare enchantments stop at +5.
-export const attributeLootBonus=(rarity,npcLevel)=>Math.min(rarity==='rare'?5:Infinity,Math.max(1,Math.floor(npcLevel/5)));
-export function randomAttributeLoot(playerLevel,npcLevel,roll){
- if(playerLevel<5||npcLevel<5||roll>=.05)return null;
- return 'ring-wisdom-'+attributeLootBonus('rare',npcLevel);
-}
 const colors=['#b6baa5','#77bbec','#c69aef','#efcb70'];
 export const TREASURE_ITEMS={
  ...royalTrialItems,
@@ -54,7 +50,7 @@ TREASURE_ITEMS['boots-slime-skating']={id:'boots-slime-skating',kind:'boots',sha
 for(let tier=1;tier<=3;tier++)for(let rank=0;rank<4;rank++)for(const shape of ['gloves','gauntlets','helmet','crown']){const kind=['gloves','gauntlets'].includes(shape)?'hands':'head',rarity=RARITIES[rank],id=`${rarity}-${shape}-${tier}`,power=shape==='gloves'||shape==='crown'?tier+rank:0,protection=shape==='gauntlets'||shape==='helmet'?tier+rank+1:0;TREASURE_ITEMS[id]={id,kind,shape,tier,rarity,name:`${['Sturdy','Runed','Royal','Mythic'][rank]} ${shape[0].toUpperCase()+shape.slice(1)} ${['','I','II','III'][tier]}`,color:colors[rank],value:25+tier*30+rank*90,power,protection,description:power?`Adds ${power} weapon damage while equipped.`:`Blocks ${protection} incoming damage while equipped.`};}
 TREASURE_ITEMS['scroll-return']={id:'scroll-return',kind:'consumable',shape:'scroll',unique:true,rarity:'common',name:'Scroll of Return',color:'#ddc28b',value:60,description:'One use: escape immediately to the nearest safe town in this land, even during combat. Does not heal you.'};
 Object.assign(TREASURE_ITEMS,GAG_ITEMS,SPELL_ITEMS,NAUTICAL_ITEMS,{[SKELETON_KEY.id]:SKELETON_KEY});
-export const gearKey=kind=>({ring2:'equippedRing2',hands:'equippedHands',head:'equippedHead',boots:'equippedBoots',shield:'equippedShield',weapon:'equipped',armor:'equippedArmor',ring:'equippedRing',necklace:'equippedNecklace'})[kind];
+export const gearKey=kind=>({belt:'equippedBelt',ring2:'equippedRing2',hands:'equippedHands',head:'equippedHead',boots:'equippedBoots',shield:'equippedShield',weapon:'equipped',armor:'equippedArmor',ring:'equippedRing',necklace:'equippedNecklace'})[kind];
 export function hash(text){let n=2166136261;for(const ch of text)n=Math.imul(n^ch.charCodeAt(0),16777619);return n>>>0;}
 export function random(seed){let n=seed>>>0;return ()=>{n=(Math.imul(n,1664525)+1013904223)>>>0;return n/4294967296;};}
 export function sellPrice(item){return item.kind==='gem'?item.value:Math.max(1,Math.floor((item.value||20)/2));}
@@ -135,7 +131,7 @@ export function merchantStock(region,town='',level=1){const tier=Math.min(3,regi
 const chestLayouts=new Map();
 export function dungeonChests(s,map){if(!s.dungeon)return [];if(s.dungeon.site==='roadside-crypt')return [cryptChest(s,TREASURE_ITEMS)];if(s.dungeon.ship)return [{x:3,y:10,id:'ship:0:0',item:'alien-0-1',items:['alien-0-1'],rarity:'epic',gold:1},{x:11,y:10,id:'ship:0:1',item:'alien-2-2',items:['alien-2-2'],rarity:'epic',gold:1}].map(c=>({...c,opened:!!s.openedChests?.includes(c.id)}));const d=s.dungeon;if(d.royal==='sewer')return [sewerChest(s,map)];const room=secretAlcove(d,map),closed=room?map.map((row,y)=>row.map((tile,x)=>x===room.x&&y===room.y?1:tile)):map,key=`${s.treasureSeed??187441}:${d.expedition||d.site||d.royal||d.index}:${d.floor}:${lootLevel(s)}`;if(!chestLayouts.has(key)){if(chestLayouts.size>=128)chestLayouts.delete(chestLayouts.keys().next().value);chestLayouts.set(key,buildChests({...s,openedChests:[]},closed));}const chests=chestLayouts.get(key).map(c=>({...c,opened:!!s.openedChests?.includes(c.id)}));if(d.index===4&&d.floor===19&&!d.royal&&!d.site&&!d.expedition&&chests.length){chests[0]={...chests[0],id:'4:19:boat',item:'boat-amulet',items:['boat-amulet'],rarity:'epic',opened:!!s.openedChests?.includes('4:19:boat')};}if((d.site==='firedrak'&&d.floor===9&&s.flags.drakeDefeated)||(d.expedition&&d.floor===2&&s.flags['expedition:'+d.expedition])||(d.site==='elf-village'&&d.floor===3&&s.flags.haghildaDefeated)||(!d.expedition&&!d.site&&!d.royal&&d.floor===dungeonFloors(d)-1&&s.flags['boss:'+d.index])){const id=`${d.expedition||d.site||d.index}:${d.floor}:boss`,pool=Object.values(TREASURE_ITEMS).filter(i=>!i.unique&&!i.alien&&!i.elven&&['rare','epic','legendary'].includes(i.rarity)&&levelAppropriate(i,s)&&i.tier===Math.min(3,1+Math.floor((lootLevel(s)-1)/8))),themed=pool.filter(i=>caveLootMatches(i,caveProfile(d.expedition))),choices=themed.length?themed:pool,item=choices[hash(id)%choices.length];if(item){const reward=d.expedition?.startsWith('planet-')&&TREASURE_ITEMS['alien-forged-'+item.id]?'alien-forged-'+item.id:item.id;chests.push({id,x:13,y:13,item:reward,items:[reward],rarity:item.rarity,gold:d.floor+1,opened:!!s.openedChests?.includes(id)});}}if(d.secretRoom){const id=d.index+':'+d.floor+':secret';chests.push({...d.secretRoom,id,item:'common-lesser-healing',items:['common-lesser-healing'],rarity:'common',gold:d.floor+1,opened:!!s.openedChests?.includes(id)});}return chests;}
 
-export const equipmentKeys=['equipped','equippedArmor','equippedRing','equippedRing2','equippedNecklace','equippedShield','equippedBoots','equippedHands','equippedHead'];
+export const equipmentKeys=['equipped','equippedArmor','equippedRing','equippedRing2','equippedNecklace','equippedShield','equippedBoots','equippedHands','equippedHead','equippedBelt'];
 export const equippedAccessories=s=>equipmentKeys.slice(1).map(k=>TREASURE_ITEMS[s[k]]).filter(Boolean);
 export const gearPower=s=>equippedAccessories(s).reduce((n,i)=>n+(i.power||0),0);
 
@@ -191,8 +187,4 @@ for (const item of Object.values(TREASURE_ITEMS)) {
 
 for(const q of SIDE_QUESTS)if(q.questItem)TREASURE_ITEMS[q.questItem]={id:q.questItem,kind:'quest',unique:true,name:q.keepsakeName,shape:'scroll',rarity:'rare',value:0,description:'A commission keepsake for '+q.title+'. Return it to the Odd Jobs office.'};
 
-// Fixed IDs retain each rolled enchantment through inventory, trading and save/load.
-for(let bonus=1;bonus<=5;bonus++){
- const id='ring-wisdom-'+bonus;
- TREASURE_ITEMS[id]={id,name:'Ring of Wisdom +'+bonus,kind:'ring',shape:'ring',rarity:'rare',minLevel:5,tier:1,unique:true,encounterOnly:true,bottomOnly:true,color:'#77bbec',value:100+bonus*60,attributeBonuses:{wisdom:bonus},description:'While worn, +'+bonus+' Wisdom. Found after defeating level '+(bonus*5)+(bonus===5?' or higher':'–'+(bonus*5+4))+' foes. Rare enchantments never exceed +5.'};
-}
+Object.assign(TREASURE_ITEMS,RARE_GEAR_ITEMS);

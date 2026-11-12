@@ -3,7 +3,8 @@ import {
   attributeLabel, attributePointsAvailable, effectiveAttributes, effectiveLevel, levelDrainMinutesLeft,
 } from './attributes.js';
 import { gagActive } from './gag-potions.js';
-import { footwearSpeed } from './junk-loot.js';
+import { travelSpeed } from './junk-loot.js';
+import { randomEncounterMultiplier } from './rare-gear.js';
 import { buffTimeLeft } from './world-clock.js';
 import { WEAPONS, UNARMED, armorProtection, itemById, weaponAccuracy, weaponMagicDamage } from './items.js';
 import { TREASURE_ITEMS, equippedAccessories, gearPower } from './treasure.js';
@@ -56,15 +57,17 @@ function attributeRows(s) {
 export function statsView(s) {
   const t = heroStats(s);
   const level = effectiveLevel(s);
+  const speed = travelSpeed({ ...s, mode: 'world' });
+  const bootsMultiplier = 1 - (TREASURE_ITEMS[s.equippedBoots]?.encounterReduction || 0);
+  const gearReduction = Math.round((1 - bootsMultiplier * randomEncounterMultiplier(s)) * 100);
   const gagLabels = { pigFace: 'Pig face', tiny: 'Mouse-sized', helium: 'Helium voice' };
   const rows = [
     ...Object.entries(gagLabels).filter(([key]) => gagActive(s, key))
       .map(([key, label]) => [label, `${buffTimeLeft(s, key)} game min remaining`]),
     ['Health', `${s.hp} / ${s.maxHp}`],
     ['Level', level === s.level ? level : `${level} / ${s.level} · ${levelDrainMinutesLeft(s)} game min`],
-    ['Wilderness movement', s.equippedBoots === 'snowshoes' && s.region !== 3
-      ? '1 square / 2 moves' : `${footwearSpeed({ ...s, mode: 'world' })} square(s) / move`],
-    ['Encounter reduction', `${Math.round((TREASURE_ITEMS[s.equippedBoots]?.encounterReduction || 0) * 100)}% from boots`],
+    ['Wilderness movement', speed === .5 ? '1 square / 2 moves' : `${speed} square(s) / move`],
+    ['Encounter reduction', `${gearReduction}% from gear`],
     ['Weapon damage', t.damage.join('–')],
     ['Hit chance', `${t.accuracy}%`],
     ['Physical protection', t.protection.toFixed(1)],
@@ -74,7 +77,7 @@ export function statsView(s) {
     ['Frost resistance', `${t.frost}%`],
     ['Poison resistance', `${t.poison}%`],
     ['Magic resistance', `${t.magic}%`],
-    ['Spell damage bonus', `+${t.spellBonus}`],
+    ['Spell damage bonus', `${t.spellBonus > 0 ? '+' : ''}${t.spellBonus}`],
     ['Dodge chance', `${t.evasion}%`],
     ['Regeneration', `${t.regeneration} / enemy attack`],
     ['Life drain', `${t.lifeSteal} / hit`],

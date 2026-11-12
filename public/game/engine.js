@@ -1,3 +1,4 @@
+import {rareGearEffect,randomEncounterMultiplier,randomLegendaryGearLoot} from './rare-gear.js';
 import {WILDERNESS_EVENTS,WILDERNESS_EVENT_CHANCE,startWildernessEvent,wildernessEventAction,validateWildernessEvents} from './wilderness-events.js';
 import {ROADSIDE_CRYPT,roadsideCryptMap,enterRoadsideCrypt,cryptGuardian} from './roadside-crypt.js';
 import {WORLD_WIDTH,WORLD_HEIGHT,WORLD_MAP_VERSION,worldSize,migrateWorldSize} from './world-size.js';
@@ -9,6 +10,7 @@ import {merchantPotionRemaining,recordPotionPurchase} from './merchant-supplies.
 import {planetaryAttack} from './planetary-monsters.js';
 import {inlandWater,waterAccess,pumpLake} from './nautical.js';
 import {SPELL_ITEMS,prepareWands,validateSpellState,castSpellItem,spellItem,randomSpellDrop,undead} from './spell-items.js';
+import {rollAttackDamage} from './combat-belt.js';
 import {GAG_ITEMS,gagActive,gagDrop,applyGag,HELIUM_REFUSAL} from './gag-potions.js';
 import {lowLevelLoot,travelSteps} from './junk-loot.js';
 import {secretAlcove,secretMap} from './secret-alcoves.js';
@@ -22,7 +24,7 @@ import {dungeonFloors} from './dungeon-depths.js';
 import {dungeonLadders} from './dungeon-ladders.js';
 import {BOTTOMLESS_PIT,PIT_MAP_SEED,BALROG_ID,BALROG_ATTACKS,BALROG_WHIP,ROYAL_BALROG_TRIAL,pitBottomAction,pitVictory} from './bottomless-pit.js';
 import {PUTRID_PALACE,PUTRID_PALACE_SEED,WANG_ID,WANG_TRIAL_DIALOGUE,freeGalen,castGalenRing,turnInWang} from './royal-trials.js';
-import {castleAction,castleFineFor,castleGuardResponse,exitCastle,validCastleState} from './castle-interiors.js';
+import {castleChestAt,castleLayout,castleAction,castleFineFor,castleGuardResponse,exitCastle,validCastleState} from './castle-interiors.js';
 import {AREAS,areaFor,areaTile,areaSites,branchGates,teleporterSite,visitedLands,shipMap,expeditionName,explorationAction} from './exploration.js';
 import {cityOf,cityTick,cityAction,validateCities} from './city-rule.js';
 import {WILD_SITES,gameDay,forestMap,mountainTile} from './wild-sites.js';
@@ -30,7 +32,7 @@ import {TREASURE_ITEMS,dungeonChests,dungeonMonsterLoot,gearKey,equipmentKeys,eq
 import {ROYAL_INTRO,ROYAL_ENDINGS,royalObjective,royalCell,hasRoyalAdmission} from './royal-story.js';
 import {buildEncounter} from './encounters.js';
 import {casinoAction,validCasino} from './casino.js';
-import {townWalkable,townPosition} from './town.js';
+import {townWalkable,townPosition,townPlace} from './town.js';
 import {WEAPONS,UNARMED,armorProtection,itemById,merchantBuyPrice,merchantSellPrice,weaponAccuracy,weaponMagicDamage} from './items.js';
 import {REGIONS,TOWNS,DUNGEONS,CHAPTERS,ENEMIES,ENDINGS,SIDE_QUESTS} from './content.js';
 export const DIRS=[[0,-1],[1,0],[0,1],[-1,0]];
@@ -39,7 +41,7 @@ function rand(s){s.rng=(Math.imul(s.rng,1664525)+1013904223)>>>0;return s.rng/42
 function note(s,text){s.log.push(text);s.log=s.log.slice(-60);}
 function advance(s,chapter){if(chapter>s.chapter){s.chapter=chapter;note(s,CHAPTERS[chapter].text);}}
 export function createGame(name='Wanderer',gender='him'){
- const town=TOWNS[0];return prepareAttributes({attributeHealthAdjustment:0,worldMapVersion:WORLD_MAP_VERSION,wandCharges:{},wandSerial:0,spellEffects:{},worldTimeMs:8*HOUR_MS,buffExpiry:{},gender:CHARACTER_FACES.some(f=>f.id===gender)?gender:'him',cities:{},treasureSeed:hash(String(name)),openedChests:[],buffs:{},equippedRing2:null,equippedHands:null,equippedHead:null,equippedBoots:null,equippedShield:null,equippedRing:null,equippedNecklace:null,version:1,bag:['road-sword','travel-armor','scroll-return'],equipped:'road-sword',equippedArmor:'travel-armor',equipmentVersion:1,pendingLoot:[],name:String(name).trim().slice(0,24)||'Wanderer',region:0,x:town.x-1,y:town.y,mode:'world',location:null,hp:80,maxHp:80,gold:65,meals:3,level:1,xp:0,weapon:1,armor:1,potions:3,chapter:0,relics:[],quests:[],wanted:[0,0,0,0],reputation:0,flags:{victories:0,guardVictories:0,transport:false},log:['The crown has called for a hero. Unfortunately, it has found you.',CHAPTERS[0].text],rng:187441,turns:0,dungeon:null,enemy:null,returnMode:'world',ending:null});
+ const town=TOWNS[0];return prepareAttributes({attributeHealthAdjustment:0,worldMapVersion:WORLD_MAP_VERSION,wandCharges:{},wandSerial:0,spellEffects:{},worldTimeMs:8*HOUR_MS,buffExpiry:{},gender:CHARACTER_FACES.some(f=>f.id===gender)?gender:'him',cities:{},treasureSeed:hash(String(name)),openedChests:[],buffs:{},equippedBelt:null,equippedRing2:null,equippedHands:null,equippedHead:null,equippedBoots:null,equippedShield:null,equippedRing:null,equippedNecklace:null,version:1,bag:['road-sword','travel-armor','scroll-return'],equipped:'road-sword',equippedArmor:'travel-armor',equipmentVersion:1,pendingLoot:[],name:String(name).trim().slice(0,24)||'Wanderer',region:0,x:town.x-1,y:town.y,mode:'world',location:null,hp:80,maxHp:80,gold:65,meals:3,level:1,xp:0,weapon:1,armor:1,potions:3,chapter:0,relics:[],quests:[],wanted:[0,0,0,0],reputation:0,flags:{victories:0,guardVictories:0,transport:false},log:['The crown has called for a hero. Unfortunately, it has found you.',CHAPTERS[0].text],rng:187441,turns:0,dungeon:null,enemy:null,returnMode:'world',ending:null});
 }
 export function createRoyalGame(name,gender){const s=createGame(name,gender),court=TOWNS[1];s.treasureSeed=crypto.getRandomValues(new Uint32Array(1))[0];s.mode='town';s.location=court.id;s.x=court.x;s.y=court.y;s.townPosition={x:6,y:11};s.gold=1;s.meals=1;s.potions=0;s.bag=['rusty-sword','travel-armor','scroll-return','starter-healing','starter-healing'];s.equipped='rusty-sword';s.equippedArmor=null;s.flags.royalQuest='opening';s.flags.royalEntranceSeen=false;s.flags.royalIntroLine=0;s.log=[ROYAL_INTRO[0].text];return s;}
 export function dungeonMap(d){return secretMap(d, d.site===ROADSIDE_CRYPT?roadsideCryptMap():d.ship?shipMap():d.site==='elf-village'?forestMap(d.floor):d.royal==='cell'?royalCell():makeDungeon(d.expedition?100+hash(d.expedition)%10000:d.royal==='sewer'?8:d.site===BOTTOMLESS_PIT.id?PIT_MAP_SEED:d.site===PUTRID_PALACE.id?PUTRID_PALACE_SEED:d.index,d.floor));}
@@ -180,7 +182,15 @@ function enemyStrike(s,defending,events,multiplier,attack){
  const elemental=['fire','frost','poison'].includes(element)?benefits.elementalResistance:0;
  const magical=mental||['caster','spectral'].includes(s.enemy.kind)||s.enemy.attackType==='magic'||['magic','psychic'].includes(element)?benefits.magicResistance:0;
  const resistance=Math.min(.75,wards.filter(i=>i.resistance===element).reduce((n,i)=>n+i.resistPercent/100,0)+elemental+magical);
- const shield=wards.filter(i=>i.kind!=='armor').reduce((n,i)=>n+(i.protection||0),0),evasion=Math.min(.4,wards.reduce((n,i)=>n+(i.evasion||0),benefits.evasion))+(s.enemy.confused&&s.enemy.attackType!=='ranged'&&s.enemy.kind!=='caster'?.3:0);if(evasion&&rand(s)<evasion){events.push({kind:'miss',target:'hero',amount:0,sound:'miss'});note(s,s.enemy.confused?'The confused enemy swings wide and misses.':'You evade the blow.');return;}const attackers=s.enemy.memberHp?Math.max(1,Math.ceil(s.enemy.hp/s.enemy.memberHp)):1;const damage=Math.max(1,Math.floor((attack?.power??s.enemy.attack)*(attack?.multiplier??1)*(1+.55*(attackers-1))*(.7+rand(s)*.7)*(s.enemy.speciesId==='haghilda'&&s.enemy.peppered?.5:1)*(1-resistance)-(mental?0:armorProtection(s)*1.3+shield)))*multiplier;const ward=TREASURE_ITEMS[s.equippedShield],blocked=!mental&&ward?.block?ward.block[0]+Math.floor(rand(s)*(ward.block[1]-ward.block[0]+1)):0,taken=Math.max(0,(defending?Math.ceil(damage/3):damage)-blocked-(s.enemy.insulted?2:0));const wardBlock=s.spellEffects?.wardTurns>0?10:0;if(wardBlock)s.spellEffects.wardTurns--;const finalTaken=Math.max(0,taken-wardBlock);s.hp-=finalTaken;note(s,`${s.enemy.name}${alienAttack?' '+alienAttack.verb:s.enemy.speciesId==='haghilda'?' blasts suffocating toxic snot':' strikes'} for ${finalTaken}.${wardBlock?' Protective Ward absorbs '+Math.min(wardBlock,taken)+'.':''}${blocked?' Frostburn blocks '+Math.min(blocked,defending?Math.ceil(damage/3):damage)+'.':''}`);if(finalTaken>0)vampireBite(s);events.push({kind:defending?'block':'hit',target:'hero',hpAfter:Math.max(0,s.hp),amount:finalTaken,sound:defending?'block':'hurt',...(attack?{message:s.log.at(-1)}:{})});if(ward?.retaliation){const ice=ward.retaliation[0]+Math.floor(rand(s)*(ward.retaliation[1]-ward.retaliation[0]+1))+benefits.magicDamage;s.enemy.hp-=ice;events.push({kind:'magic',target:'enemy',amount:ice,sound:'magic'});note(s,'Frostburn launches sharp ice projectiles for '+ice+' damage.');}if(s.hp>0&&s.enemy.hp<=0){events.push({kind:'victory',target:'enemy',amount:0,sound:'victory'});victory(s);return;}if(s.hp>0){const regen=wards.reduce((n,i)=>n+(i.regeneration||0),0);if(regen){s.hp=Math.min(s.maxHp,s.hp+regen);note(s,'Your enchanted gear restores '+regen+' health.');}}if(s.hp<=0){events.push({kind:'defeat',target:'hero',amount:0,sound:'defeat'});recover(s);}}
+ const shield=wards.filter(i=>i.kind!=='armor').reduce((n,i)=>n+(i.protection||0),0),evasion=Math.min(.4,wards.reduce((n,i)=>n+(i.evasion||0),benefits.evasion))+(s.enemy.confused&&s.enemy.attackType!=='ranged'&&s.enemy.kind!=='caster'?.3:0);if(evasion&&rand(s)<evasion){events.push({kind:'miss',target:'hero',amount:0,sound:'miss'});note(s,s.enemy.confused?'The confused enemy swings wide and misses.':'You evade the blow.');return;}const attackers=s.enemy.memberHp?Math.max(1,Math.ceil(s.enemy.hp/s.enemy.memberHp)):1;const damage=Math.max(1,Math.floor((attack?.power??s.enemy.attack)*(attack?.multiplier??1)*(1+.55*(attackers-1))*(.7+rand(s)*.7)*(s.enemy.speciesId==='haghilda'&&s.enemy.peppered?.5:1)*(1-resistance)-(mental?0:armorProtection(s)*1.3+shield)))*multiplier;const ward=TREASURE_ITEMS[s.equippedShield],blocked=!mental&&ward?.block?ward.block[0]+Math.floor(rand(s)*(ward.block[1]-ward.block[0]+1)):0,taken=Math.max(0,(defending?Math.ceil(damage/3):damage)-blocked-(s.enemy.insulted?2:0));const wardBlock=s.spellEffects?.wardTurns>0?10:0;if(wardBlock)s.spellEffects.wardTurns--;const finalTaken=Math.max(0,taken-wardBlock);s.hp-=finalTaken;note(s,`${s.enemy.name}${alienAttack?' '+alienAttack.verb:s.enemy.speciesId==='haghilda'?' blasts suffocating toxic snot':' strikes'} for ${finalTaken}.${wardBlock?' Protective Ward absorbs '+Math.min(wardBlock,taken)+'.':''}${blocked?' Frostburn blocks '+Math.min(blocked,defending?Math.ceil(damage/3):damage)+'.':''}`);if(finalTaken>0)vampireBite(s);events.push({kind:defending?'block':'hit',target:'hero',hpAfter:Math.max(0,s.hp),amount:finalTaken,sound:defending?'block':'hurt',...(attack?{message:s.log.at(-1)}:{})});
+ if(ward?.retaliation){
+  const ice=ward.retaliation[0]+Math.floor(rand(s)*(ward.retaliation[1]-ward.retaliation[0]+1))+benefits.magicDamage;
+  const damage=rollAttackDamage(s,ice,()=>rand(s),note);
+  s.enemy.hp-=damage.amount;
+  events.push({kind:'magic',target:'enemy',...damage,sound:'magic'});
+  note(s,'Frostburn launches sharp ice projectiles for '+damage.amount+' damage.');
+ }
+ if(s.hp>0&&s.enemy.hp<=0){events.push({kind:'victory',target:'enemy',amount:0,sound:'victory'});victory(s);return;}if(s.hp>0){const regen=wards.reduce((n,i)=>n+(i.regeneration||0),0);if(regen){s.hp=Math.min(s.maxHp,s.hp+regen);note(s,'Your enchanted gear restores '+regen+' health.');}}if(s.hp<=0){events.push({kind:'defeat',target:'hero',amount:0,sound:'defeat'});recover(s);}}
 function clearWangSlugs(s, damage) {
  if(s.enemy?.speciesId!==WANG_ID||!s.enemy.slugs||damage<=0)return;
  const killed=Math.min(s.enemy.slugs,damage);
@@ -221,7 +231,7 @@ const STARTER_WEAPONS=['smiting',...['sword','mace','spear','axe'].flatMap(famil
 function victory(s){s.spellEffects.stunnedTurns=0;const e=s.enemy;if(e.cryptGuardian)s.flags['cryptCleared:'+e.cryptGuardian]=true;if(e.guard){s.flags.guardVictories=(s.flags.guardVictories||0)+1;if(s.flags.guardVictories===3)note(s,'Three guards have fallen. Word spreads: the guards are terrified and will leave you alone for the rest of your adventure.');}if(s.dungeon&&!e.guard){const job=SIDE_QUESTS.find(q=>q.questItem&&(q.keepsakeKind!=='tooth'||/dragon|drake/i.test(e.speciesId||e.name))&&!s.quests.includes(q.id)&&!s.bag.includes(q.questItem)&&TOWNS.find(t=>t.id===q.town)?.region===s.region);if(job){s.bag.push(job.questItem);s.pendingLoot.push(job.questItem);}}if(s.dungeon&&!e.boss&&!e.guard&&rand(s)<.30){
  const item=dungeonMonsterLoot(s,rand(s),rand(s));
  if(item){s.bag.push(item);s.pendingLoot.push(item);note(s,'You found '+TREASURE_ITEMS[item].name+'.');}
-}const planet=!!s.dungeon?.expedition?.startsWith('planet-');if(planet&&!e.boss){const id=alienDrop(rand(s),rand(s));if(id){s.bag.push(id);s.pendingLoot.push(id);note(s,'Alien salvage found.');}}if(!e.boss&&!e.guard){const spellLoot=randomSpellDrop(e.level||1,rand(s),rand(s));if(spellLoot){s.bag.push(spellLoot);s.pendingLoot.push(spellLoot);note(s,'You found '+SPELL_ITEMS[spellLoot].name+'.');}}if(!e.boss&&!e.guard){const prank=gagDrop(rand(s),rand(s));if(prank){s.bag.push(prank);s.pendingLoot.push(prank);note(s,'You found '+GAG_ITEMS[prank].name+'.');}}if(!e.boss&&!e.guard&&e.level<=5){const found=lowLevelLoot(e.level,rand(s),rand(s));if(found){s.bag.push(found);s.pendingLoot.push(found);note(s,'You found '+TREASURE_ITEMS[found].name+'.');}}if(e.speciesId==='ghost-dragon'){s.flags.ghostDragonDefeated=true;if(!s.flags.frostburnAwarded){s.flags.frostburnAwarded=true;s.bag.push('shield-frostburn');s.pendingLoot.push('shield-frostburn');note(s,'The dragon leaves an Epic Shield of Frostburn.');}}const attributeLoot=randomAttributeLoot(s.level,e.level||1,random(hash(s.rng+':'+s.flags.victories+':attribute-loot'))());if(attributeLoot){s.bag.push(attributeLoot);s.pendingLoot.push(attributeLoot);note(s,'You found '+TREASURE_ITEMS[attributeLoot].name+'.');}s.gold+=e.gold;s.xp+=e.xp??(e.boss?60:20);s.flags.victories++;
+}const planet=!!s.dungeon?.expedition?.startsWith('planet-');if(planet&&!e.boss){const id=alienDrop(rand(s),rand(s));if(id){s.bag.push(id);s.pendingLoot.push(id);note(s,'Alien salvage found.');}}if(!e.boss&&!e.guard){const spellLoot=randomSpellDrop(e.level||1,rand(s),rand(s));if(spellLoot){s.bag.push(spellLoot);s.pendingLoot.push(spellLoot);note(s,'You found '+SPELL_ITEMS[spellLoot].name+'.');}}if(!e.boss&&!e.guard){const prank=gagDrop(rand(s),rand(s));if(prank){s.bag.push(prank);s.pendingLoot.push(prank);note(s,'You found '+GAG_ITEMS[prank].name+'.');}}if(!e.boss&&!e.guard&&e.level<=5){const found=lowLevelLoot(e.level,rand(s),rand(s));if(found){s.bag.push(found);s.pendingLoot.push(found);note(s,'You found '+TREASURE_ITEMS[found].name+'.');}}if(e.speciesId==='ghost-dragon'){s.flags.ghostDragonDefeated=true;if(!s.flags.frostburnAwarded){s.flags.frostburnAwarded=true;s.bag.push('shield-frostburn');s.pendingLoot.push('shield-frostburn');note(s,'The dragon leaves an Epic Shield of Frostburn.');}}const attributeLoot=randomAttributeLoot(s.level,e.level||1,random(hash(s.rng+':'+s.flags.victories+':attribute-loot'))(),random(hash(s.rng+':'+s.flags.victories+':attribute-choice'))());if(attributeLoot){s.bag.push(attributeLoot);s.pendingLoot.push(attributeLoot);note(s,'You found '+TREASURE_ITEMS[attributeLoot].name+'.');}const legendaryGear=randomLegendaryGearLoot(s.level,e.level||1,random(hash(s.rng+':'+s.flags.victories+':legendary-gear'))());if(legendaryGear){s.bag.push(legendaryGear);s.pendingLoot.push(legendaryGear);note(s,'You found '+TREASURE_ITEMS[legendaryGear].name+'.');}s.gold+=e.gold;s.xp+=e.xp??(e.boss?60:20);s.flags.victories++;
  // Independent treasure rolls leave the existing loot table intact.
  for(const [id,chance] of [['dungeon-elevator',.05],['teleporter-crystal',.005]]){
   if(id==='dungeon-elevator'&&s.returnMode!=='dungeon')continue;
@@ -233,6 +243,31 @@ function victory(s){s.spellEffects.stunnedTurns=0;const e=s.enemy;if(e.cryptGuar
  if(!s.flags.wangDefeated){s.flags.wangDefeated=true;s.bag.push('wang-sceptre');s.pendingLoot.unshift('wang-sceptre');note(s,'You recover Wang’s sceptre.');}
  }else if(e.boss&&s.dungeon?.expedition){s.flags['expedition:'+s.dungeon.expedition]=true;const id=bossRelic[e.speciesId]||'alien-'+s.dungeon.expedition.split('-')[1]+'-'+s.dungeon.expedition.split('-').at(-1);if(planet){const gems=Object.values(TREASURE_ITEMS).filter(i=>i.kind==='gem');if(gems.length){const gem=gems[Math.floor(rand(s)*gems.length)].id;s.bag.push(gem);s.pendingLoot.push(gem);}}if(s.dungeon.expedition.startsWith('planet-')&&TREASURE_ITEMS[id]){s.bag.push(id);s.pendingLoot.push(id);}}else if(e.boss&&e.speciesId!=='drake-defiler')s.flags['boss:'+s.dungeon.index]=true;if(e.guard){if(e.gateGuard){s.flags.gateAttemptWins=(s.flags.gateAttemptWins||0)+1;note(s,'Border guards defeated: '+s.flags.gateAttemptWins+'/3.');if(s.flags.gateAttemptWins===3){s.flags['gateAccess:'+e.gateGuard]=true;delete s.flags.gateAttemptWins;delete s.flags.gateAttemptId;note(s,'All three guards yield. You have permanent free access through this gate, with or without relics.');}}else if(e.gossipGuard){note(s,'The square falls silent. This bully will collect no more gossip fees.');}else if(e.tributeTown){const city=cityOf(s,e.tributeTown);if(city){city.guards++;if(city.guards>=2){note(s,'Both tax guards are defeated, but the King’s fire threat remains. Send 1,000 gold through Giacomo before the deadline to guarantee the town’s safety.');}else note(s,'One tax guard remains. Return to Town Hall to challenge him.');}}else if(s.location==='bellwether'){s.flags.royalGuardWins=(s.flags.royalGuardWins||0)+1;note(s,'Royal guards defeated: '+s.flags.royalGuardWins+'/20.');if(s.flags.royalGuardWins>=20){s.flags['townGarrison:bellwether']=true;s.flags['garrison:0']=true;note(s,'The royal garrison surrenders.');advanceRoyalAudience(s);}}else if(s.location){const key='palaceWins:'+s.location;s.flags[key]=(s.flags[key]||0)+1;note(s,'Palace guards defeated: '+s.flags[key]+'/5.');if(s.flags[key]>=5){s.flags['townGarrison:'+s.location]=true;note(s,'The governor’s palace is yours. Demand the city key from the mayor.');}}s.wanted[s.region]=Math.max(0,s.wanted[s.region]-1);s.reputation-=3;}note(s,`${e.name} is defeated. You find ${e.gold} gold.`);s.mode=s.returnMode;s.enemy=null;while(s.xp>=s.level*50){s.xp-=s.level*50;s.level++;s.maxHp+=14;s.hp=Math.min(s.maxHp,s.hp+30);note(s,`Level ${s.level}. Rumors of your competence are becoming difficult to deny.`);}if(e.gateGuard&&!s.flags['gateAccess:'+e.gateGuard])startGateGuard(s,e.gateGuard);if(e.castleRobbery)castleGuardResponse(s,{startGuard:startCastleGuard});else if(e.guard&&!e.tributeTown&&!e.gossipGuard&&!e.gateGuard&&s.location&&s.location!=='bellwether'&&!s.flags['townGarrison:'+s.location]&&(e.guardChallenge||!guardsFear(s))){encounter(s,false,true,!!e.guardChallenge);s.enemy.name='Palace Guard '+((s.flags['palaceWins:'+s.location]||0)+1)+' of 5';}}
 export function act(input,action,events=[],previewRules={}){
+ if(!previewRules.singleSpeedStep&&['town','dungeon'].includes(input.mode)&&['move','forward','back','strafe'].includes(action?.type)&&rareGearEffect(input,'movementBonus')>0){
+  let state=input;
+  const position=s=>s.mode==='dungeon'?s.dungeon:s.castle||townPosition(s);
+  for(let step=0;step<=rareGearEffect(input,'movementBonus');step++){
+   const before=position(state),x=before?.x,y=before?.y,castle=!!state.castle;
+   state=act(state,action,events,{...previewRules,singleSpeedStep:true});
+   const after=position(state);
+   if(state.mode!==input.mode||castle!==!!state.castle||after?.x===x&&after?.y===y)break;
+   if(state.mode==='town'&&(state.castle?castleChestAt(state)||state.castle.x===castleLayout(state.location).throne.x&&state.castle.y===castleLayout(state.location).throne.y:townPlace(state)))break;
+   if(state.mode==='dungeon'){
+    const d=state.dungeon,map=dungeonMap(d);
+    if(d.x===13&&d.y===13||d.site==='elf-village'&&d.floor>=2&&d.x===7&&d.y===7||d.royal==='cell'&&d.x===3&&d.y===3||d.ship&&d.x===7&&d.y===5)break;
+    if(map[d.y]?.[d.x]===2||dungeonLadders(d,map).some(p=>p.x===d.x&&p.y===d.y)||dungeonChests(state,map).some(p=>!p.opened&&p.x===d.x&&p.y===d.y))break;
+   }
+   // A speed burst must never skip a possible turn; open rooms use careful steps.
+   const dx=after.x-x,dy=after.y-y;
+   const open=(px,py)=>{
+    if(state.mode==='dungeon'){const map=dungeonMap(state.dungeon);return map[py]?.[px]!==undefined&&map[py][px]!==1;}
+    if(state.castle){const tile=castleLayout(state.location).tiles[py]?.[px];return !!tile&&tile!=='wall';}
+    return townWalkable(px,py,state);
+   };
+   if(open(after.x-dy,after.y+dx)||open(after.x+dy,after.y-dx))break;
+  }
+  return state;
+ }
  const s=actInner({...input,previewRules},action,events);
  delete s.previewRules;
  if(input.flags?.impaledMoves&&(input.mode!==s.mode||input.region!==s.region||input.x!==s.x||input.y!==s.y||input.exploration?.area!==s.exploration?.area))delete s.flags.impaledMoves;
@@ -323,11 +358,12 @@ function actInner(input,action,events=[]){
   if(s.mode!=='battle'){note(s,'Use Galen’s ring in battle.');return s;}
   if(!s.bag.includes(a.id)||!s.flags.galenRingCharges){note(s,'Galen’s ring has no charges left.');return s;}
   if(fearStopsAttack(s,events))return s;
-  const amount=castGalenRing(s,()=>rand(s));
+  const damage=rollAttackDamage(s,castGalenRing(s,()=>rand(s)),()=>rand(s),note);
+  const {amount}=damage;
   s.enemy.hp-=amount;
   note(s,'Galen’s ring casts Fireball for '+amount+' damage.');
   clearWangSlugs(s,amount);
-  events.push({kind:'magic',target:'enemy',amount,sound:'fire-whoosh',spell:'fireball'});
+  events.push({kind:'magic',target:'enemy',...damage,sound:'fire-whoosh',spell:'fireball'});
   if(s.enemy.hp<=0){events.push({kind:'victory',target:'enemy',amount:0,sound:'victory'});victory(s);}
   else enemyTurn(s,false,events);
   return s;
@@ -421,7 +457,13 @@ function actInner(input,action,events=[]){
  if(s.mode!=='battle'){note(s,'Use this gadget during a fight.');return s;}s.bag.splice(s.bag.indexOf(a.id),1);
  if(a.id==='clock-stop'){s.flags.clockStopped=3;note(s,'Time stops for your enemy for three turns.');}
  if(a.id==='feign-collar'){delete s.flags.clockStopped;resetPalaceAttempt(s);s.enemy=null;s.mode=s.returnMode;events.push({kind:'retreat',target:'hero',amount:0,sound:'door'});note(s,'Your performance is embarrassingly convincing. You escape.');}
- if(a.id==='brass-grenade'){const amount=35+Math.floor(rand(s)*21);s.enemy.hp-=amount;events.push({kind:'magic',target:'enemy',amount,sound:'fire-whoosh',spell:'fireball'});if(s.enemy.hp<=0){events.push({kind:'victory',target:'enemy',amount:0,sound:'victory'});victory(s);}else enemyTurn(s,false,events);}return s;
+ if(a.id==='brass-grenade'){
+  const damage=rollAttackDamage(s,35+Math.floor(rand(s)*21),()=>rand(s),note);
+  s.enemy.hp-=damage.amount;
+  events.push({kind:'magic',target:'enemy',...damage,sound:'fire-whoosh',spell:'fireball'});
+  if(s.enemy.hp<=0){events.push({kind:'victory',target:'enemy',amount:0,sound:'victory'});victory(s);}
+  else enemyTurn(s,false,events);
+ }return s;
  }
  if(a.type==='useItem'){const item=TREASURE_ITEMS[a.id],index=s.bag.indexOf(a.id);if(item?.kind!=='potion'||index<0||s.mode==='ending')return s;const halfHealth=Math.ceil(s.maxHp/2);if(item.healsToHalf&&s.hp>=halfHealth){note(s,'You are already at half health or higher.');return s;}if(item.healing&&s.hp===s.maxHp){note(s,'You are already at full health.');return s;}s.bag.splice(index,1);s.pendingLoot=s.pendingLoot.filter(id=>id!==a.id||s.bag.includes(id));s.buffs??={};if(item.healing||item.healsToHalf){const amount=item.healsToHalf?halfHealth-s.hp:Math.min(s.maxHp-s.hp,Math.floor(item.healing));s.hp+=amount;events.push({kind:'heal',target:'hero',amount,sound:'magic'});}else{s.buffs[item.effect]=item.duration;setTimedBuff(s,item.effect,item.duration*5);s.buffs.strengthPower=item.effect==='strength'?item.power:s.buffs.strengthPower||0;}note(s,'Used '+item.name+'. '+item.description);if(s.mode==='battle')enemyTurn(s,false,events);return s;}
  if(a.type==='acknowledgeGuards'){delete s.flags.pennilessTown;delete s.flags.guardTauntPending;return s;}
@@ -452,8 +494,16 @@ function actInner(input,action,events=[]){
  if(s.casino?.active&&s.mode==='town'&&!['casinoDouble','casinoHit','casinoStand','casinoHold','casinoDraw','casinoShoot','casinoRouletteReveal','gamble','rename'].includes(a.type)){note(s,'Finish your current casino game before leaving the table.');return s;}
  if(a.type==='rename'){const name=String(a.name??'').replace(/[\x00-\x1f\x7f]/g,'').trim().slice(0,24);if(name)s.name=name;return s;}
  if(a.type==='acknowledgeLoot'){s.pendingLoot?.shift();return s;}
- if(a.type==='equip'){const item=itemById(a.id,s);if(s.mode==='battle'||!s.bag?.includes(a.id)||!gearKey(item?.kind))return s;const slot=item.kind==='ring'?(a.slot==='ring'||a.slot==='ring2'?a.slot:!s.equippedRing?'ring':!s.equippedRing2?'ring2':'ring'):item.kind,key=gearKey(slot);if(item.kind==='ring'){const other=slot==='ring'?'equippedRing2':'equippedRing';if(s[other]===a.id&&s.bag.filter(id=>id===a.id).length<2)s[other]=null;}s[key]=a.id;note(s,`Equipped ${item.name}.`);return s;}
- if(a.type==='unequip'){const key=gearKey(a.slot);if(key&&s.mode!=='battle'&&s[key]){note(s,`You put ${itemById(s[key],s).name} in your bag.`);s[key]=null;}return s;}
+ if(a.type==='sageBuyIntelligence'){
+  if(s.mode!=='town'||s.location!=='mothbridge'||s.castle||townPlace(s)?.id!=='fortune'||!s.flags.sageWonkOffer)return s;
+  if(s.attributes.intelligence>=50){note(s,'The Sage smiles: your Intelligence has already reached its limit.');return s;}
+  if(s.gold<5000){note(s,'The Sage’s lesson costs 5,000 gold. Come back when you can afford it.');return s;}
+  if(applyAttributeItem(s,{kind:'potion',rarity:'legendary',attributeEffect:{attribute:'intelligence',amount:1}})){s.gold-=5000;delete s.flags.sageWonkOffer;note(s,'The Sage of Wonk grants you one permanent point of Intelligence for 5,000 gold.');}
+  return s;
+ }
+ if(a.type==='sageRemoveHelm'){if(s.mode==='town'&&s.location==='mothbridge'&&!s.castle&&townPlace(s)?.id==='fortune'&&s.equippedHead==='helm-thinkiness'){s.equippedHead=null;s.flags.sageWonkOffer=true;note(s,'The Sage of Wonk taps your helmet with a spoon. It pops free! The Helm of Thinkiness is back in your bag. No payment needed.');}return s;}
+ if(a.type==='equip'){const item=itemById(a.id,s);if(item?.kind==='head'&&itemById(s.equippedHead,s)?.cursed&&s.equippedHead!==a.id){note(s,'The cursed Helm of Thinkiness refuses to budge. Visit the Sage of Wonk in Mothbridge.');return s;}if(s.mode==='battle'||!s.bag?.includes(a.id)||!gearKey(item?.kind))return s;const slot=item.kind==='ring'?(a.slot==='ring'||a.slot==='ring2'?a.slot:!s.equippedRing?'ring':!s.equippedRing2?'ring2':'ring'):item.kind,key=gearKey(slot);if(item.kind==='ring'){const other=slot==='ring'?'equippedRing2':'equippedRing';if(s[other]===a.id&&s.bag.filter(id=>id===a.id).length<2)s[other]=null;}s[key]=a.id;note(s,`Equipped ${item.name}.`);return s;}
+ if(a.type==='unequip'){const key=gearKey(a.slot);if(key&&itemById(s[key],s)?.cursed){note(s,'The cursed Helm of Thinkiness refuses to budge. Visit the Sage of Wonk in Mothbridge.');return s;}if(key&&s.mode!=='battle'&&s[key]){note(s,`You put ${itemById(s[key],s).name} in your bag.`);s[key]=null;}return s;}
  if(s.mode==='ending'&&!['continue'].includes(a.type))return s;
  if(a.type==='continue'){s.mode='world';s.ending=null;s.dungeon=null;s.location=null;return s;}
  if(a.type==='heal'){if(s.potions>0&&s.hp<s.maxHp){s.potions--;events.push({kind:'heal',target:'hero',amount:Math.min(45,s.maxHp-s.hp),sound:'magic'});s.hp=Math.min(s.maxHp,s.hp+45);note(s,'The tonic tastes like regret. It restores 45 health.');if(s.mode==='battle')enemyTurn(s,false,events);}return s;}
@@ -461,7 +511,43 @@ function actInner(input,action,events=[]){
   if(a.type==='evade'&&s.enemy.firstContact&&s.enemy.surprised){note(s,'You slip past before '+s.enemy.name+' notices you.');s.enemy=null;s.mode=s.returnMode;return s;}
   if(a.type==='attack'&&fearStopsAttack(s,events))return s;
   if(a.type==='attack'&&WEAPONS[s.equipped]?.explosionChance&&rand(s)<WEAPONS[s.equipped].explosionChance){const broken=s.equipped,index=s.bag.indexOf(broken);if(index>=0)s.bag.splice(index,1);s.equipped=null;s.pendingLoot=s.pendingLoot.filter(id=>id!==broken||s.bag.includes(id));s.hp-=100;s.enemy.hp-=100;const message='Your Alien weapon Exploded, doing 100 points of damage to you and your foe!';note(s,message);events.push({kind:'explosion',target:'enemy',amount:100,sound:'fire-whoosh',message},{kind:'hit',target:'hero',amount:100,hpAfter:Math.max(0,s.hp),sound:'hurt',message});if(s.hp<=0){events.push({kind:'defeat',target:'hero',amount:0,sound:'defeat'});recover(s);}else if(s.enemy.hp<=0){events.push({kind:'victory',target:'enemy',amount:0,sound:'victory'});victory(s);}else enemyTurn(s,false,events);return s;}
-  if(a.type==='attack'){const advantage=s.enemy.surprised;const weakness=s.enemy.weakness;const effective=a.type==='attack'&&(weakness==='quick strikes'||weakness==='guard then counter'&&s.flags.guarded||weakness==='steady pressure'&&s.flags.combo>=1);const gear=WEAPONS[s.equipped]||UNARMED,benefits=attributeBenefits(s,itemById);if(a.type==='attack'&&rand(s)*100>=Math.max(5,weaponAccuracy(s,benefits.accuracy)+(advantage?20:0)-(s.enemy.kind==='swift'?8:0))){s.flags.guarded=false;s.flags.combo=0;events.push({kind:'miss',target:'enemy',amount:0,sound:'miss'});note(s,'Your weapon misses.');enemyTurn(s,false,events);return s;}const base=gear.damage[0]+Math.floor(rand(s)*(gear.damage[1]-gear.damage[0]+1))+(s.equipped?s.weapon*4:0)+effectiveLevel(s)*2+benefits.meleeDamage+(s.buffs?.strength>0?s.buffs.strengthPower||0:0)+gearPower(s);const raw=Math.floor((base+(s.buffs?.meal>0?4:0))*(gagActive(s,'tiny')?.5:1)*(effective?1.4:1)*(advantage?1.25:1));const protection=s.enemy.luteNumb>0?0:Math.floor(s.enemy.armor||0);const multiplier=s.equipped==='holy-avenger'&&undead(s.enemy)?3:1;const damage=multiplier*(Math.max(1,raw-protection) +weaponMagicDamage(gear,benefits.magicDamage));if(a.type==='attack'&&gear.freezeChance&&rand(s)<gear.freezeChance){s.enemy.frozen=1;note(s,'Frost freezes the enemy in place!');}s.flags.guarded=false;s.flags.combo=a.type==='attack'?(s.flags.combo||0)+1:0;s.enemy.hp-=damage;if(a.type==='attack'&&gear.lifeSteal){s.hp=Math.min(s.maxHp,s.hp+gear.lifeSteal);note(s,'Your weapon drains '+gear.lifeSteal+' health from the enemy.');}events.push({kind:'hit',target:'enemy',amount:damage,sound:'hit'});note(s,`Your weapon deals ${damage} damage.${effective?' You exploit its weakness.':''}${protection?' Its armor absorbs '+Math.min(protection,raw-1)+' damage.':''}`);if(s.enemy.hp<=0){events.push({kind:'victory',target:'enemy',amount:0,sound:'victory'});victory(s);}else{if(s.equipped==='dagger-of-insult'&&rand(s)<.2){const insults=["You smell like a clam digger's boot!","You're as weak as a baby goblin with a stick!","I thought slime was ugly, but you set a new low record!"];const message=insults[Math.floor(rand(s)*insults.length)]+' The enemy loses morale and deals 2 less damage.';s.enemy.insulted=true;note(s,message);events.push({kind:'taunt',target:'enemy',amount:0,sound:'click',message});}enemyTurn(s,false,events);}}
+  if(a.type==='attack'){
+   const advantage=s.enemy.surprised,weakness=s.enemy.weakness;
+   const effective=weakness==='quick strikes'||weakness==='guard then counter'&&s.flags.guarded||weakness==='steady pressure'&&s.flags.combo>=1;
+   const gear=WEAPONS[s.equipped]||UNARMED,benefits=attributeBenefits(s,itemById);
+   const accuracy=weaponAccuracy(s,benefits.accuracy)+(advantage?20:0)-(s.enemy.kind==='swift'?8:0);
+   if(rand(s)*100>=Math.max(5,accuracy)){
+    s.flags.guarded=false;s.flags.combo=0;
+    events.push({kind:'miss',target:'enemy',amount:0,sound:'miss'});
+    note(s,'Your weapon misses.');
+    enemyTurn(s,false,events);return s;
+   }
+   const roll=gear.damage[0]+Math.floor(rand(s)*(gear.damage[1]-gear.damage[0]+1));
+   const base=roll+(s.equipped?s.weapon*4:0)+effectiveLevel(s)*2+benefits.meleeDamage+(s.buffs?.strength>0?s.buffs.strengthPower||0:0)+gearPower(s);
+   const raw=Math.floor((base+(s.buffs?.meal>0?4:0))*(gagActive(s,'tiny')?.5:1)*(effective?1.4:1)*(advantage?1.25:1));
+   const protection=s.enemy.luteNumb>0?0:Math.floor(s.enemy.armor||0);
+   const multiplier=s.equipped==='holy-avenger'&&undead(s.enemy)?3:1;
+   const baseDamage=multiplier*(Math.max(1,raw-protection)+weaponMagicDamage(gear,benefits.magicDamage));
+   if(gear.freezeChance&&rand(s)<gear.freezeChance){s.enemy.frozen=1;note(s,'Frost freezes the enemy in place!');}
+   s.flags.guarded=false;s.flags.combo=(s.flags.combo||0)+1;
+   const attackDamage=rollAttackDamage(s,baseDamage,()=>rand(s),note);
+   const {amount}=attackDamage;
+   s.enemy.hp-=amount;
+   if(gear.lifeSteal){s.hp=Math.min(s.maxHp,s.hp+gear.lifeSteal);note(s,'Your weapon drains '+gear.lifeSteal+' health from the enemy.');}
+   events.push({kind:'hit',target:'enemy',...attackDamage,sound:'hit'});
+   note(s,`Your weapon deals ${amount} damage.${effective?' You exploit its weakness.':''}${protection?' Its armor absorbs '+Math.min(protection,raw-1)+' damage.':''}`);
+   if(s.enemy.hp<=0){
+    events.push({kind:'victory',target:'enemy',amount:0,sound:'victory'});victory(s);
+   }else{
+    if(s.equipped==='dagger-of-insult'&&rand(s)<.2){
+     const insults=["You smell like a clam digger's boot!","You're as weak as a baby goblin with a stick!","I thought slime was ugly, but you set a new low record!"];
+     const message=insults[Math.floor(rand(s)*insults.length)]+' The enemy loses morale and deals 2 less damage.';
+     s.enemy.insulted=true;note(s,message);
+     events.push({kind:'taunt',target:'enemy',amount:0,sound:'click',message});
+    }
+    enemyTurn(s,false,events);
+   }
+  }
   else if(a.type==='guard'){s.flags.guarded=true;s.flags.combo=0;s.hp=Math.min(s.maxHp,s.hp+3);enemyTurn(s,true,events);}
   else if(a.type==='flee'){resetPalaceAttempt(s);if(rand(s)<.5){note(s,'Your enemy lunges as you retreat — a hit deals double damage!');enemyTurn(s,false,events,2);}if(s.mode==='battle'&&s.enemy){s.mode=s.returnMode;s.enemy=null;s.spellEffects.stunnedTurns=0;if(s.dungeon)arriveAtLadder(s.dungeon,'up');events.push({kind:'retreat',target:'hero',amount:0,sound:'step'});note(s,'You escape. Discretion is a very respectable kind of panic.');}}
 
@@ -507,7 +593,7 @@ function actInner(input,action,events=[]){
   const atEndpoint=d.x===13&&d.y===13;
   const bottom=d.floor===dungeonFloors(d)-1;
   if(a.type==='turn'&&[-1,1].includes(a.delta))d.dir=(d.dir+a.delta+4)%4;
-  if(a.type==='forward'||a.type==='back'||a.type==='strafe'){if(s.equippedBoots==='snowshoes'&&!travelSteps(s)){note(s,'Your snowshoes drag on the dungeon floor.');return s;}const [dx,dy]=DIRS[(d.dir+(a.type==='strafe'?(a.delta<0?-1:1):0)+4)%4],n=a.type==='back'?-1:1;const x=d.x+dx*n,y=d.y+dy*n;if(m[y]?.[x]!==undefined&&m[y][x]!==1){d.x=x;d.y=y;clock(s);if(s.mode==='dungeon'&&(sewerGuardian(s)||roadsideGuardian(s)))return s;if(s.mode==='dungeon'&&d.site!==ROADSIDE_CRYPT&&!d.ship&&d.royal!=='cell'&&!(x===1&&y===1)&&!(x===13&&y===13)&&!ladders.some(l=>l.x===x&&l.y===y)&&rand(s)<.055*(gagActive(s,'tiny')?.5:1))encounter(s);}else note(s,d.ship?'The ship’s bulkhead blocks your path.':d.site==='elf-village'?'Dense roots and ruined timber block your path.':'Cold stone blocks your path.');}
+  if(a.type==='forward'||a.type==='back'||a.type==='strafe'){if(s.equippedBoots==='snowshoes'&&!travelSteps(s)){note(s,'Your snowshoes drag on the dungeon floor.');return s;}const [dx,dy]=DIRS[(d.dir+(a.type==='strafe'?(a.delta<0?-1:1):0)+4)%4],n=a.type==='back'?-1:1;const x=d.x+dx*n,y=d.y+dy*n;if(m[y]?.[x]!==undefined&&m[y][x]!==1){d.x=x;d.y=y;clock(s);if(s.mode==='dungeon'&&(sewerGuardian(s)||roadsideGuardian(s)))return s;if(s.mode==='dungeon'&&d.site!==ROADSIDE_CRYPT&&!d.ship&&d.royal!=='cell'&&!(x===1&&y===1)&&!(x===13&&y===13)&&!ladders.some(l=>l.x===x&&l.y===y)&&rand(s)<.055*(gagActive(s,'tiny')?.5:1)*randomEncounterMultiplier(s))encounter(s);}else note(s,d.ship?'The ship’s bulkhead blocks your path.':d.site==='elf-village'?'Dense roots and ruined timber block your path.':'Cold stone blocks your path.');}
   if(d.ship||d.site===ROADSIDE_CRYPT)return s;
   if(d.site===BOTTOMLESS_PIT.id){
    if(a.type==='descend'&&canDescend)changeDungeonFloor(d,1);
@@ -640,9 +726,9 @@ export function loadGame(json){
  if(s.flags.royalQuest==='opening'&&(!Number.isInteger(s.flags.royalIntroLine)||s.flags.royalIntroLine<0||s.flags.royalIntroLine>=ROYAL_INTRO.length))throw Error('Invalid introduction.');
  if(s.equipmentVersion!==1||!(s.equippedArmor===null||itemById(s.equippedArmor,s)?.kind==='armor'&&s.bag?.includes(s.equippedArmor)))throw Error('Invalid armor equipment.');
  if(!Array.isArray(s.bag)||s.bag.some(id=>!itemById(id,s)||itemById(id,s).kind==='relic')||s.equipped!==null&&(!Object.hasOwn(WEAPONS,s.equipped)||!s.bag.includes(s.equipped))||!Array.isArray(s.pendingLoot)||s.pendingLoot.some(id=>!itemById(id)||!s.bag.includes(id)&&!s.relics.includes(id)))throw Error('Invalid equipment.');
- s.treasureSeed??=187441;s.openedChests??=[];s.buffs??={};s.equippedRing2??=null;s.equippedHands??=null;s.equippedHead??=null;s.equippedBoots??=null;s.equippedShield??=null;s.equippedRing??=null;s.equippedNecklace??=null;
+ s.treasureSeed??=187441;s.openedChests??=[];s.buffs??={};s.equippedBelt??=null;s.equippedRing2??=null;s.equippedHands??=null;s.equippedHead??=null;s.equippedBoots??=null;s.equippedShield??=null;s.equippedRing??=null;s.equippedNecklace??=null;
  if(!Number.isInteger(s.treasureSeed)||s.treasureSeed<0||s.treasureSeed>4294967295||!Array.isArray(s.openedChests)||s.openedChests.length>10000||new Set(s.openedChests).size!==s.openedChests.length||s.openedChests.some(id=>typeof id!=='string'||!/^(?:crypt:[1-9][0-9]*:0|ship:0:[01]|4:19:boat|sewer:0:key|(?:[0-7]:(?:[0-9]|[1-9][0-9])|(?:cell|sewer):0|elf-village:[0-3]|firedrak:[0-9]|bottomless-pit:(?:[0-9]|[1-9][0-9])|putrid-palace:(?:[0-9]|1[0-4])|(?:wild-(?:[0-9]|1[01])-cave-[01]|planet-[0-2]-cave-[0-2]):[0-2]):(?:[0-5]|secret|boss))$/.test(id)))throw Error('Invalid chest progress.');
- for(const kind of ['ring','ring2','necklace','shield','boots','head','hands']){const id=s[gearKey(kind)];if(id!==null&&(itemById(id)?.kind!==(kind==='ring2'?'ring':kind)||!s.bag.includes(id)))throw Error('Invalid jewelry.');}
+ for(const kind of ['ring','ring2','necklace','shield','boots','head','hands','belt']){const id=s[gearKey(kind)];if(id!==null&&(itemById(id)?.kind!==(kind==='ring2'?'ring':kind)||!s.bag.includes(id)))throw Error('Invalid jewelry.');}
  if(s.equippedRing&&s.equippedRing===s.equippedRing2&&s.bag.filter(id=>id===s.equippedRing).length<2)throw Error('Two equipped rings require two owned copies.');
  if(!s.buffs||typeof s.buffs!=='object'||Array.isArray(s.buffs)||Object.entries(s.buffs).some(([k,v])=>!['strength','strengthPower','invisibility','meal','poison','waterBreathing'].includes(k)||!Number.isInteger(v)||v<0||v>100))throw Error('Invalid potion effects.');
  if(s.enemy?.frozen!==undefined&&(!Number.isInteger(s.enemy.frozen)||s.enemy.frozen<0||s.enemy.frozen>1))throw Error('Invalid freeze effect.');
