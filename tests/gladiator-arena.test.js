@@ -6,12 +6,20 @@ import {townPlaces} from '../public/game/town.js';
 import {itemById} from '../public/game/items.js';
 import {rulerPersonality} from '../public/game/ruler-personalities.js';
 import {DAY_MS} from '../public/game/world-clock.js';
-import {ARENA_LEATHER_ARMOR, ARENA_WINS_REQUIRED, arenaOpponent, imprisonInArena} from '../public/game/gladiator-arena.js';
+import {ARENA_LEATHER_ARMOR, ARENA_WINS_REQUIRED, arenaLevelRange, arenaOpponent, imprisonInArena} from '../public/game/gladiator-arena.js';
 import {MONSTER_BY_ID} from '../public/game/bestiary.js';
 
 const save = s => loadGame(saveGame(s));
 const start = {type: 'startArenaFight'};
 const note = (s, text) => s.log.push(text);
+const orderedFighters = [
+  ['The Snake', 'snake', /daggers/], ['Thug the Smug', 'thug-the-smug', /brass knuckles/i],
+  ['Thrace the Mace', 'thrace-the-mace', /two-handed mace/], ['Caratacas the Celt', 'caratacas-the-celt', /peanut-shaped shield/],
+  ['Dimitri Death', 'dimitri-death', /chains/], ['Bratticus Babyface', 'bratticus-babyface', /trident/],
+  ['Trajan the Tragic', 'trajan-the-tragic', /net and short spear/], ['Noman the Nomad', 'noman-the-nomad', /spiked clubs/],
+  ['Screwby Just Screwby', 'screwby-just-screwby', /rapiers/], ['Ender the Undefeated', 'ender-the-undefeated', /axe/],
+];
+const originalArena = () => TOWNS.find(town => arenaOpponent(1, town.id)?.name === 'The Snake');
 
 function visitor(town = TOWNS[0]) {
   const s = {...createGame('Arena Tester'), mode: 'town', location: town.id, region: town.region, x: town.x, y: town.y};
@@ -48,7 +56,13 @@ function win(s, events = []) {
 test('every town has a voluntary arena that can be entered from its door and left after a retreat', () => {
   for (const town of TOWNS) {
     const outside = visitor(town);
+    const {min, max} = arenaLevelRange(town.id);
+    outside.level = min;
     assert.equal(act({...outside, townPosition: {x: 6, y: 12}}, {type: 'enterArena'}).arena, undefined);
+    const upper = act({...outside, level: max}, {type: 'enterArena'}).arena;
+    assert.equal(upper.town, town.id);
+    assert.equal(upper.entryWarning, undefined);
+    assert.equal(act({...outside, level: max + 1}, {type: 'enterArena'}).arena, undefined);
     const active = save(act(outside, {type: 'enterArena'}));
     assert.deepEqual(active.arena, {town: town.id, prisoner: false, wins: 0, qualifies: false});
     const fight = save(act(active, start));
@@ -60,6 +74,55 @@ test('every town has a voluntary arena that can be entered from its door and lef
     assert.equal(left.arena, undefined);
     assert.deepEqual(left.bag, outside.bag);
   }
+});
+
+test('underlevel volunteers must confirm their arena entry after reloading and can decline', () => {
+  const applicant = visitor();
+  const warned = save(act(applicant, {type: 'enterArena'}));
+  assert.match(warned.log.at(-1), /Nice try\. Admire your courage but these guys will slice and dice you\. Still want in\?/);
+  assert.equal(warned.arena.entryWarning, true);
+  assert.equal(act(warned, start).mode, 'town');
+  const declined = act(warned, {type: 'confirmArenaEntry', accept: false});
+  assert.equal(declined.arena, undefined);
+  assert.equal(declined.location, applicant.location);
+  const confirmed = save(act(warned, {type: 'confirmArenaEntry', accept: true}));
+  assert.equal(confirmed.arena.entryWarning, undefined);
+  assert.equal(act(confirmed, start).mode, 'battle');
+});
+
+test('volunteers above the local range are refused, while a sentence bypasses level screening', () => {
+  const applicant = visitor();
+  applicant.level = 100;
+  const denied = act(applicant, {type: 'enterArena'});
+  assert.equal(denied.arena, undefined);
+  assert.match(denied.log.at(-1), /Get lost\. You’re just looking for easy money against these low level scum!/);
+  const allowed = act({...applicant, level: arenaLevelRange(applicant.location).min}, {type: 'enterArena'});
+  const climbed = act({...allowed, level: 100}, start);
+  assert.equal(climbed.mode, 'town');
+  assert.match(climbed.log.at(-1), /Get lost/);
+  for (const level of [1, 100]) {
+    const prisoner = {...applicant, level};
+    imprisonInArena(prisoner, note);
+    assert.equal(act(prisoner, start).mode, 'battle');
+  }
+});
+
+test('town arena stats compound by ten percent per bout independently of the adventurer level', () => {
+  const townBases = new Set();
+  for (const town of TOWNS) {
+    const captive = visitor(town);
+    imprisonInArena(captive, note);
+    const base = act(captive, start).enemy;
+    townBases.add(base.maxHp);
+    for (const round of [1, 2, 5, 10]) {
+      const next = act({...captive, level: 99, arena: {...captive.arena, wins: round - 1}}, start).enemy;
+      for (const stat of ['maxHp', 'attack', 'armor', 'level']) {
+        assert.equal(next[stat], Math.round(base[stat] * 1.1 ** (round - 1)), `${town.id} bout ${round} ${stat}`);
+      }
+    }
+  }
+  assert.ok(townBases.size > 1);
+  assert.notDeepEqual(arenaLevelRange('mothbridge'), arenaLevelRange('hinge-town'));
 });
 
 test('confiscation stashes cursed gear, pending loot, and exact wand charges until the tenth win', () => {
@@ -166,13 +229,35 @@ test('a level-three adventurer can win all ten real bouts with loan gear and the
   assert.deepEqual(s.attributes, attributes);
 });
 
+test('a level-one prisoner can finish a late-region sentence using a stronger mundane loan sword', () => {
+  const town = TOWNS.find(town => town.id === 'noonless-quay');
+  let s = visitor(town);
+  const originalRank = s.weapon;
+  imprisonInArena(s, note);
+  assert.ok(s.weapon > originalRank);
+  assert.equal(s.arena.loanWeaponRank, s.weapon);
+  assert.equal(s.equipped, 'road-sword');
+  assert.equal(s.equippedArmor, ARENA_LEATHER_ARMOR.id);
+  assert.throws(() => save({...s, weapon: s.weapon + 1}), /Invalid arena/);
+  s = save(s);
+  for (let round = 1; round <= ARENA_WINS_REQUIRED; round++) {
+    s = act(s, start);
+    let turns = 0;
+    while (s.mode === 'battle' && turns++ < 40) s = act(s, {type: 'attack'});
+    assert.equal(s.arena?.wins ?? ARENA_WINS_REQUIRED, round);
+  }
+  assert.equal(s.flags.arenaBasicPerk, true);
+  assert.equal(s.weapon, originalRank);
+  assert.equal(s.arena, undefined);
+});
+
 test('each arena bout shows its scheduled foe and a distinct existing combat sprite', () => {
   const hero = visitor();
   imprisonInArena(hero, note);
   const names = new Set(), art = new Set();
   const available = new Set(Object.values(MONSTER_BY_ID).filter(monster => monster.art).map(monster => `${monster.art.sheet}/${monster.art.index}`));
   for (let round = 1; round <= ARENA_WINS_REQUIRED; round++) {
-    const opponent = arenaOpponent(round);
+    const opponent = arenaOpponent(round, hero.arena.town);
     const fight = save(act({...hero, arena: {...hero.arena, wins: round - 1}}, start));
     assert.equal(fight.enemy.name, opponent.name);
     assert.deepEqual(fight.enemy.art, opponent.art);
@@ -187,6 +272,48 @@ test('each arena bout shows its scheduled foe and a distinct existing combat spr
   assert.equal(art.size, ARENA_WINS_REQUIRED);
   assert.equal(arenaOpponent(0), null);
   assert.equal(arenaOpponent(ARENA_WINS_REQUIRED + 1), null);
+});
+
+test('the original named roster is ordered and restricted to its one arena', () => {
+  const matches = TOWNS.filter(town => arenaOpponent(1, town.id)?.name === 'The Snake');
+  assert.deepEqual(matches.map(town => town.id), ['bellwether']);
+  const hero = visitor(matches[0]);
+  imprisonInArena(hero, note);
+  for (const [index, [name, slug, weapon]] of orderedFighters.entries()) {
+    const opponent = arenaOpponent(index + 1, hero.arena.town);
+    assert.equal(opponent.name, name);
+    assert.match(opponent.weapon, weapon);
+    const fight = save(act({...hero, arena: {...hero.arena, wins: index}}, start));
+    assert.equal(fight.enemy.name, name);
+    assert.equal(fight.enemy.portrait, `/assets/gladiator-${slug}.webp`);
+  }
+});
+
+test('the named gladiators have distinct attack cadences and a winding mace stays wound after saving', () => {
+  const town = originalArena();
+  assert.ok(town, 'The named fighters have an arena.');
+  const hero = visitor(town);
+  hero.hp = hero.maxHp = 500;
+  imprisonInArena(hero, note);
+  const cadences = new Set();
+  for (const [index] of orderedFighters.entries()) {
+    let fight = act({...hero, arena: {...hero.arena, wins: index}}, start);
+    const cadence = [];
+    for (let turn = 0; turn < 6; turn++) {
+      const events = [];
+      fight = act(fight, {type: 'guard'}, events);
+      const blows = events.filter(event => event.target === 'hero' && ['block', 'hit', 'miss'].includes(event.kind));
+      if (index === 2 && turn === 0) {
+        assert.equal(blows.length, 0);
+        assert.match(fight.log.at(-1), /winds up/);
+        fight = save(fight);
+      }
+      if (index === 2 && turn === 1) assert.match(blows[0]?.message, /two-handed mace/);
+      cadence.push(blows.length);
+    }
+    cadences.add(cadence.join(','));
+  }
+  assert.ok(cadences.size >= 8, `Distinct attack sequences: ${[...cadences].join(' / ')}`);
 });
 
 test('save loading rejects missing confiscated equipment and mismatched bouts', () => {

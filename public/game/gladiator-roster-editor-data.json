@@ -1,0 +1,953 @@
+{
+  "version": 2,
+  "arenas": [
+    {
+      "id": "mothbridge",
+      "name": "Mothbridge",
+      "region": "The Hearthmarch",
+      "status": "draft",
+      "summary": "Orchard workers, millers, and villagers making do with equipment from the sheds behind the inn.",
+      "fighters": [
+        {
+          "bout": 1,
+          "name": "Nettle Tuck",
+          "look": "Wiry woman in her 20s. Severe side-shaved crop, a broad weather-beaten face with a broken nose and healed brow scar, dark knotwork tattoos on the neck and forearms, scuffed spike-toed boots. Intimidating scowl, rugged unglamorized features, patched practical clothing with dirty leather straps, rusted studs and torn hems",
+          "weapon": "Hazel staff, quick jabs and a clear pause before each sweep",
+          "portrait": "/assets/gladiator-mothbridge-01.webp"
+        },
+        {
+          "bout": 2,
+          "name": "Bram Barrelbottom",
+          "look": "Round, sturdy man in his 40s, red nose, flour-white apron over leather",
+          "weapon": "Barrel-lid shield and wooden mallet, shield shove followed by a clumsy bonk",
+          "portrait": "/assets/gladiator-mothbridge-02.webp"
+        },
+        {
+          "bout": 3,
+          "name": "Cora Crust",
+          "look": "Muscular woman in her 30s, dark skin. Ragged short mohawk, a heavy jaw and crooked nose with a healed cheek scar, bold geometric neck tattoos, a battered spike-topped iron helmet. Intimidating scowl, rugged unglamorized features, patched practical clothing with dirty leather straps, rusted studs and torn hems",
+          "weapon": "Iron bread peel, broad paddle strikes and a two-handed overhead blow",
+          "portrait": "/assets/gladiator-mothbridge-03.webp"
+        },
+        {
+          "bout": 4,
+          "name": "Fen Twine",
+          "look": "Tall man in his 20s, shaved temples, hemp braid, sleeveless slate vest",
+          "weapon": "Rope-weight flail, circles wide and snaps back into reach",
+          "portrait": "/assets/gladiator-mothbridge-04.webp"
+        },
+        {
+          "bout": 5,
+          "name": "Old Piers Prunes",
+          "look": "Stocky man in his 60s, grey plait, orchard apron, red knee wraps",
+          "weapon": "Forked pruning hook, catches a shield edge and follows with a sweep",
+          "portrait": "/assets/gladiator-mothbridge-05.webp"
+        },
+        {
+          "bout": 6,
+          "name": "The Thresher",
+          "look": "Broad man in his 30s, straw-blond stubble, blue scarf, rolled linen sleeves A battered book titled Fighting for Dummies sticks out of his boot, title facing outward.",
+          "weapon": "Grain flail, measured alternating blows with a delayed third strike",
+          "portrait": "/assets/gladiator-mothbridge-06.webp"
+        },
+        {
+          "bout": 7,
+          "name": "Merrick Mudsock",
+          "look": "Lean man in his 40s, brown skin, one green stocking, reed cloak and bare knuckles",
+          "weapon": "Ditcher’s spade, low feints and sudden flat-blade slaps",
+          "portrait": "/assets/gladiator-mothbridge-07.webp"
+        },
+        {
+          "bout": 8,
+          "name": "Gulliver Guttercap",
+          "look": "Tall man in his 50s, hooked nose, shaggy grey beard, battered rain hood",
+          "weapon": "Gutter polearm, keeps the opponent at reach and turns retreat into a lunge",
+          "portrait": "/assets/gladiator-mothbridge-08.webp"
+        },
+        {
+          "bout": 9,
+          "name": "Sable Sieve",
+          "look": "Athletic man in his 30s, ink-blue braids, cream tunic, copper sieve strapped as a buckler",
+          "weapon": "Sickle and sieve shield, quick alternating cuts and close blocks",
+          "portrait": "/assets/gladiator-mothbridge-09.webp"
+        },
+        {
+          "bout": 10,
+          "name": "Oswin Last Bushel",
+          "look": "Heavyset man in his 50s, chestnut skin, gold front tooth, dark leather stitched with wheat",
+          "weapon": "Grain scale with a weighted swing, then a guarded counter when the scale settles",
+          "portrait": "/assets/gladiator-mothbridge-10.webp"
+        }
+      ]
+    },
+    {
+      "id": "bellwether",
+      "name": "Bellwether Court",
+      "region": "The Hearthmarch",
+      "status": "confirmed",
+      "summary": "The original ten fighters at the Coliseum.",
+      "fighters": [
+        {
+          "bout": 1,
+          "name": "The Snake",
+          "look": "A lean thief in patched dark leathers, with a dagger in each hand.",
+          "weapon": "Two daggers",
+          "portrait": "/assets/gladiator-snake.webp"
+        },
+        {
+          "bout": 2,
+          "name": "Thug the Smug",
+          "look": "A big, smug brute who grins through broken teeth and wears heavy brass knuckles.",
+          "weapon": "Brass knuckles",
+          "portrait": "/assets/gladiator-thug-the-smug.webp"
+        },
+        {
+          "bout": 3,
+          "name": "Thrace the Mace",
+          "look": "A Thracian fighter in a bronze breastplate, holding a two-handed mace at his shoulder.",
+          "weapon": "A two-handed mace",
+          "portrait": "/assets/gladiator-thrace-the-mace.webp"
+        },
+        {
+          "bout": 4,
+          "name": "Caratacas the Celt",
+          "look": "A Celtic swordsman whose painted shield narrows in the middle like a peanut.",
+          "weapon": "A short sword and a peanut-shaped shield",
+          "portrait": "/assets/gladiator-caratacas-the-celt.webp"
+        },
+        {
+          "bout": 5,
+          "name": "Dimitri Death",
+          "look": "A gaunt prisoner who keeps both ends of his former shackles in motion.",
+          "weapon": "Two chains used as whips",
+          "portrait": "/assets/gladiator-dimitri-death.webp"
+        },
+        {
+          "bout": 6,
+          "name": "Bratticus Babyface",
+          "look": "An adult gladiator with a round, baby-faced scowl and a diaper-style cloth wrap, brandishing a long trident.",
+          "weapon": "A trident",
+          "portrait": "/assets/gladiator-bratticus-babyface.webp"
+        },
+        {
+          "bout": 7,
+          "name": "Trajan the Tragic",
+          "look": "A Roman net fighter with a mournful face, a weighted casting net and a short spear.",
+          "weapon": "A net and short spear",
+          "portrait": "/assets/gladiator-trajan-the-tragic.webp"
+        },
+        {
+          "bout": 8,
+          "name": "Noman the Nomad",
+          "look": "An enormous nomad in chain mail and a nasal helmet, gripping a spiked club in each fist.",
+          "weapon": "Two spiked clubs",
+          "portrait": "/assets/gladiator-noman-the-nomad.webp"
+        },
+        {
+          "bout": 9,
+          "name": "Screwby Just Screwby",
+          "look": "A deadly, precise fencer with two slim rapiers and the habit of watching his opponent’s feet.",
+          "weapon": "Two rapiers",
+          "portrait": "/assets/gladiator-screwby-just-screwby.webp"
+        },
+        {
+          "bout": 10,
+          "name": "Ender the Undefeated",
+          "look": "A bald, pale-white giant with old scars and red-lined eyes, carrying an enormous axe.",
+          "weapon": "A giant axe",
+          "portrait": "/assets/gladiator-ender-the-undefeated.webp"
+        }
+      ]
+    },
+    {
+      "id": "gallows-fair",
+      "name": "Gallows Fair",
+      "region": "The Hearthmarch",
+      "status": "draft",
+      "summary": "Carnival acts, failed gamblers, and performers who found the arena steadier work than the wheel.",
+      "fighters": [
+        {
+          "bout": 1,
+          "name": "Nasty Hobbitses",
+          "look": "Short adult man with slick black hair, thick black sideburns matching the hair on his large bare feet, an eyeball earring, a plain cheap turquoise vest, patched trousers cut above the ankles; no boots or ornate trim.",
+          "weapon": "Two dry human femur bones used as clubs, quick alternating blows.",
+          "portrait": "/assets/gladiator-gallows-fair-01.webp"
+        },
+        {
+          "bout": 2,
+          "name": "Master Oddsocks",
+          "look": "Tall man in his 40s, violet hairpiece, one striped boot, one polished boot",
+          "weapon": "Cane with a brass knob, taps on the floor before an unexpected swing",
+          "portrait": "/assets/gladiator-gallows-fair-02.webp"
+        },
+        {
+          "bout": 3,
+          "name": "Huck Halfpenny",
+          "look": "Lean man in his 30s, shaved head, coin earrings, grey coat with yellow piping",
+          "weapon": "Broad copper token on a chain, attacks in slow loops with an abrupt return",
+          "portrait": "/assets/gladiator-gallows-fair-03.webp"
+        },
+        {
+          "bout": 4,
+          "name": "Velda Velvetropes",
+          "look": "Broad woman in her 30s, deep brown skin. Close buzz cut, a craggy face with a split eyebrow and old chin scar, black thorn tattoos on the arms, removable steel fangs fitted over the teeth. Intimidating scowl, rugged unglamorized features, patched practical clothing with dirty leather straps, rusted studs and torn hems",
+          "weapon": "Ringmaster’s whip, keeps distance and follows a loud crack with a short rush",
+          "portrait": "/assets/gladiator-gallows-fair-04.webp"
+        },
+        {
+          "bout": 5,
+          "name": "Joxo the Joker",
+          "look": "Lanky adult man with diamond face paint and a ragged jester hat, simple patched jester tunic, trousers and worn boots. Holds flaming juggling pins.",
+          "weapon": "Flaming juggling pins, deceptive flourishes and rapid strikes that deal extra heat damage.",
+          "portrait": "/assets/gladiator-gallows-fair-05.webp"
+        },
+        {
+          "bout": 6,
+          "name": "Goran Oddsmaker",
+          "look": "Thickset man in his 50s, square beard, waistcoat printed with betting slips",
+          "weapon": "Dice-box hammer, rolls one shoulder to signal a heavy diagonal hit",
+          "portrait": "/assets/gladiator-gallows-fair-06.webp"
+        },
+        {
+          "bout": 7,
+          "name": "Bertram Badluck",
+          "look": "Athletic man in his 30s, white streak in black hair, crimson gloves, horseshoe brooch",
+          "weapon": "Twin horseshoe knuckles, short chains of punches followed by a sudden step away",
+          "portrait": "/assets/gladiator-gallows-fair-07.webp"
+        },
+        {
+          "bout": 8,
+          "name": "Derrick Doubletake",
+          "look": "Sinewy man in his 40s, silver face paint on one cheek, mirrored hat and purple leggings",
+          "weapon": "Mirrored buckler and slim dueling sword, flashes a feint and answers overeager strikes",
+          "portrait": "/assets/gladiator-gallows-fair-08.webp"
+        },
+        {
+          "bout": 9,
+          "name": "Ludo Loosewheel",
+          "look": "Large man in his 40s, heavy eyebrows, teal wheel-spoke breastplate, red sash",
+          "weapon": "Roulette-wheel shield and short club, spins into a shield bash and guards on recovery",
+          "portrait": "/assets/gladiator-gallows-fair-09.webp"
+        },
+        {
+          "bout": 10,
+          "name": "Clarissa the Courtier",
+          "look": "Imposing older woman in her 60s, silver coiled braids, crowned domino mask, black-and-gold courtier coat, rapier and a fan of playing cards.",
+          "weapon": "Rapier and distracting playing cards; deceptive courtly feints followed by vicious below-the-belt thrusts and kicks. Notorious for fighting dirty.",
+          "portrait": "/assets/gladiator-gallows-fair-10.webp"
+        }
+      ]
+    },
+    {
+      "id": "redhaven",
+      "name": "Redhaven",
+      "region": "The Cinder Dominion",
+      "status": "draft",
+      "summary": "Former rebels, court clerks, and the sort of retired watch officers who keep their armor in working order.",
+      "fighters": [
+        {
+          "bout": 1,
+          "name": "Tilden Redstamp",
+          "look": "Compact hardened man in his late 20s, square spectacles, buzzed brown hair, heavy brow, crooked nose, dark stubble and an old cheek scar. Plain faded red tunic, trousers and worn boots.",
+          "weapon": "Oversized docket stamp on a short handle, single emphatic strikes with time to recover",
+          "portrait": "/assets/gladiator-redhaven-01.webp"
+        },
+        {
+          "bout": 2,
+          "name": "Narek Bootprint",
+          "look": "Adult man with dark tousled hair and stubble, one iron prosthetic leg with a shovel blade for its foot, a close-fitting necklace of thick iron rings, plain worn tunic and trousers, single belt and one boot.",
+          "weapon": "Blunt parade sabre, sidesteps wide and cuts back across the arena.",
+          "portrait": "/assets/gladiator-redhaven-02.webp"
+        },
+        {
+          "bout": 3,
+          "name": "Jessa Brassbutton",
+          "look": "Broad woman in her 40s, dark skin. Shaved head with one coarse braided strip, a broad scarred face and uneven brows, dark animal tattoos on the forearms, spike-toed boots and a dented spiked shoulder guard. Intimidating scowl, rugged unglamorized features, patched practical clothing with dirty leather straps, rusted studs and torn hems",
+          "weapon": "Round guard shield and truncheon, solid blocks followed by patient counters",
+          "portrait": "/assets/gladiator-redhaven-03.webp"
+        },
+        {
+          "bout": 4,
+          "name": "Corvin Sideways",
+          "look": "Slim man in his 30s, auburn undercut, red scarf worn across a shoulder",
+          "weapon": "Broken-banner spear, crosses the line at an angle and thrusts from the side",
+          "portrait": "/assets/gladiator-redhaven-04.webp"
+        },
+        {
+          "bout": 5,
+          "name": "Levin Longreceipt",
+          "look": "Tall man in his 50s, grey curls, ink-stained cuffs, copper chain of office",
+          "weapon": "Brass tally chain, sweeping swings that shorten when the opponent comes close",
+          "portrait": "/assets/gladiator-redhaven-05.webp"
+        },
+        {
+          "bout": 6,
+          "name": "Bran the Hammer",
+          "look": "Stocky older man with a huge grey moustache, plain pointed iron skullcap, battered leather vest, simple trousers, one belt and worn boots; no cloak, gold fittings or embroidery.",
+          "weapon": "Iron gavel, slower double blows and a loud overhead finish",
+          "portrait": "/assets/gladiator-redhaven-06.webp"
+        },
+        {
+          "bout": 7,
+          "name": "The Handmaiden",
+          "look": "Athletic woman in her 30s with tan skin, severe cropped black hair, a healed brow scar, chin lowered in a menacing glare and a crown of skeletal finger bones. Plain worn tunic, battered leather vest, trousers and boots.",
+          "weapon": "Sabre and scabbard, uses the scabbard to block before darting in with the blade",
+          "portrait": "/assets/gladiator-redhaven-07.webp"
+        },
+        {
+          "bout": 8,
+          "name": "Miro Mendedbanner",
+          "look": "Lean man in his 40s, brown skin, braided beard, coat made from stitched protest banners",
+          "weapon": "Long banner-halberd, sweeping arcs with a short thrust hidden behind the cloth",
+          "portrait": "/assets/gladiator-redhaven-08.webp"
+        },
+        {
+          "bout": 9,
+          "name": "Senan Sealedwrit",
+          "look": "Tall man in his 40s, deep-set eyes, wax-red shoulder guards, sealed scroll tube",
+          "weapon": "Reinforced scroll-case baton and short sword, alternates heavy baton pressure with quick blade taps",
+          "portrait": "/assets/gladiator-redhaven-09.webp"
+        },
+        {
+          "bout": 10,
+          "name": "Kaspar Last Appeal",
+          "look": "Square-built man in his 50s, grey temples, old rebel sash over scarlet plate, no helmet",
+          "weapon": "Greatsword and elbow shield, short defensive exchanges before a long deliberate sweep",
+          "portrait": "/assets/gladiator-redhaven-10.webp"
+        }
+      ]
+    },
+    {
+      "id": "iron-choir",
+      "name": "Iron Choir",
+      "region": "The Cinder Dominion",
+      "status": "draft",
+      "summary": "Furnace crews and metalworkers who fight to a rhythm heard through the arena floor.",
+      "fighters": [
+        {
+          "bout": 1,
+          "name": "The Musician",
+          "look": "Lean adult man in his late 20s with dark tousled hair, spiked earmuffs, a hostile grin showing every tooth sharpened to a point, a cheap worn tunic and leather apron, plain trousers and boots. Wields a giant two-pronged tuning fork.",
+          "weapon": "Giant tuning fork, quick ringing strikes separated by a predictable beat",
+          "portrait": "/assets/gladiator-iron-choir-01.webp"
+        },
+        {
+          "bout": 2,
+          "name": "Fenn Rivetmouth",
+          "look": "Rangy man in his 30s, chipped tooth, close-cropped curls, orange gloves and rolled sleeves",
+          "weapon": "Rivet setter, short punches with a single heavier follow-up",
+          "portrait": "/assets/gladiator-iron-choir-02.webp"
+        },
+        {
+          "bout": 3,
+          "name": "Toma Offbeat",
+          "look": "Stocky adult man with plum-dyed hair and beard, rotten crooked teeth and several gaps, one missing ear with a healed scar, a cheap sleeveless purple leather vest, patched trousers and plain boots.",
+          "weapon": "Forked iron staff, breaks an even rhythm with one delayed poke",
+          "portrait": "/assets/gladiator-iron-choir-03.webp"
+        },
+        {
+          "bout": 4,
+          "name": "Hessa Coppershins",
+          "look": "Strong woman in her 40s with black skin, severe side-shaved crest, old facial scars and bold neck and arm tattoos, cheap leather work apron over plain tunic and trousers, copper shin plates and spike-toed boots. Exactly three sets of artificial dentures hang from her belt.",
+          "weapon": "Long furnace tongs, reaches out with a pinch feint then swings across",
+          "portrait": "/assets/gladiator-iron-choir-04.webp"
+        },
+        {
+          "bout": 5,
+          "name": "Brod Bellowback",
+          "look": "Broad man in his 50s, bald crown, bellows straps across his back, rust-red leather",
+          "weapon": "Bellows-frame shield and short punch hammer, advances steadily behind the shield",
+          "portrait": "/assets/gladiator-iron-choir-05.webp"
+        },
+        {
+          "bout": 6,
+          "name": "Pell Workwhistle",
+          "look": "Lean man in his 30s, pale cropped hair, brass whistle, green heatproof sleeves",
+          "weapon": "Pair of small forge picks, signals a sprint with the whistle and follows with alternating taps",
+          "portrait": "/assets/gladiator-iron-choir-06.webp"
+        },
+        {
+          "bout": 7,
+          "name": "Vass Coalheel",
+          "look": "Tall man in his 40s, dark skin, ash-grey eyebrows, asymmetric furnace plate",
+          "weapon": "Long slag rake, drags it to mark distance and catches a rushed advance with a wide arc",
+          "portrait": "/assets/gladiator-iron-choir-07.webp"
+        },
+        {
+          "bout": 8,
+          "name": "Ember Lastshift",
+          "look": "Heavyset man in his 50s, burnished face mask, dark blue coat, tool tags at the waist",
+          "weapon": "Smith’s maul with a heat-glow finish, deliberate wind-up and punishing follow-through",
+          "portrait": "/assets/gladiator-iron-choir-08.webp"
+        },
+        {
+          "bout": 9,
+          "name": "Runa Railbrace",
+          "look": "Athletic woman in her 40s. Ragged short mohawk, a heavy jaw and crooked nose with a healed cheek scar, bold geometric neck tattoos, a battered spike-topped iron helmet. Intimidating scowl, rugged unglamorized features, patched practical clothing with dirty leather straps, rusted studs and torn hems",
+          "weapon": "Rail spike and braced forearm shield, presses through blocks and fights close",
+          "portrait": "/assets/gladiator-iron-choir-09.webp"
+        },
+        {
+          "bout": 10,
+          "name": "Oskar Grand Anvil",
+          "look": "Very broad man in his 60s, white forked beard, blackened mail, conductor’s white gloves",
+          "weapon": "Two-handed anvil hammer, marks an even cadence before accelerating the final swing",
+          "portrait": "/assets/gladiator-iron-choir-10.webp"
+        }
+      ]
+    },
+    {
+      "id": "ash-market",
+      "name": "Ash Market",
+      "region": "The Cinder Dominion",
+      "status": "draft",
+      "summary": "Print workers, card sharps, and permit smugglers in layers that conceal more pockets than armor.",
+      "fighters": [
+        {
+          "bout": 1,
+          "name": "Nim Margin",
+          "look": "Slim man in his 20s, brown skin, orange head wrap, ink-black fingertip marks",
+          "weapon": "Compositor’s stick, short snapping strikes with open space between them",
+          "portrait": "/assets/gladiator-ash-market-01.webp"
+        },
+        {
+          "bout": 2,
+          "name": "Jory Foldover",
+          "look": "Round man in his 30s, soft brown beard, green apron folded into layered panels",
+          "weapon": "Folding ruler club, changes reach when the segments flick open",
+          "portrait": "/assets/gladiator-ash-market-02.webp"
+        },
+        {
+          "bout": 3,
+          "name": "Ennis Wrongfont",
+          "look": "Tall man in his 30s, white Mohawk, black coat patched with mismatched letters",
+          "weapon": "Type-case buckler and ink roller, wide roller swings behind the box shield",
+          "portrait": "/assets/gladiator-ash-market-03.webp"
+        },
+        {
+          "bout": 4,
+          "name": "Tolliver Outofstock",
+          "look": "Long-armed man in his 40s, hooked eyebrows, empty sample satchel, rust-coloured vest",
+          "weapon": "Brass yardstick sabre, long measured cuts and sharp retreating pokes",
+          "portrait": "/assets/gladiator-ash-market-04.webp"
+        },
+        {
+          "bout": 5,
+          "name": "Farah Fineprint",
+          "look": "Athletic woman in her 30s. Close buzz cut, a craggy face with a split eyebrow and old chin scar, black thorn tattoos on the arms, removable steel fangs fitted over the teeth. Intimidating scowl, rugged unglamorized features, patched practical clothing with dirty leather straps, rusted studs and torn hems",
+          "weapon": "Small paper knife and a folded-paper fan guard, conceals quick blade changes",
+          "portrait": "/assets/gladiator-ash-market-05.webp"
+        },
+        {
+          "bout": 6,
+          "name": "Mav Ledgerlash",
+          "look": "Broad man in his 40s, amber eyes, waxed coat, chained red account book",
+          "weapon": "Chain-bound ledger, bounces a low swing into a heavy side strike",
+          "portrait": "/assets/gladiator-ash-market-06.webp"
+        },
+        {
+          "bout": 7,
+          "name": "Bastian Blackink",
+          "look": "Muscular man in his 40s, shaved sides, black-stained arms, dark orange smuggler’s cloak",
+          "weapon": "Two ink-stone mallets, a slow opener followed by fast double blows",
+          "portrait": "/assets/gladiator-ash-market-07.webp"
+        },
+        {
+          "bout": 8,
+          "name": "Silas Stampede",
+          "look": "Heavy man in his 50s, silver sideburns, seal-rings and layered mail under a velvet coat",
+          "weapon": "Permit-stamp polehammer, stamps a threatening rhythm into the floor before lunging",
+          "portrait": "/assets/gladiator-ash-market-08.webp"
+        },
+        {
+          "bout": 9,
+          "name": "Ivor Runout",
+          "look": "Lean man in his 50s, weathered brown skin, blond braid, layered grey newspaper-print cape",
+          "weapon": "Folding cargo hook and wheeled satchel shield, reels back to bait a close chase",
+          "portrait": "/assets/gladiator-ash-market-09.webp"
+        },
+        {
+          "bout": 10,
+          "name": "Odette Offthebooks",
+          "look": "Tall woman in her 60s. Hard undercut with a short bristling crest, an angular weathered face and healed lip scar, dense band tattoos around the neck, clawed steel gauntlets. Intimidating scowl, rugged unglamorized features, patched practical clothing with dirty leather straps, rusted studs and torn hems",
+          "weapon": "Long press lever and brass hand shield, shifts between shield counters and wide crushing swings",
+          "portrait": "/assets/gladiator-ash-market-10.webp"
+        }
+      ]
+    },
+    {
+      "id": "salt-choir",
+      "name": "Salt Choir",
+      "region": "Pelagos, the Tidemoon",
+      "status": "draft",
+      "summary": "Shell archivists, coral workers, and singers who keep time by tides and bells.",
+      "fighters": [
+        {
+          "bout": 1,
+          "name": "Ivor Smalltide",
+          "look": "Petite man in his 20s, black curls, teal head scarf, pearly ear guards",
+          "weapon": "Short shell club, light taps and a short backward hop",
+          "portrait": "/assets/gladiator-salt-choir-01.webp"
+        },
+        {
+          "bout": 2,
+          "name": "Berto Brinepocket",
+          "look": "Stout man in his 30s, tan skin, salt-whitened beard, many-buttoned blue coat",
+          "weapon": "Brine scoop, scoops upward in a slow and readable attack",
+          "portrait": "/assets/gladiator-salt-choir-02.webp"
+        },
+        {
+          "bout": 3,
+          "name": "Kess Echoear",
+          "look": "Slender man in his 20s, brown skin, shell ear trumpet, dark turquoise tunic",
+          "weapon": "Shell-tipped reed spear, pauses as though listening before a rapid thrust",
+          "portrait": "/assets/gladiator-salt-choir-03.webp"
+        },
+        {
+          "bout": 4,
+          "name": "Uncle Tunaflat",
+          "look": "Broad man in his 60s, white curls, seaweed-green apron, mismatched shell shoulder guards",
+          "weapon": "Flat fishmonger’s paddle, wide slaps followed by a stern shove",
+          "portrait": "/assets/gladiator-salt-choir-04.webp"
+        },
+        {
+          "bout": 5,
+          "name": "Davin Coralcut",
+          "look": "Muscular man in his 30s, chestnut skin, shaved scalp, orange coral arm guards",
+          "weapon": "Coral saw-sword, shortened strokes that grow wider if the opponent backs away",
+          "portrait": "/assets/gladiator-salt-choir-05.webp"
+        },
+        {
+          "bout": 6,
+          "name": "Maela Highnote",
+          "look": "Tall woman in her 40s. Shaved head with one coarse braided strip, a broad scarred face and uneven brows, dark animal tattoos on the forearms, spike-toed boots and a dented spiked shoulder guard. Intimidating scowl, rugged unglamorized features, patched practical clothing with dirty leather straps, rusted studs and torn hems",
+          "weapon": "Tuning-fork staff, signals a double hit with a ringing strike on the stone",
+          "portrait": "/assets/gladiator-salt-choir-06.webp"
+        },
+        {
+          "bout": 7,
+          "name": "Ril Lowtide",
+          "look": "Wiry man in his 40s, teal-dyed curls, white woven mantle, weighted hems",
+          "weapon": "Net and hooked knife, casts a sweeping net feint and follows with a short hook",
+          "portrait": "/assets/gladiator-salt-choir-07.webp"
+        },
+        {
+          "bout": 8,
+          "name": "Nestor Shellback",
+          "look": "Large man in his 50s, umber skin, grey locs, giant scallop shell strapped to one arm",
+          "weapon": "Scallop shield and fluted mace, holds a tight guard until the opponent overcommits",
+          "portrait": "/assets/gladiator-salt-choir-08.webp"
+        },
+        {
+          "bout": 9,
+          "name": "Vika Undertone",
+          "look": "Lithe woman in her 30s, pale skin. Uneven cropped hair with shaved temples, a square weather-beaten face and old nose scar, rough black neck tattoos, a spike-topped helmet and a removable steel fang plate. Intimidating scowl, rugged unglamorized features, patched practical clothing with dirty leather straps, rusted studs and torn hems",
+          "weapon": "Pair of crescent shell blades, moves in a spiral and switches hands between attacks",
+          "portrait": "/assets/gladiator-salt-choir-09.webp"
+        },
+        {
+          "bout": 10,
+          "name": "Elder Caron Stillwater",
+          "look": "Sturdy man in his 70s, silver-grey braids, sea-green choir robe over pearl scale",
+          "weapon": "Resonant bell-polearm, controls distance with slow sweeps and a fast thrust after the chime",
+          "portrait": "/assets/gladiator-salt-choir-10.webp"
+        }
+      ]
+    },
+    {
+      "id": "lantern-raft",
+      "name": "Lantern Raft",
+      "region": "Pelagos, the Tidemoon",
+      "status": "draft",
+      "summary": "Deckhands, fishers, and ferry pilots who fight in patched clothes designed to dry by tomorrow.",
+      "fighters": [
+        {
+          "bout": 1,
+          "name": "Sorin Shortoar",
+          "look": "Small man in his 20s, black bob, yellow slicker, dried kelp tied to a boot",
+          "weapon": "Short oar, broad simple swings with a visible reset",
+          "portrait": "/assets/gladiator-lantern-raft-01.webp"
+        },
+        {
+          "bout": 2,
+          "name": "Malk Mooringpin",
+          "look": "Stocky man in his 30s, copper skin, chunky moustache, maroon cap and brine-stained sleeves",
+          "weapon": "Mooring pin club, short weighted chops when the opponent closes",
+          "portrait": "/assets/gladiator-lantern-raft-02.webp"
+        },
+        {
+          "bout": 3,
+          "name": "Tansy Tarheel",
+          "look": "Athletic woman in her 30s, dark skin. Severe side-shaved crop, a broad weather-beaten face with a broken nose and healed brow scar, dark knotwork tattoos on the neck and forearms, scuffed spike-toed boots. Intimidating scowl, rugged unglamorized features, patched practical clothing with dirty leather straps, rusted studs and torn hems",
+          "weapon": "Twin deck hooks, alternates left and right, then backs off with both raised",
+          "portrait": "/assets/gladiator-lantern-raft-03.webp"
+        },
+        {
+          "bout": 4,
+          "name": "Peregrin Paddlewise",
+          "look": "Tall man in his 40s, grey curls, woollen vest, crooked boat compass on a string",
+          "weapon": "Long sculling oar, uses the broad blade to block and the butt to counter",
+          "portrait": "/assets/gladiator-lantern-raft-04.webp"
+        },
+        {
+          "bout": 5,
+          "name": "Korin Knotagain",
+          "look": "Thickset man in his 40s, auburn braids looped like ropes, rolled green sleeves",
+          "weapon": "Knotted rope coil, sweeps low and pulls the loose end back into guard",
+          "portrait": "/assets/gladiator-lantern-raft-05.webp"
+        },
+        {
+          "bout": 6,
+          "name": "Ivar Lanternjaw",
+          "look": "Lean man in his 50s, iron-grey beard, amber lantern hanging from a chin strap",
+          "weapon": "Lantern pole, swings the glowing basket wide and thrusts with its brass heel",
+          "portrait": "/assets/gladiator-lantern-raft-06.webp"
+        },
+        {
+          "bout": 7,
+          "name": "Tern Twoanchors",
+          "look": "Broad man in his 30s, deep brown skin, shaved head, rope bandolier and heavy boots",
+          "weapon": "Two small anchor-shaped axes, one hooks while the other makes a broad follow-up",
+          "portrait": "/assets/gladiator-lantern-raft-07.webp"
+        },
+        {
+          "bout": 8,
+          "name": "Ned Overboard",
+          "look": "Tall man in his 50s, windburned skin, white side braid, orange rescue sash",
+          "weapon": "Long rescue crook, reverses grip between long pulls and compact counterstrikes",
+          "portrait": "/assets/gladiator-lantern-raft-08.webp"
+        },
+        {
+          "bout": 9,
+          "name": "Rook Driftline",
+          "look": "Rangy man in his 40s, narrow green eyes, blue storm coat, wooden hand brace",
+          "weapon": "Tethered boarding spear, extends past normal reach and reels back to reset",
+          "portrait": "/assets/gladiator-lantern-raft-09.webp"
+        },
+        {
+          "bout": 10,
+          "name": "Admiral Six Inches",
+          "look": "Older woman in her 60s, brown skin. Ragged short mohawk, a heavy jaw and crooked nose with a healed cheek scar, bold geometric neck tattoos, a battered spike-topped iron helmet. Intimidating scowl, rugged unglamorized features, patched practical clothing with dirty leather straps, rusted studs and torn hems",
+          "weapon": "Boarding pike and reinforced tiller shield, mixes reach attacks with deft lateral blocks",
+          "portrait": "/assets/gladiator-lantern-raft-10.webp"
+        }
+      ]
+    },
+    {
+      "id": "pearl-defiance",
+      "name": "Pearl Defiance",
+      "region": "Pelagos, the Tidemoon",
+      "status": "draft",
+      "summary": "Salvage crews and bathtub-navy veterans, with armor pieced together from retired ship fittings.",
+      "fighters": [
+        {
+          "bout": 1,
+          "name": "Bert Barnacleteeth",
+          "look": "Compact man in his 20s, green head scarf, brown skin, shell earrings, canvas vest",
+          "weapon": "Barnacle scraper, short side-to-side swipes with a predictable step in",
+          "portrait": "/assets/gladiator-pearl-defiance-01.webp"
+        },
+        {
+          "bout": 2,
+          "name": "Salvo Splashless",
+          "look": "Thin man in his 30s, close white curls, pale blue navy tunic and too-large boots",
+          "weapon": "Boat bailer, scooping attacks and quick hand changes",
+          "portrait": "/assets/gladiator-pearl-defiance-02.webp"
+        },
+        {
+          "bout": 3,
+          "name": "Cress Buoycap",
+          "look": "Broad man in his 30s, orange buoy helmet, indigo trousers, copper wrist wraps",
+          "weapon": "Small buoy on a rope, looping strikes and a sudden stop behind the shield",
+          "portrait": "/assets/gladiator-pearl-defiance-03.webp"
+        },
+        {
+          "bout": 4,
+          "name": "Yana Tubthump",
+          "look": "Muscular woman in her 40s. Close buzz cut, a craggy face with a split eyebrow and old chin scar, black thorn tattoos on the arms, removable steel fangs fitted over the teeth. Intimidating scowl, rugged unglamorized features, patched practical clothing with dirty leather straps, rusted studs and torn hems",
+          "weapon": "Enamel lid shield and bath plug flail, shield bash followed by a swinging return",
+          "portrait": "/assets/gladiator-pearl-defiance-04.webp"
+        },
+        {
+          "bout": 5,
+          "name": "Duro Caulkfist",
+          "look": "Heavyset man in his 50s, grey beard, deep brown skin, white caulker’s apron over leather",
+          "weapon": "Caulking mallet and stout chisel, pressure with the mallet before a quick chisel jab",
+          "portrait": "/assets/gladiator-pearl-defiance-05.webp"
+        },
+        {
+          "bout": 6,
+          "name": "Celeste Saltmedal",
+          "look": "Tall woman in her 40s. Hard undercut with a short bristling crest, an angular weathered face and healed lip scar, dense band tattoos around the neck, clawed steel gauntlets. Intimidating scowl, rugged unglamorized features, patched practical clothing with dirty leather straps, rusted studs and torn hems",
+          "weapon": "Ceremonial cutlass, guarded blade work punctuated by a crisp salute feint",
+          "portrait": "/assets/gladiator-pearl-defiance-06.webp"
+        },
+        {
+          "bout": 7,
+          "name": "Rafe Rivetfloat",
+          "look": "Sinewy man in his 30s, teal braid, pieced shoulder plate, orange boat rope belt",
+          "weapon": "Two detachable deck spikes, changes between paired strikes and long reach",
+          "portrait": "/assets/gladiator-pearl-defiance-07.webp"
+        },
+        {
+          "bout": 8,
+          "name": "Milo Halfahull",
+          "look": "Stocky man in his 50s, dark skin, white curls, riveted wooden hull armor with purple paint",
+          "weapon": "Hull-plank tower shield and stubby oar, walks forward under cover before a shove",
+          "portrait": "/assets/gladiator-pearl-defiance-08.webp"
+        },
+        {
+          "bout": 9,
+          "name": "Quill Quarterdeck",
+          "look": "Lean man in his 40s, long silver braid, shell-white vest, red officer’s boots",
+          "weapon": "Twin boarding sabres, circles to alternate quick cuts with a defensive crossed-blade pause",
+          "portrait": "/assets/gladiator-pearl-defiance-09.webp"
+        },
+        {
+          "bout": 10,
+          "name": "Commodore Bubbleplate",
+          "look": "Towering man in his 60s, sun-browned cheeks, immaculate silver moustache, polished enamel plate and brass epaulettes",
+          "weapon": "Brass bathhouse mace and curved tub shield, alternates steady pressure with well-timed counters",
+          "portrait": "/assets/gladiator-pearl-defiance-10.webp"
+        }
+      ]
+    },
+    {
+      "id": "last-dawn",
+      "name": "Last Dawn",
+      "region": "The Hollow Star of Vesper",
+      "status": "draft",
+      "summary": "Solar technicians and former ceremonial guards wearing faded gold against the dim star.",
+      "fighters": [
+        {
+          "bout": 1,
+          "name": "Lio Wickwait",
+          "look": "Young adult man in his 20s, tousled dark hair, amber scarf, candle wax on grey sleeves",
+          "weapon": "Unlit torch club, single broad swings with a long reset",
+          "portrait": "/assets/gladiator-last-dawn-01.webp"
+        },
+        {
+          "bout": 2,
+          "name": "Nevin Dimmer",
+          "look": "Slender man in his 30s, silver spectacles, violet hair wrap, matte gold gloves",
+          "weapon": "Brass dimmer rod, quick diagonal touches followed by a longer reach",
+          "portrait": "/assets/gladiator-last-dawn-02.webp"
+        },
+        {
+          "bout": 3,
+          "name": "Orin Afterglint",
+          "look": "Lanky man in his 30s, dark skin, iridescent sash, one mirrored pauldron",
+          "weapon": "Mirrored crescent buckler and short baton, catches a swing and replies with a single counter",
+          "portrait": "/assets/gladiator-last-dawn-03.webp"
+        },
+        {
+          "bout": 4,
+          "name": "Cinnard Clockless",
+          "look": "Solid man in his 40s, auburn curls, copper clock face at the belt, black quilted coat",
+          "weapon": "Weighted hour hand, winds up visibly and switches tempo halfway through the swing",
+          "portrait": "/assets/gladiator-last-dawn-04.webp"
+        },
+        {
+          "bout": 5,
+          "name": "Halden OneSpark",
+          "look": "Tall man in his 40s, close-cropped blond hair, brown skin, black apron and amber eye shield",
+          "weapon": "Spark striker hammer, a bright impact signals a short double blow",
+          "portrait": "/assets/gladiator-last-dawn-05.webp"
+        },
+        {
+          "bout": 6,
+          "name": "Damaris Dawnshift",
+          "look": "Athletic woman in her 30s. Shaved head with one coarse braided strip, a broad scarred face and uneven brows, dark animal tattoos on the forearms, spike-toed boots and a dented spiked shoulder guard. Intimidating scowl, rugged unglamorized features, patched practical clothing with dirty leather straps, rusted studs and torn hems",
+          "weapon": "Dawn patrol spear, spearpoints sweep first and jab when the opponent pauses",
+          "portrait": "/assets/gladiator-last-dawn-06.webp"
+        },
+        {
+          "bout": 7,
+          "name": "Verin Candlecount",
+          "look": "Broad man in his 50s, long greying hair, brass bead braids, blue utility robes",
+          "weapon": "Weighted prayer-bead loop and small heater shield, varies swing distance as it circles",
+          "portrait": "/assets/gladiator-last-dawn-07.webp"
+        },
+        {
+          "bout": 8,
+          "name": "Bruno Sunpatch",
+          "look": "Stocky man in his 50s, umber skin, grey knot, quilted yellow patches over heavy leather",
+          "weapon": "Two-ended heat wrench, changes from blunt checks to long two-handed sweeps",
+          "portrait": "/assets/gladiator-last-dawn-08.webp"
+        },
+        {
+          "bout": 9,
+          "name": "Aldo Firstlight",
+          "look": "Older man in his 60s, white mustache, long mustard coat, iron ribs under the fabric",
+          "weapon": "Telescope lance, a short strike conceals a sudden full-length thrust",
+          "portrait": "/assets/gladiator-last-dawn-09.webp"
+        },
+        {
+          "bout": 10,
+          "name": "Lux Last Match",
+          "look": "Tall woman in her 60s, brown skin. Uneven cropped hair with shaved temples, a square weather-beaten face and old nose scar, rough black neck tattoos, a spike-topped helmet and a removable steel fang plate. Intimidating scowl, rugged unglamorized features, patched practical clothing with dirty leather straps, rusted studs and torn hems",
+          "weapon": "Heavy dawnblade and round mirror shield, strong guarded counters and a slow bright finishing sweep",
+          "portrait": "/assets/gladiator-last-dawn-10.webp"
+        }
+      ]
+    },
+    {
+      "id": "hinge-town",
+      "name": "Hinge Town",
+      "region": "The Hollow Star of Vesper",
+      "status": "draft",
+      "summary": "Doorwrights, bell riggers, and gravity mechanics wielding an unusual number of hinges.",
+      "fighters": [
+        {
+          "bout": 1,
+          "name": "Rill Squeakpin",
+          "look": "Slight man in his 20s, black undercut, purple cap, loose brass fasteners on his belt",
+          "weapon": "Long hinge-pin baton, short jabs broken up by noisy shoulder feints",
+          "portrait": "/assets/gladiator-hinge-town-01.webp"
+        },
+        {
+          "bout": 2,
+          "name": "Dax Doorstop",
+          "look": "Broad man in his 30s, dark skin, square beard, brown leather coat with wedge-shaped elbow pads",
+          "weapon": "Door wedge club, stands firm and answers a nearby strike with a compact knock",
+          "portrait": "/assets/gladiator-hinge-town-02.webp"
+        },
+        {
+          "bout": 3,
+          "name": "Marn Misaligned",
+          "look": "Tall man in his 20s, pale skin, pink curls, one purple boot visibly taller",
+          "weapon": "Jointed rod, begins a swing at one height and folds it into another",
+          "portrait": "/assets/gladiator-hinge-town-03.webp"
+        },
+        {
+          "bout": 4,
+          "name": "Yelka Bellpull",
+          "look": "Lean woman in her 40s. Severe side-shaved crop, a broad weather-beaten face with a broken nose and healed brow scar, dark knotwork tattoos on the neck and forearms, scuffed spike-toed boots. Intimidating scowl, rugged unglamorized features, patched practical clothing with dirty leather straps, rusted studs and torn hems",
+          "weapon": "Bell-rope weight, calls each long swing with a hollow ring",
+          "portrait": "/assets/gladiator-hinge-town-04.webp"
+        },
+        {
+          "bout": 5,
+          "name": "Noll Knucklebent",
+          "look": "Sturdy man in his 50s, grey eyebrows, reinforced purple coat, spare knuckle plates on a chain",
+          "weapon": "Folding knuckle clubs, two close strikes with a snap-open heavy follow-up",
+          "portrait": "/assets/gladiator-hinge-town-05.webp"
+        },
+        {
+          "bout": 6,
+          "name": "Seth Stillplumb",
+          "look": "Athletic man in his 30s, deep brown skin, violet apron, silver plumb bobs decorating the hem",
+          "weapon": "Tethered plumb weight, shifts between a hanging block and a rising attack",
+          "portrait": "/assets/gladiator-hinge-town-06.webp"
+        },
+        {
+          "bout": 7,
+          "name": "Ivo OfftheLatch",
+          "look": "Long-armed man in his 40s, pale shaved head, orange shoulder pad, blue mechanic’s sleeves",
+          "weapon": "Latch-shaped axe and forearm guard, uses quick hook feints to create room for wide chops",
+          "portrait": "/assets/gladiator-hinge-town-07.webp"
+        },
+        {
+          "bout": 8,
+          "name": "Tressa Torsion",
+          "look": "Powerful woman in her 40s. Ragged short mohawk, a heavy jaw and crooked nose with a healed cheek scar, bold geometric neck tattoos, a battered spike-topped iron helmet. Intimidating scowl, rugged unglamorized features, patched practical clothing with dirty leather straps, rusted studs and torn hems",
+          "weapon": "Spring-loaded staff, coils visibly before a quick extended strike",
+          "portrait": "/assets/gladiator-hinge-town-08.webp"
+        },
+        {
+          "bout": 9,
+          "name": "Nev ReverseSwing",
+          "look": "Tall man in his 50s, silver curls, dark skin, black coat that fastens at either shoulder",
+          "weapon": "Double-hinged poleaxe, changes the angle of its second sweep and braces after a block",
+          "portrait": "/assets/gladiator-hinge-town-09.webp"
+        },
+        {
+          "bout": 10,
+          "name": "Foreman Halfturn",
+          "look": "Broad man in his 60s, salt-and-pepper beard, plum coat, iron-braced leg, giant ceremonial key",
+          "weapon": "Key-shaped warhammer and hinge shield, pivots around the shield before a punishing return swing",
+          "portrait": "/assets/gladiator-hinge-town-10.webp"
+        }
+      ]
+    },
+    {
+      "id": "noonless-quay",
+      "name": "Noonless Quay",
+      "region": "The Hollow Star of Vesper",
+      "status": "draft",
+      "summary": "Customs officers, dockside brokers, and shippers whose cargo includes shadows, clocks, and other nuisances.",
+      "fighters": [
+        {
+          "bout": 1,
+          "name": "Giles Halfshadow",
+          "look": "Slim man in his 20s, dark skin, lavender scarf, one matte-black glove",
+          "weapon": "Shadow-black sap, darting body taps and a quick step back",
+          "portrait": "/assets/gladiator-noonless-quay-01.webp"
+        },
+        {
+          "bout": 2,
+          "name": "Parn Declaredgoods",
+          "look": "Stout man in his 30s, trimmed brown beard, white cuff bands, indigo inspector’s vest",
+          "weapon": "Cargo chalk baton, marks the ground before a deliberate strike",
+          "portrait": "/assets/gladiator-noonless-quay-02.webp"
+        },
+        {
+          "bout": 3,
+          "name": "Tavi LooseManifest",
+          "look": "Tall man in his 30s, grey-dyed coils, olive spectacles, coat hung with torn tags",
+          "weapon": "Manifest rod and leather folio shield, counters with a fast tap when the folio catches a swing",
+          "portrait": "/assets/gladiator-noonless-quay-03.webp"
+        },
+        {
+          "bout": 4,
+          "name": "Hal NoRefunds",
+          "look": "Broad man in his 40s, brown skin, red wax seals across his cuffs, charcoal leather apron",
+          "weapon": "Tollbox hammer, announces a heavy hit with the loose coins rattling inside",
+          "portrait": "/assets/gladiator-noonless-quay-04.webp"
+        },
+        {
+          "bout": 5,
+          "name": "Wolfrin Longqueue",
+          "look": "Lanky man in his 50s, sunken cheeks, purple scarf, straight grey hair, brass queue token",
+          "weapon": "Queue-barrier pole, blocks advance and punishes attempts to pass on either side",
+          "portrait": "/assets/gladiator-noonless-quay-05.webp"
+        },
+        {
+          "bout": 6,
+          "name": "Adra Nightreceipt",
+          "look": "Athletic woman in her 30s. Close buzz cut, a craggy face with a split eyebrow and old chin scar, black thorn tattoos on the arms, removable steel fangs fitted over the teeth. Intimidating scowl, rugged unglamorized features, patched practical clothing with dirty leather straps, rusted studs and torn hems",
+          "weapon": "Split quill daggers, rapid paired strikes after a precise retreating step",
+          "portrait": "/assets/gladiator-noonless-quay-06.webp"
+        },
+        {
+          "bout": 7,
+          "name": "Tavros Dockminute",
+          "look": "Heavyset man in his 40s, dark skin, grey braided beard, oversized stopped watch pinned to the chest",
+          "weapon": "Pendulum axe, timed diagonal sweeps with the last one landing off the beat",
+          "portrait": "/assets/gladiator-noonless-quay-07.webp"
+        },
+        {
+          "bout": 8,
+          "name": "Ves LockofFog",
+          "look": "Tall man in his 40s, translucent grey hood, silver eyebrows, knotwork on dark gloves",
+          "weapon": "Fog lantern flail and smoked-glass guard, obscures the recovery before changing swing direction",
+          "portrait": "/assets/gladiator-noonless-quay-08.webp"
+        },
+        {
+          "bout": 9,
+          "name": "Bria BondedCargo",
+          "look": "Muscular woman in her 50s, warm brown skin. Hard undercut with a short bristling crest, an angular weathered face and healed lip scar, dense band tattoos around the neck, clawed steel gauntlets. Intimidating scowl, rugged unglamorized features, patched practical clothing with dirty leather straps, rusted studs and torn hems",
+          "weapon": "Cargo chain and hook shield, alternates heavy swings at distance with guarded pressure up close",
+          "portrait": "/assets/gladiator-noonless-quay-09.webp"
+        },
+        {
+          "bout": 10,
+          "name": "Magistrate Missing Noon",
+          "look": "Stately man in his 60s, high white collar, violet undershirt, ink-dark steel, unlit clock crown",
+          "weapon": "Long customs seal halberd, patient blocks followed by accelerating strikes when the opponent presses",
+          "portrait": "/assets/gladiator-noonless-quay-10.webp"
+        }
+      ]
+    }
+  ]
+}

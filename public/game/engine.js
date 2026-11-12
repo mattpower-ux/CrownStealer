@@ -1,3 +1,4 @@
+import {validateChampionState,finishChampionChallenge} from './champion-titles.js';
 import {merchantFor,canBuyMerchantSupply,isMerchantResaleItem} from './merchant-catalog.js';
 import {stockForMerchant} from './merchant-inventory.js';
 import {POISON_ITEMS,poisonDamage,spendPoisonRound,validWeaponCoating} from './weapon-poisons.js';
@@ -31,7 +32,7 @@ import {dungeonLadders} from './dungeon-ladders.js';
 import {BOTTOMLESS_PIT,PIT_MAP_SEED,BALROG_ID,BALROG_ATTACKS,BALROG_WHIP,ROYAL_BALROG_TRIAL,pitBottomAction,pitVictory} from './bottomless-pit.js';
 import {PUTRID_PALACE,PUTRID_PALACE_SEED,WANG_ID,WANG_TRIAL_DIALOGUE,freeGalen,castGalenRing,turnInWang} from './royal-trials.js';
 import {castleChestAt,castleInteractionsAt,castleLayout,castleAction,castleFineFor,castleGuardResponse,exitCastle,validCastleState} from './castle-interiors.js';
-import {arenaAction,arenaVictory,arenaDefeat,imprisonInArena,preserveArenaAfterTownChange,validArenaState} from './gladiator-arena.js';
+import {tryChampionChallenge,arenaAction,arenaVictory,arenaDefeat,arenaStrikeTurn,arenaDefenseBonus,imprisonInArena,preserveArenaAfterTownChange,validArenaState} from './gladiator-arena.js';
 import {finishGuardConsultation} from './castle-guard-audience.js';
 import {DRAGONSTONE_CHEST_ID,ROYAL_CAMPAIGN_ENDINGS,isRoyalCampaign,royalCampaignObjective,royalCampaignTownAdmission,reportRoyalCampaign,deliverRoyalMessage,chooseRoyalCampaignEnding,royalHeroAction,dismissHeroEncounter,migrateRoyalCampaign,validRoyalCampaignState} from './royal-campaign.js';
 import {ROYAL_DUNGEON_ID,ROYAL_DUNGEON_NAME,royalDungeonMap,royalDungeonStairAt,royalDungeonAt,royalDungeonAction,royalDungeonVictory,royalDungeonHeckle,validRoyalDungeonState,leaveRoyalDungeon} from './royal-dungeon.js';
@@ -180,7 +181,7 @@ function startCastleGuard(s,forced=false) {
  encounter(s,false,true,forced);
 }
 function resetPalaceAttempt(s){if(s.enemy?.gateGuard){delete s.flags.gateAttemptWins;delete s.flags.gateAttemptId;}if(s.enemy?.guard&&!s.enemy.castleRoyalDefense&&!s.enemy.castleDuel&&!s.enemy.tributeTown&&!s.enemy.gossipGuard&&!s.enemy.gateGuard&&s.location!=='bellwether')delete s.flags['palaceWins:'+s.location];}
-function recover(s,events=[]){if(arenaDefeat(s,note,events))return;if(isRoyalCampaign(s)&&s.dungeon?.royal&&['imprisoned','sewers'].includes(s.flags.royalQuest))s.flags.royalQuest='commission';captureDragon(s);s.spellEffects.stunnedTurns=0;const rescue=message=>{s.flags.rescuePending=true;s.flags.rescueMessage=message;note(s,message);};if(s.enemy?.castleDuel){exitCastle(s,true);s.enemy=null;s.hp=s.maxHp;s.dungeon=null;rescue('The palace guard carries you outside to recover.');return;}if(s.enemy?.castleRobbery){
+function recover(s,events=[]){if(finishChampionChallenge(s,false,note,events))return;if(arenaDefeat(s,note,events))return;if(isRoyalCampaign(s)&&s.dungeon?.royal&&['imprisoned','sewers'].includes(s.flags.royalQuest))s.flags.royalQuest='commission';captureDragon(s);s.spellEffects.stunnedTurns=0;const rescue=message=>{s.flags.rescuePending=true;s.flags.rescueMessage=message;note(s,message);};if(s.enemy?.castleDuel){exitCastle(s,true);s.enemy=null;s.hp=s.maxHp;s.dungeon=null;rescue('The palace guard carries you outside to recover.');return;}if(s.enemy?.castleRobbery){
  resetPalaceAttempt(s);exitCastle(s,true);s.enemy=null;s.hp=s.maxHp;s.dungeon=null;
  rescue('The castle guards carry you outside. Pay the 2,000-gold fine at the town gate.');
  return;
@@ -216,6 +217,18 @@ function enemyTurn(s,defending=false,events=[],multiplier=1,keepCoating=false){i
  if(s.enemy.royalDungeonNpc==='royal-heckler'){
   royalDungeonHeckle(s,note,events);
   enemyStrike(s,defending,events,multiplier,{verb:'heckles you',mental:true,element:'psychic'});
+  return;
+ }
+ const gladiator=s.enemy,arenaTurn=arenaStrikeTurn(gladiator);
+ if(arenaTurn){
+  if(arenaTurn.message){
+   note(s,arenaTurn.message);
+   events.push({kind:'arenaStance',target:'enemy',amount:0,message:arenaTurn.message});
+  }
+  for(const blow of arenaTurn.blows){
+   if(s.enemy!==gladiator)break;
+   enemyStrike(s,defending,events,multiplier,blow);
+  }
   return;
  }
  enemyStrike(s,defending,events,multiplier);
@@ -273,7 +286,7 @@ function roadsideGuardian(s){
 }
 function sewerGuardian(s){if(s.dungeon?.royal!=='sewer'||s.flags.sewerSpiderDefeated)return false;const chest=dungeonChests(s,dungeonMap(s.dungeon))[0];if(chest.opened||Math.abs(chest.x-s.dungeon.x)+Math.abs(chest.y-s.dungeon.y)>1)return false;faceEncounterPassage(s.dungeon);s.returnMode='dungeon';s.mode='battle';s.flags.guarded=false;s.flags.combo=0;s.enemy={name:'Great Sewer Spider',speciesId:'giant-grove-spider',art:{sheet:'monsters-grove',index:1},level:6,hp:110,maxHp:110,attack:15,armor:3,gold:6,xp:30,kind:'brute',firstContact:true,boss:true,sewerChestGuard:true,weakness:'A huge spider guards the skeleton key chest.'};note(s,'A huge spider drops from its web, guarding the only chest in the sewers.');return true;}
 const STARTER_WEAPONS=['smiting',...['sword','mace','spear','axe'].flatMap(family=>['common-'+family+'-1','common-'+family+'-1-v1'])];
-function victory(s,events=[]){delete s.weaponCoating;s.spellEffects.stunnedTurns=0;const e=s.enemy;if(arenaVictory(s,note,events))return;if(royalDungeonVictory(s,e,note))return;if(e.castleDuel){s.mode=s.returnMode;s.enemy=null;note(s,'The '+e.name+' yields and lowers their weapon.');return;}if(e.castleRoyalDefense){s.mode=s.returnMode;s.enemy=null;note(s,e.castleRoyalDefense==='governor'?'You drive back the governor’s guards and escape the mansion. The governor remains protected.':'You drive back the throne guard and escape the palace. The royal family remains protected.');exitCastle(s,true);return;}if(e.minorGuardian)s.flags['minorCleared:'+e.minorGuardian]=true;if(e.cryptGuardian)s.flags['cryptCleared:'+e.cryptGuardian]=true;if(e.guard){s.flags.guardVictories=(s.flags.guardVictories||0)+1;if(s.flags.guardVictories===3)note(s,'Three guards have fallen. Word spreads: the guards are terrified and will leave you alone for the rest of your adventure.');}if(s.dungeon&&!e.guard){const job=SIDE_QUESTS.find(q=>q.questItem&&(q.keepsakeKind!=='tooth'||/dragon|drake/i.test(e.speciesId||e.name))&&!s.quests.includes(q.id)&&!s.bag.includes(q.questItem)&&TOWNS.find(t=>t.id===q.town)?.region===s.region);if(job){s.bag.push(job.questItem);s.pendingLoot.push(job.questItem);}}if(s.dungeon&&!e.boss&&!e.guard&&rand(s)<.30){
+function victory(s,events=[]){delete s.weaponCoating;s.spellEffects.stunnedTurns=0;const e=s.enemy;if(finishChampionChallenge(s,true,note,events))return;if(arenaVictory(s,note,events))return;if(royalDungeonVictory(s,e,note))return;if(e.castleDuel){s.mode=s.returnMode;s.enemy=null;note(s,'The '+e.name+' yields and lowers their weapon.');return;}if(e.castleRoyalDefense){s.mode=s.returnMode;s.enemy=null;note(s,e.castleRoyalDefense==='governor'?'You drive back the governor’s guards and escape the mansion. The governor remains protected.':'You drive back the throne guard and escape the palace. The royal family remains protected.');exitCastle(s,true);return;}if(e.minorGuardian)s.flags['minorCleared:'+e.minorGuardian]=true;if(e.cryptGuardian)s.flags['cryptCleared:'+e.cryptGuardian]=true;if(e.guard){s.flags.guardVictories=(s.flags.guardVictories||0)+1;if(s.flags.guardVictories===3)note(s,'Three guards have fallen. Word spreads: the guards are terrified and will leave you alone for the rest of your adventure.');}if(s.dungeon&&!e.guard){const job=SIDE_QUESTS.find(q=>q.questItem&&(q.keepsakeKind!=='tooth'||/dragon|drake/i.test(e.speciesId||e.name))&&!s.quests.includes(q.id)&&!s.bag.includes(q.questItem)&&TOWNS.find(t=>t.id===q.town)?.region===s.region);if(job){s.bag.push(job.questItem);s.pendingLoot.push(job.questItem);}}if(s.dungeon&&!e.boss&&!e.guard&&rand(s)<.30){
  const item=dungeonMonsterLoot(s,rand(s),rand(s));
  if(item){s.bag.push(item);s.pendingLoot.push(item);note(s,'You found '+TREASURE_ITEMS[item].name+'.');}
 }const planet=!!s.dungeon?.expedition?.startsWith('planet-');if(planet&&!e.boss){const id=alienDrop(rand(s),rand(s));if(id){s.bag.push(id);s.pendingLoot.push(id);note(s,'Alien salvage found.');}}if(!e.boss&&!e.guard){const spellLoot=randomSpellDrop(e.level||1,rand(s),rand(s));if(spellLoot){s.bag.push(spellLoot);s.pendingLoot.push(spellLoot);note(s,'You found '+SPELL_ITEMS[spellLoot].name+'.');}}if(!e.boss&&!e.guard){const prank=gagDrop(rand(s),rand(s));if(prank){s.bag.push(prank);s.pendingLoot.push(prank);note(s,'You found '+GAG_ITEMS[prank].name+'.');}}if(!e.boss&&!e.guard&&e.level<=5){const found=lowLevelLoot(e.level,rand(s),rand(s));if(found){s.bag.push(found);s.pendingLoot.push(found);note(s,'You found '+TREASURE_ITEMS[found].name+'.');}}if(e.speciesId==='ghost-dragon'){s.flags.ghostDragonDefeated=true;if(!s.flags.frostburnAwarded){s.flags.frostburnAwarded=true;s.bag.push('shield-frostburn');s.pendingLoot.push('shield-frostburn');note(s,'The dragon leaves an Epic Shield of Frostburn.');}}const attributeLoot=randomAttributeLoot(s.level,e.level||1,random(hash(s.rng+':'+s.flags.victories+':attribute-loot'))(),random(hash(s.rng+':'+s.flags.victories+':attribute-choice'))());if(attributeLoot){s.bag.push(attributeLoot);s.pendingLoot.push(attributeLoot);note(s,'You found '+TREASURE_ITEMS[attributeLoot].name+'.');}const legendaryGear=randomLegendaryGearLoot(s.level,e.level||1,random(hash(s.rng+':'+s.flags.victories+':legendary-gear'))());if(legendaryGear){s.bag.push(legendaryGear);s.pendingLoot.push(legendaryGear);note(s,'You found '+TREASURE_ITEMS[legendaryGear].name+'.');}s.gold+=e.gold;s.xp+=e.xp??(e.boss?60:20);s.flags.victories++;
@@ -500,7 +513,7 @@ function actInner(input,action,events=[]){
   const site=pointAt(s);s.dungeon={site:'minor-site',minorId:site.id,index:site.index,floor:0,x:1,y:1,dir:2,ladderLayout:1,...(site.other?{tunnelExit:{...site.other}}:{})};
   s.mode=s.returnMode='dungeon';s.location=site.id;s.dungeon.dir=openDungeonDirection(s.dungeon);note(s,'You explore '+site.name+'. '+site.floors+' level'+(site.floors===1?'':'s')+' lie within.');return s;
  }
- if(explorationAction(s,a,{note,encounter,clock,pointAt,random:()=>rand(s)}))return s;
+ if(explorationAction(s,a,{note,encounter,clock,pointAt,random:()=>rand(s),championChallenge:tryChampionChallenge}))return s;
  if(a.type==='attackBorderGuards'){const gate=pointAt(s);if(s.mode!=='world'||!s.flags.borderTauntPending||!gate||!['gate','branchGate'].includes(gate.kind)||s.flags['gateAccess:'+gate.id]||s.flags['gateChallengeWon:'+gate.id]||s.flags.royalHero)return s;delete s.flags.borderTauntPending;s.flags.gateAttemptWins=0;s.flags.gateAttemptId=gate.id;startGateGuard(s,gate.id);return s;}
  if(a.type==='acknowledgeBorder'){delete s.flags.borderTauntPending;return s;}
  if(s.flags.royalQuest==='opening'){
@@ -617,7 +630,7 @@ function actInner(input,action,events=[]){
    const roll=gear.damage[0]+Math.floor(rand(s)*(gear.damage[1]-gear.damage[0]+1));
    const base=roll+(s.equipped?s.weapon*4:0)+effectiveLevel(s)*2+benefits.meleeDamage+(s.buffs?.strength>0?s.buffs.strengthPower||0:0)+gearPower(s);
    const raw=Math.floor((base+(s.buffs?.meal>0?4:0))*(gagActive(s,'tiny')?.5:1)*(effective?1.4:1)*(advantage?1.25:1));
-   const protection=s.enemy.luteNumb>0?0:Math.floor(s.enemy.armor||0);
+   const protection=s.enemy.luteNumb>0?0:Math.floor(s.enemy.armor||0)+arenaDefenseBonus(s.enemy);
    const multiplier=s.equipped==='holy-avenger'&&undead(s.enemy)?3:1;
    const baseDamage=multiplier*(Math.max(1,raw-protection)+weaponMagicDamage(gear,benefits.magicDamage))+poisonDamage(s);
    if(gear.freezeChance&&rand(s)<gear.freezeChance){s.enemy.frozen=1;note(s,'Frost freezes the enemy in place!');}
@@ -647,7 +660,7 @@ function actInner(input,action,events=[]){
  }
  if(a.type==='move'&&s.mode==='world'){
   if(!Number.isInteger(a.dx)||!Number.isInteger(a.dy)||Math.abs(a.dx)+Math.abs(a.dy)!==1)return s;
-  const steps=travelSteps(s);if(!steps){note(s,'Your snowshoes drag. One square takes two moves away from snow.');return s;}for(let step=0;step<steps;step++){const x=s.x+a.dx,y=s.y+a.dy;const gate=pointAt(s);if(gate?.kind==='gate'&&a.dy===0&&(gate.target>s.region?a.dx>0:a.dx<0)){crossBorder(s,gate);return s;}const tile=worldTile(s.region,x,y);if(x<1||x>WORLD_WIDTH-2||y<1||y>WORLD_HEIGHT-2||!dragonFlying(s)&&(tile==='water'&&!waterAccess(s,x,y)||tile==='mountain')){note(s,'That route is impassable. Follow the paths around it.');return s;}s.x=x;s.y=y;delete s.flags.travelMerchant;clock(s);const bones=WILD_SITES.find(p=>p.kind==='dragon');if(s.region===bones.region&&!s.flags.ghostDragonDefeated&&!(s.spellEffects?.invisibleMoves>0)&&Math.max(Math.abs(s.x-bones.x),Math.abs(s.y-bones.y))<=1){s.returnMode='world';s.enemy={speciesId:'ghost-dragon',name:'Ghost of the Ancient Dragon',level:12,hp:220,maxHp:220,attack:28,armor:9,gold:260,xp:180,kind:'spectral',weakness:'steady pressure',firstContact:true};s.enemy=nightEnemy(s,s.enemy);s.mode='battle';s.flags.guarded=false;s.flags.combo=0;note(s,'The BEWARE sign shudders. A level-12 ghost dragon rises from its bones!');return s;}if(s.turns>4&&!pointAt(s)&&rand(s)<wildernessChance(s,mountFor(s)?.reduction!==undefined?.08*(1-mountFor(s).reduction):s.flags.transport?.06:.08)*(1-(TREASURE_ITEMS[s.equippedBoots]?.encounterReduction||0)))encounter(s);if(s.mode==='world'&&s.region===2&&!areaFor(s)&&!pointAt(s)&&rand(s)<.02){s.flags.travelMerchant={x:s.x,y:s.y};note(s,'A traveling merchant appears with a suspiciously expensive cure.');return s;}if(s.mode!=='world'||s.flags.wildernessEvent||s.flags.impaledMoves||s.flags.peacefulEncounter||pointAt(s))return s;}return s;
+  const steps=travelSteps(s);if(!steps){note(s,'Your snowshoes drag. One square takes two moves away from snow.');return s;}for(let step=0;step<steps;step++){const x=s.x+a.dx,y=s.y+a.dy;const gate=pointAt(s);if(gate?.kind==='gate'&&a.dy===0&&(gate.target>s.region?a.dx>0:a.dx<0)){crossBorder(s,gate);return s;}const tile=worldTile(s.region,x,y);if(x<1||x>WORLD_WIDTH-2||y<1||y>WORLD_HEIGHT-2||!dragonFlying(s)&&(tile==='water'&&!waterAccess(s,x,y)||tile==='mountain')){note(s,'That route is impassable. Follow the paths around it.');return s;}s.x=x;s.y=y;delete s.flags.travelMerchant;clock(s);const bones=WILD_SITES.find(p=>p.kind==='dragon');if(s.region===bones.region&&!s.flags.ghostDragonDefeated&&!(s.spellEffects?.invisibleMoves>0)&&Math.max(Math.abs(s.x-bones.x),Math.abs(s.y-bones.y))<=1){s.returnMode='world';s.enemy={speciesId:'ghost-dragon',name:'Ghost of the Ancient Dragon',level:12,hp:220,maxHp:220,attack:28,armor:9,gold:260,xp:180,kind:'spectral',weakness:'steady pressure',firstContact:true};s.enemy=nightEnemy(s,s.enemy);s.mode='battle';s.flags.guarded=false;s.flags.combo=0;note(s,'The BEWARE sign shudders. A level-12 ghost dragon rises from its bones!');return s;}if(s.turns>4&&!pointAt(s)&&tryChampionChallenge(s,()=>rand(s),note))return s;if(s.turns>4&&!pointAt(s)&&rand(s)<wildernessChance(s,mountFor(s)?.reduction!==undefined?.08*(1-mountFor(s).reduction):s.flags.transport?.06:.08)*(1-(TREASURE_ITEMS[s.equippedBoots]?.encounterReduction||0)))encounter(s);if(s.mode==='world'&&s.region===2&&!areaFor(s)&&!pointAt(s)&&rand(s)<.02){s.flags.travelMerchant={x:s.x,y:s.y};note(s,'A traveling merchant appears with a suspiciously expensive cure.');return s;}if(s.mode!=='world'||s.flags.wildernessEvent||s.flags.impaledMoves||s.flags.peacefulEncounter||pointAt(s))return s;}return s;
  }
  if(a.type==='payGovernor'&&s.mode==='world'){const p=pointAt(s);if(p?.kind!=='town'||!s.flags['palaceBan:'+p.id])return s;if(s.gold<5000){note(s,'The entrance guards demand the full 5,000 gold.');return s;}s.gold-=5000;delete s.flags['palaceBan:'+p.id];s.wanted[p.region]=0;note(s,'The guards deliver 5,000 gold to the governor. You may enter '+p.name+' again.');return s;}
  if(a.type==='enter'&&s.mode==='world'){
@@ -847,6 +860,7 @@ export function loadGame(json){
  if(s.flags?.royalEntranceSeen!==undefined&&typeof s.flags.royalEntranceSeen!=='boolean')throw Error('Invalid royal entrance progress.');
  migrateRangedGear(s);prepareWands(s);validateSpellState(s);s.gender??='him';if(!CHARACTER_FACES.some(f=>f.id===s.gender))throw Error('Invalid character gender / face.');
  validateCities(s);
+ validateChampionState(s);
  if(s.wildernessHealProgress!==undefined&&(!Number.isFinite(s.wildernessHealProgress)||s.wildernessHealProgress<0||s.wildernessHealProgress>=1))throw Error('Invalid wilderness recovery progress.');
  if(s.worldTimeMs!==undefined&&(!Number.isSafeInteger(s.worldTimeMs)||s.worldTimeMs<0||s.worldTimeMs>1e15))throw Error('Invalid world clock.');if(s.buffExpiry!==undefined&&(!s.buffExpiry||Array.isArray(s.buffExpiry)||typeof s.buffExpiry!=='object'||Object.entries(s.buffExpiry).some(([key,value])=>!['strength','invisibility','meal','pigFace','tiny','helium','waterBreathing','hairy'].includes(key)||!Number.isSafeInteger(value)||value<0||value>1e15)))throw Error('Invalid timed effects.');
  s.meals??=Math.min(999,Math.max(0,Math.floor(s.food||0)));delete s.food;

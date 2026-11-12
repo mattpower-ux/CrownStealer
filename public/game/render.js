@@ -929,10 +929,48 @@ function paintIllustratedBoss(c,enemy,x,y,w,h){
  return true;
 }
 
+const arenaPortraits=new Map();
+
+function arenaPortraitImage(enemy){
+ const url=enemy.portrait;
+ if(!(enemy.arenaFighter||enemy.championTown)||typeof url!=='string'||!/^\/assets\/(?:[a-z0-9_-]+\/)*[a-z0-9_-]+\.webp$/.test(url))return null;
+ if(!arenaPortraits.has(url)){
+  const image=new Image();
+  image.src=url;
+  arenaPortraits.set(url,image);
+ }
+ return arenaPortraits.get(url);
+}
+
+function paintArenaPortrait(c,enemy,x,y,w,h){
+ const art=arenaPortraitImage(enemy);
+ if(!art?.naturalWidth)return false;
+ const scale=Math.min(w/art.naturalWidth,h/art.naturalHeight);
+ const width=art.naturalWidth*scale,height=art.naturalHeight*scale;
+ c.drawImage(art,x+(w-width)/2,y+h-height,width,height);
+ return true;
+}
+
+export function paintArenaOpponentPreview(canvas,opponent){
+ if(!canvas||!opponent)return;
+ const enemy={...opponent,arenaFighter:true};
+ const context=canvas.getContext('2d');
+ if(!context)return;
+ const paint=()=>{
+  if(!canvas.isConnected)return;
+  context.clearRect(0,0,canvas.width,canvas.height);
+  paintMonster(context,enemy,4,4,canvas.width-8,canvas.height-8);
+ };
+ for(const art of [arenaPortraitImage(enemy),monsterAtlases[opponent.art?.sheet]]){
+  if(art&&!art.complete)art.addEventListener('load',paint,{once:true});
+ }
+ paint();
+}
+
 const ghostDragon=new Image();ghostDragon.src='/assets/ghost-dragon.webp';
 
 const firedrakSprites=new Image();firedrakSprites.src='/assets/firedrak-monsters.webp';monsterAtlases['firedrak-monsters']=firedrakSprites;
-export function paintMonster(c,enemy,x,y,w,h,dungeonIndex=0){if(paintIllustratedBoss(c,enemy,x,y,w,h))return true;if(enemy.speciesId==='leviathan-levity'&&levityBoss.complete&&levityBoss.naturalWidth){c.drawImage(levityBoss,x,y,w,h);return true;}if(enemy.speciesId==='haghilda'&&haghilda.complete&&haghilda.naturalWidth){c.drawImage(haghilda,x,y,w,h);return true;}if(enemy.speciesId==='ghost-dragon'&&ghostDragon.complete&&ghostDragon.naturalWidth){c.drawImage(ghostDragon,x,y,w,h);return true;}const species=GROVE_ENEMIES.find(m=>m.id===enemy.speciesId)||MONSTER_BY_ID[enemy.speciesId]||ENEMIES.find(m=>m.name===enemy.name);const art=enemy.speciesId?.startsWith('firedrak-')||enemy.speciesId==='drake-defiler'?{sheet:'firedrak-monsters',index:enemy.speciesId==='firedrak-imp'?0:enemy.speciesId==='firedrak-elemental'?1:2}:(enemy.arenaFighter?enemy.art||{sheet:'dungeon-monsters',index:11}:species?.art)||{sheet:'dungeon-monsters',index:enemy.guard?11:enemy.boss?[2,2,4,4,7,6,8,10][dungeonIndex]:9};const img=monsterAtlases[art.sheet];if(!img?.complete||!img.naturalWidth)return false;const cols=art.sheet==='firedrak-monsters'?3:['monsters-wild','monsters-grove'].includes(art.sheet)?2:4,rows=art.sheet==='firedrak-monsters'?1:['monsters-wild','monsters-grove'].includes(art.sheet)?1:art.sheet==='monsters-planets'?2:3,sw=img.width/cols,sh=img.height/rows,key=art.sheet+':'+art.index;
+export function paintMonster(c,enemy,x,y,w,h,dungeonIndex=0){if(paintArenaPortrait(c,enemy,x,y,w,h))return true;if(paintIllustratedBoss(c,enemy,x,y,w,h))return true;if(enemy.speciesId==='leviathan-levity'&&levityBoss.complete&&levityBoss.naturalWidth){c.drawImage(levityBoss,x,y,w,h);return true;}if(enemy.speciesId==='haghilda'&&haghilda.complete&&haghilda.naturalWidth){c.drawImage(haghilda,x,y,w,h);return true;}if(enemy.speciesId==='ghost-dragon'&&ghostDragon.complete&&ghostDragon.naturalWidth){c.drawImage(ghostDragon,x,y,w,h);return true;}const species=GROVE_ENEMIES.find(m=>m.id===enemy.speciesId)||MONSTER_BY_ID[enemy.speciesId]||ENEMIES.find(m=>m.name===enemy.name);const art=enemy.speciesId?.startsWith('firedrak-')||enemy.speciesId==='drake-defiler'?{sheet:'firedrak-monsters',index:enemy.speciesId==='firedrak-imp'?0:enemy.speciesId==='firedrak-elemental'?1:2}:((enemy.arenaFighter||enemy.championTown)?enemy.art||{sheet:'dungeon-monsters',index:11}:species?.art)||{sheet:'dungeon-monsters',index:enemy.guard?11:enemy.boss?[2,2,4,4,7,6,8,10][dungeonIndex]:9};const img=monsterAtlases[art.sheet];if(!img?.complete||!img.naturalWidth)return false;const cols=art.sheet==='firedrak-monsters'?3:['monsters-wild','monsters-grove'].includes(art.sheet)?2:4,rows=art.sheet==='firedrak-monsters'?1:['monsters-wild','monsters-grove'].includes(art.sheet)?1:art.sheet==='monsters-planets'?2:3,sw=img.width/cols,sh=img.height/rows,key=art.sheet+':'+art.index;
 
  if(!monsterBounds.has(art.sheet)){
 

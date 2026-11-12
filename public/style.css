@@ -701,9 +701,23 @@ dialog[data-panel="quests"] #panel-body .oddjob-story{
 .arena-progress strong{font-variant-numeric:tabular-nums}
 .arena-progress progress{grid-column:1/-1;width:100%;height:9px;accent-color:#d4ad6c}
 .arena-panel p{margin-bottom:10px}
+.arena-range{color:#ead7ac}
+.arena-opponent{display:grid;grid-template-columns:clamp(76px,24%,100px) minmax(0,1fr);gap:12px;align-items:center;padding:8px;margin:10px 0;border:1px solid var(--line);background:#0b1b15}
+.arena-opponent-portrait{position:static;width:100%;height:auto;aspect-ratio:9/10}
+.arena-opponent p{margin:3px 0;line-height:1.4}
+#panel-body .arena-opponent h3{margin:2px 0 4px;font-size:20px}
 .arena-perk{margin:8px 0;padding:7px 9px;background:#23392b;border:1px solid #ad925866;color:#f1d8a0}
 .arena-perk p{margin:2px 0;line-height:1.4}
 .arena-loss{color:#efb09b}
 .arena-stash summary{color:#e1c894;cursor:pointer}
 .arena-stash ul{max-height:120px;overflow:auto}
 @media(max-width:620px){.arena-panel{grid-template-columns:1fr;gap:9px}.arena-ring{max-height:27svh}}
+
+/* Champion honors stay separate from the hero name and combat health labels. */
+.hero-champion-titles{display:block;max-width:100%;text-align:left;font-size:11px;line-height:1.5;color:var(--gold,#e4c88c);overflow-wrap:anywhere;padding:0;margin:0 0 5px}
+.hero-champion-titles[hidden]{display:none}
+.champion-titles{margin:0 0 14px;padding:10px 14px;border:1px solid #a88c514d;border-radius:8px;background:#b4933210}
+.champion-titles summary{cursor:pointer;color:var(--gold,#e4c88c);font-size:13px}
+.champion-titles ul{display:flex;flex-wrap:wrap;gap:6px 18px;list-style:none;padding:0;margin:10px 0;font-size:12px;color:var(--gold,#e4c88c)}
+.champion-titles li{overflow-wrap:anywhere}
+.champion-titles .fine{margin-bottom:0}

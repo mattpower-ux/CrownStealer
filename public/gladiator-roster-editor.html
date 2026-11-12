@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gladiator roster · Bar the Gates</title>
+  <style>
+    :root{color-scheme:dark;--page:#101e18;--panel:#172921;--field:#0e1c16;--line:#b49a6752;--gold:#e5c17c;--ink:#eee6d1;--muted:#b8c2ae;font:16px/1.5 Arial,Helvetica,sans-serif}
+    *{box-sizing:border-box}
+    [hidden]{display:none!important}
+    body{margin:0;background:var(--page);color:var(--ink)}
+    main{max-width:1360px;margin:auto;padding:38px clamp(18px,4vw,64px) 64px}
+    h1,h2{font-family:Georgia,'Times New Roman',serif;font-weight:normal;color:var(--gold);margin:0}
+    h1{font-size:clamp(40px,5.5vw,68px);line-height:1.05}
+    h2{font-size:clamp(26px,3.5vw,38px);line-height:1.1}
+    p{margin:0}
+    .brand{color:var(--gold);margin-bottom:5px;font-size:.83rem;letter-spacing:.04em}
+    .intro{max-width:50rem;margin:12px 0 22px;color:var(--muted)}
+    .toolbar{display:grid;grid-template-columns:minmax(165px,1fr) minmax(240px,2fr) auto;gap:12px;align-items:end;border:1px solid var(--line);background:var(--panel);padding:16px}
+    label,.filter-field{display:grid;gap:5px;min-width:0}
+    label{font-size:.85rem;color:var(--muted)}
+    input,textarea,select,button{font:inherit;min-width:0;border:1px solid var(--line);border-radius:3px}
+    input,textarea,select{width:100%;padding:10px 11px;background:var(--field);color:var(--ink)}
+    input,select,button{min-height:45px}
+    textarea{resize:vertical;min-height:100px;line-height:1.46}
+    :is(input,textarea,select,button):focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+    button{padding:9px 13px;cursor:pointer;background:#253c2e;color:var(--ink)}
+    button:hover:not(:disabled){background:#365140}
+    button:disabled{opacity:.5;cursor:default}
+    .downloads{display:flex;gap:8px;flex-wrap:wrap}
+    .downloads button:first-child{background:var(--gold);color:#17291f}
+    .downloads button:first-child:hover:not(:disabled){background:#f4d79b}
+    .readouts{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:.85rem;margin:10px 0 28px}
+    #save-status{color:var(--gold)}
+    .arena{margin-bottom:46px}
+    .arena-heading{padding-bottom:13px;margin-bottom:12px;border-bottom:1px solid var(--line)}
+    .arena-meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:5px;color:var(--muted);font-size:.83rem}
+    .status-label{color:var(--gold);border:1px solid var(--line);padding:1px 8px;border-radius:3px}
+    [data-roster-status="confirmed"] .status-label{color:#cfe7ae;border-color:#b6d28d67}
+    .arena-summary{margin-top:6px;color:var(--muted)}
+    .fighter{display:grid;grid-template-columns:120px minmax(160px,1fr) minmax(225px,1.5fr) minmax(225px,1.5fr);gap:14px;align-items:start;background:var(--panel);border:1px solid var(--line);padding:13px;margin-bottom:7px;border-radius:3px}
+    .bout{color:var(--gold);font-weight:600;font-size:.88rem;margin-top:0;white-space:nowrap}
+    .fighter-identity img{display:block;width:100%;height:180px;object-fit:contain;margin-top:8px}
+    .fighter input,.fighter textarea{font-size:1rem}
+    @media(max-width:980px){
+      .toolbar{grid-template-columns:1fr 2fr}
+      .downloads{grid-column:1/-1}
+      .fighter{grid-template-columns:120px minmax(0,1fr) minmax(0,1fr)}
+      .fighter .name-field{grid-column:2/-1}
+      .fighter label:nth-child(3){grid-column:2}
+    }
+    @media(max-width:570px){
+      main{padding-top:24px}
+      .toolbar{grid-template-columns:1fr;padding:12px}
+      .downloads{grid-column:auto}
+      .fighter{grid-template-columns:minmax(0,1fr);gap:9px}
+      .fighter .name-field,.fighter label:nth-child(3){grid-column:auto}
+      .bout{margin:0}
+      textarea{min-height:112px}
+    }
+  </style>
+  <script type="module" src="/game/gladiator-roster-editor.js"></script>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="brand">Bar the Gates</p>
+      <h1>Gladiator roster</h1>
+      <p class="intro">Edit names, appearances, and fighting specialties. Changes stay in this browser until you export them.</p>
+    </header>
+    <section class="toolbar" aria-label="Roster controls">
+      <div class="filter-field">
+        <label for="arena-filter">Arena</label>
+        <select id="arena-filter" disabled><option value="">All arenas</option></select>
+      </div>
+      <div class="filter-field">
+        <label for="roster-search">Search fighters</label>
+        <input id="roster-search" type="search" placeholder="Name, appearance, or specialty" disabled>
+      </div>
+      <div class="downloads">
+        <button type="button" id="download-json" disabled>Download JSON</button>
+        <button type="button" id="download-markdown" disabled>Download Markdown</button>
+      </div>
+    </section>
+    <div class="readouts">
+      <p id="match-count" aria-live="polite">Loading rosters…</p>
+      <p id="save-status" role="status"></p>
+    </div>
+    <p id="no-results" hidden>No fighters match those filters.</p>
+    <div id="roster"></div>
+  </main>
+</body>
+</html>

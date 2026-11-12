@@ -54,7 +54,7 @@ export function areaTile(s,x,y){
  return landscapeTile(s.region,area?.id,x,y,base);
 }
 export function shipMap(){const m=Array.from({length:15},()=>Array(15).fill(1)),room=(x1,y1,x2,y2)=>{for(let y=y1;y<=y2;y++)for(let x=x1;x<=x2;x++)m[y][x]=0;};room(5,1,9,6);room(6,6,8,12);room(1,2,4,5);room(10,2,13,5);room(1,9,4,12);room(10,9,13,12);room(4,4,10,4);room(4,10,10,10);m[1][7]=3;return m;}
-export function explorationAction(s,a,{note,encounter,clock,pointAt,random}){
+export function explorationAction(s,a,{note,encounter,clock,pointAt,random,championChallenge}){
  const area=areaFor(s),ship=s.dungeon?.ship;
  const travel=(id)=>{s.exploration??={artifacts:[]};s.exploration.area=id;s.mode='world';s.returnMode='world';s.dungeon=null;s.location=null;s.x=id.startsWith('planet-')?16:64;s.y=id.startsWith('planet-')?21:87;note(s,'Arrived in '+areaFor(s).name+'.');};
  const board=()=>{s.exploration??={artifacts:[]};s.exploration.area=null;s.mode='dungeon';s.returnMode='dungeon';s.dungeon={index:s.region*2,floor:0,x:7,y:12,dir:0,ship:true};s.location=null;note(s,'A column of light lifts you into an alien starship. Find the control station at (7, 5) to choose another planet. Returning home requires a planetary teleporter or P-Hopper.');};
@@ -82,6 +82,7 @@ export function explorationAction(s,a,{note,encounter,clock,pointAt,random}){
    s.x=x;s.y=y;clock(s);
    if(area.kind==='planet'&&x===16&&y===22){board();return true;}
    if(pointAt(s))return true;
+   if(championChallenge?.(s,random,note))return true;
    if(random()<wildernessChance(s,.07))encounter(s);
    if(s.mode!=='world'||s.flags.wildernessEvent||s.flags.impaledMoves||s.flags.peacefulEncounter)return true;
   }

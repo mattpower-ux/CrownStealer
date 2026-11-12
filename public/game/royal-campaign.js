@@ -170,7 +170,7 @@ export function royalHeroAction(s, action, note) {
 }
 
 export function dismissHeroEncounter(s, note) {
-  if (!s.flags.royalHero || s.mode !== 'battle' || !s.enemy || s.enemy.arenaFighter) return;
+  if (!s.flags.royalHero || s.mode !== 'battle' || !s.enemy || s.enemy.arenaFighter || s.enemy.championTown) return;
   const message = s.enemy.guard ? `${s.enemy.name} bows and lowers their weapon.` : `${s.enemy.name} sees the hero and flees.`;
   s.mode = s.returnMode;
   s.enemy = null;
