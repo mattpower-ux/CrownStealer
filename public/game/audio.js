@@ -268,7 +268,7 @@ export class AudioDirector {
       case 'applause': for(let i=0;i<42;i++)this.brush(now+i*.047+(i%3)*.009,.055+(i%4)*.012,.045*(1-i/60),'effects',1100+(i%7)*370); [72,76,79,84].forEach((n,i)=>tone(hz(n),i*.09,.35,.055)); break;
       case 'fire-whoosh': for(let i=0;i<8;i++)this.brush(now+i*.06,.25,.16,'effects',250+i*220);break;
       case 'lightning-crackle': for(let i=0;i<16;i++)this.brush(now+i*.035,.04,.19,'effects',1800+(i%4)*1100);break;
-      case 'buzzer': tone(110,0,.35,.25,'sawtooth');tone(103,.12,.4,.19,'sawtooth');break;
+      case 'buzzer': tone(110,0,.35,.25,undefined,'sawtooth');tone(103,.12,.4,.19,undefined,'sawtooth');break;
       case 'townEntrance': tone(784,0,.14,.12);tone(1175,.1,.25,.10);break;
       case 'casinoWin': case 'goldFound': case 'coin': tone(988, 0, .12, .10); tone(1319, .08, .24, .09); break;
       case 'door': this.brush(now, .18, .11, 'effects', 450); tone(110, 0, .20, .12, 55); break;

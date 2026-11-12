@@ -6,6 +6,8 @@ import { heroStats, statsView } from '../public/game/hero-stats.js';
 import { itemById } from '../public/game/items.js';
 import { dungeonMonsterLoot, merchantStock, sellPrice } from '../public/game/treasure.js';
 import { TOWNS } from '../public/game/content.js';
+import { merchantFor, merchantStockFor } from '../public/game/merchant-catalog.js';
+import { atTownPlace } from './town-fixture.js';
 
 function battle(overrides = {}) {
   const hero = createGame();
@@ -126,15 +128,16 @@ test('Wisdom resists magic and Constitution resists fire, frost, and poison dama
 
 test('Charisma changes both merchant purchase and sale transactions', () => {
   const town = TOWNS.find(town => town.id === 'mothbridge');
-  const hero = { ...createGame(), mode: 'town', location: town.id, x: town.x, y: town.y, gold: 1000 };
+  const hero = atTownPlace({ ...createGame(), mode: 'town', location: town.id, x: town.x, y: town.y, gold: 1000 }, 'shop');
   hero.attributes.charisma = 50;
-  const itemId = merchantStock(hero.region, hero.location, hero.level).find(id => itemById(id, hero).value >= 50);
+  const stock = merchantStockFor(merchantFor(town.id), merchantStock(hero.region, hero.location, hero.level), id => itemById(id, hero));
+  const itemId = stock.find(id => itemById(id, hero).value >= 50);
   const item = itemById(itemId, hero);
   const bought = act(hero, { type: 'buyItem', id: itemId });
   assert.equal(hero.gold - bought.gold, Math.ceil(item.value * 80 / 100));
   const sold = act(bought, { type: 'sellItem', id: itemId });
   assert.equal(sold.gold - bought.gold, Math.floor(sellPrice(item) * 120 / 100));
-  assert.equal(hero.gold - act(hero, { type: 'buy', item: 'food' }).gold, 8);
+  assert.equal(hero.gold - act(atTownPlace(hero, 'inn'), { type: 'buy', item: 'food' }).gold, 8);
 });
 
 test('rare and legendary attribute consumables can drop through the dungeon loot table', () => {

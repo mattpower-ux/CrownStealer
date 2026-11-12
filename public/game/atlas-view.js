@@ -7,7 +7,7 @@ import { WORLD_HEIGHT, WORLD_WIDTH } from './world-size.js';
 
 const LEVELS = ['1–7', '8–15', '16–25', '26+'];
 const LEVEL_COLORS = ['#a9d890', '#ffdc81', '#ffb17d', '#ff9a95'];
-const MARKS = { town: '#fff0c4', dungeon: '#ffa4a1', gate: '#ffd46e' };
+const MARKS = { town: '#fff0c4', dungeon: '#ffa4a1', gate: '#ffd46e', passage: '#8ed7f1' };
 const DUNGEON_NOTES = {
   'tithe-vault': 'Haghilda holds the Hearth Seal in the abandoned elven village.',
   'widows-bell': 'A level-12 Rock Troll guards the Witness Bell on floor 10.',
@@ -29,7 +29,7 @@ export function atlasRegions(state) {
     const branches = branchGates(region.id).map(gate => {
       const branch = AREAS.find(candidate => candidate.id === gate.area);
       return {
-        ...branch, gate, open: isOpen(gate), current: area?.id === branch.id,
+        ...branch, gate, open: gate.boatOnly ? !!(state.flags.rowboatReady || state.flags.sailboatReady) : isOpen(gate), current: area?.id === branch.id,
         sites: areaSites({ region: region.id, exploration: { area: branch.id } })
           .filter(site => ['expedition', 'bottomless-pit'].includes(site.kind) || site.id === 'bottomless-pit'),
       };
@@ -47,14 +47,15 @@ const routeStatus = open => open ? 'Open' : 'Sealed';
 
 function branchView(branch) {
   const direction = branch.gate.direction;
+  const route = branch.gate.boatOnly ? 'Sailing passage · Boat required' : direction[0].toUpperCase() + direction.slice(1) + ' gate · ' + routeStatus(branch.open);
   return `<li class="atlas-branch"><details${branch.current ? ' open' : ''}>
-    <summary><span>${escape(branch.name)}</span><small>${direction[0].toUpperCase() + direction.slice(1)} gate · ${routeStatus(branch.open)}${branch.current ? ' · You are here' : ''}</small></summary>
-    <p>Gate ${coordinate(branch.gate)}</p><ul>${branch.sites.map(site => `<li>${escape(site.name)} ${coordinate(site)}</li>`).join('')}</ul>
+    <summary><span>${escape(branch.name)}</span><small>${route}${branch.current ? ' · You are here' : ''}</small></summary>
+    <p>${branch.gate.boatOnly ? 'Passage' : 'Gate'} ${coordinate(branch.gate)}</p><ul>${branch.sites.map(site => `<li>${escape(site.name)} ${coordinate(site)}</li>`).join('')}</ul>
   </details></li>`;
 }
 
 export function atlasView(state) {
-  return `<p class="atlas-legend"><span>Recommended character levels</span><span><i class="atlas-town"></i> Settlement</span><span><i class="atlas-dungeon"></i> Dungeon</span><span><i class="atlas-gate"></i> Gate</span></p>
+  return `<p class="atlas-legend"><span>Recommended character levels</span><span><i class="atlas-town"></i> Settlement</span><span><i class="atlas-dungeon"></i> Dungeon</span><span><i class="atlas-gate"></i> Gate</span><span><i class="atlas-passage"></i> Sailing passage</span></p>
     <ol class="atlas-regions">${atlasRegions(state).map(region => `<li class="atlas-region" style="--difficulty:${region.color}">
       <header><h3>${escape(region.name)}</h3><span>Levels ${region.levels}</span>${region.current ? '<small>Current land</small>' : ''}</header>
       <canvas width="64" height="48" data-atlas-map="${region.id}" role="img" aria-label="Terrain map of ${escape(region.name)}"></canvas>
@@ -75,7 +76,7 @@ export function paintAtlasMaps(container, state) {
     if (!region || !context) continue;
     const stepX = WORLD_WIDTH / canvas.width;
     const stepY = WORLD_HEIGHT / canvas.height;
-    const colors = { ...region.palette, grass: region.palette.land, road: '#c4ad78' };
+    const colors = { ...region.palette, grass: region.palette.land, road: '#c4ad78', bridge: '#aa8a61', swamp: '#416c56' };
     for (let y = 0; y < canvas.height; y++) for (let x = 0; x < canvas.width; x++) {
       context.fillStyle = colors[worldTile(region.id, x * stepX, y * stepY)];
       context.fillRect(x, y, 1, 1);
@@ -90,7 +91,7 @@ export function paintAtlasMaps(container, state) {
     }
     for (const town of region.towns) mark(town, MARKS.town);
     for (const dungeon of [...region.dungeons, ...region.sideDungeons]) mark(dungeon, MARKS.dungeon);
-    for (const gate of [region.east, region.west, ...region.branches.map(branch => branch.gate)].filter(Boolean)) mark(gate, MARKS.gate);
+    for (const gate of [region.east, region.west, ...region.branches.map(branch => branch.gate)].filter(Boolean)) mark(gate, gate.boatOnly ? MARKS.passage : MARKS.gate);
     if (region.current && !mapArea && state.mode === 'world') mark(state, '#fff');
   }
 }

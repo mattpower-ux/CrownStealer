@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 globalThis.Image = class { addEventListener() {} };
 globalThis.document = {createElement: () => ({})};
-const {render, worldViewport} = await import('../public/game/render.js');
+const {castleViewport, render, worldViewport} = await import('../public/game/render.js');
 const {createGame} = await import('../public/game/engine.js');
 
 test('the camera shows one sixteenth of an expanded wilderness and stays inside its edges', () => {
@@ -20,7 +20,7 @@ test('planetary maps retain their existing camera size and bounds', () => {
   assert.deepEqual(worldViewport(state), {cols: 20, rows: 15, left: 12, top: 9});
 });
 
-test('an entered castle renders its room map rather than the surrounding town', () => {
+test('the castle camera follows the hero and hides distant rooms', () => {
   globalThis.devicePixelRatio = 1;
   const state = createGame();
   Object.assign(state, {mode: 'town', location: 'bellwether', castle: {x: 9, y: 14, alarm: false}});
@@ -39,6 +39,13 @@ test('an entered castle renders its room map rather than the surrounding town', 
   canvas.getContext = () => context;
   render(canvas, state);
   assert.equal(canvas.dataset.view, 'castle-map');
-  assert.ok(labels.includes('Treasury'));
+  assert.deepEqual(castleViewport(state), {cols: 11, rows: 11, left: 4, top: 9});
+  assert.ok(labels.includes('Entrance Hall'));
+  assert.ok(!labels.includes('Royal Audience Chamber'));
+  labels.length = 0;
+  Object.assign(state.castle, {x: 9, y: 4});
+  render(canvas, state);
+  assert.deepEqual(castleViewport(state), {cols: 11, rows: 11, left: 4, top: -1});
   assert.ok(labels.includes('Royal Audience Chamber'));
+  assert.ok(!labels.includes('Entrance Hall'));
 });

@@ -1,7 +1,27 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createGame,act,saveGame,loadGame} from '../public/game/engine.js';
-import {WEAPONS,weaponAccuracy} from '../public/game/items.js';
+import {WEAPONS,itemArt,itemById,weaponAccuracy} from '../public/game/items.js';
+
+test('item categories retain recognizable art when an item has no known shape', () => {
+  for (const [id, shape] of [
+    ['common-lesser-healing','potion'], ['scroll-fireball','scroll'], ['common-ring-1','ring'],
+    ['belt-sneakiness-1','belt'], ['travel-armor','armor'], ['common-helmet-1','helmet'],
+    ['boots-speed-1','boots'],
+  ]) {
+    assert.match(itemArt({...itemById(id),shape:'missing'}), new RegExp('aria-label="'+shape+' illustration"'));
+  }
+});
+
+test('named legendary rewards use their own art and quest bones and teeth differ from books', () => {
+  for (const id of ['belt-double-damage','galen-fireball-ring','balrog-whip','holy-avenger','wang-sceptre']) {
+    const item = itemById(id);
+    assert.ok(itemArt(item).includes('aria-label="'+item.name+' illustration"'), id);
+  }
+  assert.match(itemArt(itemById('job-keepsake-the-husband-in-the-ledger')), /aria-label="book illustration"/);
+  assert.match(itemArt(itemById('job-keepsake-an-unflattering-history')), /aria-label="bone illustration"/);
+  assert.match(itemArt(itemById('job-keepsake-amnesty-in-small-print')), /aria-label="tooth illustration"/);
+});
 function win(s=createGame('Mara')){s.mode='battle';s.enemy={name:'Wolf',hp:1,maxHp:1,attack:1,gold:15,weakness:'quick strikes'};s.returnMode='world';return act(s,{type:'attack'});}
 test('first victory gives a named weapon and a persistent discovery notice',()=>{const s=win();assert.ok(s.bag.includes('smiting'));assert.deepEqual(s.pendingLoot,['smiting']);assert.deepEqual(loadGame(saveGame(s)).pendingLoot,s.pendingLoot);assert.equal(WEAPONS.smiting.toHit,3);assert.deepEqual(WEAPONS.smiting.damage,[6,10]);});
 test('equip requires ownership and dismissing the discovery keeps the weapon',()=>{let s=win();assert.equal(act(s,{type:'equip',id:'star-lance'}).equipped,'road-sword');s=act(s,{type:'equip',id:'smiting'});assert.equal(s.equipped,'smiting');s=act(s,{type:'acknowledgeLoot'});assert.equal(s.pendingLoot.length,0);assert.ok(s.bag.includes('smiting'));});

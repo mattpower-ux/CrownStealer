@@ -1,3 +1,4 @@
+import {poisonDamage} from './weapon-poisons.js';
 import {
   ATTRIBUTE_BASE, ATTRIBUTE_CAP, ATTRIBUTE_NAMES, attributeBenefits, attributeBuffMinutesLeft,
   attributeLabel, attributePointsAvailable, effectiveAttributes, effectiveLevel, levelDrainMinutesLeft,
@@ -19,7 +20,7 @@ export function heroStats(s) {
   const resistance = element => Math.min(75, gear.filter(i => i.resistance === element)
     .reduce((n, i) => n + i.resistPercent, Math.round(benefits.elementalResistance * 100)));
   return {
-    damage: weapon.damage.map(n => Math.floor((n + bonus) * (gagActive(s, 'tiny') ? .5 : 1)) + magicDamage),
+    damage: weapon.damage.map(n => Math.floor((n + bonus) * (gagActive(s, 'tiny') ? .5 : 1)) + magicDamage + poisonDamage(s)),
     accuracy: Math.max(5, weaponAccuracy(s, benefits.accuracy)),
     protection: armorProtection(s) * 1.3 + gear.filter(i => i.kind !== 'armor').reduce((n, i) => n + (i.protection || 0), 0),
     fire: resistance('fire'),
@@ -35,6 +36,20 @@ export function heroStats(s) {
     lightning: weapon.stormDamage || 0,
     spellBonus: benefits.magicDamage,
   };
+}
+
+function expectedWeaponDamage(s) {
+  const {damage:[low,high],accuracy}=heroStats(s);
+  return (low+high)*accuracy/200;
+}
+
+export function isGearUpgrade(s,id) {
+  const candidate=itemById(id,s);
+  if(candidate?.kind==='armor'){
+    return id!==s.equippedArmor&&armorProtection({...s,equippedArmor:id})>armorProtection(s);
+  }
+  if(candidate?.kind!=='weapon'||id===s.equipped)return false;
+  return expectedWeaponDamage({...s,equipped:id})>expectedWeaponDamage(s);
 }
 
 function attributeRows(s) {
@@ -79,6 +94,7 @@ export function statsView(s) {
     ['Magic resistance', `${t.magic}%`],
     ['Spell damage bonus', `${t.spellBonus > 0 ? '+' : ''}${t.spellBonus}`],
     ['Dodge chance', `${t.evasion}%`],
+    ['Wilderness recovery', `1 HP / ${(100 / effectiveAttributes(s, itemById).constitution).toFixed(1)} seconds`],
     ['Regeneration', `${t.regeneration} / enemy attack`],
     ['Life drain', `${t.lifeSteal} / hit`],
     ['Freeze chance', `${t.freeze}%`],
@@ -88,6 +104,7 @@ export function statsView(s) {
     s.buffs?.strength > 0 && `Strength potion: +${s.buffs.strengthPower} damage · ${buffTimeLeft(s, 'strength')} game min.`,
     s.buffs?.invisibility > 0 && `Invisible: ${buffTimeLeft(s, 'invisibility')} game min.`,
     t.elementDamage && `${t.element} damage: +${t.elementDamage} per hit.`,
+    s.weaponCoating && `Weapon poison: +${poisonDamage(s)} damage · ${s.weaponCoating.rounds} combat rounds.`,
     t.lightning && `Lightning damage: +${t.lightning} per hit.`,
   ].filter(Boolean).join(' ');
   return `<section class="hero-stats" aria-label="Current equipped stats"><h3>Current stats</h3>${attributeRows(s)}<dl>${rows.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl><p class="fine">${effects}</p></section>`;

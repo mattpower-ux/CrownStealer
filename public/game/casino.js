@@ -3,6 +3,10 @@ export const DEALER_TAUNT='Well, big spender, ready to try again?';
 export const dealerVoice=town=>[0,3,5,7,9,11].includes(TOWNS.findIndex(t=>t.id===town))?'male':'female';
 export const DEALERS=['Oswin Copperthumb','Lady Maribel','Madam Vell','Rafi Sandglass','Brinna Brass','Uncle Saffron','Captain Nessa','Old Perrin','Mira Pearl','Hollis Frost','Professor Selene','Vey the Quiet'];
 export const RED=new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
+export const WINK_TARGET_RADIUS=7;
+const WINK_BOUNCE=5;
+export const winkHitsCup=(landing,target)=>Math.abs(landing-target)<=WINK_TARGET_RADIUS;
+const validWinkLanding=value=>Number.isInteger(value)&&value>=-13&&value<=113;
 const rank=c=>c%13+2;
 export const cardText=c=>(['J','Q','K','A'][rank(c)-11]||rank(c))+['♣','♦','♥','♠'][Math.floor(c/13)];
 export function blackjackTotal(cards){let total=0,aces=0;for(const c of cards){const r=rank(c);total+=r===14?11:Math.min(10,r);if(r===14)aces++;}while(total>21&&aces){total-=10;aces--;}return total;}
@@ -19,7 +23,7 @@ export function casinoAction(s,a,random,note){
   s.gold-=bet;r=s.casino={game:a.game,bet,active:true,town:s.location,message:'Your wager is on the table.'};
   if(a.game==='blackjack'||a.game==='poker'){r.deck=shuffled(random);r.hand=r.deck.splice(0,a.game==='poker'?5:2);if(a.game==='poker'){r.held=[false,false,false,false,false];r.message='Select the cards to hold, then draw once.';}else{r.dealer=r.deck.splice(0,2);if(blackjackTotal(r.hand)===21||blackjackTotal(r.dealer)===21){const yours=blackjackTotal(r.hand),dealer=blackjackTotal(r.dealer);finish(yours===dealer?1:yours===21?3:0,yours===dealer?'Both have blackjack: push.':yours===21?'Blackjack!':'Dealer blackjack.');}else r.message='Hit for another card or stand. Dealer stands on all 17s.';}}
   if(a.game==='roulette'){r.number=Math.floor(random()*37);r.choice=String(a.choice);r.spinning=true;r.message='The wheel is spinning…';}
-  if(a.game==='tiddlywinks'){r.shots=0;r.hits=0;r.target=40+Math.floor(random()*41);r.wind=Math.floor(random()*17)-8;r.message='Three winks. Land at least two in the cup to win.';}
+  if(a.game==='tiddlywinks'){r.shots=0;r.hits=0;r.landings=[];r.target=40+Math.floor(random()*41);r.wind=Math.floor(random()*17)-8;r.message='Three winks. Land at least two in the cup to win.';}
   return;
  }
  if(!r?.active)return;
@@ -35,11 +39,18 @@ export function casinoAction(s,a,random,note){
  }
  if(r.game==='tiddlywinks'&&a.type==='casinoShoot'){
   const power=Number(a.power);if(!Number.isFinite(power)||power<0||power>100)return;
-  const landing=Math.round(power+r.wind+(random()-.5)*10),hit=Math.abs(landing-r.target)<=7;r.shots++;if(hit)r.hits++;r.landing=landing;
+  const landing=Math.round(power+r.wind+(random()-.5)*2*WINK_BOUNCE),hit=winkHitsCup(landing,r.target);
+  r.shots++;if(hit)r.hits++;r.landing=landing;r.landings?.push(landing);
   if(r.shots===3)finish(r.hits>=2?3:0,`${r.hits}/3 winks in the cup.`);else{r.message=`${hit?'In the cup!':'Miss.'} Landed at ${landing}. ${r.hits} hits, ${3-r.shots} shots left.`;r.wind=Math.floor(random()*17)-8;}
  }
 }
 export function validCasino(r,s){if(r==null)return true;if(!r||!['blackjack','poker','roulette','tiddlywinks'].includes(r.game)||typeof r.active!=='boolean'||!Number.isSafeInteger(r.bet)||r.bet<1||typeof r.message!=='string'||r.message.length>1000)return false;if(r.stake!==undefined&&(r.doubled!==true||r.stake!==r.bet*2||r.active))return false;if(r.active&&(s.mode!=='town'||r.town!==s.location))return false;
  if(['blackjack','poker'].includes(r.game)){if(!Array.isArray(r.deck)||!Array.isArray(r.hand)||r.hand.length<2||r.hand.length>22)return false;const all=[...r.deck,...r.hand,...(r.dealer||[])];if(all.length>52||new Set(all).size!==all.length||all.some(c=>!Number.isInteger(c)||c<0||c>51))return false;if(r.game==='blackjack'&&(!Array.isArray(r.dealer)||r.dealer.length<2||r.dealer.length>22))return false;if(r.game==='poker'&&(r.hand.length!==5||!Array.isArray(r.held)||r.held.length!==5||r.held.some(h=>typeof h!=='boolean')))return false;}
  if(r.game==='roulette'&&(!Number.isInteger(r.number)||r.number<0||r.number>36||!['red','black','odd','even',...Array.from({length:37},(_,i)=>String(i))].includes(r.choice)||r.active&&r.spinning!==true))return false;
- if(r.game==='tiddlywinks'&&(!Number.isInteger(r.shots)||r.shots<0||r.shots>3||!Number.isInteger(r.hits)||r.hits<0||r.hits>r.shots||!Number.isInteger(r.target)||r.target<40||r.target>80||!Number.isInteger(r.wind)||Math.abs(r.wind)>8))return false;return true;}
+ if(r.game==='tiddlywinks'){
+  if(!Number.isInteger(r.shots)||r.shots<0||r.shots>3||!Number.isInteger(r.hits)||r.hits<0||r.hits>r.shots||!Number.isInteger(r.target)||r.target<40||r.target>80||!Number.isInteger(r.wind)||Math.abs(r.wind)>8||r.landing!==undefined&&!validWinkLanding(r.landing))return false;
+  if(r.landings!==undefined&&(!Array.isArray(r.landings)||r.landings.length!==r.shots||r.landings.some(landing=>!validWinkLanding(landing))||
+    r.landings.filter(landing=>winkHitsCup(landing,r.target)).length!==r.hits||r.landings.at(-1)!==r.landing))return false;
+ }
+ return true;
+}

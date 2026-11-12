@@ -8,6 +8,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createGame, act, loadGame, saveGame, worldTile, dungeonMap, DIRS} from '../public/game/engine.js';
 import {TOWNS, DUNGEONS, SIDE_QUESTS, ENDINGS} from '../public/game/content.js';
+import {townPlaces, townPosition, townWalkable} from '../public/game/town.js';
+import {canBuyMerchantSupply} from '../public/game/merchant-catalog.js';
 
 function pathTo(start, target, passable) {
   const queue = [start], previous = new Map([[start.join(','), null]]);
@@ -51,7 +53,10 @@ function campaign(outlaw) {
     let rounds = 0;
     while (state.mode === 'battle') {
       assert.ok(++rounds < 100, `Combat stalled against ${state.enemy.name}`);
-      if (state.hp < Math.min(45, state.maxHp / 2) && state.potions) step({type:'heal'});
+      const dangerousPack = !state.enemy.boss && state.enemy.groupSize === 3 && state.enemy.attack * 3 > state.maxHp / 3;
+      // The strongest packs can burn through health much faster than a tonic restores it.
+      if (dangerousPack && !state.spellEffects.invisibleMoves && state.bag.includes('scroll-invisibility')) step({type:'useItem',id:'scroll-invisibility'});
+      else if (state.hp < Math.min(45, state.maxHp / 2) && state.potions) step({type:'heal'});
       else if (state.enemy.weakness === 'guard then counter' && !state.flags.guarded) step({type:'guard'});
       else step({type:'attack'});
     }
@@ -89,6 +94,15 @@ function campaign(outlaw) {
       assert.deepEqual([state.dungeon.x,state.dungeon.y],[x,y]);
     }
   }
+  function walkTown(place) {
+    const {x,y}=townPosition(state);
+    const route=pathTo([x,y],[place.x,place.y],(x,y)=>y<12&&townWalkable(x,y,state));
+    for(const [x,y] of route){
+      const previous=townPosition(state);
+      step({type:'move',dx:x-previous.x,dy:y-previous.y});
+      assert.deepEqual(townPosition(state),{x,y});
+    }
+  }
   function visit(town, challenge = false) {
     walkTo(town); step({type:'enter'}); fight();
     assert.equal(state.mode,'town');
@@ -109,14 +123,35 @@ function campaign(outlaw) {
       assert.equal(state.mode,'town','Conquered garrison does not respawn');
       if (state.hp < state.maxHp) step({type:'rest'});
     }
-    while (state.meals < 3 && state.gold >= 10) step({type:'buy',item:'food'});
-    while (state.potions < 3 && state.gold >= 48 && merchantPotionRemaining(state,'potion')>0) step({type:'buy',item:'potion'});
-    // Keep a small food/rest reserve; favor armor when both ranks are equal.
-    for (;;) {
-      const item = state.armor <= state.weapon ? 'armor' : 'weapon';
-      const price = item === 'armor' ? state.armor*40 : state.weapon*45;
-      if (state.gold < price + 20) break;
-      step({type:'buy',item});
+    const places=townPlaces(state);
+    if(state.meals<3&&state.gold>=10){
+      walkTown(places.find(place=>canBuyMerchantSupply(place,'food')));
+      const meals=state.meals;
+      step({type:'buy',item:'food'});
+      assert.equal(state.meals,meals+3);
+    }
+    const alchemist=places.find(place=>canBuyMerchantSupply(place,'potion'));
+    if(alchemist&&state.potions<3&&state.gold>=48&&merchantPotionRemaining(state,'potion')>0){
+      walkTown(alchemist);
+      while(state.potions<3&&state.gold>=48&&merchantPotionRemaining(state,'potion')>0){
+        const count=state.potions;
+        step({type:'buy',item:'potion'});
+        assert.equal(state.potions,count+1);
+      }
+    }
+    const blacksmith=places.find(place=>canBuyMerchantSupply(place,'weapon'));
+    if(blacksmith){
+      // Keep a small food/rest reserve; favor armor when both ranks are equal.
+      let atBlacksmith=false;
+      for(;;){
+        const item=state.armor<=state.weapon?'armor':'weapon';
+        const price=state[item]*(item==='armor'?40:45);
+        if(state.gold<price+20)break;
+        if(!atBlacksmith){walkTown(blacksmith);atBlacksmith=true;}
+        const rank=state[item];
+        step({type:'buy',item});
+        assert.equal(state[item],rank+1);
+      }
     }
     state = loadGame(saveGame(state));
   }

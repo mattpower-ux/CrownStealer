@@ -1,5 +1,5 @@
-import {TOWN_LAYOUTS} from './town-layouts.js';
-import {TOWNS} from './content.js';
+import {SPECIALTY_SHOP_LAYOUTS,TOWN_LAYOUTS} from './town-layouts.js';
+import {merchantPlaces} from './merchant-catalog.js';
 // Shared town geometry keeps entrances, collision, touch movement and art aligned.
 export const TOWN_SIZE=13;
 export const TOWN_PLACES=[
@@ -16,4 +16,19 @@ export function townPosition(s){return s.townPosition||{x:6,y:11};}
 export function townPlace(s){const p=townPosition(s);return townPlaces(s).find(b=>b.x===p.x&&b.y===p.y);}
 export function townWalkable(x,y,s=null){if(x===6&&y===12)return true;if(x<1||x>11||y<1||y>11)return false;return !townPlaces(s).some(b=>b.bw&&x>=b.bx&&x<b.bx+b.bw&&y>=b.by&&y<b.by+b.bh);}
 
-export function townPlaces(s){const index=Math.max(0,TOWNS.findIndex(t=>t.id===s?.location));const result=TOWN_PLACES.map(p=>({...p}));const layout=TOWN_LAYOUTS[s?.location];if(layout)for(const p of result){const pos=layout[p.id];if(pos){[p.bx,p.by]=pos;p.x=p.bx+1;p.y=p.by+2;}}const shop=result.find(p=>p.id==='shop');if(s?.location==='mothbridge'){shop.name='Mount Shop';result.find(p=>p.id==='fortune').name='Sage of Wonk';}else if(s?.location==='salt-choir')shop.name='Healing Enclave';else if(index%3===1)shop.name='Wizard’s Scrolls & Wands';if(index%3===2)shop.name='Gizmos & Gadgets Emporium';return result;}
+function placeAt(place,footprint){
+ if(!footprint)return {...place};
+ const [bx,by]=footprint;
+ return {...place,bx,by,x:bx+1,y:by+2};
+}
+
+export function townPlaces(s){
+ const town=s?.location;
+ const layout=TOWN_LAYOUTS[town];
+ const [primary,secondary]=merchantPlaces(town);
+ const result=TOWN_PLACES.map(place=>placeAt(place.id==='shop'&&primary?{...place,...primary}:place,layout?.[place.id]));
+ const specialty=Object.hasOwn(SPECIALTY_SHOP_LAYOUTS,town)?SPECIALTY_SHOP_LAYOUTS[town]:null;
+ if(secondary&&specialty)result.push(placeAt({...secondary,art:1,bw:2,bh:2},specialty));
+ if(town==='mothbridge')result.find(place=>place.id==='fortune').name='Sage of Wonk';
+ return result;
+}

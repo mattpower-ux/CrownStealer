@@ -7,6 +7,21 @@ const WIDTH = 19;
 const HEIGHT = 15;
 const entrance = {x: 9, y: 14};
 const throne = {x: 9, y: 2};
+const throneGuardPositions = [[7, 1], [8, 1], [10, 1], [11, 1], [7, 2], [11, 2], [7, 4], [8, 4], [10, 4], [11, 4], [8, 5], [10, 5]];
+const palaceGuardPositions = [[7, 2], [11, 2], [8, 3], [10, 3], [8, 5], [10, 5]];
+const governors = {
+  mothbridge: {name: 'Countess Adrianna', gender: 'female'},
+  'gallows-fair': {name: 'Lord Krumble', gender: 'male'},
+  redhaven: {name: 'Sir Pimple of Prock', gender: 'male'},
+  'iron-choir': {name: 'Baron Huan the Rude', gender: 'male'},
+  'ash-market': {name: 'Lord Bladdar of Seldomkeep', gender: 'male'},
+  'salt-choir': {name: 'Dame Isobel Crowfoot', gender: 'female'},
+  'lantern-raft': {name: 'Lady Maud Wyrmholt', gender: 'female'},
+  'pearl-defiance': {name: 'Earl Oswin Tallowgate', gender: 'male'},
+  'last-dawn': {name: 'Baroness Elspeth Underbough', gender: 'female'},
+  'hinge-town': {name: 'Sir Aldric Candlewick', gender: 'male'},
+  'noonless-quay': {name: 'Lady Sybil Rookmere', gender: 'female'},
+};
 const wings = [
   {id: 'treasury', name: 'Treasury'},
   {id: 'archive', name: 'Archives'},
@@ -16,9 +31,10 @@ const wings = [
 const wingBounds = [[1, 1, 5, 4], [13, 1, 5, 4], [1, 8, 5, 5], [13, 8, 5, 5]];
 
 function createLayout(town, index) {
+  const royal = town.id === 'bellwether';
   const tiles = Array.from({length: HEIGHT}, () => Array(WIDTH).fill('wall'));
   const rooms = [
-    {id: 'audience', name: town.id === 'bellwether' ? 'Royal Audience Chamber' : 'Audience Chamber', x: 7, y: 1, width: 5, height: 5},
+    {id: 'audience', name: royal ? 'Royal Audience Chamber' : 'Audience Chamber', x: 7, y: 1, width: 5, height: 5},
     {id: 'vestibule', name: 'Entrance Hall', x: 7, y: 12, width: 5, height: 2},
     ...wingBounds.map(([x, y, width, height], i) => ({...wings[(i + index) % wings.length], x, y, width, height})),
   ];
@@ -40,12 +56,41 @@ function createLayout(town, index) {
     y: room.y + 1,
     gold: (room.id === 'treasury' ? 150 : 70) + town.region * 30,
   }));
-  return {width: WIDTH, height: HEIGHT, tiles, rooms, chests, entrance, throne};
+  const guards = (royal ? throneGuardPositions : palaceGuardPositions).map(([x, y], i) => ({
+    id: (royal ? 'throne-guard-' : 'palace-guard-') + (i + 1), kind: 'guard',
+    name: royal ? 'Royal Throne Guard' : 'Governor’s Guard', x, y,
+  }));
+  const king = royal ? {id: 'king', kind: 'king', name: 'King Malachi the Ineffable', ...throne} : null;
+  const princess = royal ? {id: 'princess', kind: 'princess', name: 'Princess Bunnyfoot', x: throne.x + 1, y: throne.y} : null;
+  const governor = royal ? null : {id: 'governor', kind: 'governor', ...governors[town.id], ...throne};
+  return {width: WIDTH, height: HEIGHT, tiles, rooms, chests, entrance, throne, guards, king, princess, governor};
 }
 
 const layouts = new Map(TOWNS.map((town, index) => [town.id, createLayout(town, index)]));
 export const castleLayout = townId => layouts.get(townId);
 export const castleFineFor = (s, townId) => s.flags['castleBan:' + townId] === true ? CASTLE_FINE : 0;
+
+export function castleFigures(s) {
+  const layout = castleLayout(s.location);
+  if (!layout) return [];
+  if (layout.governor) return [layout.governor];
+  return [!s.flags?.kingUsurped && layout.king, !s.flags?.princessImprisoned && layout.princess].filter(Boolean);
+}
+
+function figureDistance(s, figure) {
+  return Math.abs(figure.x - s.castle.x) + Math.abs(figure.y - s.castle.y);
+}
+
+export function castleRulerAt(s, target) {
+  if (s.mode !== 'town' || !s.castle) return null;
+  const figures = castleFigures(s).filter(figure => target === undefined || figure.id === target);
+  return figures.find(figure => figureDistance(s, figure) === 0) ??
+    figures.find(figure => figureDistance(s, figure) === 1) ?? null;
+}
+
+export function castleRoyalAt(s, target) {
+  return s.location === 'bellwether' ? castleRulerAt(s, target) : null;
+}
 
 function walkable(layout, x, y) {
   const tile = layout?.tiles[y]?.[x];
@@ -78,6 +123,24 @@ export function castleGuardResponse(s, {startGuard}) {
   return true;
 }
 
+function attackRuler(s, action, layout, {note, startGuard}) {
+  const target = castleRulerAt(s, action.target);
+  if (!target) return;
+  startGuard(s, true);
+  if (s.mode !== 'battle' || !s.enemy?.guard) return;
+  const groupSize = layout.guards.length;
+  const memberHp = s.enemy.maxHp;
+  const name = layout.guards[0].name;
+  Object.assign(s.enemy, {
+    name, castleRoyalDefense: target.id, castleRobbery: true,
+    groupSize, memberHp, hp: memberHp * groupSize, maxHp: memberHp * groupSize, gold: 0, xp: 0,
+  });
+  s.castle.alarm = true;
+  s.flags['townFaction:' + s.location] = -20;
+  s.flags['castleBan:' + s.location] = true;
+  note(s, `Before you reach ${target.name}, all ${groupSize} ${name}s rush to intercept you.`);
+}
+
 export function castleAction(s, action, options) {
   const {note, clock, random, dexterity} = options;
   if (action.type === 'payCastleFine') {
@@ -97,11 +160,19 @@ export function castleAction(s, action, options) {
   const layout = castleLayout(s.location);
   if (action.type === 'enterCastle') {
     if (!layout || s.castle || townPlace(s)?.id !== 'court' || castleFineFor(s, s.location)) return true;
+    if (s.wanted?.[s.region] > 0) {
+      note(s, 'The palace doors remain shut until you pay your local fine.');
+      return true;
+    }
     s.castle = {...layout.entrance, alarm: false};
     note(s, 'You enter ' + (s.location === 'bellwether' ? 'Bellwether Castle' : 'the governor’s palace') + '.');
     return true;
   }
   if (!s.castle || !layout) return false;
+  if (action.type === 'attackCastleRoyal') {
+    attackRuler(s, action, layout, options);
+    return true;
+  }
   if (action.type === 'move') {
     const {dx, dy} = action;
     if (!Number.isInteger(dx) || !Number.isInteger(dy) || Math.abs(dx) + Math.abs(dy) !== 1) return true;
@@ -155,6 +226,13 @@ export function validCastleState(s) {
         !TOWNS.some(t => t.id === s.location && t.region === s.region) ||
         !Number.isInteger(x) || !Number.isInteger(y) || !walkable(castleLayout(s.location), x, y) ||
         typeof alarm !== 'boolean' || alarm && !castleFineFor(s, s.location)) return false;
+  }
+  if (s.enemy?.castleRoyalDefense !== undefined) {
+    const e = s.enemy;
+    const target = castleFigures(s).find(figure => figure.id === e.castleRoyalDefense);
+    if (e.castleRobbery !== true || !target || figureDistance(s, target) > 1 ||
+        e.groupSize !== castleLayout(s.location).guards.length || !Number.isInteger(e.memberHp) || e.memberHp < 1 ||
+        e.maxHp !== e.groupSize * e.memberHp || e.hp > e.maxHp || e.gold !== 0 || e.xp !== 0) return false;
   }
   for (const [key, value] of Object.entries(s.flags)) {
     if (key.startsWith('castleBan:') && (!layouts.has(key.slice(10)) || typeof value !== 'boolean')) return false;
