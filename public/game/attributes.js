@@ -75,7 +75,10 @@ export function effectiveAttributes(state, itemById) {
     const worn = equipment.reduce((sum, bonuses) => sum + (bonuses[name] ?? 0), 0);
     const buff = state.attributeBuffs?.[name];
     const temporary = isActive(buff, now) ? buff.amount : 0;
-    return [name, Math.min(ATTRIBUTE_CAP, baseScore(state, name) + worn + temporary)];
+    // The permanent oath blessing is separate from allocated scores and is never
+    // consumed by respecs, timed effects, or the ordinary training cap.
+    const oath = state.flags?.percivalOath === 'accepted' && ['strength','charisma'].includes(name) ? 2 : 0;
+    return [name, Math.min(ATTRIBUTE_CAP, baseScore(state, name) + worn + temporary) + oath + (state.flags?.wizardApprentice==='accepted'&&name==='intelligence'?2:0)];
   }));
 }
 

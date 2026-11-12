@@ -24,9 +24,9 @@ function rareOffer(s, merchant, offer) {
 }
 
 export function stockForMerchant(s, merchant) {
-  if (!merchant || !['blacksmith', 'alchemist', 'wizard', 'gizmo'].includes(merchant.merchant)) return [];
-  const base = merchantStock(s.region, s.location, s.level).filter(id => ['common', 'rare'].includes(TREASURE_ITEMS[id]?.rarity));
-  if (merchant.merchant === 'alchemist') {
+  if (!merchant || !['blacksmith', 'alchemist', 'wizard', 'gizmo', 'traveling'].includes(merchant.merchant)) return [];
+  const base = merchantStock(s.region, s.location || 'traveling', s.level).filter(id => ['common', 'rare'].includes(TREASURE_ITEMS[id]?.rarity));
+  if (['alchemist', 'traveling'].includes(merchant.merchant)) {
     base.push(...Object.values(POISON_ITEMS).filter(item => item.minRegion <= s.region).map(item => item.id));
   }
   const ids = merchantStockFor(merchant, [...new Set(base)], id => TREASURE_ITEMS[id] || POISON_ITEMS[id]);

@@ -78,7 +78,7 @@ export function statsView(s) {
   const gagLabels = { pigFace: 'Pig face', tiny: 'Mouse-sized', helium: 'Helium voice' };
   const rows = [
     ...Object.entries(gagLabels).filter(([key]) => gagActive(s, key))
-      .map(([key, label]) => [label, `${buffTimeLeft(s, key)} game min remaining`]),
+      .map(([key, label]) => [label, key==='tiny'&&!buffTimeLeft(s,key)?`${Math.max(0,Math.ceil(((s.flags.wizardTimers?.shapeshiftUntil||0)-Date.now())/1000))} real sec remaining`:`${buffTimeLeft(s, key)} game min remaining`]),
     ['Health', `${s.hp} / ${s.maxHp}`],
     ['Level', level === s.level ? level : `${level} / ${s.level} · ${levelDrainMinutesLeft(s)} game min`],
     ['Wilderness movement', speed === .5 ? '1 square / 2 moves' : `${speed} square(s) / move`],

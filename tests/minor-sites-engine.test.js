@@ -140,7 +140,7 @@ test('pre-terrain saves stranded by new mountains or water relocate once to near
   const legacy={...createGame(),x,y};
   delete legacy.wildernessTerrainVersion;
   const restored=loadGame(saveGame(legacy));
-  assert.equal(restored.wildernessTerrainVersion,1);
+  assert.equal(restored.wildernessTerrainVersion,2);
   assert.notDeepEqual([restored.x,restored.y],[x,y]);
   assert.ok(!['water','mountain'].includes(worldTile(0,restored.x,restored.y)));
   const reloaded=loadGame(saveGame(restored));
@@ -163,12 +163,11 @@ test('legacy terrain migration frees a branch traveler stranded on an isolated d
  }));
 });
 
-test('legacy Pelagos walkers relocate from newly isolated coastal land onto the mainland',()=>{
+test('legacy Pelagos walkers relocate from changed coastal terrain onto the mainland',()=>{
  const region=2,legacy={...createGame(),region,x:84,y:2};
  delete legacy.wildernessTerrainVersion;
  const walkable=(x,y)=>!['water','mountain'].includes(worldTile(region,x,y));
- assert.ok(walkable(legacy.x,legacy.y));
- assert.ok(DIRS.some(([dx,dy])=>walkable(legacy.x+dx,legacy.y+dy)));
+ assert.equal(worldTile(region,legacy.x,legacy.y),'water');
 
  const mainland=[{x:64,y:48}],seen=new Set(['64,48']);
  for(const {x,y} of mainland)for(const [dx,dy] of DIRS){

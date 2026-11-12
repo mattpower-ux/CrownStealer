@@ -1,0 +1,40 @@
+import {createRequire} from 'node:module';
+import {readFile,mkdir} from 'node:fs/promises';
+import assert from 'node:assert/strict';
+const require=createRequire('C:/Users/mattp/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/package.json');
+const {chromium}=require('playwright');
+const browser=await chromium.launch({channel:'chrome',headless:true});
+try{
+ const page=await browser.newPage({viewport:{width:1280,height:900},serviceWorkers:'block'});
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.route('http://review.test/**',async route=>{let path=new URL(route.request().url()).pathname;if(path==='/')path='/index.html';try{const type=path.endsWith('.js')?'text/javascript':path.endsWith('.css')?'text/css':path.endsWith('.html')?'text/html':path.endsWith('.mp3')?'audio/mpeg':path.endsWith('.json')?'application/json':'image/webp';await route.fulfill({body:await readFile('public'+path),contentType:type});}catch{await route.fulfill({status:404,body:''});}});
+ await page.addInitScript(()=>{window.audioAttempts=[];const play=HTMLMediaElement.prototype.play;HTMLMediaElement.prototype.play=function(){window.audioAttempts.push(this.src);return play.call(this);};});
+ await page.goto('http://review.test/game/engine.js');
+ console.log(await page.evaluate(async()=>{const {createGame,saveGame}=await import('/game/engine.js');const {wildernessDiscoverySites}=await import('/game/wilderness-discoveries.js');const s=createGame('Discovery review');const site=wildernessDiscoverySites(s).find(p=>p.type==='hero-remains');s.x=site.x;s.y=site.y;s.gold=100;localStorage.setItem('crownstealer-save-v1',saveGame(s));return site;}));
+ await page.goto('http://review.test/');await page.locator('#studio-splash').click();await page.locator('#continue-game').click();await page.locator('#game').waitFor({state:'visible'});
+ await page.waitForTimeout(500);await mkdir('artifacts',{recursive:true});
+ await page.screenshot({path:'artifacts/discovery-world.png'});
+ await page.getByRole('button',{name:'Examine Boulder pile',exact:true}).click();
+ await page.locator('#panel[data-panel="discovery"]').waitFor({state:'visible'});
+ await page.screenshot({path:'artifacts/discovery-boulders.png'});
+ await page.getByRole('button',{name:'Search among the boulders',exact:true}).click();
+ console.log('after search',await page.locator('#panel-title').innerText(),await page.locator('#toast').innerText(),errors);await page.getByRole('heading',{name:'Hero’s remains',exact:true}).waitFor();
+ assert.match(await page.locator('#panel-body').innerText(),/orc arrows/);
+ const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('crownstealer-save-v1')));assert.ok(saved.bag.includes('horn-of-help'));assert.equal(saved.flags.hornHelpCharges,3);assert.equal(saved.gold,175);
+ assert.equal(await page.getByRole('button',{name:'Search among the boulders',exact:true}).count(),0);
+ await page.screenshot({path:'artifacts/discovery-hero-remains.png'});
+ console.log('Hero discovery: 75 gold and 3-charge horn; revealed skeleton; repeat search unavailable.');
+ await page.goto('http://review.test/game/engine.js');
+ await page.evaluate(async()=>{const {createGame,saveGame}=await import('/game/engine.js');const {wildernessDiscoverySites}=await import('/game/wilderness-discoveries.js');const s=createGame('Ruins review');s.region=1;const site=wildernessDiscoverySites(s).find(p=>p.type==='burned-village');s.x=site.x;s.y=site.y;localStorage.setItem('crownstealer-save-v1',saveGame(s));});
+ await page.goto('http://review.test/');await page.locator('#studio-splash').click();await page.locator('#continue-game').click();await page.locator('#game').waitFor({state:'visible'});
+ await page.getByRole('button',{name:'Examine Burned village ruins',exact:true}).click();await page.getByRole('button',{name:'Search this place',exact:true}).click();
+ await page.getByRole('button',{name:'Pick the chest lock',exact:true}).waitFor();assert.match(await page.locator('#panel-body').innerText(),/% chance to open/);assert.match(await page.locator('#panel-body').innerText(),/trap|damage/);
+ await page.screenshot({path:'artifacts/discovery-ruined-village.png'});await page.getByRole('button',{name:'Leave this place',exact:true}).click();assert.equal(await page.locator('#panel').evaluate(el=>el.open),false);console.log('Ruins: buried chest revealed, lock chance and trap risk visible.');
+ await page.goto('http://review.test/game/render.js');await page.setContent('<canvas style="position:relative;width:960px;height:600px"></canvas>');
+ await page.evaluate(async()=>{
+  const {render}=await import('/game/render.js');const {createGame}=await import('/game/engine.js');const s=createGame('Ghost review');s.mode='battle';s.returnMode='dungeon';s.dungeon={index:0,floor:0,x:1,y:2,dir:0};s.enemy={name:'Grave Watcher',speciesId:'grove-goblin',level:2,hp:20,maxHp:30,heroGhost:true};
+  render(document.querySelector('canvas'),s,0,null,true);
+ });
+ await page.locator('canvas').screenshot({path:'artifacts/hero-ghost-combat.png'});
+ console.log('page errors',errors);assert.deepEqual(errors,[]);
+}finally{await browser.close();}

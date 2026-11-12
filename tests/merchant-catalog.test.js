@@ -8,8 +8,40 @@ import {
   merchantPlaces,
   merchantStockFor,
   canMerchantSell,
+  canMerchantBuy,
+  compareMerchantItems,
   canBuyMerchantSupply,
 } from '../public/game/merchant-catalog.js';
+
+test('specialists buy only their own categories while traveling merchants accept mixed goods', () => {
+  const sword = {kind:'weapon',id:'sword'}, scroll = {kind:'scroll',id:'scroll'}, ring = {kind:'ring',id:'ring'};
+  assert.equal(canMerchantBuy('blacksmith', sword), true);
+  assert.equal(canMerchantBuy('blacksmith', scroll), false);
+  assert.equal(canMerchantBuy('blacksmith', ring), false);
+  assert.equal(canMerchantBuy('wizard', scroll), true);
+  assert.equal(canMerchantBuy('wizard', ring), true);
+  assert.equal(canMerchantBuy('wizard', sword), false);
+  for (const item of [sword, scroll, ring, {kind:'potion'}, {kind:'gadget'}]) {
+    assert.equal(canMerchantBuy('traveling', item), true);
+    assert.equal(canMerchantSell('traveling', item), true);
+  }
+  assert.equal(canMerchantBuy('traveling', {kind:'quest'}), false);
+});
+
+test('merchant weapons sort by total damage and combat bonuses before rarity, with stable ties', () => {
+  const items = [
+    {id:'weak-legend',kind:'weapon',damage:[2,4],rarity:'legendary'},
+    {id:'plain',kind:'weapon',damage:[10,14],rarity:'rare'},
+    {id:'magic',kind:'weapon',damage:[7,9],elementDamage:3,stormDamage:4,rarity:'common'},
+    {id:'accurate',kind:'weapon',damage:[10,14],toHit:3,rarity:'common'},
+    {id:'tie-b',kind:'weapon',damage:[4,6],rarity:'rare'},
+    {id:'tie-a',kind:'weapon',damage:[4,6],rarity:'rare'},
+    {id:'tie-epic',kind:'weapon',damage:[4,6],rarity:'epic'},
+    {id:'weapon',kind:'weapon'},
+  ];
+  assert.deepEqual(items.sort(compareMerchantItems).map(item=>item.id),
+    ['magic','accurate','plain','tie-epic','tie-a','tie-b','weak-legend','weapon']);
+});
 
 test('every region offers the three merchant types across different towns', () => {
   for (let region = 0; region < 4; region++) {

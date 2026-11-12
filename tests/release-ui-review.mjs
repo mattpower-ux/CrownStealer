@@ -1,0 +1,75 @@
+import {createRequire} from 'node:module';
+import {readFile,mkdir} from 'node:fs/promises';
+import assert from 'node:assert/strict';
+const require=createRequire('C:/Users/mattp/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright/package.json');
+const {chromium}=require('playwright');
+const browser=await chromium.launch({channel:'chrome',headless:true});
+try{
+ const page=await browser.newPage({viewport:{width:1280,height:900},serviceWorkers:'block'});
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.route('http://review.test/**',async route=>{let path=new URL(route.request().url()).pathname;if(path==='/')path='/index.html';try{const type=path.endsWith('.js')?'text/javascript':path.endsWith('.css')?'text/css':path.endsWith('.html')?'text/html':path.endsWith('.mp3')?'audio/mpeg':path.endsWith('.json')?'application/json':'image/webp';await route.fulfill({body:await readFile('public'+path),contentType:type});}catch{await route.fulfill({status:404,body:''});}});
+ await page.addInitScript(()=>{window.audioAttempts=[];const play=HTMLMediaElement.prototype.play;HTMLMediaElement.prototype.play=function(){window.audioAttempts.push(this.src);return play.call(this);};});
+ await page.goto('http://review.test/game/engine.js');
+ console.log(await page.evaluate(async()=>{const {createGame,saveGame,shipyardList}=await import('/game/engine.js');const s=createGame('Shipyard review');const yard=shipyardList(s)[0];s.x=yard.x;s.y=yard.y;s.gold=12345;s.bag.push('common-sword-1-v2','rare-armor-1','boots-slime-skating','boat-amulet','shrinkable-sailboat');localStorage.setItem('crownstealer-save-v1',saveGame(s));return yard;}));
+ await page.goto('http://review.test/');
+ await page.locator('#studio-splash').click();
+ await page.locator('#continue-game').click();
+ console.log('load toast',await page.locator('#toast').innerText());await page.locator('#game').waitFor({state:'visible'});
+ await page.waitForTimeout(1200);
+ await mkdir('artifacts',{recursive:true});
+ await page.screenshot({path:'artifacts/shipyard-world-review.png'});
+ console.log('actions',await page.locator('#actions').innerText());
+ await page.getByRole('button',{name:'Enter Driftwood Shipyard',exact:true}).click();
+ await page.locator('#panel[data-panel="shipyard"]').waitFor({state:'visible'});
+ await page.screenshot({path:'artifacts/shipyard-panel-review.png'});
+ await page.getByRole('button',{name:'Buy rowboat · 250 gold',exact:true}).click();
+ await page.getByText('Your rowboat is ready to launch.',{exact:true}).waitFor();
+ assert.match(await page.locator('#panel-body').innerText(),/12,095 gold/);
+ console.log('purchase UI',await page.locator('#panel-body').innerText());
+ await page.locator('#close-panel').click();
+ await page.getByRole('button',{name:'Open inventory',exact:true}).click();
+ await page.locator('.inventory-gold').waitFor();
+ assert.match(await page.locator('.inventory-gold').innerText(),/12,095/);
+ assert.ok(await page.locator('.upgrade-star').count()>=2);
+ await page.screenshot({path:'artifacts/inventory-review.png'});
+ console.log('inventory',{stars:await page.locator('.upgrade-star').count(),gold:await page.locator('.inventory-gold').innerText(),brokenImages:await page.locator('#panel img').evaluateAll(imgs=>imgs.filter(i=>i.complete&&!i.naturalWidth).map(i=>i.src))});
+ await page.setViewportSize({width:800,height:600});await page.waitForTimeout(200);await page.screenshot({path:'artifacts/inventory-tablet-review.png'});console.log('tablet overflow',await page.locator('#panel').evaluate(el=>el.scrollWidth>el.clientWidth+1));
+ await page.locator('#close-panel').click();
+ await page.getByRole('button',{name:'Open World Map',exact:true}).click();
+ await page.locator('#panel[data-panel="atlas"]').waitFor({state:'visible'});
+ const mapText=await page.locator('#panel-body').innerText();assert.doesNotMatch(mapText,/Unexplored land/);assert.equal(await page.locator('[data-atlas-world]').count(),1);assert.doesNotMatch(mapText,/Cinder/i);
+ assert.equal(await page.locator('#panel').evaluate(el=>el.scrollWidth>el.clientWidth+1),false);
+ await page.screenshot({path:'artifacts/world-map-tablet-review.png'});
+ console.log('World Map: travel button opens, unexplored lands hidden, no Cinder text, no horizontal overflow.');
+ const merchantNames=await page.evaluate(async()=>{
+  const {createGame}=await import('/game/engine.js');const {renderMerchantView}=await import('/game/merchant-view.js');const {itemById}=await import('/game/items.js');
+  const s=createGame('Merchant review');Object.assign(s,{region:2,level:18,gold:10000,equipped:null,equippedArmor:null,bag:['rusty-sword','rare-sword-1','common-ring-1','scroll-return','weapon-poison-1']});
+  document.querySelector('#panel').dataset.panel='travelMerchant';document.querySelector('#panel-title').textContent='Traveling Market';
+  renderMerchantView(document.querySelector('#panel-body'),s,{id:'travel-merchant',merchant:'traveling'},()=>{});
+  return {strong:itemById('rare-sword-1',s).name,weak:itemById('rusty-sword',s).name,ring:itemById('common-ring-1',s).name};
+ });
+ const sellNames=await page.locator('[data-trade-list="sell"] .trade-inspect').allTextContents();
+ assert.ok(sellNames.indexOf(merchantNames.strong)<sellNames.indexOf(merchantNames.weak));
+ assert.equal(await page.locator('[data-trade-category]').count(),0);
+ await page.getByRole('searchbox',{name:'Search trade items'}).fill('specialty');
+ const specialty=await page.locator('[data-trade-list="sell"] .trade-row:visible').innerText();
+ assert.match(specialty,new RegExp(merchantNames.ring));assert.ok(!specialty.includes(merchantNames.weak));
+ await page.waitForTimeout(100);assert.equal(await page.locator('#panel').evaluate(el=>el.classList.contains('paged-panel')),false);await page.screenshot({path:'artifacts/merchant-specialty-tablet-review.png'});
+ console.log('Merchant: stronger sword first, category search shows ring and hides weapons, no category buttons.');
+ await page.evaluate(async()=>{
+  const {createGame}=await import('/game/engine.js');const {renderMerchantView}=await import('/game/merchant-view.js');
+  const s=createGame('Blacksmith portrait');Object.assign(s,{mode:'town',location:'mothbridge',gold:10000});
+  document.querySelector('#panel').dataset.panel='shop';document.querySelector('#panel-title').textContent='Blacksmith';
+  renderMerchantView(document.querySelector('#panel-body'),s,{id:'shop',merchant:'blacksmith'},()=>{});
+ });
+ for(const [name,width,height] of [['tablet',800,600],['mobile',390,844],['landscape',800,450]]){
+  await page.setViewportSize({width,height});await page.waitForTimeout(100);
+  const portrait=await page.locator('.trade-proprietor .merchant-portrait').boundingBox();
+  assert.equal(portrait.width,144);assert.equal(portrait.height,144);
+  assert.equal(await page.locator('#panel').evaluate(el=>el.scrollWidth>el.clientWidth+1),false);
+  assert.equal(await page.locator('[data-trade-category]').count(),0);
+  await page.screenshot({path:`artifacts/blacksmith-portrait-${name}-review.png`});
+ }
+ console.log('audio',await page.evaluate(()=>window.audioAttempts));
+ console.log('page errors',errors);assert.deepEqual(errors,[]);
+}finally{await browser.close();}

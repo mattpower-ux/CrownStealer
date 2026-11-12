@@ -3,6 +3,57 @@ import assert from 'node:assert/strict';
 
 const audio = await import('../public/game/audio.js').catch(() => ({}));
 
+test('opening theme attempts playback before a blocked context resumes and retries on a gesture', async () => {
+  const h = harness();
+  let gesture = false, release, resumes = 0;
+  h.options.AudioContext.prototype.resume = function () {
+    resumes++;
+    if (!gesture) return new Promise(resolve => { release = resolve; });
+    this.state = 'running'; release?.(); return Promise.resolve();
+  };
+  h.options.Audio = class {
+    paused = true; currentTime = 0;
+    constructor(src) { this.src = src; }
+    play() {
+      if (!gesture) return Promise.reject(Object.assign(new Error('gesture required'), { name: 'NotAllowedError' }));
+      this.paused = false; return Promise.resolve();
+    }
+    pause() { this.paused = true; }
+  };
+  const director = new audio.AudioDirector(h.options);
+  const opening = director.unlock();
+  await Promise.resolve();
+  assert.equal(director.titlePlayer?.src, '/assets/title-theme.mp3');
+  assert.equal(director.titleUnavailable, false);
+  gesture = true;
+  await director.unlock(); await opening;
+  assert.equal(resumes, 2, 'a pending autoplay resume cannot swallow a gesture');
+  assert.equal(director.titlePlayer.paused, false);
+  const player = director.titlePlayer; player.currentTime = 2.4;
+  director.setScene('title'); await director.unlock();
+  assert.equal(director.titlePlayer, player);
+  assert.equal(player.currentTime, 2.4, 'title handoff must not rewind the opening');
+  await director.destroy();
+});
+
+test('title playback interruption remains retryable after suspension', async () => {
+  const h = harness(); let interrupted = true;
+  h.options.Audio = class {
+    paused = true;
+    play() {
+      if (interrupted) return Promise.reject(Object.assign(new Error('paused during load'), { name: 'AbortError' }));
+      this.paused = false; return Promise.resolve();
+    }
+    pause() { this.paused = true; }
+  };
+  const director = new audio.AudioDirector(h.options);
+  await director.unlock(); await director.suspend();
+  assert.equal(director.titleUnavailable, false);
+  interrupted = false; await director.resume();
+  assert.equal(director.titlePlayer.paused, false);
+  await director.destroy();
+});
+
 function harness() {
   const timers = new Map();
   let nextTimer = 0;

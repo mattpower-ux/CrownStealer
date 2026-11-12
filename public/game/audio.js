@@ -50,7 +50,13 @@ export class AudioDirector {
 
   async unlock() {
     if (this.destroyed || !this.Context) return false;
-    if (this.unlocking) return this.unlocking;
+    // Media play must happen inside the gesture, before awaiting Web Audio.
+    this.startTitle();
+    if (this.unlocking) {
+      // A pre-gesture resume can stay pending until resume is called in a gesture.
+      if (!this.paused) this.context?.resume().catch(() => {});
+      return this.unlocking;
+    }
     this.unlocking = (async () => {
       try {
         if (!this.context) {
@@ -71,7 +77,6 @@ export class AudioDirector {
           }
         }
         if (!this.paused) await this.context.resume();
-        if(!this.titlePlayer&&this.MediaAudio){this.titlePlayer=new this.MediaAudio('/assets/title-theme.mp3');this.titlePlayer.loop=true;this.titlePlayer.preload='none';this.titlePlayer.volume=this.musicVolume;this.titlePlayer.onerror=()=>{this.titleUnavailable=true;if(this.scene==='title'&&!this.paused&&!this.destroyed)this.start();};}
         if (this.destroyed) return false;
         if (!this.paused) this.start();
         if(this.context.decodeAudioData) this.loadEncounter();
@@ -84,6 +89,27 @@ export class AudioDirector {
       }
     })();
     return this.unlocking;
+  }
+
+  startTitle() {
+    if (this.scene !== 'title' || this.paused || this.destroyed || !this.MediaAudio || this.titleUnavailable) return false;
+    if (!this.titlePlayer) {
+      this.titlePlayer = new this.MediaAudio('/assets/title-theme.mp3');
+      this.titlePlayer.loop = true;
+      this.titlePlayer.preload = 'auto';
+      this.titlePlayer.volume = this.musicVolume;
+      this.titlePlayer.onerror = () => {
+        this.titleUnavailable = true;
+        if (this.scene === 'title' && !this.paused && !this.destroyed) this.start();
+      };
+    }
+    if (this.titlePlayer.paused) this.titlePlayer.play().catch(error => {
+      // Policy denial and an interrupted load are recoverable on the next gesture.
+      if (error?.name === 'NotAllowedError' || error?.name === 'AbortError') return;
+      this.titleUnavailable = true;
+      if (this.scene === 'title' && !this.paused && !this.destroyed) this.start();
+    });
+    return true;
   }
 
   setVolumes(music, effects) {
@@ -111,8 +137,8 @@ export class AudioDirector {
   }
 
   start() {
-    if (this.timer !== null || this.paused || this.destroyed || this.context.state !== 'running') return;
-    if(this.scene==='title'&&this.titlePlayer&&!this.titleUnavailable){if(this.titlePlayer.paused)this.titlePlayer.play().catch(()=>{this.titleUnavailable=true;if(this.scene==='title'&&!this.paused&&!this.destroyed)this.start();});return;}
+    if (this.timer !== null || this.paused || this.destroyed || this.context?.state !== 'running') return;
+    if (this.startTitle()) return;
     const recording=recordedMusic(this.scene);
     if(recording&&this.MediaAudio&&!this.backgroundUnavailable.has(recording)){
       let player=this.backgroundPlayers.get(recording);

@@ -10,7 +10,7 @@ test('exact 5/15/20/60 percent mutually exclusive chest rarity boundaries',()=>{
 test('treasure includes weapon and jewelry variants alongside consumables',()=>{const items=Object.values(TREASURE_ITEMS).filter(i=>!i.encounterOnly&&!i.alien&&!i.lowLoot&&i.kind!=='gem'&&i.kind!=='quest'&&!i.healsToHalf);assert.ok(items.length>=720);for(const [kind,count] of Object.entries({weapon:248,potion:117,wand:84,scroll:24}))assert.ok(items.filter(i=>i.kind===kind).length>=count,kind);const families=new Set(items.filter(i=>i.kind==='weapon').map(i=>i.family));for(const family of ['mace','sword','spear','axe'])assert.ok(families.has(family),family);});
 test('every dungeon floor has 2–5 unique reachable chests, with stable depth-scaled loot',()=>{for(let index=0;index<8;index++)for(let floor=0;floor<3;floor++){const s=dungeon(index,floor),map=dungeonMap(s.dungeon),boxes=dungeonChests(s,map);assert.ok(boxes.length>=2&&boxes.length<=5);assert.equal(new Set(boxes.map(c=>c.x+','+c.y)).size,boxes.length);for(const c of boxes){assert.notEqual(map[c.y][c.x],1);assert.notEqual(map[c.y][c.x],2);const item=TREASURE_ITEMS[c.item];assert.ok(c.gold>0);if(!item){assert.deepEqual(c.items,[]);continue;}assert.equal(item.rarity,c.rarity);if(item.kind!=='potion'&&item.kind!=='scroll'&&item.kind!=='gem'&&item.id!=='scroll-return'&&!item.nautical)assert.equal(item.tier,Math.min(3,1+Math.floor((lootLevel(s)-1)/8)));}assert.deepEqual(dungeonChests(loadGame(saveGame(s)),map),boxes);}for(const royal of ['cell','sewer']){const s=dungeon();s.dungeon.royal=royal;const boxes=dungeonChests(s,dungeonMap(s.dungeon));assert.ok(royal==='sewer'?boxes.length===1:boxes.length>=2&&boxes.length<=5);}});
 test('opening chest grants item and gold once and persists without rerolling',()=>{let s=dungeon();const c=dungeonChests(s,dungeonMap(s.dungeon))[0];s.dungeon.x=c.x;s.dungeon.y=c.y;const gold=s.gold;s=act(s,{type:'openChest'});assert.equal(s.gold,gold+c.gold);for(const id of c.items)assert.ok(s.bag.includes(id));assert.deepEqual(s.pendingLoot,c.items);s=loadGame(saveGame(s));assert.equal(dungeonChests(s,dungeonMap(s.dungeon))[0].opened,true);assert.equal(act(s,{type:'openChest'}).gold,s.gold);});
-test('all towns sell specialist stock and buy jewelry, while equipped items and relics cannot be sold',()=>{
+test('all towns sell specialist stock, only wizards buy jewelry, and equipped items and relics cannot be sold',()=>{
   const ring='common-ring-1',relic='tithe-vault';
   for(const town of TOWNS){
     let s=atTownPlace({...createGame(),mode:'town',location:town.id,region:town.region,gold:1000},'shop');
@@ -26,8 +26,9 @@ test('all towns sell specialist stock and buy jewelry, while equipped items and 
     assert.equal(act(s,{type:'sellItem',id:relic}).gold,s.gold);
     s=act(s,{type:'unequip',slot:'ring'});
     s=act(s,{type:'sellItem',id:ring});
-    assert.equal(s.gold,1000-price+Math.floor(TREASURE_ITEMS[ring].value/2));
-    assert.ok(!s.bag.includes(ring));
+    const buysJewelry=merchantFor(town.id).merchant==='wizard';
+    assert.equal(s.gold,1000-price+(buysJewelry?Math.floor(TREASURE_ITEMS[ring].value/2):0));
+    assert.equal(s.bag.includes(ring),!buysJewelry);
     assert.equal(act(s,{type:'sellItem',id:ring}).gold,s.gold);
   }
 });

@@ -7,7 +7,10 @@ const westCoveDepth = 14;
 const southCoveDepth = 13;
 
 function coastDepth(length, phase) {
-  return Array.from({length}, (_, point) => Math.round(5 + 2.7 * Math.sin(point * .115 + phase) + 1.5 * Math.sin(point * .26 + phase * 2)));
+  // Broad headlands broken by short, steep coves and tooth-like rocky points.
+  return Array.from({length}, (_, point) => Math.max(2, Math.min(23, Math.round(
+    10 + 5.8 * Math.sin(point * .115 + phase) + 4.2 * Math.sin(point * .43 + phase * 2)
+    + 2.4 * Math.sin(point * 1.17 + phase * 3)))));
 }
 
 const landscapes = Array.from({length: 16}, (_, land) => {
@@ -51,7 +54,7 @@ export function boatPassageShore(area) {
 }
 
 function coastalWater(region, area, x, y, shore) {
-  if (x > 16 && x < WORLD_WIDTH - 17 && y > 13 && y < WORLD_HEIGHT - 14) return false;
+  if (x > 23 && x < WORLD_WIDTH - 24 && y > 23 && y < WORLD_HEIGHT - 24) return false;
   const mainland = area == null;
   const east = WORLD_WIDTH - 1 - x;
   const south = WORLD_HEIGHT - 1 - y;
@@ -63,16 +66,19 @@ function coastalWater(region, area, x, y, shore) {
   }
   const borderApproach = mainland && Math.abs(y - middleY) <= 2;
   const westApproach = borderApproach || mainland && region > 0 && Math.abs(y - westLandingY) <= 2;
-  const northApproach = mainland && Math.abs(x - centerX) <= 2;
+  const northApproach = Math.abs(x - centerX) <= 2;
   const southApproach = Math.abs(x - centerX) <= 2;
   return x <= shore.west[y] && !westApproach || east <= shore.east[y] && !borderApproach ||
     y <= shore.north[x] && !northApproach || south <= shore.south[x] && !southApproach;
 }
 
 export function landscapeTile(region, area, x, y, base) {
+  // A tiny island inside Moonless Thicket's lake, with open water on every side.
+  if (area === 'wild-10' && ((x-87)/2)**2 + ((y-58)/1.5)**2 <= 1) return 'grass';
   const landscape = landscapeFor(region, area);
   if (!landscape || base === 'water') return base;
   const {lake, river, ridge, shore, footbridge} = landscape;
+  if (area === 'wild-6' && ((x-112)/5.6)**2 + ((y-64)/8)**2 <= 1) return 'grass';
   if (coastalWater(region, area, x, y, shore)) return 'water';
   if (y > 0 && y < lake.y && Math.abs(x - river[y]) <= 1) {
     return base === 'road' || y === footbridge ? 'bridge' : 'water';

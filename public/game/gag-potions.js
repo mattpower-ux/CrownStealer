@@ -1,6 +1,6 @@
 import {worldTimeMs} from './world-clock.js';
 export const GAG_KEYS=['pigFace','tiny','helium'];
-export const gagActive=(s,key)=>(s?.buffExpiry?.[key]||0)>worldTimeMs(s||{});
+export const gagActive=(s,key)=>(s?.buffExpiry?.[key]||0)>worldTimeMs(s||{})||(key==='tiny'&&s?.flags?.wizardApprentice==='accepted'&&(s.flags.wizardTimers?.shapeshiftUntil||0)>Date.now());
 export const GAG_ITEMS=Object.fromEntries([
  ['potion-unique-looks','Potion of Unique Looks','pigFace',168,'#e7a3ad','Your face becomes a pig’s for one full game week! A wandering merchant in Pelagos, the third region, MIGHT carry a Potion of Cure-All. Bring 5,000 gold.'],
  ['potion-largeness','Potion of Largeness','tiny',3,'#94c976','You shrink to the size of a mouse! Physical weapon damage and the chance of random encounters are halved for three game hours. No cure.'],

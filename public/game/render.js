@@ -1,5 +1,15 @@
+import {TWINKLESTAR_TOWER_ID,twinklestarTowerSite} from './twinklestar-tower.js';
+import {wizardAudienceAvailable,wizardInvisible} from './wizard-apprentice.js';
+import {drawTwinklestarTower,drawWhiteWizard,twinklestarWallInk} from './wizard-render.js';
+import {percivalCastleSite,PERCIVAL_CASTLE_ID} from './percival-castle.js';
+import {percivalAudienceAvailable} from './paladin-oath.js';
+import {drawPercivalCastle,percivalWallInk,drawPercivalMist} from './percival-render.js';
+import {wildernessDiscoveries} from './wilderness-discoveries.js';
+import {drawDiscoveryArt,drawHeroGhost} from './discovery-render.js';
 import {caveProfile} from './cave-profiles.js';
 import {drawDungeonCeiling} from './dungeon-ceilings.js';
+import {drawSolidLadders} from './ladder-render.js';
+import {isKoboldBurrow,burrowPixel,drawBurrowPlanes,drawBurrowDarkness} from './burrow-render.js';
 import {mountFor} from './mounts.js';
 import {dragonFlying} from './dragon.js';
 import {townSign} from './town-signs.js';
@@ -66,7 +76,7 @@ import {TOWN_SIZE,TOWN_PLACES,townPosition} from './town.js';
 
 import {REGIONS,TOWNS,DUNGEONS} from './content.js';
 
-import {worldTile,makeDungeon,dungeonMap,DIRS,minorSiteList} from './engine.js';
+import {worldTile,makeDungeon,dungeonMap,DIRS,minorSiteList,shipyardList} from './engine.js';
 
 const sprites=new Image();sprites.src='/assets/creatures.webp';
 
@@ -86,7 +96,10 @@ function drawMountedHero(c,hero,mount,size,flash){
  c.strokeStyle='#493322';c.lineWidth=Math.max(1,size*.018);c.beginPath();c.moveTo(sx+size*.15,sy-size*.13);c.quadraticCurveTo(size*.48,sy+size*.08,size*.55,-size*.15);c.stroke();c.restore();return true;
 }
 
-function drawAdventurer(c,x,y,size,flash=0){c.save();const projection=c.getTransform(),aspect=Math.abs(projection.a/projection.d)||1;c.translate(x,y);c.scale(1/aspect,1);x=0;y=0;const activeMount=renderedHero&&mountFor(renderedHero),outdoors=renderedHero&&(renderedHero.mode==='world'||renderedHero.mode==='battle'&&renderedHero.returnMode==='world');if(activeMount&&outdoors&&drawMountedHero(c,renderedHero,activeMount,size,flash)){c.restore();return;}c.save();c.fillStyle='#05150a77';c.beginPath();c.ellipse(x,y+size*.36,size*.27,size*.10,0,0,Math.PI*2);c.fill();if(flash)c.filter=`brightness(${1+flash*1.8})`;if(renderedHero&&drawGearAvatar(c,renderedHero,x,y,size)){}else if(adventurer.complete&&adventurer.naturalWidth)c.drawImage(adventurer,x-size/2,y-size/2,size,size);else{path(c,[[x,y-size*.35],[x-size*.25,y+size*.35],[x+size*.25,y+size*.35]],'#477653','#d5b675');circle(c,x,y-size*.3,size*.12,'#ddc295');c.strokeStyle='#e2e7da';c.lineWidth=2;c.beginPath();c.moveTo(x+size*.2,y);c.lineTo(x+size*.4,y+size*.35);c.stroke();}c.restore();c.restore();}
+function drawAdventurer(c,x,y,size,flash=0){c.save();if(renderedHero&&wizardInvisible(renderedHero))c.globalAlpha*=.25;const projection=c.getTransform(),aspect=Math.abs(projection.a/projection.d)||1;c.translate(x,y);c.scale(1/aspect,1);x=0;y=0;if(renderedHero?.flags?.wizardTimers?.shapeshiftUntil>Date.now()){
+ c.strokeStyle='#b9a68f';c.lineWidth=size*.025;c.beginPath();c.moveTo(-size*.11,size*.13);c.quadraticCurveTo(-size*.37,size*.08,-size*.29,-size*.02);c.stroke();
+ c.fillStyle='#a49e8c';c.beginPath();c.ellipse(0,size*.10,size*.14,size*.085,0,0,Math.PI*2);c.fill();circle(c,size*.11,size*.055,size*.055,'#b7b09b');circle(c,size*.075,size*.012,size*.035,'#c1b19b');circle(c,size*.145,size*.06,size*.012,'#1b2924');c.restore();return;
+}const activeMount=renderedHero&&mountFor(renderedHero),outdoors=renderedHero&&(renderedHero.mode==='world'||renderedHero.mode==='battle'&&renderedHero.returnMode==='world');if(activeMount&&outdoors&&drawMountedHero(c,renderedHero,activeMount,size,flash)){c.restore();return;}c.save();c.fillStyle='#05150a77';c.beginPath();c.ellipse(x,y+size*.36,size*.27,size*.10,0,0,Math.PI*2);c.fill();if(flash)c.filter=`brightness(${1+flash*1.8})`;if(renderedHero&&drawGearAvatar(c,renderedHero,x,y,size)){}else if(adventurer.complete&&adventurer.naturalWidth)c.drawImage(adventurer,x-size/2,y-size/2,size,size);else{path(c,[[x,y-size*.35],[x-size*.25,y+size*.35],[x+size*.25,y+size*.35]],'#477653','#d5b675');circle(c,x,y-size*.3,size*.12,'#ddc295');c.strokeStyle='#e2e7da';c.lineWidth=2;c.beginPath();c.moveTo(x+size*.2,y);c.lineTo(x+size*.4,y+size*.35);c.stroke();}c.restore();c.restore();}
 
 const cover=new Image();cover.src='/assets/cover.webp';
 
@@ -316,6 +329,20 @@ function drawWorldViewport(c,w,h,s){
  if(map.area)drawAreaSites(c,s,map.area,size,view);
  else drawLandSites(c,s,size,view);
  drawMinorSites(c,s,size,view);
+ const tower=twinklestarTowerSite(s);if(tower&&visibleWorldPoint(tower,view)){const x=(tower.x+.5)*size,y=(tower.y+.5)*size;drawTwinklestarTower(c,x,y,size);label(c,tower.name,x,y+size*.8,Math.max(10,size*.3),'#e8e7bf');}
+ const hauntedCastle=percivalCastleSite(s);if(hauntedCastle&&visibleWorldPoint(hauntedCastle,view)){const x=(hauntedCastle.x+.5)*size,y=(hauntedCastle.y+.5)*size;drawPercivalCastle(c,x,y,size*1.1);label(c,hauntedCastle.name,x,y+size*.9,Math.max(10,size*.3),'#d4e5cc');}
+ for(const site of wildernessDiscoveries(s))if(visibleWorldPoint(site,view)){
+  const x=(site.x+.5)*size,y=(site.y+.5)*size;drawDiscoveryArt(c,site.type,x,y,size*.88,site);
+  label(c,site.name,x,y+size*.9,Math.max(9,size*.28),site.searched?'#b3b99a':'#e2d3a4');
+ }
+ for(const yard of shipyardList(s))if(visibleWorldPoint(yard,view)){
+  const x=(yard.x+.5)*size,y=(yard.y+.5)*size;
+  c.fillStyle='#352719';c.fillRect(x-size*.65,y-size*.35,size*1.3,size*.85);
+  for(let i=0;i<6;i++){c.fillStyle=i%2?'#b88d56':'#91693d';c.fillRect(x-size*.6,y-size*.3+i*size*.13,size*1.2,size*.1);}
+  drawRowboat(c,x,y-size*.15,size*.85);
+  label(c,yard.name,x,y+size*.9,Math.max(10,size*.32),'#ffe4a2');
+ }
+
  drawMetalTrees(c,s,size,view);
  const x=(s.x+.5)*size,y=(s.y+.5)*size,inWater=map.tileAt(s.x,s.y)==='water';
  if(inWater&&(s.flags.rowboatReady||s.flags.sailboatReady))drawRowboat(c,x,y,size);
@@ -327,7 +354,7 @@ function drawWorldViewport(c,w,h,s){
 }
 export function render(canvas,s,time=0,fx=null,reduced=false){renderedHero=s;const rect=canvas.getBoundingClientRect();const dpr=Math.min(devicePixelRatio||1,2);const w=Math.max(1,rect.width),h=Math.max(1,rect.height);if(canvas.width!==Math.round(w*dpr)||canvas.height!==Math.round(h*dpr)){canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);}const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);
 
- if(s.dungeon&&(s.mode==='dungeon'||s.mode==='battle'&&s.returnMode==='dungeon'))canvas.dataset.wallTheme=caveProfile(s.dungeon.expedition)?.name||DUNGEON_WALLS[s.dungeon.index].name;else delete canvas.dataset.wallTheme;
+ if(s.dungeon&&(s.mode==='dungeon'||s.mode==='battle'&&s.returnMode==='dungeon'))canvas.dataset.wallTheme=s.dungeon.site===TWINKLESTAR_TOWER_ID?'Twinklestar’s arcane tower':s.dungeon.site===PERCIVAL_CASTLE_ID?'Percival’s haunted crypt':isKoboldBurrow(s.dungeon)?'Kobold earth burrow':caveProfile(s.dungeon.expedition)?.name||DUNGEON_WALLS[s.dungeon.index].name;else delete canvas.dataset.wallTheme;
 
  const contact=s.mode==='battle'&&s.returnMode==='dungeon',wildContact=s.mode==='battle'&&s.returnMode!=='dungeon'&&s.enemy?.firstContact;
  const castle=s.castle&&castleLayout(s.location),arena=s.arena&&(s.mode==='town'||s.enemy?.arenaFighter);
@@ -343,6 +370,9 @@ export function render(canvas,s,time=0,fx=null,reduced=false){renderedHero=s;con
  else if(s.mode==='town')town(c,w,h,s,reduced?0:time);
  else drawWorldViewport(c,w,h,s);
 
+ if(wizardAudienceAvailable(s))drawWhiteWizard(c,w,h,{label:false});
+ if(percivalAudienceAvailable(s))drawHeroGhost(c,w,h,time,reduced,{x:.5,y:.72,scale:.5,label:'SIR PERCIVAL'});
+ if(s.mode==='battle'&&s.enemy?.heroGhost)drawHeroGhost(c,w,h,time,reduced);
  const v=c.createRadialGradient(w/2,h/2,h*.18,w/2,h/2,Math.max(w,h)*.65);v.addColorStop(0,'#00110b00');v.addColorStop(1,s.mode==='world'||s.mode==='battle'&&s.returnMode==='world'||castle||arena?'#030e0c20':'#030e0ccc');c.fillStyle=v;c.fillRect(0,0,w,h);
 
 }
@@ -845,7 +875,7 @@ function drawLadderOpenings(c,w,h,d,ladders,dx,dy,fov){
   const offsetX=ladder.wallX-ladder.x,offsetY=ladder.wallY-ladder.y;
   const cx=ladder.x-d.x+offsetX*.21,cy=ladder.y-d.y+offsetY*.21;
   const plane=ladder.opening==='ceiling'?-1:1;
-  const aperture=(radius)=>{
+  const aperture=(radius,depthOffset=0)=>{
    const corners=[[-1,-1],[1,-1],[1,1],[-1,1]].map(([sx,sy])=>{
     const x=cx+sx*radius,y=cy+sy*radius;
     return {depth:x*dx+y*dy,side:y*dx-x*dy};
@@ -861,27 +891,42 @@ function drawLadderOpenings(c,w,h,d,ladders,dx,dy,fov){
     if(point.depth>=near)points.push(point);
     return points;
    });
-   return visible.map(({side,depth})=>[w/2+focal*side/depth,h/2+plane*h*.425/depth]);
+   return visible.map(({side,depth})=>[w/2+focal*side/depth,h/2+plane*h*(.425+depthOffset)/depth]);
   };
   const rim=aperture(.29),hole=aperture(.235);
   if(rim.length<3||hole.length<3)continue;
-  path(c,rim,plane<0?'#706f65':'#746451','#241e18');
+  const shaft=aperture(.235,.27);
+  path(c,rim,plane<0?'#8b8270':'#897454','#241e18');
+  c.save();c.beginPath();hole.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.closePath();c.clip();
   path(c,hole,'#040607','#161918');
+  if(shaft.length===hole.length){
+   for(let i=0;i<hole.length;i++){
+    const j=(i+1)%hole.length;
+    path(c,[hole[i],hole[j],shaft[j],shaft[i]],['#282923','#3e3a2f','#171e1d','#524734'][i%4],'#161b18');
+   }
+   path(c,shaft,'#020506','#0c1211');
+  }
+  c.restore();
+  // Highlighted stone lip makes the opening read as a cut through thick masonry.
+  c.save();c.lineWidth=1.5;c.strokeStyle='#b0a08288';c.beginPath();c.moveTo(...rim[0]);c.lineTo(...rim[1]);c.stroke();c.restore();
  }
 }
 
-function dungeonUncached(c,w,h,s,time){const d=s.dungeon;if(!d)return;if(d.ship){drawShip(c,w,h,s);return;}if(d.site==='elf-village'){const [dx,dy]=DIRS[d.dir];drawForest(c,w,h,s,dungeonMap(d),dx,dy);return;}const m=dungeonMap(d),ladders=dungeonLadders(d,m),cave=caveProfile(d.expedition),wall=d.royal==='sewer'?SEWER_WALL:DUNGEON_WALLS[cave?.wall??(d.site==='firedrak'?3:d.index)];const ceiling=c.createLinearGradient(0,0,0,h);ceiling.addColorStop(0,wall.ceiling);ceiling.addColorStop(.5,'#151b1b');ceiling.addColorStop(.51,d.expedition?.startsWith('planet-1')?'#c6b68e':wall.floor);ceiling.addColorStop(1,'#111816');c.fillStyle=ceiling;c.fillRect(0,0,w,h);for(let i=0;i<190;i++){const xx=(i*137.53)%w,yy=h*.52+(i*71.71)%(h*.48);c.fillStyle=d.expedition?.startsWith('planet-1')?(i%2?'#e3d1a333':'#705e3b33'):'#938f7330';c.fillRect(xx,yy,2+(i%3),1);}drawDungeonCeiling(c,w,h,wall,{phase:d.floor});if(d.royal==='sewer')drawSewerChannel(c,w,h,time);const [dx,dy]=DIRS[d.dir];const angle=Math.atan2(dy,dx),fov=Math.PI/2.6,step=2;
+function dungeonUncached(c,w,h,s,time){const d=s.dungeon;if(!d)return;if(d.ship){drawShip(c,w,h,s);return;}if(d.site==='elf-village'){const [dx,dy]=DIRS[d.dir];drawForest(c,w,h,s,dungeonMap(d),dx,dy);return;}const m=dungeonMap(d),ladders=dungeonLadders(d,m),cave=caveProfile(d.expedition),burrow=isKoboldBurrow(d),haunted=d.site===PERCIVAL_CASTLE_ID,twinkling=d.site===TWINKLESTAR_TOWER_ID,wall=d.royal==='sewer'?SEWER_WALL:DUNGEON_WALLS[twinkling?7:haunted?1:cave?.wall??(d.site==='firedrak'?3:d.index)];const ceiling=c.createLinearGradient(0,0,0,h);ceiling.addColorStop(0,wall.ceiling);ceiling.addColorStop(.5,'#151b1b');ceiling.addColorStop(.51,d.expedition?.startsWith('planet-1')?'#c6b68e':wall.floor);ceiling.addColorStop(1,'#111816');c.fillStyle=ceiling;c.fillRect(0,0,w,h);for(let i=0;i<190;i++){const xx=(i*137.53)%w,yy=h*.52+(i*71.71)%(h*.48);c.fillStyle=d.expedition?.startsWith('planet-1')?(i%2?'#e3d1a333':'#705e3b33'):'#938f7330';c.fillRect(xx,yy,2+(i%3),1);}if(!burrow)drawDungeonCeiling(c,w,h,wall,{phase:d.floor});if(d.royal==='sewer')drawSewerChannel(c,w,h,time);const [dx,dy]=DIRS[d.dir];const angle=Math.atan2(dy,dx),fov=Math.PI/2.6,step=2;
 
+ if(burrow)drawBurrowPlanes(c,w,h,d,dx,dy,fov);
  drawLadderOpenings(c,w,h,d,ladders,dx,dy,fov);
- const wallImage=c.getImageData(0,0,w,h),wallPixels=new Uint32Array(wallImage.data.buffer);
- for(let col=0;col<w;col+=step){const a=angle+Math.atan((col/w-.5)*2*Math.tan(fov/2));const vx=Math.cos(a),vy=Math.sin(a);let dist=.02,x=d.x+.5,y=d.y+.5;while(dist<18){x=d.x+.5+vx*dist;y=d.y+.5+vy*dist;if(m[Math.floor(y)]?.[Math.floor(x)]===1||m[Math.floor(y)]?.[Math.floor(x)]===undefined)break;dist+=.025;}if(dist<18){let low=Math.max(0,dist-.025),high=dist;for(let n=0;n<7;n++){const mid=(low+high)/2,mx=d.x+.5+vx*mid,my=d.y+.5+vy*mid;if(m[Math.floor(my)]?.[Math.floor(mx)]===1||m[Math.floor(my)]?.[Math.floor(mx)]===undefined)high=mid;else low=mid;}dist=high;x=d.x+.5+vx*dist;y=d.y+.5+vy*dist;}const corrected=dist*Math.cos(a-angle),height=Math.min(h*2,h*.85/corrected),top=(h-height)/2;const fracX=x-Math.floor(x),fracY=y-Math.floor(y),vertical=fracX<.04||fracX>.96,tex=vertical?fracY:fracX;const light=clamp(1-dist/11,.09,.95)*(vertical?.77:1);const detail=wallDetailKind(Math.floor(x),Math.floor(y),d.index);const barred=d.site===ROYAL_DUNGEON_ID&&!d.cellsOpen&&ROYAL_DUNGEON_CELLS.some(cell=>cell.door.x===Math.floor(x)&&cell.door.y===Math.floor(y));const mounted=ladders.find(l=>l.wallX===Math.floor(x)&&l.wallY===Math.floor(y)&&l.x===Math.floor(x-vx*.07)&&l.y===Math.floor(y-vy*.07));for(let yy=Math.max(0,top);yy<Math.min(h,top+height);yy+=2){const v=(yy-top)/height;const row=Math.floor(v*wall.rows);const mortar=(v*wall.rows)%1<.06||((tex*wall.columns+(row%2)*.5)%1)<.045;const grain=Math.sin(tex*190+v*140)*4;const wear=wall.wear===1&&(row+Math.floor(tex*9))%7===0?-9:wall.wear===2&&(tex*wall.columns)%1<.12?8:0;const base=mortar?28:78+grain+wear;let color=(255<<24)|(Math.max(0,Math.floor((base+wall.tint[2])*light))<<16)|(Math.max(0,Math.floor((base+wall.tint[1])*light))<<8)|Math.max(0,Math.floor((base+wall.tint[0])*light));if(!mounted){const material=wallMaterialPixel(cave?.wall??(d.expedition?.startsWith('planet-1')?4:d.site==='firedrak'?3:d.index),tex,v,light);if(material!==null)color=material;const ink=d.expedition?.startsWith('planet-')?alienWallInk(detail,tex,v):wallDetail(detail,tex,v,time,d.royal==='sewer'?8:d.index);if(ink)color=inkPixel(ink);if(cave){const r=Math.max(0,Math.min(255,(color&255)+cave.tint[0])),g=Math.max(0,Math.min(255,((color>>>8)&255)+cave.tint[1])),b=Math.max(0,Math.min(255,((color>>>16)&255)+cave.tint[2]));color=(255<<24)|(b<<16)|(g<<8)|r;}}if(mounted){const rail=(tex>.28&&tex<.34)||(tex>.66&&tex<.72),rung=tex>.28&&tex<.72&&(v*9)%1<.14;const arrowV=mounted.direction==='up'?.22:.78;const arrow=Math.abs(Math.abs(tex-.5)-Math.abs(v-arrowV)*1.4)<.025&&(mounted.direction==='up'?v>arrowV&&v<arrowV+.1:v<arrowV&&v>arrowV-.1);if(arrow)color=inkPixel(mounted.direction==='up'?'#a6e4ef':'#ffe1a0');else if((rail||rung)&&(mounted.direction==='up'?v<.88:v>.12))color=inkPixel(rail?'#a87b48':'#d2a56b');}if(barred){const beam=tex<.08||tex>.92||v<.07||v>.93||Math.abs(v-.48)<.025||(tex*9)%1<.19;color=inkPixel(beam?'#717675':'#141d20');}const y0=Math.max(0,Math.floor(yy)),y1=Math.min(h,y0+2),x1=Math.min(w,col+step);for(let py=y0;py<y1;py++){let offset=py*w+col;for(let px=col;px<x1;px++)wallPixels[offset++]=color;}}}
+ const wallImage=c.getImageData(0,0,w,h),wallPixels=new Uint32Array(wallImage.data.buffer),wallDepth=new Float32Array(w).fill(18);
+ for(let col=0;col<w;col+=step){const a=angle+Math.atan((col/w-.5)*2*Math.tan(fov/2));const vx=Math.cos(a),vy=Math.sin(a);let dist=.02,x=d.x+.5,y=d.y+.5;while(dist<18){x=d.x+.5+vx*dist;y=d.y+.5+vy*dist;if(m[Math.floor(y)]?.[Math.floor(x)]===1||m[Math.floor(y)]?.[Math.floor(x)]===undefined)break;dist+=.025;}if(dist<18){let low=Math.max(0,dist-.025),high=dist;for(let n=0;n<7;n++){const mid=(low+high)/2,mx=d.x+.5+vx*mid,my=d.y+.5+vy*mid;if(m[Math.floor(my)]?.[Math.floor(mx)]===1||m[Math.floor(my)]?.[Math.floor(mx)]===undefined)high=mid;else low=mid;}dist=high;x=d.x+.5+vx*dist;y=d.y+.5+vy*dist;}const corrected=dist*Math.cos(a-angle),height=Math.min(h*2,h*.85/corrected),top=(h-height)/2;for(let px=col;px<Math.min(w,col+step);px++)wallDepth[px]=corrected;const fracX=x-Math.floor(x),fracY=y-Math.floor(y),vertical=fracX<.04||fracX>.96,tex=vertical?fracY:fracX;const light=clamp(1-dist/11,.09,.95)*(vertical?.77:1);const detail=wallDetailKind(Math.floor(x),Math.floor(y),d.index);const barred=d.site===ROYAL_DUNGEON_ID&&!d.cellsOpen&&ROYAL_DUNGEON_CELLS.some(cell=>cell.door.x===Math.floor(x)&&cell.door.y===Math.floor(y));const mounted=ladders.find(l=>l.wallX===Math.floor(x)&&l.wallY===Math.floor(y)&&l.x===Math.floor(x-vx*.07)&&l.y===Math.floor(y-vy*.07));for(let yy=Math.max(0,top);yy<Math.min(h,top+height);yy+=2){const v=(yy-top)/height;const row=Math.floor(v*wall.rows);const mortar=(v*wall.rows)%1<.06||((tex*wall.columns+(row%2)*.5)%1)<.045;const grain=Math.sin(tex*190+v*140)*4;const wear=wall.wear===1&&(row+Math.floor(tex*9))%7===0?-9:wall.wear===2&&(tex*wall.columns)%1<.12?8:0;const base=mortar?28:78+grain+wear;let color=(255<<24)|(Math.max(0,Math.floor((base+wall.tint[2])*light))<<16)|(Math.max(0,Math.floor((base+wall.tint[1])*light))<<8)|Math.max(0,Math.floor((base+wall.tint[0])*light));if(burrow){color=burrowPixel('wall',vertical?y:x,v,light,((Math.floor(x)*3+Math.floor(y)*5)%4===0)&&!mounted);}else{const material=wallMaterialPixel(twinkling?7:haunted?1:cave?.wall??(d.expedition?.startsWith('planet-1')?4:d.site==='firedrak'?3:d.index),tex,v,light);if(material!==null)color=material;const ink=twinkling?twinklestarWallInk(detail,tex,v):haunted?percivalWallInk(detail,tex,v):d.expedition?.startsWith('planet-')?alienWallInk(detail,tex,v):wallDetail(detail,tex,v,time,d.royal==='sewer'?8:d.index);if(ink)color=inkPixel(ink);if(cave){const r=Math.max(0,Math.min(255,(color&255)+cave.tint[0])),g=Math.max(0,Math.min(255,((color>>>8)&255)+cave.tint[1])),b=Math.max(0,Math.min(255,((color>>>16)&255)+cave.tint[2]));color=(255<<24)|(b<<16)|(g<<8)|r;}}if(mounted){const arrowV=mounted.direction==='up'?.22:.78;const arrow=Math.abs(Math.abs(tex-.5)-Math.abs(v-arrowV)*1.4)<.025&&(mounted.direction==='up'?v>arrowV&&v<arrowV+.1:v<arrowV&&v>arrowV-.1);if(arrow)color=inkPixel(mounted.direction==='up'?'#a6e4ef':'#ffe1a0');}if(barred){const beam=tex<.08||tex>.92||v<.07||v>.93||Math.abs(v-.48)<.025||(tex*9)%1<.19;color=inkPixel(beam?'#717675':'#141d20');}const y0=Math.max(0,Math.floor(yy)),y1=Math.min(h,y0+2),x1=Math.min(w,col+step);for(let py=y0;py<y1;py++){let offset=py*w+col;for(let px=col;px<x1;px++)wallPixels[offset++]=color;}}}
  c.putImageData(wallImage,0,0);
+ drawSolidLadders(c,w,h,d,ladders,dx,dy,fov,wallDepth);
+ if(haunted)drawPercivalMist(c,w,h);
 
- const glow=c.createRadialGradient(w*.18,h*.68,5,w*.18,h*.68,w*.65);glow.addColorStop(0,d.royal==='sewer'?'#6ac9ad28':'#e5a84021');glow.addColorStop(1,'#d9a34400');c.fillStyle=glow;c.fillRect(0,0,w,h);
+ if(!burrow){const glow=c.createRadialGradient(w*.18,h*.68,5,w*.18,h*.68,w*.65);glow.addColorStop(0,haunted?'#8ac4ad18':d.royal==='sewer'?'#6ac9ad28':'#e5a84021');glow.addColorStop(1,'#d9a34400');c.fillStyle=glow;c.fillRect(0,0,w,h);}else drawBurrowDarkness(c,w,h);
 
  const here=ladders.find(l=>l.x===d.x&&l.y===d.y);if(here)label(c,here.direction==='up'?'↑ CEILING LADDER':'↓ FLOOR LADDER',w/2,52,14,here.direction==='up'?'#a6e4ef':'#ffe1a0');
 
- if(d.index===4&&!d.royal&&!d.expedition)drawFishBones(c,w,h,d,m,dx,dy);
+ if(!burrow&&d.index===4&&!d.royal&&!d.expedition)drawFishBones(c,w,h,d,m,dx,dy);
 
  drawDungeonChests(c,w,h,s,m,dx,dy);
 

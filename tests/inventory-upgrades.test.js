@@ -34,6 +34,7 @@ test('pack highlighting and its accessible label update after equipment changes'
   state.bag.push('common-sword-1-v2','rare-armor-1','rusty-sword','helm-thinkiness');
   const button=(html,id)=>html.match(new RegExp('<button[^>]+data-bag-item="'+id+'"[^>]*>'))?.[0];
   const before=inventoryView(state);
+  assert.match(before, /data-bag-item="common-sword-1-v2"[^>]*>[\s\S]*?class="upgrade-star" aria-hidden="true"/);
   for(const id of ['common-sword-1-v2','rare-armor-1']){
     assert.match(button(before,id),/class="bag-cell gear-upgrade"/);
     assert.match(button(before,id),/aria-label="[^"]*Better than equipped/);
@@ -45,6 +46,7 @@ test('pack highlighting and its accessible label update after equipment changes'
   const after=inventoryView(upgraded);
   assert.equal(button(after,'common-sword-1-v2'),undefined);
   assert.equal(button(after,'rare-armor-1'),undefined);
+  assert.doesNotMatch(after, /class="upgrade-star"/);
   assert.doesNotMatch(button(after,'road-sword'),/gear-upgrade|Better than equipped/);
   assert.doesNotMatch(button(after,'travel-armor'),/gear-upgrade|Better than equipped/);
 });

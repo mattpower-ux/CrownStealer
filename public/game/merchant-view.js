@@ -1,6 +1,6 @@
 import { TOWNS } from './content.js';
 import { itemArt, itemById, merchantBuyPrice, merchantSellPrice } from './items.js';
-import { MERCHANT_CATEGORY_LABELS, canBuyMerchantSupply, isMerchantResaleItem, merchantCategory } from './merchant-catalog.js';
+import { MERCHANT_CATEGORY_LABELS, canBuyMerchantSupply, canMerchantBuy, compareMerchantItems, merchantCategory } from './merchant-catalog.js';
 import { stockForMerchant } from './merchant-inventory.js';
 import { merchantItemRemaining } from './merchant-supplies.js';
 import { MOUNTS } from './mounts.js';
@@ -11,13 +11,6 @@ const gold = value => value.toLocaleString('en-US') + ' gold';
 const escape = value => String(value ?? '').replace(/[&<>"']/g, char => (
   { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]
 ));
-
-const categoryArt = {
-  'weapons-armor': { kind: 'weapon', shape: 'sword' },
-  'magic-expendables': { kind: 'scroll' },
-  'potions-poisons': { kind: 'potion' },
-  specialty: { kind: 'tool', shape: 'pouch' },
-};
 
 function supplies(state, place) {
   const entries = [
@@ -68,14 +61,14 @@ function buyEntries(state, place) {
       action: { type: 'buyItem', id },
     };
   });
-  return [...supplies(state, place), ...stock];
+  return [...supplies(state, place), ...stock].sort((a, b) => compareMerchantItems(a.item, b.item));
 }
 
-function sellEntries(state) {
+function sellEntries(state, place) {
   const counts = new Map();
   for (const id of state.bag) counts.set(id, (counts.get(id) || 0) + 1);
   return Array.from(counts, ([id, available]) => ({ item: itemById(id, state), available }))
-    .filter(({ item }) => isMerchantResaleItem(item))
+    .filter(({ item }) => canMerchantBuy(place, item))
     .map(({ item, available }) => ({
       item,
       available,
@@ -84,7 +77,7 @@ function sellEntries(state) {
       bulk: true,
       blocked: equipmentKeys.some(key => state[key] === item.id) ? 'Unequip to sell' : '',
       label: 'Sell',
-    }));
+    })).sort((a, b) => compareMerchantItems(a.item, b.item));
 }
 
 function rowMarkup(entry, side, index) {
@@ -101,19 +94,14 @@ export function renderMerchantView(body, state, place, dispatch) {
   const key = state.location + '/' + place.id;
   const sameShop = previous?.dataset.shop === key;
   const query = sameShop ? previous.querySelector('.trade-search input').value : '';
-  let category = sameShop ? previous.dataset.category : 'all';
   const oldQuantity = sameShop ? previous.querySelector('.trade-quantity input')?.value : null;
   const scroll = sameShop ? [...previous.querySelectorAll('.trade-list')].map(list => list.scrollTop) : [];
   const previousButton = sameShop ? document.activeElement?.closest('.trade-execute') : null;
   const previousTrade = previousButton?.dataset.tradeKey;
 
   const buy = buyEntries(state, place);
-  const sell = sellEntries(state);
+  const sell = sellEntries(state, place);
   const all = [...buy, ...sell];
-  const categories = new Set(all.map(entry => merchantCategory(entry.item)));
-  const selectCategory = (id, label) => '<button type="button" data-trade-category="' + id + '">' +
-    (categoryArt[id] ? '<span aria-hidden="true">' + itemArt(categoryArt[id]) + '</span>' : '') + label + '</button>';
-  if (!categories.has(category)) category = 'all';
 
   const index = Math.max(0, TOWNS.findIndex(town => town.id === state.location));
   const proprietor = place.id === 'shop' ? MERCHANTS[index] : null;
@@ -121,14 +109,12 @@ export function renderMerchantView(body, state, place, dispatch) {
     { id: 'buy', name: 'Buy', entries: buy, offset: 0, empty: 'There are no matching items for sale.' },
     { id: 'sell', name: 'Sell', entries: sell, offset: buy.length, empty: sell.length ? 'There are no matching items to sell.' : 'You have no items this merchant buys.' },
   ];
-  body.innerHTML = '<div class="trade-market" data-shop="' + escape(key) + '" data-category="' + category + '">' +
+  body.innerHTML = '<div class="trade-market" data-shop="' + escape(key) + '">' +
     '<div class="trade-summary">' +
     (proprietor ? '<span class="trade-proprietor"><span class="merchant-portrait" aria-hidden="true" style="background-position:' + index % 4 * 100 / 3 + '% ' + Math.floor(index / 4) * 50 + '%"></span>' + escape(proprietor.name) + '</span>' : '') +
     '<span class="trade-purse">Your gold <strong>' + state.gold.toLocaleString('en-US') + '</strong></span></div>' +
     '<div class="trade-tools"><label class="trade-search">Search items<input type="search" aria-label="Search trade items" placeholder="Name or category" value="' + escape(query) + '"></label>' +
     (all.some(entry => entry.bulk) ? '<label class="trade-quantity">Quantity<input type="number" min="1" max="99" value="' + escape(oldQuantity || 1) + '"></label>' : '') + '</div>' +
-    '<div class="trade-categories" role="group" aria-label="Item categories">' +
-    selectCategory('all', 'All items') + Object.entries(MERCHANT_CATEGORY_LABELS).filter(([id]) => categories.has(id)).map(([id, name]) => selectCategory(id, name)).join('') + '</div>' +
     '<div class="trade-columns">' + columns.map(column =>
       '<section class="trade-column" aria-labelledby="trade-heading-' + column.id + '">' +
       '<h3 id="trade-heading-' + column.id + '">' + column.name + '</h3>' +
@@ -144,7 +130,6 @@ export function renderMerchantView(body, state, place, dispatch) {
   const detail = market.querySelector('.merchant-detail');
   const lists = [...market.querySelectorAll('.trade-list')];
   const rows = [...market.querySelectorAll('.trade-row')];
-  const categoryButtons = [...market.querySelectorAll('[data-trade-category]')];
 
   function requestedQuantity(entry) {
     if (!entry.bulk) return 1;
@@ -154,14 +139,11 @@ export function renderMerchantView(body, state, place, dispatch) {
 
   function refresh() {
     const text = search.value.trim().toLocaleLowerCase();
-    market.dataset.category = category;
-    for (const control of categoryButtons) control.setAttribute('aria-pressed', control.dataset.tradeCategory === category);
     for (const row of rows) {
       const entry = all[Number(row.dataset.tradeIndex)];
       const { item, action, available, price, label = 'Buy' } = entry;
       const group = merchantCategory(item);
-      row.hidden = (category !== 'all' && category !== group) ||
-        ![item.name, MERCHANT_CATEGORY_LABELS[group]].some(value => value?.toLocaleLowerCase().includes(text));
+      row.hidden = ![item.name, MERCHANT_CATEGORY_LABELS[group]].some(value => value?.toLocaleLowerCase().includes(text));
       const count = requestedQuantity(entry);
       const total = price === null || count === null ? price : price * count;
       const selling = action.type === 'sellItem';
@@ -178,6 +160,10 @@ export function renderMerchantView(body, state, place, dispatch) {
       const status = row.querySelector('.trade-item small');
       if (unavailable && unavailable !== 'Sold out') status.textContent = unavailable;
       else status.textContent = Number.isFinite(available) ? (selling ? 'In bag ' : 'Stock ') + available : '';
+      if (item.kind === 'weapon' && item.damage) {
+        const bonus = (item.elementDamage || 0) + (item.stormDamage || 0);
+        status.textContent += ' · ' + item.damage.join('–') + ' damage' + (bonus ? ' + ' + bonus + ' magic' : '');
+      }
     }
     for (const list of lists) {
       list.hidden = !Array.from(list.children).some(row => !row.hidden);
@@ -202,10 +188,6 @@ export function renderMerchantView(body, state, place, dispatch) {
     };
   }
 
-  for (const control of categoryButtons) control.onclick = () => {
-    category = control.dataset.tradeCategory;
-    refresh();
-  };
   search.oninput = refresh;
   if (quantity) quantity.oninput = refresh;
   const dismount = market.querySelector('.trade-dismount');

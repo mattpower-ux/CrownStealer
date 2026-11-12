@@ -43,6 +43,19 @@ export function minorDungeonMap(d) {
     carve(fromX,fromY,x,fromY);
     carve(x,fromY,x,y);
   }
+  if(site.kind==='koboldCave'){
+    // Expand around the old paths rather than replacing them: an adventurer saved
+    // anywhere in the earlier burrow still loads onto connected, walkable ground.
+    // Overlapping rounded chambers create wide, short necks instead of a maze.
+    const chambers=[
+      [3.3,3.1,3.25,2.8+offset*.15],
+      [6.6+offset*.35,7.1,3.8,3.8],
+      [10.8,10.9,3.2+offset*.1,3.3],
+    ];
+    for(let y=1;y<=13;y++)for(let x=1;x<=13;x++){
+      if(chambers.some(([cx,cy,rx,ry])=>((x-cx)/rx)**2+((y-cy)/ry)**2<=1))carve(x,y,x,y);
+    }
+  }
   map[1][1]=3;
   map[13][13]=2;
   return map;

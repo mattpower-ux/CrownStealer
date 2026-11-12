@@ -14,7 +14,9 @@ export const TOWN_PLACES=[
 ];
 export function townPosition(s){return s.townPosition||{x:6,y:11};}
 export function townPlace(s){const p=townPosition(s);return townPlaces(s).find(b=>b.x===p.x&&b.y===p.y);}
-export function townWalkable(x,y,s=null){if(x===6&&y===12)return true;if(x<1||x>11||y<1||y>11)return false;return !townPlaces(s).some(b=>b.bw&&x>=b.bx&&x<b.bx+b.bw&&y>=b.by&&y<b.by+b.bh);}
+// The painted northeast bridge crosses Mothbridge's east wall on row two.
+export function townExitAt(x,y,s=null){return x===6&&y===12||s?.location==='mothbridge'&&x===12&&y===2;}
+export function townWalkable(x,y,s=null){if(townExitAt(x,y,s))return true;if(x<1||x>11||y<1||y>11)return false;return !townPlaces(s).some(b=>b.bw&&x>=b.bx&&x<b.bx+b.bw&&y>=b.by&&y<b.by+b.bh);}
 
 function placeAt(place,footprint){
  if(!footprint)return {...place};

@@ -7,6 +7,7 @@ import { joystickIntent, joystickStepDelay } from '../public/game/touch-joystick
 
 test('the Atlas groups all twelve land branches under the mainland gates and excludes planets', () => {
   const s = createGame();
+  s.flags.visitedLands = [0,1,2,3,...Array.from({length:12},(_,i)=>'wild-'+i)];
   const regions = atlasRegions(s);
   assert.equal(regions.length, 4);
   assert.equal(regions.flatMap(region => region.branches).length, 12);
@@ -20,8 +21,9 @@ test('the Atlas groups all twelve land branches under the mainland gates and exc
   assert.doesNotMatch(html, /Aurelia|Mycelion|Violet Ice/);
   assert.match(html, /Whispering Barrens/);
   assert.match(html, /The Bottomless Pit/);
-  assert.match(html, /The Putrid Palace \(72, 76\)/);
-  assert.match(html, /East gate to The Cinder Dominion/);
+  assert.match(html, /The Putrid Palace/);
+  assert.match(html, /data-atlas-world/);
+  assert.doesNotMatch(html, /atlas-regions|<details/);
 });
 
 test('the Putrid Palace appears in the Atlas without adding a relic requirement to the east gate', () => {
@@ -49,11 +51,12 @@ test('the Atlas distinguishes reachable gates and the active branch', () => {
 
 test('the Atlas requires a boat and both relics for sailing passages unless a dragon is equipped', () => {
   const s = createGame();
+  s.flags.visitedLands = [0,3,'wild-10','wild-11'];
   const sailing = () => atlasRegions(s)[3].branches.filter(branch => branch.gate.boatOnly);
   assert.equal(sailing().length, 2);
   s.flags.rowboatReady = true;
   assert.ok(sailing().every(branch => !branch.open));
-  assert.match(atlasView(s), /Sailing passage · Sealed · Boat and both relics required/);
+  assert.ok(sailing().every(branch => branch.discovered));
   s.relics.push(...atlasRegions(s)[3].dungeons.map(dungeon => dungeon.id));
   assert.ok(sailing().every(branch => branch.open));
   delete s.flags.rowboatReady;
@@ -62,7 +65,6 @@ test('the Atlas requires a boat and both relics for sailing passages unless a dr
   s.flags.mount = 'dragon';
   assert.ok(sailing().every(branch => branch.open));
   assert.equal(atlasRegions(s)[0].east.open, true);
-  assert.match(atlasView(s), /Sailing passage · Open/);
   s.flags.dragonCaptured = true;
   assert.ok(sailing().every(branch => !branch.open));
   assert.equal(atlasRegions(s)[0].east.open, false);

@@ -10,6 +10,37 @@ function shop(town='mothbridge',id='shop'){
  const s=createGame();Object.assign(s,{mode:'town',location:town,gold:100000});
  const p=townPlaces(s).find(p=>p.id===id);s.townPosition={x:p.x,y:p.y};return s;
 }
+
+test('a present traveling merchant trades mixed goods with persistent stock and rejects remote trades',()=>{
+ let s=createGame();Object.assign(s,{region:2,level:18,gold:100000,x:24,y:24});
+ s.flags.travelMerchant={x:s.x,y:s.y};
+ const place={id:'travel-merchant',merchant:'traveling'};
+ const stock=stockForMerchant(s,place);
+ for(const kind of ['weapon','potion','scroll','ring'])assert.ok(stock.some(id=>itemById(id,s).kind===kind),kind);
+ const weapon=stock.find(id=>itemById(id,s).kind==='weapon');
+ s=act(s,{type:'buyItem',id:weapon,merchant:place.id});assert.ok(s.bag.includes(weapon));
+ s=loadGame(saveGame(s));const before=s.gold;
+ s=act(s,{type:'buyItem',id:weapon,merchant:place.id});assert.equal(s.gold,before);
+ for(const id of [weapon,'scroll-return','common-ring-1','weapon-poison-1']){
+   if(!s.bag.includes(id))s.bag.push(id);
+   const gold=s.gold;s=act(s,{type:'sellItem',id,merchant:place.id});
+   assert.ok(s.gold>gold,id);assert.equal(s.bag.includes(id),false,id);
+ }
+ const cure=act(s,{type:'buyCureAll'});assert.ok(cure.bag.includes('potion-cure-all'));assert.equal(cure.flags.travelMerchant.sold,true);
+ for(const edit of [v=>v.x++,v=>delete v.flags.travelMerchant,v=>v.mode='battle']){
+   const away=structuredClone(s);edit(away);away.bag.push('common-ring-1');
+   assert.equal(act(away,{type:'sellItem',id:'common-ring-1',merchant:place.id}).gold,away.gold);
+ }
+});
+
+test('blacksmith rejects unrelated bag goods while their specialist buys them',()=>{
+ const smith=shop();smith.bag.push('weapon-poison-1');
+ const rejected=act(smith,{type:'sellItem',id:'weapon-poison-1'});
+ assert.equal(rejected.gold,smith.gold);assert.deepEqual(rejected.bag,smith.bag);
+ const alchemist=shop('gallows-fair');alchemist.bag.push('weapon-poison-1');
+ const sold=act(alchemist,{type:'sellItem',id:'weapon-poison-1'});
+ assert.ok(sold.gold>alchemist.gold);assert.equal(sold.bag.includes('weapon-poison-1'),false);
+});
 test('trading requires the actual storefront and rejects another merchant category',()=>{
  const s=shop(),id=stockForMerchant(s,merchantFor(s.location)).find(id=>itemById(id,s).kind==='weapon');
  const wrong=act(s,{type:'buyItem',id:'weapon-poison-1'});assert.equal(wrong.gold,s.gold);

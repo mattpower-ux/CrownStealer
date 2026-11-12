@@ -64,12 +64,36 @@ export function isMerchantResaleItem(item) {
 export function canMerchantSell(merchant, item) {
   if (!isMerchantResaleItem(item)) return false;
   const type = typeof merchant === 'string' ? merchant : merchant?.merchant;
+  if (type === 'traveling') return true;
   if (isGizmo(item)) return type === 'gizmo';
   const category = merchantCategory(item);
   if (type === 'blacksmith') return category === 'weapons-armor';
   if (type === 'alchemist') return category === 'potions-poisons';
   if (type === 'wizard') return category === 'magic-expendables' || category === 'specialty';
   return false;
+}
+
+// Storefronts buy the same categories they sell; traveling traders are generalists.
+export function canMerchantBuy(merchant, item) {
+  return canMerchantSell(merchant, item);
+}
+
+const rarityRank = { common: 0, rare: 1, epic: 2, legendary: 3 };
+const weaponDamage = item => Array.isArray(item.damage)
+  ? (item.damage[0] + item.damage[1]) / 2 + (item.elementDamage || 0) + (item.stormDamage || 0)
+  : -1;
+
+export function compareMerchantItems(a, b) {
+  // Keep actual weapons together, strongest first; upgrades without damage follow.
+  const aWeapon = a.kind === 'weapon', bWeapon = b.kind === 'weapon';
+  if (aWeapon !== bWeapon) return aWeapon ? -1 : 1;
+  if (!aWeapon) return 0;
+  return weaponDamage(b) - weaponDamage(a) ||
+    (b.toHit || 0) - (a.toHit || 0) ||
+    (b.freezeChance || 0) - (a.freezeChance || 0) ||
+    (b.lifeSteal || 0) - (a.lifeSteal || 0) ||
+    (rarityRank[b.rarity] ?? -1) - (rarityRank[a.rarity] ?? -1) ||
+    String(a.id).localeCompare(String(b.id), 'en');
 }
 
 export function merchantStockFor(merchant, ids, itemById) {
