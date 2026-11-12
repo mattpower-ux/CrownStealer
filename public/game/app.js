@@ -11,7 +11,8 @@ import {GAG_ITEMS,GAG_KEYS,gagActive,pigFaceSvg,HELIUM_REFUSAL} from './gag-poti
 import {ladderPrompt} from './dungeon-ladders.js';
 import {BALROG_ID,BALROG_WHIP,BOTTOMLESS_PIT,ROYAL_BALROG_TRIAL,pitBottomAction} from './bottomless-pit.js';
 import {PUTRID_PALACE,WANG_ID,WANG_TRIAL_DIALOGUE} from './royal-trials.js';
-import {castleLayout,castleChestAt,castleFineFor,castleRulerAt} from './castle-interiors.js';
+import {castleLayout,castleChestAt,castleFineFor,castleRulerAt,castleGuards,castleInteractionAt,castleInteractionsAt,castleInteractionActions} from './castle-interiors.js';
+import {ROYAL_DUNGEON_ID,royalDungeonActions,royalDungeonAt} from './royal-dungeon.js';
 import {ROADSIDE_CRYPT} from './roadside-crypt.js';
 import {minorSiteDefinition} from './minor-sites.js';
 import {innView,innkeeperFor} from './inn.js';
@@ -42,7 +43,7 @@ import {WEAPONS,UNARMED,itemById,itemArt,merchantBuyPrice,weaponAccuracy} from '
 import {REGIONS,TOWNS,DUNGEONS,CHAPTERS,LORE,ENDINGS} from './content.js';
 import {createGame,createRoyalGame,act,pointAt,nextObjective,saveGame,loadGame,dungeonNavigation,dungeonName,dungeonMap,wildernessStepDelay} from './engine.js';
 import {undead} from './spell-items.js';
-import {render,paintMonster,worldViewport,castleViewport,castlePointVisible} from './render.js';
+import {render,paintMonster,worldViewport,castleViewport,castlePointVisible,renderCastleOverview,castleGovernorPortrait,castleGuardPortrait} from './render.js';
 import {AudioDirector} from './audio.js';
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const developerMode=!window.Android&&new URLSearchParams(location.search).get('developer')==='1';
@@ -87,7 +88,7 @@ let oddJobId=null;
 function start(s){oddJobId=null;clockLast=performance.now();displayedDungeonLevel=null;finishCombat();cancelAnimationFrame(frame);state=s;$('title-screen').hidden=true;$('game').hidden=false;update();audio.unlock().then(()=>sceneMusic());frame=requestAnimationFrame(draw);if(state.flags.boatReveal)openPanel('boatReveal');else if(state.flags.rescuePending)openPanel('rescue');else if(state.flags.gagReveal)openPanel('gagReveal');else if(state.flags.peacefulEncounter)openPanel('peaceful');else if(state.flags.travelMerchant)openPanel('travelMerchant');else if(state.mode==='town'&&state.flags.gossipGuardTown)openPanel('gossipGuard');else if(state.flags.borderTauntPending)openPanel('borderTaunt');else if(state.flags.guardTauntPending)openPanel('guardTaunt');else if(state.flags.royalQuest==='opening')openPanel('royalIntro');else if(state.mode==='ending')openPanel('ending');else if(state.casino?.active)openPanel('casino');else showLoot();}
 $('new-game').onclick=()=>{if(!selectedGender){toast('Choose HIM, HER, or SHIM first.');return;}if(hasSave()){openPanel('new');return;}beginNewAdventurer();};
 $('continue-game').onclick=()=>{try{start(loadGame(localStorage.getItem(SAVE)));}catch(e){toast('Cannot read save: '+e.message);}};
-$('home').onclick=()=>{flushClock(false);clearTimeout(levelBannerTimer);$('level-banner').hidden=true;displayedDungeonLevel=null;finishCombat();persist();$('game').hidden=true;$('title-screen').hidden=false;refreshSlotPicker();audio.setScene('title');cancelAnimationFrame(frame);};
+$('home').onclick=()=>{audio.stopRoyalDungeonVoice();flushClock(false);clearTimeout(levelBannerTimer);$('level-banner').hidden=true;displayedDungeonLevel=null;finishCombat();persist();$('game').hidden=true;$('title-screen').hidden=false;refreshSlotPicker();audio.setScene('title');cancelAnimationFrame(frame);};
 $('title-music').onclick=()=>{audio.setScene('title');audio.unlock();};
 $('title-settings').onclick=()=>openPanel('settings');
 function sceneMusic(){
@@ -103,7 +104,7 @@ function showEntryPrompt(){if(state.castle)return;const p=state.mode==='town'?to
 document.getElementById('entry-yea').onclick=()=>{entryPrompt.hidden=true;dispatch({type:'enter'});};
 document.getElementById('entry-nay').onclick=()=>{entryPrompt.hidden=true;audio.unlock().then(()=>audio.effect('whinny'));};
 const ladderPopup=document.createElement('section');ladderPopup.id='ladder-prompt';ladderPopup.hidden=true;ladderPopup.setAttribute('role','dialog');ladderPopup.setAttribute('aria-labelledby','ladder-question');ladderPopup.innerHTML='<h2 id="ladder-question">You Found a Ladder</h2><p id="ladder-direction"></p><div><button id="ladder-down" class="primary">Go Down</button><button id="ladder-up">Ascend/Leave</button></div>';document.body.append(ladderPopup);
-function showLadderPrompt(){const ladder=state?.mode==='dungeon'&&!activePanel&&!combatView?ladderPrompt(state,dungeonMap(state.dungeon)):null;ladderPopup.hidden=!ladder;if(!ladder)return;const sewer=state.dungeon.royal==='sewer';
+function showLadderPrompt(){const ladder=state?.mode==='dungeon'&&state.dungeon.site!==ROYAL_DUNGEON_ID&&!activePanel&&!combatView?ladderPrompt(state,dungeonMap(state.dungeon)):null;ladderPopup.hidden=!ladder;if(!ladder)return;const sewer=state.dungeon.royal==='sewer';
  $('ladder-question').textContent=sewer?'Galen’s Cell':'You Found a Ladder';
  $('ladder-direction').textContent=sewer?(state.flags.galenFreed?'The wizard points to the loose stones.':'An old wizard waits behind the bars.'):ladder.direction==='down'?'This ladder leads through the floor.':'This ladder leads through the ceiling.';
  $('ladder-up').textContent=sewer?(state.flags.galenFreed?'Push loose stones':'Free Galen'):'Ascend/Leave';$('ladder-down').disabled=ladder.direction!=='down';$('ladder-up').disabled=ladder.direction!=='up';}
@@ -122,10 +123,24 @@ function launchPlanetFlight(action){
  requestAnimationFrame(frame);
 }
 let completingFlight=false;
-function dispatch(a){if(!state||combatView||shipInFlight)return;if(a.type==='mapTurn'){state.flags.mapFacing=((state.flags.mapFacing||0)+a.delta+4)%4;persist();toast('Facing '+['north','east','south','west'][state.flags.mapFacing]);return;}if(a.type==='mapStep'){const dir=state.castle?0:state.flags.mapFacing||0;let dx=a.dx,dy=a.dy;for(let i=0;i<dir;i++)[dx,dy]=[-dy,dx];a={type:'move',dx,dy};}if(a.type==='navigatePlanet'&&!completingFlight&&state.mode==='dungeon'&&state.dungeon?.ship&&Math.abs(state.dungeon.x-7)+Math.abs(state.dungeon.y-5)<=7&&Number.isInteger(a.planet)&&a.planet>=0&&a.planet<3){completingFlight=true;launchPlanetFlight(a);return;}completingFlight=false;flushClock(false);entryPrompt.hidden=true;ladderPopup.hidden=true;if(state.mode==='world'&&a.type==='enter'&&pointAt(state)?.kind==='teleporter'){openPanel('crystalTravel');return;}if(state.mode==='town'&&a.type==='enter'){interactTown();return;}const before=state,events=[];state=act(state,a,events,developerMode?previewRules:{});const winkShot=a.type==='casinoShoot'&&state.casino?.game==='tiddlywinks'&&state.casino.shots>before.casino?.shots;const winkResult=winkShot&&state.casino.resultId&&state.casino.resultId!==before.casino?.resultId?state.casino:null;persist();if(['crystalTravel','dungeonElevator'].includes(a.type)&&state.bag.length<before.bag.length)closePanel();if(state.log.at(-1)!==before.log.at(-1)&&/This place looks eerily familiar, and empty.|Someone was here before you/.test(state.log.at(-1)))toast(state.log.at(-1));if(isHal(before)||isHal(state)||state.flags.halOutcome||a.type==='halAcknowledge'){update();sceneMusic();if(state.flags.halOutcome)openPanel('halOutcome');else if(isHal(state))openPanel('halChallenge');else{if(['halChallenge','halOutcome'].includes(activePanel))closePanel();if(before.enemy?.speciesId==='space-hal'&&state.flags['expedition:'+before.dungeon?.expedition])showGoldLoot(before.enemy.gold,state.gold);else showLoot();}return;}if(a.type==='rest')innMorning=state.flags.innStayCount!==before.flags.innStayCount;if(state.dungeon?.royal==='cell'&&before.dungeon?.royal!=='cell'){try{localStorage.setItem(CHECKPOINT+'-royal',saveGame(state));toast('Royal dungeon checkpoint saved automatically.');}catch(e){toast('Royal checkpoint could not be saved: '+e.message);}}if(a.type==='useItem'&&!state.bag.includes(a.id))inventorySelection=null;if(a.type==='useItem'&&(['scroll-find-secrets','scroll-vomit'].includes(a.id)||itemById(a.id,before)?.attributeEffect)&&state.log.at(-1)!==before.log.at(-1))toast(state.log.at(-1));if(a.type==='equip')inventorySelection={id:a.id,source:'slot',slot:a.slot||(state.equippedRing2===a.id?'ring2':itemById(a.id,state)?.kind)};if(a.type==='unequip')inventorySelection={id:before[gearKey(a.slot)],source:'bag'};if(state.casino?.game==='blackjack'&&['gamble','casinoHit','casinoDouble','casinoStand'].includes(a.type)&&(a.type==='gamble'?!before.casino?.active&&state.gold<before.gold||state.casino.resultId!==before.casino?.resultId:before.casino?.active&&(state.casino.hand.length!==before.casino.hand.length||state.casino.dealer.length!==before.casino.dealer.length)))audio.unlock().then(()=>audio.effect('cards'));if(!winkShot&&state.casino?.resultId&&state.casino.resultId!==before.casino?.resultId)showCasinoResult(state.casino);const casinoWin=state.casino?.won&&state.casino.resultId!==before.casino?.resultId;if(casinoWin&&!winkShot){dealerReactionUntil=performance.now()+4000;clearTimeout(dealerReactionTimer);dealerReactionTimer=setTimeout(()=>{document.querySelector('.dealer-portrait')?.classList.remove('is-annoyed');document.querySelector('.casino-win')?.remove();},4000);}if(before.mode==='dungeon'&&['forward','back','strafe'].includes(a.type)&&state.mode==='dungeon'&&state.turns===before.turns)toast(state.equippedBoots==='snowshoes'&&state.flags.snowshoeStep===1?'Snowshoes: one square takes two moves off snow.':'A wall blocks this direction. Use Q/E or the curved buttons to turn.');if(before.mode==='battle'&&events.length){if(activePanel)closePanel();persist();playCombat(before,events);return;}const hurt=state.hp<before.hp,firstContact=before.mode!=='battle'&&state.mode==='battle'&&!state.enemy.boss&&!state.enemy.guard;const unlocked=audio.unlock();if(casinoWin&&!winkShot){unlocked.then(()=>{if(activePanel==='casino'&&!document.hidden)audio.effect('applause');});}if(firstContact){const contact=state;unlocked.then(()=>{if(state===contact&&!document.hidden)audio.effect(/\b(?:wolf|wolves|warg|wargs)\b/i.test(contact.enemy.name)?'wolfEncounter':'encounter');});}else if(a.type==='useItem'&&a.id==='scroll-vomit'&&state.bag.filter(id=>id===a.id).length<before.bag.filter(id=>id===a.id).length)audio.effect('vomit');else if(a.type==='attack')audio.effect('hit');else if(hurt)audio.effect('hurt');else if(a.type==='heal')audio.effect('magic');else if(state.gold>before.gold&&!winkShot)audio.effect('coin');else if(state.mode!==before.mode)audio.effect('door');else if(['move','forward','back','strafe'].includes(a.type)&&state.turns>before.turns)audio.effect('step');else audio.effect('click');if(activePanel&&(before.mode!==state.mode&&!(activePanel==='casino'&&winkShot)||a.type==='enterCastle'&&state.castle&&!before.castle))closePanel();if(before.mode==='town'&&state.mode==='world'&&state.gold===0)toast('Being escorted out of the town. Return with some gold.');update();persist();sceneMusic();if(state.mode==='ending'&&before.mode!=='ending')openPanel('ending');if(activePanel==='royalIntro'&&state.flags.royalQuest==='opening')openPanel('royalIntro');else if(activePanel==='casino')openPanel('casino',{winkShot,winkResult});else if(['shop','quests','court','inventory','inn','talk','potions','spells'].includes(activePanel))openPanel(activePanel);if(activePanel==='fortune'&&['sageRemoveHelm','sageBuyIntelligence'].includes(a.type)){
+function dispatch(a){if(!state||combatView||shipInFlight)return;if(a.type==='inspectCastle'){inspectCastle(a.id);return;}if(a.type==='mapTurn'){state.flags.mapFacing=((state.flags.mapFacing||0)+a.delta+4)%4;persist();toast('Facing '+['north','east','south','west'][state.flags.mapFacing]);return;}if(a.type==='mapStep'){const dir=state.castle?0:state.flags.mapFacing||0;let dx=a.dx,dy=a.dy;for(let i=0;i<dir;i++)[dx,dy]=[-dy,dx];a={type:'move',dx,dy};}if(a.type==='navigatePlanet'&&!completingFlight&&state.mode==='dungeon'&&state.dungeon?.ship&&Math.abs(state.dungeon.x-7)+Math.abs(state.dungeon.y-5)<=7&&Number.isInteger(a.planet)&&a.planet>=0&&a.planet<3){completingFlight=true;launchPlanetFlight(a);return;}completingFlight=false;flushClock(false);entryPrompt.hidden=true;ladderPopup.hidden=true;if(state.mode==='world'&&a.type==='enter'&&pointAt(state)?.kind==='teleporter'){openPanel('crystalTravel');return;}if(state.mode==='town'&&a.type==='enter'){interactTown();return;}const before=state,events=[];state=act(state,a,events,developerMode?previewRules:{});const castleMove=a.type==='move'&&!!before.castle;if(castleMove)playCastleFootsteps(before,state);if(before.dungeon?.site===ROYAL_DUNGEON_ID&&state.dungeon?.site!==ROYAL_DUNGEON_ID&&before.mode!=='battle')audio.stopRoyalDungeonVoice();const winkShot=a.type==='casinoShoot'&&state.casino?.game==='tiddlywinks'&&state.casino.shots>before.casino?.shots;const winkResult=winkShot&&state.casino.resultId&&state.casino.resultId!==before.casino?.resultId?state.casino:null;persist();if(['crystalTravel','dungeonElevator'].includes(a.type)&&state.bag.length<before.bag.length)closePanel();if(state.log.at(-1)!==before.log.at(-1)&&/This place looks eerily familiar, and empty.|Someone was here before you/.test(state.log.at(-1)))toast(state.log.at(-1));if(isHal(before)||isHal(state)||state.flags.halOutcome||a.type==='halAcknowledge'){update();sceneMusic();if(state.flags.halOutcome)openPanel('halOutcome');else if(isHal(state))openPanel('halChallenge');else{if(['halChallenge','halOutcome'].includes(activePanel))closePanel();if(before.enemy?.speciesId==='space-hal'&&state.flags['expedition:'+before.dungeon?.expedition])showGoldLoot(before.enemy.gold,state.gold);else showLoot();}return;}if(a.type==='rest')innMorning=state.flags.innStayCount!==before.flags.innStayCount;if(state.dungeon?.royal==='cell'&&before.dungeon?.royal!=='cell'){try{localStorage.setItem(CHECKPOINT+'-royal',saveGame(state));toast('Royal dungeon checkpoint saved automatically.');}catch(e){toast('Royal checkpoint could not be saved: '+e.message);}}if(a.type==='useItem'&&!state.bag.includes(a.id))inventorySelection=null;if(a.type==='useItem'&&(['scroll-find-secrets','scroll-vomit'].includes(a.id)||itemById(a.id,before)?.attributeEffect)&&state.log.at(-1)!==before.log.at(-1))toast(state.log.at(-1));if(a.type==='equip')inventorySelection={id:a.id,source:'slot',slot:a.slot||(state.equippedRing2===a.id?'ring2':itemById(a.id,state)?.kind)};if(a.type==='unequip')inventorySelection={id:before[gearKey(a.slot)],source:'bag'};if(state.casino?.game==='blackjack'&&['gamble','casinoHit','casinoDouble','casinoStand'].includes(a.type)&&(a.type==='gamble'?!before.casino?.active&&state.gold<before.gold||state.casino.resultId!==before.casino?.resultId:before.casino?.active&&(state.casino.hand.length!==before.casino.hand.length||state.casino.dealer.length!==before.casino.dealer.length)))audio.unlock().then(()=>audio.effect('cards'));if(!winkShot&&state.casino?.resultId&&state.casino.resultId!==before.casino?.resultId)showCasinoResult(state.casino);const casinoWin=state.casino?.won&&state.casino.resultId!==before.casino?.resultId;if(casinoWin&&!winkShot){dealerReactionUntil=performance.now()+4000;clearTimeout(dealerReactionTimer);dealerReactionTimer=setTimeout(()=>{document.querySelector('.dealer-portrait')?.classList.remove('is-annoyed');document.querySelector('.casino-win')?.remove();},4000);}if(before.mode==='dungeon'&&['forward','back','strafe'].includes(a.type)&&state.mode==='dungeon'&&state.turns===before.turns)toast(state.equippedBoots==='snowshoes'&&state.flags.snowshoeStep===1?'Snowshoes: one square takes two moves off snow.':'A wall blocks this direction. Use Q/E or the curved buttons to turn.');const approach=events.find(event=>event.kind==='castleGuardApproach');if(before.mode==='battle'&&events.length){if(activePanel)closePanel();persist();playCombat(before,events.filter(event=>event!==approach),approach);return;}if(approach){if(activePanel)closePanel();playCastleGuardApproach(approach);return;}const hurt=state.hp<before.hp,firstContact=before.mode!=='battle'&&state.mode==='battle'&&!state.enemy.boss&&!state.enemy.guard;const unlocked=audio.unlock();for(const event of events)if(event.voice&&!document.hidden)audio.playRoyalDungeonVoice(event.voice);if(casinoWin&&!winkShot){unlocked.then(()=>{if(activePanel==='casino'&&!document.hidden)audio.effect('applause');});}if(firstContact){const contact=state;unlocked.then(()=>{if(state===contact&&!document.hidden)audio.effect(/\b(?:wolf|wolves|warg|wargs)\b/i.test(contact.enemy.name)?'wolfEncounter':'encounter');});}else if(a.type==='useItem'&&a.id==='scroll-vomit'&&state.bag.filter(id=>id===a.id).length<before.bag.filter(id=>id===a.id).length)audio.effect('vomit');else if(a.type==='attack')audio.effect('hit');else if(hurt)audio.effect('hurt');else if(a.type==='heal')audio.effect('magic');else if(state.gold>before.gold&&!winkShot)audio.effect('coin');else if(state.mode!==before.mode)audio.effect('door');else if(!castleMove&&['move','forward','back','strafe'].includes(a.type)&&state.turns>before.turns)audio.effect('step');else if(!castleMove)audio.effect('click');if(activePanel==='castleInteraction'&&['castleLeaveRoom','robCastleChest','leaveCastleChest','leaveCastleBook'].includes(a.type))closePanel();if(activePanel&&(before.mode!==state.mode&&!(activePanel==='casino'&&winkShot)||a.type==='enterCastle'&&state.castle&&!before.castle))closePanel();if(before.mode==='town'&&state.mode==='world'&&state.gold===0)toast('Being escorted out of the town. Return with some gold.');update();persist();sceneMusic();if(state.mode==='ending'&&before.mode!=='ending')openPanel('ending');if(activePanel==='royalIntro'&&state.flags.royalQuest==='opening')openPanel('royalIntro');else if(activePanel==='casino')openPanel('casino',{winkShot,winkResult});else if(['shop','quests','court','inventory','inn','talk','potions','spells','royalDungeonNpc','castleInteraction'].includes(activePanel))openPanel(activePanel);if(activePanel==='fortune'&&['sageRemoveHelm','sageBuyIntelligence'].includes(a.type)){
  const sage=$('sage-of-wonk');
  if(sage)sage.outerHTML=sageOfWonkView(state.log.at(-1)===before.log.at(-1)?'':state.log.at(-1));
- }if(activePanel==='loot'&&a.type==='equip')closePanel();else showLoot();if(state.flags.borderTauntPending&&activePanel!=='borderTaunt')openPanel('borderTaunt');if(state.flags.guardTauntPending&&activePanel!=='guardTaunt')openPanel('guardTaunt');if(state.mode==='town'&&['demand','refused'].includes(cityOf(state)?.tribute)&&!['demand','refused'].includes(cityOf(before)?.tribute))openPanel('talk');if(a.type==='rest'&&innMorning&&activePanel==='inn')playInnVoice();if(activePanel==='travelMerchant'&&a.type==='buyCureAll')openPanel('travelMerchant');if(state.flags.boatReveal&&activePanel!=='boatReveal')openPanel('boatReveal');else if(state.flags.gagReveal&&activePanel!=='gagReveal')openPanel('gagReveal');else if(state.flags.travelMerchant&&activePanel!=='travelMerchant'&&activePanel!=='squeakyVoice')openPanel('travelMerchant');if(a.type==='gossipNext'&&state.flags.gossipGuardTown&&!before.flags.gossipGuardTown){clearTimeout(gossipGuardTimer);gossipGuardTimer=setTimeout(()=>{if(activePanel==='talk'&&state.mode==='town'&&state.flags.gossipGuardTown)openPanel('gossipGuard');},4000);}if(a.type.startsWith('gossipGuard')&&!state.flags.gossipGuardTown&&activePanel==='gossipGuard')closePanel();if(state.flags.dragonGreeting&&activePanel!=='dragonGreeting')openPanel('dragonGreeting');if(a.type==='acknowledgeDragon'&&['dragonGreeting','dragonNotice'].includes(activePanel))closePanel();if(state.flags.dragonWatch?.enemy)openPanel('dragonDefense');else if(activePanel==='dragonDefense'){closePanel();showLoot();}if(a.type==='dragonOrder')audio.effect(a.order==='flame'?'fire-whoosh':'hit');if(state.flags.wildernessEvent&&activePanel!=='wildernessEvent')openPanel('wildernessEvent');else if(activePanel==='wildernessEvent'){if(state.flags.wildernessEvent)openPanel('wildernessEvent');else{closePanel();showLoot();}}if(state.flags.peacefulEncounter&&activePanel!=='peaceful')openPanel('peaceful');else if(!state.flags.peacefulEncounter&&activePanel==='peaceful')closePanel();if(['robCastleChest','leaveCastleChest','payCastleFine','royalWang','royalWhip'].includes(a.type)&&state.log.at(-1)!==before.log.at(-1))toast(state.log.at(-1));if(a.type==='move'&&before.mode===state.mode&&['town','world'].includes(state.mode)&&state.turns>before.turns)showEntryPrompt();}
+ }if(activePanel==='loot'&&a.type==='equip')closePanel();else showLoot();if(state.flags.borderTauntPending&&activePanel!=='borderTaunt')openPanel('borderTaunt');if(state.flags.guardTauntPending&&activePanel!=='guardTaunt')openPanel('guardTaunt');if(state.mode==='town'&&['demand','refused'].includes(cityOf(state)?.tribute)&&!['demand','refused'].includes(cityOf(before)?.tribute))openPanel('talk');if(a.type==='rest'&&innMorning&&activePanel==='inn')playInnVoice();if(activePanel==='travelMerchant'&&a.type==='buyCureAll')openPanel('travelMerchant');if(state.flags.boatReveal&&activePanel!=='boatReveal')openPanel('boatReveal');else if(state.flags.gagReveal&&activePanel!=='gagReveal')openPanel('gagReveal');else if(state.flags.travelMerchant&&activePanel!=='travelMerchant'&&activePanel!=='squeakyVoice')openPanel('travelMerchant');if(a.type==='gossipNext'&&state.flags.gossipGuardTown&&!before.flags.gossipGuardTown){clearTimeout(gossipGuardTimer);gossipGuardTimer=setTimeout(()=>{if(activePanel==='talk'&&state.mode==='town'&&state.flags.gossipGuardTown)openPanel('gossipGuard');},4000);}if(a.type.startsWith('gossipGuard')&&!state.flags.gossipGuardTown&&activePanel==='gossipGuard')closePanel();if(state.flags.dragonGreeting&&activePanel!=='dragonGreeting')openPanel('dragonGreeting');if(a.type==='acknowledgeDragon'&&['dragonGreeting','dragonNotice'].includes(activePanel))closePanel();if(state.flags.dragonWatch?.enemy)openPanel('dragonDefense');else if(activePanel==='dragonDefense'){closePanel();showLoot();}if(a.type==='dragonOrder')audio.effect(a.order==='flame'?'fire-whoosh':'hit');if(state.flags.wildernessEvent&&activePanel!=='wildernessEvent')openPanel('wildernessEvent');else if(activePanel==='wildernessEvent'){if(state.flags.wildernessEvent)openPanel('wildernessEvent');else{closePanel();showLoot();}}if(state.flags.peacefulEncounter&&activePanel!=='peaceful')openPanel('peaceful');else if(!state.flags.peacefulEncounter&&activePanel==='peaceful')closePanel();if(['robCastleChest','leaveCastleChest','payCastleFine','royalWang','royalWhip'].includes(a.type)&&state.log.at(-1)!==before.log.at(-1))toast(state.log.at(-1));if(a.type==='enter'&&before.mode==='world'&&state.mode==='town'&&/^The guards (take 2,000 gold and lift the ban|deliver 5,000 gold to the governor)/.test(before.log.at(-1)))toast(palaceDirections()+' Walk to its gold marker.');
+ if(a.type==='move'&&before.mode===state.mode&&['town','world'].includes(state.mode)&&state.turns>before.turns)showEntryPrompt();}
+function playCastleFootsteps(before,after){
+ if(after.turns<=before.turns)return;
+ const distance=after.castle?Math.abs(after.castle.x-before.castle.x)+Math.abs(after.castle.y-before.castle.y):1;
+ if(!distance)return;
+ audio.unlock().then(()=>{
+  if(document.hidden)return;
+  audio.effect('castleFootstep');
+  for(let step=1;step<distance;step++)setTimeout(()=>{
+   if(!document.hidden&&state.castle?.x===after.castle?.x&&state.castle?.y===after.castle?.y)audio.effect('castleFootstep');
+  },step*90);
+ });
+}
+
 function castleAt(point) {
  return state.castle?.x===point.x&&state.castle?.y===point.y;
 }
@@ -133,11 +148,89 @@ function interactTown(){
  if(state.castle){
   const layout=castleLayout(state.location);
   if(castleAt(layout.entrance))dispatch({type:'leaveCastle'});
-  else if(!state.castle.alarm&&(castleAt(layout.throne)||castleRulerAt(state)))openPanel('court');
-  else if(castleChestAt(state))toast('Choose ROB or LEAVE IT.');
+  else if(!state.castle.alarm&&layout.dungeonStair&&castleAt(layout.dungeonStair))dispatch({type:'enterRoyalDungeon'});
+  else if(!state.castle.alarm&&castleInteractionAt(state))inspectCastle();
+  else if(!state.castle.alarm&&castleAt(layout.throne))openPanel('court');
   return;
  }
  if(state.casino?.active){openPanel('casino');return;}const place=townPlace(state);if(!place){toast('Walk onto a gold entrance marker to visit a building.');return;}openPanel(place.merchant?'shop':place.id);}
+let castleInteractionId=null;
+const castleRuler=figure=>['king','princess','governor'].includes(figure.kind);
+const castleSubject=figure=>figure.id==='king'?'King Malachi':figure.kind==='guard'?figure.name+' '+figure.id.split('-').at(-1):figure.name;
+const castlePromptLabel=figure=>['chest','book'].includes(figure.kind)?'Inspect '+figure.name:'Speak to '+castleSubject(figure);
+
+function inspectCastle(id){
+ if(!state.castle||state.castle.alarm)return;
+ const figure=castleInteractionAt(state,id);
+ if(!figure)return;
+ castleInteractionId=figure.id;
+ if(castleRuler(figure)){
+  const alreadyOpen=activePanel==='castleInteraction';
+  dispatch({type:'castleTalk',id:figure.id});
+  if(alreadyOpen)return;
+ }
+ openPanel('castleInteraction');
+}
+
+function renderCastleInteraction(body){
+ const figure=castleInteractionAt(state,castleInteractionId);
+ if(!figure)return;
+ $('panel-title').textContent=figure.kind==='guard'?castleSubject(figure):figure.name;
+ const ruler=castleRuler(figure),layout=castleLayout(state.location);
+ const actions=castleInteractionActions(state,figure.id);
+ const prefix=figure.name+': ';
+ const lineIndex=state.log.findLastIndex(entry=>entry.startsWith(prefix));
+ const line=state.log[lineIndex]?.slice(prefix.length);
+ const lesson=figure.kind==='book'&&figure.rarity==='rare'&&lineIndex>=0?state.log[lineIndex+1]:'';
+ const text=figure.kind==='book'?(figure.read?figure.text:'A bound volume rests here.'):line||(figure.kind==='chest'?'The chest is locked.':'The guard watches the corridor.');
+ const nearby=castleInteractionsAt(state);
+ const governor=figure.kind==='governor'?castleGovernorPortrait(state.location):null;
+ const guard=figure.kind==='guard'?castleGuardPortrait(state.location,state.region):null;
+ const book=figure.kind==='book'&&Number.isInteger(figure.coverIndex);
+ const position=governor?' style="background-position:'+governor.column*100/3+'% '+governor.row*50+'%"':guard?' style="background-position:'+guard.column*100+'% '+guard.row*100+'%"':book?' style="background-position:'+figure.coverIndex%4*100/3+'% '+Math.floor(figure.coverIndex/4)*100/3+'%"':'';
+ const portrait=governor||guard||book||['king','princess'].includes(figure.id)?'<div class="castle-dialogue-portrait" data-figure="'+figure.kind+'" role="img" aria-label="'+esc(book?'Cover of '+figure.name:figure.name)+'"'+position+(book?' data-book-category="'+esc(figure.category)+'"':'')+'></div>':'';
+ const warning=ruler?'<p class="castle-dialogue-warning">'+layout.guards.length+(layout.governor?' palace guards':' royal guards')+' will intervene if you attack.</p>':'';
+ const controls=ruler?'<form class="castle-dialogue-options"><fieldset><legend>Choose what to do</legend>'+actions.map(({label},i)=>'<label><input type="radio" name="castle-option" value="'+i+'"><span>'+esc(label)+'</span></label>').join('')+'</fieldset><button type="submit" class="primary" disabled>Continue</button></form>':'<div class="panel-actions">'+actions.map(({label,action})=>button(esc(label),action,['robCastleChest','readCastleBook'].includes(action.type)?'primary':'')).join('')+'</div>';
+ const choices=nearby.length>1?'<nav class="castle-nearby" aria-label="Nearby in the castle">'+nearby.map(point=>'<button type="button" data-castle-figure="'+esc(point.id)+'" aria-pressed="'+(point.id===figure.id)+'">'+esc(castleSubject(point))+'</button>').join('')+'</nav>':'';
+ body.innerHTML=choices+'<section class="castle-conversation'+(portrait?' has-portrait':'')+'">'+portrait+'<div><p class="castle-dialogue-line" role="status">' +esc(text)+'</p>'+(lesson?'<p class="castle-dialogue-effect">'+esc(lesson)+'</p>':'')+warning+controls+'</div></section>'+(figure.id==='king'||figure.id==='princess'?royalAudienceControls():'');
+ for(const option of body.querySelectorAll('[data-castle-figure]'))option.onclick=()=>inspectCastle(option.dataset.castleFigure);
+ const form=body.querySelector('.castle-dialogue-options');
+ if(form){
+  const submit=form.querySelector('button[type=submit]');
+  form.onchange=()=>{submit.disabled=!form.querySelector('input:checked');};
+  form.onsubmit=event=>{
+   event.preventDefault();
+   const selected=form.querySelector('input:checked');
+   if(selected)dispatch(actions[Number(selected.value)].action);
+  };
+ }
+}
+
+const palaceAdmission=document.createElement('div');
+palaceAdmission.className='palace-admission';
+palaceAdmission.hidden=true;
+$('panel').querySelector('.dialog-heading').append(palaceAdmission);
+
+function updatePalaceAdmission(name){
+ const action=state&&name==='court'?castleEntryAction():'';
+ palaceAdmission.hidden=!action;
+ if(!action)return;
+ const fine=state.wanted[state.region]*25;
+ const paid=state.log.at(-1)?.startsWith('Your fine is paid.');
+ const message=fine?'Pay the local fine to enter.':paid?'Fine paid. The palace doors are open.':'The palace doors are open.';
+ palaceAdmission.innerHTML='<p role="status">'+message+'</p>'+action;
+}
+
+function palaceDirections(){
+ const court=townPlaces(state).find(place=>place.id==='court');
+ const here=townPosition(state);
+ const vertical=court.y<here.y?'north':court.y>here.y?'south':'';
+ const horizontal=court.x<here.x?'west':court.x>here.x?'east':'';
+ const direction=vertical+horizontal;
+ const name=state.location==='bellwether'?'The Royal Palace':'The Governor’s Palace';
+ return name+(direction?' is '+direction+' of you':' is here')+' at ('+court.x+', '+court.y+').';
+}
+
 function castleEntryAction(){
  if(state.castle||townPlace(state)?.id!=='court')return '';
  const fine=state.wanted[state.region]*25;
@@ -205,8 +298,8 @@ function update(){updateClockDisplay();updateWildernessHealth();
  updateLevelBanner();
  document.querySelector('.portrait').innerHTML=faceMarkup(state);
  $('hero-label').textContent=state.name;const level=effectiveLevel(state);$('level-label').textContent=`Level ${level}${level<state.level?' (drained)':''} · ${state.relics.length}/8 relics`;$('level-label').title=level<state.level?`${levelDrainMinutesLeft(state)} game minutes until level ${state.level} returns`:'';$('health-label').textContent=`${state.hp} / ${state.maxHp}`;$('health-bar').style.width=state.hp/state.maxHp*100+'%';$('gold').textContent=state.gold;if($('compact-vitals'))$('compact-vitals').textContent='♥ '+state.hp+'/'+state.maxHp+'   ◈ '+state.gold;$('region-kicker').textContent=REGIONS[state.region].subtitle;$('place-name').textContent=(state.mode==='dungeon'||state.mode==='battle'&&state.returnMode==='dungeon')?(minor?.name||dungeonName(state.dungeon)):state.mode==='town'?TOWNS.find(t=>t.id===state.location)?.name:(areaFor(state)?.name||REGIONS[state.region].name);$('chapter-title').textContent=state.flags.royalQuest&&state.flags.royalQuest!=='resolved'?'The Princess and the Knave':CHAPTERS[state.chapter].title;$('objective').textContent=nextObjective(state);
- $('mode-badge').textContent=state.mode==='dungeon'?(state.dungeon.ship?'ALIEN SPACECRAFT · COMMAND DECK':state.dungeon.site==='firedrak'?`FIREDRAK MOUNTAIN - LEVEL ${state.dungeon.floor+1} OF 10`:state.dungeon.site==='elf-village'?`ELVEN VILLAGE · LEVEL ${state.dungeon.floor+1} OF 4`:(minor||[BOTTOMLESS_PIT.id,PUTRID_PALACE.id].includes(state.dungeon.site))?`LEVEL ${state.dungeon.floor+1} OF ${dungeonFloors(state.dungeon)}`:`DEPTH ${state.dungeon.floor+1} · FIRST-PERSON EXPLORATION`):state.mode==='battle'?(state.returnMode==='dungeon'?'ENCOUNTER · DUNGEON COMBAT':state.enemy.firstContact?'ENCOUNTER · STUDY YOUR FOE':'ENCOUNTER · TACTICAL MAP'):state.mode==='town'?(state.castle?'CASTLE INTERIOR · 25 FT VIEW':'TOWN STREETS · WALK TO AN ENTRANCE'):'THE OVERLAND ROAD';
- const navigation=state.mode==='dungeon'?dungeonNavigation(state.dungeon):null;const p=pointAt(state);$('scene-caption').textContent=state.mode==='world'?(p?`${p.name} · ${p.boatOnly?'Boat required':'Enter to explore'}`:'The road is yours. Arrow keys or the touch pad to travel.'):state.mode==='dungeon'?`Facing ${navigation.facing}. ${navigation.forward?'Corridor ahead — move forward.':`Wall ahead — ${navigation.left?'turn left':navigation.right?'turn right':'turn around'}.`} Arrow keys step; double-tap Left/Right or use Q/E to turn.`:state.mode==='battle'&&state.enemy.firstContact&&state.returnMode==='dungeon'?`${state.enemy.name} blocks the hallway. Level ${state.enemy.level??'?'} · Armor ${state.enemy.armor??0}. ${state.enemy.guard?'Heavy royal plate: extreme danger.':'Choose your first combat action.'}`:state.mode==='battle'?`Level ${state.enemy.level??'?'} · Armor ${state.enemy.armor??0} · Weakness: ${state.enemy.weakness||'none known'}.`:state.mode==='town'?(townPlace(state)?townPlace(state).name+' · E to interact':'Walk to the gold entrance markers. Arrow keys or touch pad to explore.'):'';
+ $('mode-badge').textContent=state.mode==='dungeon'?(state.dungeon.ship?'ALIEN SPACECRAFT · COMMAND DECK':state.dungeon.site===ROYAL_DUNGEON_ID?'ROYAL DUNGEON · FIRST-PERSON EXPLORATION':state.dungeon.site==='firedrak'?`FIREDRAK MOUNTAIN - LEVEL ${state.dungeon.floor+1} OF 10`:state.dungeon.site==='elf-village'?`ELVEN VILLAGE · LEVEL ${state.dungeon.floor+1} OF 4`:(minor||[BOTTOMLESS_PIT.id,PUTRID_PALACE.id].includes(state.dungeon.site))?`LEVEL ${state.dungeon.floor+1} OF ${dungeonFloors(state.dungeon)}`:`DEPTH ${state.dungeon.floor+1} · FIRST-PERSON EXPLORATION`):state.mode==='battle'?(state.returnMode==='dungeon'?'ENCOUNTER · DUNGEON COMBAT':state.enemy.firstContact?'ENCOUNTER · STUDY YOUR FOE':'ENCOUNTER · TACTICAL MAP'):state.mode==='town'?(state.castle?'CASTLE INTERIOR · 25 FT VIEW':'TOWN STREETS · WALK TO AN ENTRANCE'):'THE OVERLAND ROAD';
+ const navigation=state.mode==='dungeon'?dungeonNavigation(state.dungeon):null;const p=pointAt(state);$('scene-caption').textContent=state.mode==='world'?(p?`${p.name} · ${p.boatOnly?'Boat required':'Enter to explore'}`:'The road is yours. Arrow keys or the touch pad to travel.'):state.mode==='dungeon'?`Facing ${navigation.facing}. ${navigation.forward?'Corridor ahead — move forward.':`Wall ahead — ${navigation.left?'turn left':navigation.right?'turn right':'turn around'}.`} Arrow keys step; double-tap Left/Right or use Q/E to turn.`:state.mode==='battle'&&state.enemy.firstContact&&state.returnMode==='dungeon'?`${state.enemy.name} blocks the hallway. Level ${state.enemy.level??'?'} · Armor ${state.enemy.armor??0}. ${state.enemy.guard?'Heavy royal plate: extreme danger.':'Choose your first combat action.'}`:state.mode==='battle'?`Level ${state.enemy.level??'?'} · Armor ${state.enemy.armor??0} · Weakness: ${state.enemy.weakness||'none known'}.`:state.mode==='town'?(townPlace(state)?townPlace(state).name+' · E to interact':palaceDirections()+' Walk to its gold entrance marker.'):'';
  $('movement').hidden=state.mode==='battle'||state.mode==='ending';
  $('movement').innerHTML=state.mode==='dungeon'?button('↑',{type:'forward'})+button('↶',{type:'turn',delta:-1})+button('↓',{type:'back'})+button('↷',{type:'turn',delta:1})+button('←',{type:'strafe',delta:-1})+button('→',{type:'strafe',delta:1}):button('↑',{type:'mapStep',dx:0,dy:-1})+button('↶',{type:'mapTurn',delta:-1})+button('↓',{type:'mapStep',dx:0,dy:1})+button('↷',{type:'mapTurn',delta:1})+button('←',{type:'mapStep',dx:-1,dy:0})+button('→',{type:'mapStep',dx:1,dy:0});
  $('movement').querySelectorAll('button').forEach((b,i)=>b.setAttribute('aria-label',state.mode==='dungeon'?['Move forward','Turn left','Move backward','Turn right','Step left','Step right'][i]:['Move forward','Turn left','Move backward','Turn right','Step left','Step right'][i]));
@@ -218,19 +311,30 @@ function update(){updateClockDisplay();updateWildernessHealth();
  else if(state.mode==='town'&&state.castle){
   const layout=castleLayout(state.location),chest=castleChestAt(state);
   const room=layout.rooms.find(room=>room.id===layout.tiles[state.castle.y][state.castle.x]);
-  const atDoors=castleAt(layout.entrance);
-  const rulers=layout.governor?['governor']:['king','princess'];
-  const targets=state.castle.alarm?[]:rulers.map(id=>castleRulerAt(state,id)).filter(Boolean);
-  const canSpeak=!state.castle.alarm&&(castleAt(layout.throne)||targets.length>0);
-  const guardsInView=layout.guards.filter(guard=>castlePointVisible(state,guard)).length;
+  const atDoors=castleAt(layout.entrance),atDungeonStair=layout.dungeonStair&&castleAt(layout.dungeonStair);
+  const interaction=state.castle.alarm?null:castleInteractionAt(state);
+  const canSpeak=!state.castle.alarm&&(castleAt(layout.throne)||castleRulerAt(state));
+  const guardsInView=castleGuards(state).filter(guard=>castlePointVisible(state,guard)).length;
   const roomName=room?.name||'Castle corridor';
-  $('scene-caption').textContent=state.castle.alarm?'The castle alarm is ringing. Reach the southern doors.':chest?chest.name+' · Locked':atDoors?'Castle doors · E to leave':roomName+(guardsInView?' · '+guardsInView+' guard'+(guardsInView===1?'':'s')+' in view':'')+(canSpeak?' · E to speak':'');
-  const defense=layout.governor?' palace guards will defend the governor.':' royal guards will defend the throne.';
-  const assault=targets.length?'<span class="castle-guard-warning">'+layout.guards.length+defense+'</span>'+targets.map(target=>button('Attack '+esc(target.id==='king'?'King Malachi':target.name),{type:'attackCastleRoyal',target:target.id},'castle-assault')).join(''):'';
-  $('actions').innerHTML=(chest&&!state.castle.alarm?button('ROB',{type:'robCastleChest'},'primary')+button('LEAVE IT',{type:'leaveCastleChest'}):'')+(canSpeak?'<button data-panel="court">Court & Watch</button>':'')+assault+(atDoors?button('Leave castle',{type:'leaveCastle'}):'');
+  $('scene-caption').textContent=state.castle.alarm?'The castle alarm is ringing. Reach the southern doors.':chest?chest.name+' · Locked':atDoors?'Castle doors · E to leave':atDungeonStair?'Royal Dungeon stairs · E to descend':roomName+(guardsInView?' · '+guardsInView+' guard'+(guardsInView===1?'':'s')+' in view':'')+(interaction?' · E to interact':'');
+  const inspect=interaction?button(esc(castlePromptLabel(interaction)),{type:'inspectCastle',id:interaction.id},'primary'):'';
+  $('actions').innerHTML=inspect+(canSpeak?'<button data-panel="court">Court & Watch</button>':'')+(atDungeonStair&&!state.castle.alarm?button('Descend to Royal Dungeon',{type:'enterRoyalDungeon'},'primary'):'')+(layout.dungeonStair?'<button data-panel="castleMap">Castle map</button>':'')+(atDoors?button('Leave castle',{type:'leaveCastle'}):'');
  }
  else if(state.mode==='town')$('actions').innerHTML=(state.casino?.active?button('Resume casino game',{type:'enter'},'primary'):castleEntryAction())+button('Leave town',{type:'leave'});
  else if(state.mode==='dungeon'&&state.dungeon.site==='elf-village')$('actions').innerHTML=button(state.dungeon.floor===3?'Enter Haghilda’s lair':'Enter tree door / climb up',{type:'descend'},'primary')+button(state.dungeon.floor?'Climb down':'Leave forest',{type:'leave'})+(state.dungeon.floor===2&&state.dungeon.x===7&&state.dungeon.y===7?button('Search fallen elf',{type:'searchElf'}):'')+'<button data-panel="potions">Drink potion</button>';
+ else if(state.mode==='dungeon'&&state.dungeon.site===ROYAL_DUNGEON_ID){
+  const point=royalDungeonAt(state);
+  let controls='';
+  if(point?.kind==='npc'){
+   $('scene-caption').textContent=point.name+' · Enter to speak';
+   controls='<button class="primary" data-panel="royalDungeonNpc">Speak to the '+esc(point.name)+'</button>';
+  }else{
+   controls=royalDungeonActions(state).map(({label,action})=>button(esc(label),action,'primary')).join('');
+   if(point?.kind==='cell')$('scene-caption').textContent=point.name+(state.dungeon.cellsOpen?' · The prisoners are free.':' · '+point.prisoners.map(prisoner=>prisoner.name).join(', '));
+   if(point?.kind==='stair')$('scene-caption').textContent='Stair to Bellwether Castle';
+  }
+  $('actions').innerHTML=controls+'<button data-panel="potions">Drink potion</button>';
+ }
  else if(state.mode==='dungeon'&&state.dungeon.royal)$('actions').innerHTML=(state.dungeon.royal==='cell'?button('Search cell',{type:'royalSearch'}):'')+button(state.dungeon.royal==='cell'?'Open trapdoor':state.flags.galenFreed?'Push loose stones':'Free Galen',{type:'descend'},'primary')+'<button data-panel="potions">Drink potion</button>';
  else if(state.mode==='dungeon'&&minor){
   const d=state.dungeon,ladder=ladderPrompt(state,dungeonMap(d));
@@ -267,7 +371,7 @@ function update(){updateClockDisplay();updateWildernessHealth();
  if(state.mode==='dungeon'){const chest=dungeonChests(state,dungeonMap(state.dungeon)).find(c=>c.x===state.dungeon.x&&c.y===state.dungeon.y);if(chest){const revisit=chest.opened&&(!minor||minor.treasure)&&state.openedChests.indexOf(chest.id)<(state.flags.chestVisitStart??state.openedChests.length)&&!state.flags['missedCoins:'+chest.id];$('scene-caption').textContent=chest.opened?(revisit?'Someone was here before you. They missed a few coins.':'You already opened this chest.'):'A treasure chest lies at your feet. Open it to claim the contents.';$('actions').insertAdjacentHTML('afterbegin',chest.opened?(revisit?button('Search for missed coins',{type:'rummageChest'},'primary'):''):button('Open chest',{type:'openChest'},'primary'));}}
  if(state.mode==='battle'&&state.equipped==='holy-avenger'&&(state.enemy.boss||undead(state.enemy)))$('scene-caption').textContent+=' Your Holy Avenger glows.';
  if(state.mode==='dungeon')$('actions').insertAdjacentHTML('beforeend','<button data-save-checkpoint>Save dungeon checkpoint</button>');
- $('context').innerHTML=state.castle?'':state.mode==='town'?`<div class="context-box"><b>Find your way</b><p>Inn & market: northern square.<br>${state.location==='mothbridge'?'Casino: east of the square.<br>Court: north of the square.':'Casino & court: southern square.'}<br>Town hall: northern lane.<br>Story house & fortune teller: by the south gate.<br>Exit: the southern gate.</p></div>`:state.wanted[state.region]>0?`<div class="context-box"><b>Wanted by the crown</b><p>Local bounty: ${state.wanted[state.region]*25} gold. A pardon can be purchased in town.</p></div>`:'';
+ $('context').innerHTML=state.castle?'':state.mode==='town'?`<div class="context-box"><b>Find your way</b><p>${esc(palaceDirections())} Other buildings have signs and gold entrance markers. The town gate is to the south.</p></div>`:state.wanted[state.region]>0?`<div class="context-box"><b>Wanted by the crown</b><p>Local bounty: ${state.wanted[state.region]*25} gold. A pardon can be purchased in town.</p></div>`:'';
  if(state.location==='bellwether')$('context').innerHTML+=`<p>Royal guards defeated: ${Math.min(20,state.flags.royalGuardWins||0)} / 20</p>`;
 
 
@@ -285,6 +389,16 @@ let nextWildernessStep=0;
 document.addEventListener('keydown',e=>{if(!state||$('game').hidden||e.target.matches('input,select,textarea,[contenteditable=true]'))return;
  if(e.key.toLowerCase()==='i'&&!e.ctrlKey&&!e.metaKey&&!e.altKey){e.preventDefault();if(e.repeat)return;cancelArrowTap();if(activePanel==='inventory')closePanel();else if(!$('panel').open)openPanel('inventory');return;}
  if($('panel').open)return;
+ if(e.key==='Enter'&&state.mode==='dungeon'&&state.dungeon.site===ROYAL_DUNGEON_ID){
+  const point=royalDungeonAt(state);
+  if(point?.kind==='npc'||point?.kind==='stair'){
+   e.preventDefault();
+   if(e.repeat||combatView)return;
+   if(point.kind==='npc')openPanel('royalDungeonNpc');
+   else dispatch({type:'leave'});
+   return;
+  }
+ }
  if(state.mode==='dungeon'&&['ArrowLeft','ArrowRight'].includes(e.key)){
   e.preventDefault();if(e.repeat||combatView)return;const delta=e.key==='ArrowLeft'?-1:1,now=performance.now();
   if(arrowTap&&arrowTap.key===e.key&&now-arrowTap.time<240){cancelArrowTap();dispatch({type:'turn',delta});return;}
@@ -303,7 +417,7 @@ $('scene').addEventListener('pointerdown',e=>{
  else if(Math.abs(dx)>Math.abs(dy))dispatch({type:'move',dx:Math.sign(dx),dy:0});
  else dispatch({type:'move',dx:0,dy:Math.sign(dy)});
 });
-function openPanel(name,{winkShot=false,winkResult=null}={}){if(state&&gagActive(state,'helium')&&['shop','talk','court','quests','inn','fortune','casino','borderTaunt','guardTaunt','travelMerchant','gossipGuard'].includes(name))name='squeakyVoice';if(name==='talk'&&activePanel!=='talk'){state=act(state,{type:'gossipBegin'});persist();if(state.flags.gossipGuardTown)name='gossipGuard';}entryPrompt.hidden=true;ladderPopup.hidden=true;if(name!=='casino'||activePanel!=='casino')stopIntroVoice();if(name==='inventory'&&activePanel!=='inventory')inventorySelection=null;activePanel=name;$('panel').dataset.panel=name;const titles={halChallenge:'Hal 2000',halOutcome:'Termination',dragonGreeting:'Your New Dragon',dragonDefense:'Your Dragon Needs You',dragonNotice:'A Dragon in Trouble',artifactReveal:'The Ancient Alien Disk',boatReveal:'A Boat in Your Pocket',rescue:'A Most Undignified Rescue',journal:'The traveler’s journal',peaceful:'A roadside offer',atlas:'World Map',crystalTravel:'Alien Artifact',dungeonElevator:'Dungeon Elevator',inventory:state?.name||'Adventurer',webster:'Ask Webster',settings:'Sound & settings',shop:'The traveling market',casino:'The Gilded Goose Gambling House',quests:'Odd Jobs',court:'The crown & the road',ending:'The shape of your legacy',inn:'The Lantern Inn',talk:'Gossip in the Square',gossipGuard:'Gossip Ain’t Free',gagReveal:'A Questionable Vintage',squeakyVoice:'A Most Unfortunate Voice',travelMerchant:'A traveling merchant',new:'Begin another story?',loot:'You found something',potions:'Drink a potion',spells:'Scrolls & Wands',fortune:'A thoroughly unwelcome prediction',borderTaunt:'The royal border patrol',guardTaunt:'An unwelcome reception',royalIntro:'An exceptionally poor proposal'};$('panel-title').textContent=titles[name]||name;const body=$('panel-body');
+function openPanel(name,{winkShot=false,winkResult=null}={}){if(state&&gagActive(state,'helium')&&['shop','talk','court','quests','inn','fortune','casino','borderTaunt','guardTaunt','travelMerchant','gossipGuard'].includes(name))name='squeakyVoice';if(name==='talk'&&activePanel!=='talk'){state=act(state,{type:'gossipBegin'});persist();if(state.flags.gossipGuardTown)name='gossipGuard';}entryPrompt.hidden=true;ladderPopup.hidden=true;if(name!=='casino'||activePanel!=='casino')stopIntroVoice();if(name==='inventory'&&activePanel!=='inventory')inventorySelection=null;activePanel=name;$('panel').dataset.panel=name;updatePalaceAdmission(name);const titles={halChallenge:'Hal 2000',halOutcome:'Termination',dragonGreeting:'Your New Dragon',dragonDefense:'Your Dragon Needs You',dragonNotice:'A Dragon in Trouble',artifactReveal:'The Ancient Alien Disk',boatReveal:'A Boat in Your Pocket',rescue:'A Most Undignified Rescue',journal:'The traveler’s journal',peaceful:'A roadside offer',atlas:'World Map',castleMap:'Bellwether Castle map',castleInteraction:'Castle',royalDungeonNpc:'Royal Dungeon',crystalTravel:'Alien Artifact',dungeonElevator:'Dungeon Elevator',inventory:state?.name||'Adventurer',webster:'Ask Webster',settings:'Sound & settings',shop:'The traveling market',casino:'The Gilded Goose Gambling House',quests:'Odd Jobs',court:'The crown & the road',ending:'The shape of your legacy',inn:'The Lantern Inn',talk:'Gossip in the Square',gossipGuard:'Gossip Ain’t Free',gagReveal:'A Questionable Vintage',squeakyVoice:'A Most Unfortunate Voice',travelMerchant:'A traveling merchant',new:'Begin another story?',loot:'You found something',potions:'Drink a potion',spells:'Scrolls & Wands',fortune:'A thoroughly unwelcome prediction',borderTaunt:'The royal border patrol',guardTaunt:'An unwelcome reception',royalIntro:'An exceptionally poor proposal'};$('panel-title').textContent=titles[name]||name;const body=$('panel-body');
  if(!state&&!['settings','new'].includes(name))return;
  if(gagActive(state,'pigFace')&&['shop','travelMerchant','casino','court','royalIntro','guardTaunt','borderTaunt','gossipGuard'].includes(name))pigTauntPending=playPigTaunt();
  if(name==='developer'&&developerMode){$('panel-title').textContent='Developer preview';body.innerHTML=previewView(state,previewRules);}
@@ -421,7 +535,25 @@ function openPanel(name,{winkShot=false,winkResult=null}={}){if(state&&gagActive
   body.innerHTML=available?'<form><label>Visited land <select name="destination">'+lands.map(id=>'<option value="'+esc(id)+'">'+esc(typeof id==='number'?REGIONS[id]?.name:AREAS.find(a=>a.id===id)?.name)+'</option>').join('')+'</select></label> <button class="primary">Use crystal</button></form>':'<p>This booth needs a Teleporter Crystal and a previously visited destination.</p>';
   if(available)body.querySelector('form').onsubmit=e=>{e.preventDefault();const id=e.currentTarget.elements.destination.value;dispatch({type:'crystalTravel',land:id.startsWith('wild-')?id:Number(id)});};
  }
+ if(name==='castleInteraction')renderCastleInteraction(body);
+ if(name==='royalDungeonNpc'){
+  const npc=royalDungeonAt(state);
+  if(npc?.kind==='npc'){
+   $('panel-title').textContent=npc.name;
+   const lastLine=state.log.at(-1)||'';
+   const prefix=npc.name+': ';
+   const dialogue=lastLine.startsWith(prefix)?lastLine.slice(prefix.length):'The '+npc.name+' lets you pass.';
+   const actions=royalDungeonActions(state).map(({label,action})=>button(esc(label),action,action.type==='royalDungeonTalk'?'primary':'castle-assault')).join('');
+   body.innerHTML='<section class="royal-dungeon-conversation"><img src="/assets/'+npc.id+'.webp" alt="'+esc(npc.name)+'"><div><p role="status">'+esc(dialogue)+'</p><div class="panel-actions">'+actions+'</div></div></section>';
+  }
+ }
  if(name==='atlas'){body.innerHTML=atlasView(state);paintAtlasMaps(body,state);}
+ if(name==='castleMap'&&state.castle){
+  const layout=castleLayout(state.location);
+  const rooms=layout.rooms.map(room=>room.name).join(', ');
+  body.innerHTML='<div class="castle-map-scroll" style="--castle-map-min:'+Math.round(layout.width*17)+'px" tabindex="0" aria-label="Scrollable castle map"><canvas role="img" aria-label="'+esc(rooms)+'. The Royal Dungeon stairs are in the Front Foyer."></canvas></div><ul class="castle-map-key"><li><i class="castle-map-hero"></i> You</li><li><i class="castle-map-chest"></i> Chest</li><li><i class="castle-map-book"></i> Readable book</li><li><i class="castle-map-stair"></i> Royal Dungeon stairs</li></ul>';
+  renderCastleOverview(body.querySelector('canvas'),state);
+ }
  if(name==='shop'){
   const place=townPlace(state);
   if(place?.merchant){
@@ -458,9 +590,8 @@ function openPanel(name,{winkShot=false,winkResult=null}={}){if(state&&gagActive
  if(name==='court'){const town=TOWNS.find(t=>t.id===state.location);if(town){$('panel-title').textContent=town.id==='bellwether'?'The Royal Palace':`${town.name} · Governor’s Palace`;body.innerHTML=`<figure class="palace-entrance"><img src="/assets/palace-${town.id}.webp" alt="${esc(town.name)} palace gate and five heavily armored guards"><figcaption>${town.id==='bellwether'?'Taking control of Bellwether requires 20 victories':'Taking control of the city requires five consecutive victories'}</figcaption></figure>`+body.innerHTML;}}
  if(name==='court'){
   const faction=state.flags['townFaction:'+state.location];
-  const explore=castleEntryAction();
   const rescueGalen=hasRoyalAdmission(state,state.location)&&!state.flags.galenFreed?button('Return to Galen’s cell',{type:'royalSewerReturn'}):'';
-  body.insertAdjacentHTML('afterbegin',explore+royalAudienceControls()+rescueGalen+(faction!==undefined?'<p>Town faction '+faction+'</p>':''));
+  body.insertAdjacentHTML('afterbegin',royalAudienceControls()+rescueGalen+(faction!==undefined?'<p>Town faction '+faction+'</p>':''));
  }
  if(name==='ending')body.innerHTML=`<div class="ending">${esc(ROYAL_ENDINGS[state.ending]||ENDINGS[state.ending])}</div><p>${state.quests.length} local stories resolved. ${state.flags.victories} battles won. The rest is what people choose to remember.</p><div class="panel-actions">${button('Return to the roads',{type:'continue'})}</div>`;
  if(name==='new')body.innerHTML='<p>A new journey replaces only the selected adventurer and that slot’s checkpoint. The other two adventurers are kept. Choose an empty slot on the title screen to keep this adventure too.</p><div class="panel-actions"><button id="confirm-new" class="primary">Replace save & begin</button><button id="cancel-new">Keep my current journey</button></div>';
@@ -530,12 +661,27 @@ function finishCombat(refresh=true){
  $('actions').removeAttribute('aria-busy');
  if(state&&refresh){update();sceneMusic();}
 }
-function playCombat(before,events){
+function playCastleGuardApproach(approach){
+ if(!state.castle||!approach.path.length)return;
+ finishCombat(false);
+ const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+ const duration=reduced?190:Math.min(1500,Math.max(680,(approach.path.length-1)*150));
+ combatView={...structuredClone(state),mode:'town',enemy:null};
+ combatFx={...approach,start:performance.now(),duration};
+ $('combat-panel').hidden=true;
+ $('travel-controls').hidden=false;
+ $('actions').setAttribute('aria-busy','true');
+ $('actions').querySelectorAll('button').forEach(button=>button.disabled=true);
+ $('mode-badge').textContent='PALACE ALARM · GUARD APPROACHING';
+ $('scene-caption').textContent='A palace guard rushes toward you.';
+ combatTimers.push(setTimeout(()=>finishCombat(),duration));
+}
+
+function playCombat(before,events,approach){
  finishCombat(false);combatView=structuredClone(before);combatView.enemy.firstContact=false;const token=combatToken;updateWildernessHealth();
  $('actions').setAttribute('aria-busy','true');$('actions').querySelectorAll('button').forEach(b=>b.disabled=true);
  const ready=audio.unlock();
- events.forEach((event,i)=>combatTimers.push(setTimeout(()=>{
-  if(token!==combatToken)return;
+ function present(event){
   combatFx={...event,start:performance.now()};if(event.spell)showSpellVisual(event.spell);if(event.kind==='victory')showVictory();if(event.kind==='explosion')showAlienExplosion(event.message);
   if(event.target==='enemy'&&event.amount)combatView.enemy.hp=Math.max(0,combatView.enemy.hp-event.amount);
   if(event.target==='hero'&&event.amount){combatView.hp=event.hpAfter??Math.max(0,Math.min(combatView.maxHp,combatView.hp+(event.kind==='heal'?event.amount:-event.amount)));$('health-label').textContent=`${combatView.hp} / ${combatView.maxHp}`;$('health-bar').style.width=combatView.hp/combatView.maxHp*100+'%';}
@@ -543,9 +689,30 @@ function playCombat(before,events){
   if(event.target==='hero'){void portrait.offsetWidth;portrait.classList.add(event.kind==='heal'?'combat-heal':event.kind==='block'?'combat-block':'combat-hurt');}
   $('scene-caption').textContent=event.message||(event.kind==='victory'?(before.returnMode==='dungeon'?'Victory — the hallway is clear.':'Victory — the road is open.'):event.kind==='retreat'?'You escape the battle.':event.kind==='defeat'?'Defeated - a pilgrim carries you to safety.':event.kind==='miss'?'Your strike misses.':event.kind==='heal'?`Potion restores ${event.amount} health.`:`${event.target==='enemy'?'Your '+(event.kind==='magic'?'spell':'strike'):'Enemy '+(event.kind==='block'?'strike, guarded':'strike')}: ${event.amount} damage`);
   updateCombatPanel(combatView,$('scene-caption').textContent);
-  ready.then(()=>{if(token===combatToken&&!document.hidden)audio.effect(event.sound);});
- },i*750)));
- combatTimers.push(setTimeout(()=>{finishCombat();if(events.some(e=>e.kind==='victory')&&before.enemy.gold>0)showGoldLoot(before.enemy.gold,state.gold);else showLoot();},events.length*750+(before.returnMode==='dungeon'&&events.some(e=>e.kind==='victory')?600:180)));
+  return ready.then(()=>{
+   if(token!==combatToken||document.hidden)return;
+   if(event.sound)audio.effect(event.sound);
+   if(event.voice)return audio.playRoyalDungeonVoice(event.voice);
+  });
+ }
+ function schedule(index,delay){
+  if(token!==combatToken)return;
+  combatTimers.push(setTimeout(()=>{
+   if(token!==combatToken)return;
+   const event=events[index];
+   if(!event){
+    finishCombat();
+    if(approach&&state.castle&&state.mode==='battle'){playCastleGuardApproach(approach);return;}
+    if(events.some(e=>e.kind==='victory')&&before.enemy.gold>0)showGoldLoot(before.enemy.gold,state.gold);else showLoot();
+    return;
+   }
+   const started=performance.now(),spoken=present(event);
+   const pause=index===events.length-1?(before.returnMode==='dungeon'&&events.some(e=>e.kind==='victory')?1350:930):750;
+   if(event.voice)spoken.then(()=>schedule(index+1,Math.max(0,pause-(performance.now()-started))));
+   else schedule(index+1,pause);
+  },delay));
+ }
+ schedule(0,0);
 }
 
 function showAlienExplosion(message){const overlay=document.createElement('div');overlay.className='alien-explosion';overlay.setAttribute('role','alert');const text=document.createElement('strong');text.textContent=message;overlay.append(text);document.body.append(overlay);setTimeout(()=>overlay.remove(),2500);}

@@ -40,12 +40,12 @@ test('the castle camera follows the hero and hides distant rooms', () => {
   render(canvas, state);
   assert.equal(canvas.dataset.view, 'castle-map');
   assert.deepEqual(castleViewport(state), {cols: 11, rows: 11, left: 4, top: 9});
-  assert.ok(labels.includes('Entrance Hall'));
-  assert.ok(!labels.includes('Royal Audience Chamber'));
+  assert.ok(labels.includes('Front Foyer'));
+  assert.ok(!labels.includes('Throne Room'));
   labels.length = 0;
   Object.assign(state.castle, {x: 9, y: 4});
   render(canvas, state);
   assert.deepEqual(castleViewport(state), {cols: 11, rows: 11, left: 4, top: -1});
-  assert.ok(labels.includes('Royal Audience Chamber'));
-  assert.ok(!labels.includes('Entrance Hall'));
+  assert.ok(labels.includes('Throne Room'));
+  assert.ok(!labels.includes('Front Foyer'));
 });

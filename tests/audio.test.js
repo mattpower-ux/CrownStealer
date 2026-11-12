@@ -194,3 +194,25 @@ test('supplied countryside and dungeon recordings use half music volume and stop
 });
 
 test('an interrupted background play does not permanently disable its recording',async()=>{const h=harness();class Media{constructor(src){this.src=src;this.paused=true;}play(){this.paused=false;return Promise.reject(Object.assign(new Error('paused during load'),{name:'AbortError'}));}pause(){this.paused=true;}}h.options.Audio=Media;const d=new audio.AudioDirector(h.options);await d.unlock();d.setScene('dungeon:0');await d.suspend();await Promise.resolve();assert.equal(d.backgroundUnavailable.has('/assets/whispers-beneath-stone.mp3'),false);await d.resume();assert.equal(d.backgroundPlayers.get('/assets/whispers-beneath-stone.mp3').paused,false);await d.destroy();});
+
+test('royal dungeon clips queue to completion and stop cleanly when the game suspends', async () => {
+  const h = harness(), clips = [];
+  h.options.Audio = class {
+    constructor(path) { this.path = path; clips.push(this); }
+    async play() { this.played = true; }
+    pause() { this.paused = true; }
+  };
+  const director = new audio.AudioDirector(h.options);
+  const intro = director.playRoyalDungeonVoice('royal-torturer-intro');
+  const taunt = director.playRoyalDungeonVoice('royal-heckler-0');
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(clips.map(clip => clip.path), ['/assets/voice-royal-torturer-intro.mp3']);
+  clips[0].onended();
+  await intro;
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(clips.map(clip => clip.path), ['/assets/voice-royal-torturer-intro.mp3','/assets/voice-royal-heckler-0.mp3']);
+  await director.suspend();
+  await taunt;
+  assert.equal(clips[1].paused, true);
+  await director.destroy();
+});

@@ -43,6 +43,9 @@ export class AudioDirector {
     this.unlocking = null;
     this.transport = 0;
     this.positions = new Map();
+    this.royalVoiceQueue = Promise.resolve();
+    this.royalVoiceGeneration = 0;
+    this.cancelRoyalVoice = null;
   }
 
   async unlock() {
@@ -235,6 +238,42 @@ export class AudioDirector {
     this.voices.add(entry);source.onended=()=>this.disconnect(entry);source.start(context.currentTime+.005);
   }
 
+  playRoyalDungeonVoice(id) {
+    if (!/^(?:royal-heckler-[0-7]|royal-torturer-intro)$/.test(id) || !this.MediaAudio) return Promise.resolve();
+    const generation = this.royalVoiceGeneration;
+    this.royalVoiceQueue = this.royalVoiceQueue.then(() => {
+      if (generation !== this.royalVoiceGeneration || this.paused || this.destroyed || !this.effectsVolume) return;
+      return new Promise(resolve => {
+        const clip = new this.MediaAudio('/assets/voice-' + id + '.mp3');
+        let timeout;
+        const finish = () => {
+          clearTimeout(timeout);
+          clip.onended = clip.onerror = clip.onplaying = null;
+          if (this.cancelRoyalVoice === cancel) this.cancelRoyalVoice = null;
+          resolve();
+        };
+        const cancel = () => { clip.pause(); finish(); };
+        this.cancelRoyalVoice = cancel;
+        clip.volume = this.effectsVolume;
+        clip.onended = clip.onerror = finish;
+        clip.onplaying = () => {
+          clearTimeout(timeout);
+          const remaining = Number.isFinite(clip.duration) ? clip.duration - clip.currentTime : 20;
+          timeout = setTimeout(cancel, Math.max(1, remaining + 3) * 1000);
+        };
+        timeout = setTimeout(cancel, 10000);
+        try { Promise.resolve(clip.play()).catch(finish); } catch { finish(); }
+      });
+    }).catch(() => {});
+    return this.royalVoiceQueue;
+  }
+
+  stopRoyalDungeonVoice() {
+    this.royalVoiceGeneration++;
+    this.cancelRoyalVoice?.();
+    this.royalVoiceQueue = Promise.resolve();
+  }
+
   effect(name,fallback=false) {
     if (!this.context || this.paused || this.destroyed || this.context.state !== 'running') return;
     if(!fallback&&RECORDED_EFFECTS[name]&&this.fetch&&this.context.decodeAudioData)return this.playRecordedEffect(name);
@@ -255,6 +294,7 @@ export class AudioDirector {
       case 'vomit': for(let i=0;i<7;i++)tone(140+i%2*60,i*.08,.13,.10,45,'sawtooth');this.brush(now+.1,.5,.035,'effects',500);break;
       case 'whinny': tone(420,0,.22,.10,1100,'sawtooth');for(let i=0;i<9;i++)tone(1000-i*60,.2+i*.085,.10,.085,650-i*35,'triangle');this.brush(now+.85,.18,.035,'effects',900);break;
       case 'step': this.brush(now, .055, .07, 'effects', 700); break;
+      case 'castleFootstep': tone(540, 0, .035, .12, 300);this.brush(now, .018, .045, 'effects', 1750);break;
       case 'hit':
         // A stronger impact and cha-ching, with quieter inharmonic partials for a steel ring.
         this.brush(now, .035, .198, 'effects', 3600);
@@ -295,6 +335,7 @@ export class AudioDirector {
   }
 
   async suspend() {
+    this.stopRoyalDungeonVoice();
     this.positions.set(this.scene,this.beat||0);
     this.paused = true;
     this.titlePlayer?.pause();
@@ -322,6 +363,7 @@ export class AudioDirector {
 
   async destroy() {
     if (this.destroyed) return;
+    this.stopRoyalDungeonVoice();
     this.destroyed = true;
     this.titlePlayer?.pause();
     for(const player of this.backgroundPlayers.values())player.pause();

@@ -617,3 +617,62 @@ dialog[data-panel="quests"] #panel-body .oddjob-story{
 .castle-guard-warning{max-width:170px;color:#ffd0ac;font-size:11px;line-height:1.3}
 .actions .castle-assault{border-color:#d38f74;background:#452d2a;color:#ffe3ce}
 .actions .castle-assault:hover{background:#583831}
+
+#panel[data-panel="court"]>.dialog-heading{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px}
+.palace-admission{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 9px;border:1px solid #b99a605e;background:#20382b}
+.palace-admission p{margin:0;font-size:13px;color:#e8d5a8}
+#panel .palace-admission button{min-height:40px;padding:6px 11px;background:#d7b77a;color:#18271e;border:1px solid #e5c589;font-size:13px}
+#panel .palace-admission button:hover{background:#ebcf94}
+@media(max-width:530px){
+  .palace-admission{flex-wrap:wrap}
+  .palace-admission button{width:100%}
+}
+
+#panel[data-panel="castleMap"]{max-width:1120px}
+.castle-map-scroll{overflow:auto;border:1px solid #b99a6066}
+.castle-map-scroll canvas{position:static;width:100%;height:auto;min-width:max(760px,var(--castle-map-min));touch-action:pan-x}
+.castle-map-key{display:flex;flex-wrap:wrap;gap:7px 18px;list-style:none;margin:10px 0 0;padding:0}
+.castle-map-key li{display:flex;align-items:center;gap:5px;font-size:12px}
+.castle-map-key i{width:12px;height:12px;border:1px solid #dfc691}
+.castle-map-hero{background:#a6e0ad;border-radius:50%}
+.castle-map-chest{background:#976138}
+.castle-map-stair{background:repeating-linear-gradient(#263b48 0 2px,#8db6c8 2px 3px)}
+
+.royal-dungeon-conversation{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;align-items:center}
+.royal-dungeon-conversation img{display:block;width:100%;aspect-ratio:3/2;object-fit:cover;border:1px solid #aa8a56}
+.royal-dungeon-conversation p{margin:0;color:#eee1bf;font:18px/1.45 Georgia,serif}
+.royal-dungeon-conversation .panel-actions{display:grid;gap:6px;margin-bottom:0}
+.royal-dungeon-conversation .castle-assault{border-color:#b77c65}
+@media(max-width:590px){.royal-dungeon-conversation{grid-template-columns:1fr;gap:12px}.royal-dungeon-conversation img{max-height:30svh}}
+
+.castle-conversation{display:grid;gap:16px;align-items:start}
+.castle-conversation.has-portrait{grid-template-columns:minmax(110px,.75fr) minmax(0,1fr)}
+.castle-dialogue-portrait{width:100%;aspect-ratio:1;background:url('/assets/royal-portraits.webp') 0 center/200% 100% no-repeat;border:1px solid #aa8a56}
+.castle-dialogue-portrait[data-figure="princess"]{background-position:right center}
+.castle-dialogue-line{margin:0;color:#f2e0b8;font:19px/1.4 Georgia,serif}
+.castle-dialogue-warning{margin:7px 0;color:#e9ad8e;font-size:12px}
+.castle-dialogue-options{display:grid;justify-items:start;gap:8px}
+.castle-dialogue-options fieldset{width:100%;margin:0;padding:0;border:0}
+.castle-dialogue-options legend{margin-bottom:5px;font-size:12px;color:#d2c9af}
+.castle-dialogue-options label{display:flex;align-items:center;gap:8px;padding:4px 7px;line-height:1.3;cursor:pointer}
+.castle-dialogue-options label:has(input:checked){background:#283d30}
+.castle-dialogue-options input{appearance:none;display:grid;place-items:center;min-height:18px;width:18px;height:18px;margin:0;padding:0;border-color:#bc9b62;flex:none}
+.castle-dialogue-options input:checked::after{content:'✓';color:#f4d993;font-size:15px;line-height:1}
+.castle-dialogue-options button{min-height:39px;padding:6px 12px}
+.castle-nearby{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
+.castle-nearby button{min-height:34px;padding:5px 8px;font-size:12px}
+.castle-nearby button[aria-pressed="true"]{border-color:#c6a365;color:#f7d895}
+@media(max-width:560px){.castle-conversation.has-portrait{grid-template-columns:1fr;gap:10px}.castle-dialogue-portrait{width:115px}}
+
+.castle-dialogue-portrait[data-figure="governor"]{background-image:url('/assets/regional-rulers.webp');background-size:400% 300%;aspect-ratio:9/8}
+
+.castle-dialogue-portrait[data-figure="guard"]{background-image:url('/assets/palace-guards.webp');background-size:200% 200%}
+
+.castle-dialogue-line{white-space:pre-line}
+.castle-map-book{background:linear-gradient(90deg,#ecd4a0 45%,#8a775d 46% 54%,#ecd4a0 55%);border-radius:2px}
+
+.castle-dialogue-portrait[data-figure="book"]{background-image:url('/assets/castle-library-covers.webp');background-size:400% 400%}
+.castle-dialogue-portrait[data-book-category="rare"]{border-color:#e5b96a}
+.castle-dialogue-portrait[data-book-category="hint"]{border-color:#a0bd9c}
+.castle-dialogue-portrait[data-book-category="recipe"]{border-color:#d8a37e}
+.castle-dialogue-effect{margin:8px 0 0;color:#f2cb80;font-size:13px}
