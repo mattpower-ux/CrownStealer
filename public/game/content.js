@@ -1,4 +1,4 @@
-// Original campaign for Bar the Gates. All locations use the 32 x 24 world grid.
+// Original campaign for Bar the Gates. Authored locations below are scaled to the 128 x 96 terrestrial grid.
 // Quest targets are cumulative counts (victory/relic) or a gold contribution.
 export const REGIONS = [
   {
@@ -409,3 +409,6 @@ for(const town of TOWNS){
 for(const q of SIDE_QUESTS){const town=TOWNS.find(t=>t.id===q.town);q.level=[1,10,20,30][town.region];q.reward=Math.max(q.reward,Math.ceil(1.5*q.level*q.level)+(q.need==='gold'?q.target:0));if(q.need==='relic'){q.need='item';q.target=1;q.questItem='job-keepsake-'+q.id;q.title='The Case of the Vanished Priest';q.text='Recover an ancient book or the vanished priest’s suspiciously polished bone from a dungeon creature in this realm. The parish insists it is for identification, not soup. Bring the keepsake back here.';q.conclusion='The clerk accepts the recovered keepsake with tongs, pays your fee, and quietly cancels the soup.';}}
 
 {let index=0;for(const q of SIDE_QUESTS)if(q.questItem){const kind=['book','bone','tooth'][index++%3];q.keepsakeKind=kind;q.keepsakeName={book:'Ancient Book',bone:'Vanished Priest’s Bone',tooth:'Dragon Tooth'}[kind];q.title={book:'Overdue by Several Centuries',bone:'The Case of the Vanished Priest',tooth:'A Tooth for the Truth'}[kind];q.text={book:'Recover an ancient book from a defeated dungeon creature in this realm. The librarian wants to fine its previous borrower, even if that involves a séance.',bone:'Recover the vanished priest’s bone from a defeated dungeon creature in this realm. The parish insists it is for identification, not soup.',tooth:'Bring back a tooth from a defeated dragon in this realm. The dentist promises to display it beside a very optimistic appointment book.'}[kind];q.conclusion='The clerk accepts your '+q.keepsakeName.toLowerCase()+', pays the agreed fee, and files the receipt under Questionable Career Choices.';}}
+
+// Terrestrial maps are four times wider and taller; IDs stay stable for saves.
+for(const p of [...TOWNS,...DUNGEONS]){p.x*=4;p.y*=4;}

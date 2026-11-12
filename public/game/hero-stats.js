@@ -1,8 +1,91 @@
-import {mountFor} from './mounts.js';
-import {gagActive} from './gag-potions.js';
-import {footwearSpeed} from './junk-loot.js';
-import {buffTimeLeft} from './world-clock.js';
-import {WEAPONS,UNARMED,armorProtection,weaponAccuracy} from './items.js';
-import {TREASURE_ITEMS,equippedAccessories,gearPower} from './treasure.js';
-export function heroStats(s){const weapon=WEAPONS[s.equipped]||UNARMED,gear=equippedAccessories(s),bonus=(s.equipped?s.weapon*4:0)+s.level*2+(s.buffs?.strength>0?s.buffs.strengthPower||0:0)+gearPower(s)+(s.buffs?.meal>0?4:0),extra=(weapon.elementDamage||0)+(weapon.stormDamage||0);return {damage:weapon.damage.map(n=>Math.floor((n+bonus)*(gagActive(s,'tiny')?.5:1))+extra),accuracy:Math.max(5,weaponAccuracy(s)),protection:armorProtection(s)*1.3+gear.filter(i=>i.kind!=='armor').reduce((n,i)=>n+(i.protection||0),0),fire:Math.min(75,gear.filter(i=>i.resistance==='fire').reduce((n,i)=>n+i.resistPercent,0)),frost:Math.min(75,gear.filter(i=>i.resistance==='frost').reduce((n,i)=>n+i.resistPercent,0)),evasion:Math.min(40,Math.round(gear.reduce((n,i)=>n+(i.evasion||0),0)*100)),regeneration:gear.reduce((n,i)=>n+(i.regeneration||0),0),lifeSteal:weapon.lifeSteal||0,freeze:Math.round((weapon.freezeChance||0)*100),element:weapon.element,elementDamage:weapon.elementDamage||0,lightning:weapon.stormDamage||0};}
-export function statsView(s){const t=heroStats(s);const rows=[...['pigFace','tiny','helium'].filter(key=>gagActive(s,key)).map(key=>[({pigFace:'Pig face',tiny:'Mouse-sized',helium:'Helium voice'}[key]),buffTimeLeft(s,key)+' game min remaining']),['Health',`${s.hp} / ${s.maxHp}`],['Level',s.level],['Wilderness movement',(s.equippedBoots==='snowshoes'&&s.region!==3?'1 square / 2 moves':(footwearSpeed({...s,mode:'world'}))+' square(s) / move')],['Encounter reduction',Math.round((TREASURE_ITEMS[s.equippedBoots]?.encounterReduction||0)*100)+'% from boots'],['Weapon damage',t.damage.join('–')],['Hit chance',t.accuracy+'%'],['Physical protection',t.protection.toFixed(1)],['Shield block',TREASURE_ITEMS[s.equippedShield]?.block?.join('–')||'0'],['Ice retaliation',TREASURE_ITEMS[s.equippedShield]?.retaliation?.join('–')||'0'],['Fire resistance',t.fire+'%'],['Frost resistance',t.frost+'%'],['Dodge chance',t.evasion+'%'],['Regeneration',t.regeneration+' / enemy attack'],['Life drain',t.lifeSteal+' / hit'],['Freeze chance',t.freeze+'%']];return `<section class="hero-stats" aria-label="Current equipped stats"><h3>Current stats</h3><p class="fine">Includes all equipped gear and active bonuses. Damage is before enemy armor, guarding, or weaknesses; swift enemies reduce hit chance.</p><dl>${rows.map(([k,v])=>`<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl><p class="fine">${s.buffs?.meal>0?'Meal: +4 damage · '+buffTimeLeft(s,'meal')+' game min. ':''}${s.buffs?.strength>0?'Strength: +'+s.buffs.strengthPower+' damage · '+buffTimeLeft(s,'strength')+' game min. ':''}${s.buffs?.invisibility>0?'Invisible: '+buffTimeLeft(s,'invisibility')+' game min. ':''}${t.elementDamage?t.element+' damage: +'+t.elementDamage+' per hit. ':''}${t.lightning?'Lightning damage: +'+t.lightning+' per hit. ':''}</p></section>`;}
+import {
+  ATTRIBUTE_BASE, ATTRIBUTE_CAP, ATTRIBUTE_NAMES, attributeBenefits, attributeBuffMinutesLeft,
+  attributeLabel, attributePointsAvailable, effectiveAttributes, effectiveLevel, levelDrainMinutesLeft,
+} from './attributes.js';
+import { gagActive } from './gag-potions.js';
+import { footwearSpeed } from './junk-loot.js';
+import { buffTimeLeft } from './world-clock.js';
+import { WEAPONS, UNARMED, armorProtection, itemById, weaponAccuracy, weaponMagicDamage } from './items.js';
+import { TREASURE_ITEMS, equippedAccessories, gearPower } from './treasure.js';
+
+export function heroStats(s) {
+  const weapon = WEAPONS[s.equipped] || UNARMED;
+  const gear = equippedAccessories(s);
+  const benefits = attributeBenefits(s, itemById);
+  const bonus = (s.equipped ? s.weapon * 4 : 0) + effectiveLevel(s) * 2 + benefits.meleeDamage
+    + (s.buffs?.strength > 0 ? s.buffs.strengthPower || 0 : 0) + gearPower(s) + (s.buffs?.meal > 0 ? 4 : 0);
+  const magicDamage = weaponMagicDamage(weapon, benefits.magicDamage);
+  const resistance = element => Math.min(75, gear.filter(i => i.resistance === element)
+    .reduce((n, i) => n + i.resistPercent, Math.round(benefits.elementalResistance * 100)));
+  return {
+    damage: weapon.damage.map(n => Math.floor((n + bonus) * (gagActive(s, 'tiny') ? .5 : 1)) + magicDamage),
+    accuracy: Math.max(5, weaponAccuracy(s, benefits.accuracy)),
+    protection: armorProtection(s) * 1.3 + gear.filter(i => i.kind !== 'armor').reduce((n, i) => n + (i.protection || 0), 0),
+    fire: resistance('fire'),
+    frost: resistance('frost'),
+    poison: resistance('poison'),
+    magic: Math.round(benefits.magicResistance * 100),
+    evasion: Math.min(40, Math.round(gear.reduce((n, i) => n + (i.evasion || 0), benefits.evasion) * 100)),
+    regeneration: gear.reduce((n, i) => n + (i.regeneration || 0), 0),
+    lifeSteal: weapon.lifeSteal || 0,
+    freeze: Math.round((weapon.freezeChance || 0) * 100),
+    element: weapon.element,
+    elementDamage: weapon.elementDamage || 0,
+    lightning: weapon.stormDamage || 0,
+    spellBonus: benefits.magicDamage,
+  };
+}
+
+function attributeRows(s) {
+  const effective = effectiveAttributes(s, itemById);
+  const points = attributePointsAvailable(s);
+  const rows = ATTRIBUTE_NAMES.map(name => {
+    const label = attributeLabel(name);
+    const base = s.attributes?.[name] ?? ATTRIBUTE_BASE;
+    const shown = effective[name] === base ? base : `${effective[name]} <small>(${base} base)</small>`;
+    const remaining = attributeBuffMinutesLeft(s, name);
+    const timer = remaining ? ` <small>${remaining} game min</small>` : '';
+    const action = points > 0 && base < ATTRIBUTE_CAP && s.mode !== 'ending' && s.flags?.royalQuest !== 'opening'
+      ? ` <button type="button" class="text-button" data-attribute="${name}" aria-label="Increase ${label}" data-action='{"type":"allocateAttribute","attribute":"${name}"}'>+1</button>`
+      : '';
+    return `<div><dt>${label}</dt><dd>${shown}${timer}${action}</dd></div>`;
+  });
+  return `<h4>Attributes</h4><p>${points} attribute ${points === 1 ? 'point' : 'points'} available</p><dl>${rows.join('')}</dl>`;
+}
+
+export function statsView(s) {
+  const t = heroStats(s);
+  const level = effectiveLevel(s);
+  const gagLabels = { pigFace: 'Pig face', tiny: 'Mouse-sized', helium: 'Helium voice' };
+  const rows = [
+    ...Object.entries(gagLabels).filter(([key]) => gagActive(s, key))
+      .map(([key, label]) => [label, `${buffTimeLeft(s, key)} game min remaining`]),
+    ['Health', `${s.hp} / ${s.maxHp}`],
+    ['Level', level === s.level ? level : `${level} / ${s.level} · ${levelDrainMinutesLeft(s)} game min`],
+    ['Wilderness movement', s.equippedBoots === 'snowshoes' && s.region !== 3
+      ? '1 square / 2 moves' : `${footwearSpeed({ ...s, mode: 'world' })} square(s) / move`],
+    ['Encounter reduction', `${Math.round((TREASURE_ITEMS[s.equippedBoots]?.encounterReduction || 0) * 100)}% from boots`],
+    ['Weapon damage', t.damage.join('–')],
+    ['Hit chance', `${t.accuracy}%`],
+    ['Physical protection', t.protection.toFixed(1)],
+    ['Shield block', TREASURE_ITEMS[s.equippedShield]?.block?.join('–') || '0'],
+    ['Ice retaliation', TREASURE_ITEMS[s.equippedShield]?.retaliation?.join('–') || '0'],
+    ['Fire resistance', `${t.fire}%`],
+    ['Frost resistance', `${t.frost}%`],
+    ['Poison resistance', `${t.poison}%`],
+    ['Magic resistance', `${t.magic}%`],
+    ['Spell damage bonus', `+${t.spellBonus}`],
+    ['Dodge chance', `${t.evasion}%`],
+    ['Regeneration', `${t.regeneration} / enemy attack`],
+    ['Life drain', `${t.lifeSteal} / hit`],
+    ['Freeze chance', `${t.freeze}%`],
+  ];
+  const effects = [
+    s.buffs?.meal > 0 && `Meal: +4 damage · ${buffTimeLeft(s, 'meal')} game min.`,
+    s.buffs?.strength > 0 && `Strength potion: +${s.buffs.strengthPower} damage · ${buffTimeLeft(s, 'strength')} game min.`,
+    s.buffs?.invisibility > 0 && `Invisible: ${buffTimeLeft(s, 'invisibility')} game min.`,
+    t.elementDamage && `${t.element} damage: +${t.elementDamage} per hit.`,
+    t.lightning && `Lightning damage: +${t.lightning} per hit.`,
+  ].filter(Boolean).join(' ');
+  return `<section class="hero-stats" aria-label="Current equipped stats"><h3>Current stats</h3>${attributeRows(s)}<dl>${rows.map(([label, value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl><p class="fine">${effects}</p></section>`;
+}

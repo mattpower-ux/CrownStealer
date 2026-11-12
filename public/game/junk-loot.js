@@ -1,5 +1,8 @@
 import {mountFor} from './mounts.js';
 const entries=[
+ ['dagger-of-insult','Dagger of Insult','weapon','insult-dagger',30,'2–6 base damage. A successful hit has a 20% chance to insult the foe, reducing its damage by 2 for the rest of the fight.',{damage:[2,6],toHit:0}],
+ ['mirrored-shield','Mirrored Shield','shield','mirror-shield',35,'+2 physical protection while equipped. Ordinary enemies have a 5% chance to flee at their own reflection when they try to attack.',{protection:2}],
+ ['lute-of-lousy-lyrics','Lute of Lousy Lyrics','weapon','iron-lute',40,'An iron mace in musical disguise. Its awful ballad has a 5% chance each enemy turn to leave the foe numb and defenseless for two rounds.',{damage:[4,9],toHit:0}],
  ['cloth-gloves','Cloth Gloves','hands','gloves',12,'+1 defense while worn. Surprisingly good at keeping splinters out.',{protection:1}],
  ['straw-hat','Straw Hat','head','hat',6,'No armor advantage. Keeps the sun off your questionable judgment.',{protection:0}],
  ['rusty-knife','Rusty Knife','weapon','knife',8,'A small rusty blade. The rust is free.',{damage:[1,3],toHit:-1}],
@@ -12,10 +15,15 @@ const entries=[
  ['scroll-vomit','Scroll of Vomit','consumable','scroll',10,'One use: vomit violently, lose 20 health, and cure poison. Do not read over an open treasure chest.',{}]
 ];
 export const JUNK_ITEMS=Object.fromEntries(entries.map(([id,name,kind,shape,value,description,extra])=>[id,{id,name,kind,shape,value,description,...extra,rarity:'common',tier:1,unique:true,lowLoot:true,color:id==='straw-hat'?'#d5b667':'#b4aa87'}]));
-export function lowLevelLoot(level,roll,pick){return level>=1&&level<=5&&roll<.2?entries[Math.min(9,Math.max(0,Math.floor(pick*10)))][0]:null;}
+export function lowLevelLoot(level,roll,pick){return level>=1&&level<=5&&roll<.2?entries[Math.min(entries.length-1,Math.max(0,Math.floor(pick*entries.length)))][0]:null;}
 export function footwearSpeed(s){if(s.equippedBoots==='snowshoes')return s.mode==='world'&&s.region===3?2:.5;return s.mode==='world'&&s.equippedBoots==='boots-slime-skating'?2:1;}
 export function travelSteps(s){const speed=s.mode==='world'&&mountFor(s)?Math.max(footwearSpeed(s),mountFor(s).speed):footwearSpeed(s);s.flags??={};if(speed===.5){s.flags.snowshoeStep=s.flags.snowshoeStep===1?0:1;return s.flags.snowshoeStep===0?1:0;}s.flags.snowshoeStep=0;return speed;}
 export function junkArt(item){const art={
+ 'insult-dagger':'<path d="M56 151 L134 32 L153 20 L145 59 L77 160Z" fill="#ccd8de"/><path d="M68 151 L145 36" stroke="#fff5d9"/><path d="M61 152 L38 190 L49 199 L77 164 M52 145 L87 167" stroke="#d6a64c" stroke-width="10"/><path d="M25 45 H94 V83 H57 L41 99 L43 83 H25Z" fill="#f3d390"/><path d="M40 64 H49 M57 64 H66 M74 64 H82"/>',
+ 'mirror-shield':'<path d="M25 38 Q100 52 175 38 L162 131 Q149 171 100 200 Q51 171 38 131Z" fill="#c7a45c"/><path d="M42 56 Q100 70 158 56 L146 128 Q134 161 100 183 Q66 161 54 128Z" fill="#9ed2dd"/><path d="M52 106 L96 65 M66 129 L132 65 M91 155 L150 96" stroke="#efffff" stroke-width="7"/>',
+ 'iron-lute':'<path d="M100 115 L154 28 L172 38 L118 131Z" fill="#a7b9c1"/><path d="M97 104 Q68 92 42 121 Q14 156 40 181 Q67 209 99 184 Q129 162 119 127Z" fill="#657a88"/><circle cx="77" cy="146" r="18" fill="#182533"/><path d="M58 172 L163 32 M64 177 L169 37" stroke="#d8cc8f"/><path d="M142 121 V77 L178 68 V106" fill="none" stroke="#c4a0ee" stroke-width="5"/><ellipse cx="133" cy="123" rx="10" ry="6" fill="#c4a0ee"/><ellipse cx="169" cy="108" rx="10" ry="6" fill="#c4a0ee"/>',
+ 'teleporter-crystal':'<path d="M100 18 L152 68 L141 156 L100 202 L59 156 L48 68Z" fill="#48a4bd"/><path d="M100 18 L120 72 L100 202 L80 72Z" fill="#a9f9f2"/><path d="M48 68 L80 72 L100 18 M120 72 L152 68 M59 156 L100 202 L141 156" stroke="#e3fffa"/>',
+ webster:'<path d="M75 34 L125 34 L154 99 L100 185 L46 99Z" fill="#8095de" stroke="#e4eaf8" stroke-width="8"/><path d="M75 34 L100 185 L125 34 M46 99 H154" stroke="#becfff"/><path d="M76 98 L67 69 L90 87 Q100 81 110 87 L133 69 L124 98 Q137 122 100 147 Q63 122 76 98Z" fill="#42305e"/><path d="M82 105 L95 110 M118 105 L105 110" stroke="#f6dd89" stroke-width="4"/><path d="M85 120 Q100 140 115 120Z" fill="#fcf5dc"/><g fill="#e7eff5" stroke="none" font-family="serif" font-size="34" font-weight="bold"><text x="20" y="68">?</text><text x="155" y="68">?</text><text x="26" y="165">?</text><text x="154" y="165">?</text></g>',
  hat:'<ellipse cx="100" cy="142" rx="88" ry="25" fill="#b79345"/><path d="M48 137 L61 71 Q100 45 139 71 L152 137 Q100 157 48 137Z" fill="#d6b861"/><path d="M52 120 Q100 140 148 120 L151 135 Q100 153 49 135Z" fill="#6e5840"/><path d="M70 76 L62 119 M90 68 L87 126 M112 68 L116 126 M132 77 L141 119" stroke="#ae8f44"/>',
  gloves:'<path d="M60 184 L48 128 L28 100 Q25 81 40 90 L61 113 L52 49 Q58 34 66 51 L78 98 L77 38 Q85 23 92 42 L99 99 L106 44 Q118 31 122 49 L119 110 L134 69 Q151 58 151 77 L138 146 L132 184Z"/><path d="M57 153 H136 M63 170 H132"/>',
  knife:'<path d="M88 143 L97 35 L120 74 L112 143Z" fill="#9e8f77"/><path d="M92 145 H117 V203 H92Z" fill="#65503c"/><path d="M85 145 H125 M104 55 L99 126 M100 167 H111 M100 185 H111"/>',

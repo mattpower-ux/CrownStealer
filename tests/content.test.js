@@ -41,8 +41,8 @@ test('all locations use unique slugs and safe noncolliding map coordinates', () 
   for (const location of locations) {
     assert.match(location.id, /^[a-z]+(?:-[a-z]+)*$/);
     assert.ok([0, 1, 2, 3].includes(location.region));
-    assert.ok(Number.isInteger(location.x) && location.x >= 3 && location.x <= 28);
-    assert.ok(Number.isInteger(location.y) && location.y >= 3 && location.y <= 20);
+    assert.ok(Number.isInteger(location.x) && location.x >= 12 && location.x <= 112);
+    assert.ok(Number.isInteger(location.y) && location.y >= 12 && location.y <= 80);
   }
   for (let region = 0; region < 4; region++) {
     assert.equal(content.TOWNS.filter(location => location.region === region).length, 3);

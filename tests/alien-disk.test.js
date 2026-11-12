@@ -6,7 +6,7 @@ import {itemById,itemArt} from '../public/game/items.js';
 test('each monument adds one disk piece, duplicate visits do not, completion still boards ship',()=>{
  let s=createGame();
  for(let i=0;i<10;i++){
-  s.region=Math.floor(i/3);s.mode='world';s.dungeon=null;s.exploration??={artifacts:[]};s.exploration.area='wild-'+i;s.exploration.home={region:s.region,x:16,y:1};s.x=16;s.y=4;
+  s.region=Math.floor(i/3);s.mode='world';s.dungeon=null;s.exploration??={artifacts:[]};s.exploration.area='wild-'+i;s.exploration.home={region:s.region,x:64,y:4};s.x=64;s.y=16;
   s=act(s,{type:'enter'});assert.equal(s.flags.artifactReveal,true);assert.equal(itemById('alien-disk',s).pieces,i+1);
   s=loadGame(saveGame(s));assert.equal(itemById('alien-disk',s).pieces,i+1);
   s=act(s,{type:'acknowledgeArtifact'});assert.equal(s.flags.artifactReveal,undefined);

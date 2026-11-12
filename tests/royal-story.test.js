@@ -1,10 +1,39 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {createGame,createRoyalGame,act,saveGame,loadGame,dungeonMap,nextObjective} from '../public/game/engine.js';import {ROYAL_INTRO} from '../public/game/royal-story.js';
 const expelled=()=>act(createRoyalGame('Foolish hero'),{type:'royalIntroSkip'});
-const gate=s=>act({...s,x:24,y:7},{type:'enter'});
-test('new royal opening starts in court, supplies one coin and rusty sword, then expels the hero',()=>{let s=createRoyalGame('Foolish hero');assert.equal(s.mode,'town');assert.equal(s.location,'bellwether');assert.equal(s.gold,1);assert.equal(s.equipped,'rusty-sword');assert.equal(s.meals,1);for(let n=0;n<ROYAL_INTRO.length;n++)s=act(s,{type:'royalIntroNext'});assert.equal(s.flags.royalQuest,'banished');assert.equal(s.mode,'world');assert.equal(s.x,23);assert.match(nextObjective(s),/500 gold/);});
+const gate=s=>act({...s,x:96,y:28},{type:'enter'});
+test('new royal opening starts in court, supplies one coin and rusty sword, then expels the hero',()=>{let s=createRoyalGame('Foolish hero');assert.equal(s.mode,'town');assert.equal(s.location,'bellwether');assert.equal(s.gold,1);assert.equal(s.equipped,'rusty-sword');assert.equal(s.meals,1);for(let n=0;n<ROYAL_INTRO.length;n++)s=act(s,{type:'royalIntroNext'});assert.equal(s.flags.royalQuest,'banished');assert.equal(s.mode,'world');assert.equal(s.x,95);assert.match(nextObjective(s),/500 gold/);});
 test('the royal gate checks gold in hand, requires no toes and imprisons the first returning adventurer',()=>{assert.equal(gate({...expelled(),gold:499}).mode,'world');const s=gate({...expelled(),gold:500});assert.equal(s.flags.royalQuest,'imprisoned');assert.equal(s.dungeon.royal,'cell');assert.equal(s.gold,500);assert.equal(loadGame(saveGame(s)).dungeon.royal,'cell');assert.equal(act(s,{type:'leave'}).mode,'dungeon');});
 function path(map,x,y,tx,ty){const q=[[x,y,[]]],seen=new Set();while(q.length){const [a,b,p]=q.shift();if(a===tx&&b===ty)return p;for(const [dx,dy,dir]of[[0,-1,0],[1,0,1],[0,1,2],[-1,0,3]]){const nx=a+dx,ny=b+dy,k=nx+','+ny;if(map[ny]?.[nx]!==undefined&&map[ny][nx]!==1&&!seen.has(k)){seen.add(k);q.push([nx,ny,[...p,dir]]);}}}throw Error('No escape route');}
 function walk(s,tx,ty){for(const dir of path(dungeonMap(s.dungeon),s.dungeon.x,s.dungeon.y,tx,ty)){while(s.dungeon.dir!==dir)s=act(s,{type:'turn',delta:1});s.rng=187441;s=act(s,{type:'forward'});assert.equal(s.mode,'dungeon');}return s;}
-test('search, trapdoor and royal sewer exit form a playable escape without awarding a campaign relic',()=>{let s=gate({...expelled(),gold:500});s=act(s,{type:'royalSearch'});s=walk(s,3,3);s=act(s,{type:'descend'});assert.equal(s.dungeon.royal,'sewer');s=walk(s,13,13);s=act(s,{type:'descend'});assert.equal(s.flags.royalQuest,'escaped');assert.equal(s.mode,'world');assert.equal(s.relics.length,0);assert.equal(s.dungeon,null);});
-test('princess choices require escape, a surrendered royal garrison and presence at court',()=>{let s={...expelled(),gold:500,mode:'town',location:'bellwether'};assert.notEqual(act(s,{type:'royalChoice',choice:'marriage'}).mode,'ending');s.flags.royalQuest='escaped';assert.notEqual(act(s,{type:'royalChoice',choice:'marriage'}).mode,'ending');s.flags['garrison:0']=true;for(const choice of ['marriage','tyrant']){const end=act(s,{type:'royalChoice',choice});assert.equal(end.ending,choice);assert.equal(loadGame(saveGame(end)).ending,choice);}});
+test('the sewer key frees Galen before the loose stones lead back inside Bellwether',()=>{let s=gate({...expelled(),gold:500});s=act(s,{type:'royalSearch'});s=walk(s,3,3);s=act(s,{type:'descend'});assert.equal(s.dungeon.royal,'sewer');s=walk(s,13,13);s=act(s,{type:'descend'});assert.equal(s.mode,'dungeon');s.bag.push('sewer-skeleton-key');s=act(s,{type:'descend'});assert.equal(s.flags.galenFreed,true);assert.equal(s.flags.galenRingCharges,3);s=act(loadGame(saveGame(s)),{type:'descend'});assert.equal(s.flags.royalQuest,'escaped');assert.equal(s.mode,'town');assert.equal(s.location,'bellwether');assert.equal(s.relics.length,0);assert.equal(s.dungeon,null);});
+test('princess choices require Wang’s payment, a surrendered royal garrison and the Balrog whip',()=>{let s={...expelled(),gold:5700,mode:'town',location:'bellwether'};assert.notEqual(act(s,{type:'royalChoice',choice:'marriage'}).mode,'ending');s.flags.royalQuest='escaped';s=act(s,{type:'talk'});assert.equal(s.flags.royalQuest,'wang');s.bag.push('wang-sceptre');s.flags.wangDefeated=true;s=act(s,{type:'royalWang'});assert.equal(s.gold,700);assert.equal(s.flags.wangTrialComplete,true);assert.notEqual(act(s,{type:'royalChoice',choice:'marriage'}).mode,'ending');s.flags['garrison:0']=true;s=act(s,{type:'talk'});assert.equal(s.flags.royalQuest,'trial');assert.notEqual(act(s,{type:'royalChoice',choice:'marriage'}).mode,'ending');s.flags.balrogDefeated=true;s.bag.push('balrog-whip');s=act(s,{type:'royalWhip'});assert.equal(s.flags.balrogTrialComplete,true);assert.equal(s.bag.includes('balrog-whip'),false);for(const choice of ['marriage','tyrant']){const end=act(s,{type:'royalChoice',choice});assert.equal(end.ending,choice);assert.equal(loadGame(saveGame(end)).ending,choice);}});
 test('existing saves are not reset or forced into the new opening',()=>{const old=createGame('Existing hero');old.gold=234;old.level=9;const restored=loadGame(saveGame(old));assert.equal(restored.gold,234);assert.equal(restored.level,9);assert.equal(restored.flags.royalQuest,undefined);});
+
+test('paying exactly 5,000 gold preserves admission to Bellwether',()=>{
+ let s={...expelled(),gold:5000,mode:'town',location:'bellwether',x:96,y:28};
+ s.flags.royalQuest='wang';s.bag.push('wang-sceptre');
+ s=act(s,{type:'royalWang'});
+ assert.equal(s.gold,0);
+ assert.equal(s.mode,'town');
+ assert.equal(s.flags.wangTrialComplete,true);
+ s=act(s,{type:'leave'});
+ s=act(loadGame(saveGame(s)),{type:'enter'});
+ assert.equal(s.mode,'town');
+ assert.equal(s.flags.pennilessTown,undefined);
+});
+
+test('an older escaped or audience save can return for Galen and keep its story stage',()=>{
+ for(const stage of ['escaped','audience']){
+  let s={...expelled(),mode:'town',location:'bellwether',x:96,y:28,gold:500};
+  s.flags.royalQuest=stage;s.bag.push('sewer-skeleton-key');
+  s=act(loadGame(saveGame(s)),{type:'royalSewerReturn'});
+  assert.equal(s.dungeon?.royal,'sewer');
+  assert.equal(s.flags.royalQuest,stage);
+  s=act(s,{type:'descend'});
+  assert.equal(s.flags.galenRingCharges,3);
+  s=act(s,{type:'descend'});
+  assert.equal(s.mode,'town');
+  assert.equal(s.flags.royalQuest,stage);
+  assert.equal(act(s,{type:'royalSewerReturn'}).mode,'town');
+ }
+});

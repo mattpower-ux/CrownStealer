@@ -13,4 +13,4 @@ services:
         value: application/vnd.android.package-archive
       - path: /downloads/*.apk
         name: Content-Disposition
-        value: attachment; filename="CrownStealer.apk"
+        value: attachment; filename="BarTheGates.apk"

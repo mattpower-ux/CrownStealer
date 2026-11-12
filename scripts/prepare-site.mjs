@@ -7,10 +7,10 @@ const expected=(await readFile(new URL('releases/CrownStealer-0.9.4.apk.sha256',
 if(checksum!==expected)throw Error('APK checksum does not match release verification.');
 await mkdir(new URL('downloads/',out),{recursive:true});
 await cp(new URL('public/',root),out,{recursive:true});
-await writeFile(new URL('downloads/CrownStealer.apk',out),apk);
-await writeFile(new URL('downloads/CrownStealer.apk.sha256',out),`${checksum}  CrownStealer.apk\n`);
+await writeFile(new URL('downloads/BarTheGates.apk',out),apk);
+await writeFile(new URL('downloads/BarTheGates.apk.sha256',out),`${checksum}  BarTheGates.apk\n`);
 await cp(new URL('docs/download.html',root),new URL('download.html',out));
-console.log(`Website prepared in dist. Android download: /downloads/CrownStealer.apk (${apk.length} bytes).`);
+console.log(`Website prepared in dist. Android download: /downloads/BarTheGates.apk (${apk.length} bytes).`);
 
 await writeFile(new URL('downloads/BornToRule.apk',out),apk);
 await writeFile(new URL('downloads/BornToRule.apk.sha256',out),`${checksum}  BornToRule.apk\n`);

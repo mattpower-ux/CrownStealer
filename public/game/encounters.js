@@ -5,6 +5,8 @@ import {nightEnemy} from './world-clock.js';
 import {GROVE_ENEMIES} from './wild-sites.js';
 import {ENEMIES,DUNGEON_LEVELS,monsterStats} from './bestiary.js';
 import {DUNGEONS} from './content.js';
+import {BOTTOMLESS_PIT,pitEncounter} from './bottomless-pit.js';
+import {PUTRID_PALACE,wangEncounter} from './royal-trials.js';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export const REGION_MIN_LEVELS=[1,8,16,26],REGION_MAX_TARGETS=[24,32,44,58],REGION_DUNGEON_BONUS=[0,4,9,16];
 export const wildernessTarget=s=>{const region=clamp(s.region||0,0,3);return clamp(REGION_MIN_LEVELS[region]+Math.floor((s.level-1)*.85),REGION_MIN_LEVELS[region],REGION_MAX_TARGETS[region]);};
@@ -12,6 +14,8 @@ export function encounterPool(s){if(s.dungeon?.site==='firedrak')return [{id:'fi
 function baseEncounter(s,roll,boss=false,guard=false){
  if(boss&&s.dungeon?.site==='firedrak')return {speciesId:'drake-defiler',name:'Drake the Defiler',level:25,hp:650,maxHp:650,attack:60,armor:18,gold:300,xp:500,kind:'caster',element:'fire',weakness:'steady pressure',boss:true,firstContact:true};
  if(guard)return {speciesId:'royal-pursuer',name:"King Malachi the Ineffable's Royal Guard",level:50,hp:900,maxHp:900,attack:110,armor:45,element:'fire',gold:170,xp:200,kind:'armored',weakness:'steady pressure',boss:false,guard:true,firstContact:true};
+ if(s.dungeon?.site===BOTTOMLESS_PIT.id)return pitEncounter(s.dungeon,roll,boss);
+ if(boss&&s.dungeon?.site===PUTRID_PALACE.id)return wangEncounter();
  if(boss&&planetaryDungeon(s.dungeon)){const m=planetaryBoss(s.dungeon,ENEMIES),stats=monsterStats(m,m.level),hp=Math.round(stats.hp*1.6);return {...m,...stats,speciesId:m.id,hp,maxHp:hp,attack:Math.round(stats.attack*1.2),armor:stats.armor+6,gold:m.level*3,xp:m.level*15,weakness:m.weakness,boss:true,guard:false,firstContact:true};}
  if(boss&&s.dungeon?.expedition){const level=8+s.region*8+s.dungeon.floor*2;return {speciesId:'royal-pursuer',name:s.dungeon.expedition.startsWith('planet-')?'Alien Vault Sentinel':'Forgotten Cave Guardian',level,hp:100+level*10,maxHp:100+level*10,attack:10+level*2,armor:Math.floor(level/2),gold:level*3,xp:level*15,kind:'armored',weakness:'steady pressure',boss:true,firstContact:true};}
  if(boss&&s.dungeon?.site==='elf-village')return {speciesId:'haghilda',name:'Haghilda the Snot',level:12,hp:260,maxHp:260,attack:29,armor:8,gold:350,xp:260,kind:'brute',weakness:'The Holy Pepper Grenade',boss:true,guard:false,firstContact:true};

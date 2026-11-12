@@ -1,9 +1,12 @@
 import {merchantPotionRemaining} from '../public/game/merchant-supplies.js';
 import {dungeonChests} from '../public/game/treasure.js';
 import {dungeonFloors} from '../public/game/dungeon-depths.js';
+import {dungeonLadders} from '../public/game/dungeon-ladders.js';
+import {levelDrainMinutesLeft} from '../public/game/attributes.js';
+import {TIME_SCALE} from '../public/game/world-clock.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createGame, act, loadGame, saveGame, worldTile, makeDungeon, DIRS} from '../public/game/engine.js';
+import {createGame, act, loadGame, saveGame, worldTile, dungeonMap, DIRS} from '../public/game/engine.js';
 import {TOWNS, DUNGEONS, SIDE_QUESTS, ENDINGS} from '../public/game/content.js';
 
 function pathTo(start, target, passable) {
@@ -52,6 +55,8 @@ function campaign(outlaw) {
       else if (state.enemy.weakness === 'guard then counter' && !state.flags.guarded) step({type:'guard'});
       else step({type:'attack'});
     }
+    const drainedMinutes = levelDrainMinutesLeft(state);
+    if (drainedMinutes) step({type:'clockTick',elapsedMs:drainedMinutes*60_000/TIME_SCALE});
     // Stronger distant lands require recovering before the next encounter;
     // the legacy 45-HP emergency threshold is unsafe against their larger hits.
     while(state.potions&&state.hp<state.maxHp-45)step({type:'heal'});
@@ -59,9 +64,30 @@ function campaign(outlaw) {
   function walkTo(point) {
     assert.equal(state.mode, 'world');
     assert.equal(state.region, point.region);
-    const route = pathTo([state.x, state.y], [point.x, point.y], (x,y) => x>=1&&x<=30&&y>=1&&y<=22&&worldTile(state.region,x,y)!=='mountain'&&(worldTile(state.region,x,y)!=='water'||state.flags.rowboatReady));
-    for (const [x,y] of route) { step({type:'move',dx:x-state.x,dy:y-state.y}); fight(); }
+    const route = pathTo([state.x, state.y], [point.x, point.y], (x,y) => x>=1&&x<=126&&y>=1&&y<=94&&worldTile(state.region,x,y)!=='mountain'&&(worldTile(state.region,x,y)!=='water'||state.flags.rowboatReady));
+    for (const [x,y] of route) {
+      let tries = 0;
+      while (state.x !== x || state.y !== y) {
+        assert.ok(++tries <= 12, 'Route cannot progress through a wilderness interruption');
+        step({type:'move',dx:x-state.x,dy:y-state.y});
+        fight();
+        if (state.flags.wildernessEvent) step({type:'wildernessChoice',choice:'leave'});
+        if (state.dungeon?.site === 'roadside-crypt') step({type:'leave'});
+        assert.equal(state.mode, 'world');
+      }
+    }
     assert.deepEqual([state.x,state.y],[point.x,point.y]);
+  }
+  function walkDungeon(target, map) {
+    const route = pathTo([state.dungeon.x,state.dungeon.y],target,(x,y)=>map[y]?.[x]!==undefined&&map[y][x]!==1);
+    for (const [x,y] of route) {
+      assert.equal(state.mode,'dungeon');
+      const direction=DIRS.findIndex(([dx,dy])=>dx===x-state.dungeon.x&&dy===y-state.dungeon.y);
+      assert.notEqual(direction,-1);
+      while (state.dungeon.dir!==direction) step({type:'turn',delta:1});
+      step({type:'forward'}); fight();
+      assert.deepEqual([state.dungeon.x,state.dungeon.y],[x,y]);
+    }
   }
   function visit(town, challenge = false) {
     walkTo(town); step({type:'enter'}); fight();
@@ -74,6 +100,8 @@ function campaign(outlaw) {
     else if (challenge && state.level<50) step({type:'steal'});
     else if (challenge) {
       for (let i=0;i<4;i++) { step({type:'steal'}); fight(); }
+      // Intimidated guards no longer initiate combat; conquest is voluntary.
+      if (!state.flags['townGarrison:'+state.location]) { step({type:'challenge'}); fight(); }
       assert.equal(state.flags['townGarrison:'+state.location],true);
       const victories = state.flags.victories;
       step({type:'challenge'});
@@ -100,17 +128,16 @@ function campaign(outlaw) {
       if(state.relics.includes(dungeon.id))continue;
       walkTo(dungeon); step({type:'enter'});
       for (let floor=0;floor<dungeonFloors({index:DUNGEONS.indexOf(dungeon)});floor++) {
-        const map = makeDungeon(state.dungeon.index,floor);
-        const route = pathTo([1,1],[13,13],(x,y)=>map[y]?.[x]!==undefined&&map[y][x]!==1);
-        for (const [x,y] of route) {
-          assert.equal(state.mode,'dungeon');
-          const dx=x-state.dungeon.x,dy=y-state.dungeon.y;
-          const direction=DIRS.findIndex(d=>d[0]===dx&&d[1]===dy);
-          while (state.dungeon.dir!==direction) step({type:'turn',delta:1});
-          step({type:'forward'}); fight();
-          assert.deepEqual([state.dungeon.x,state.dungeon.y],[x,y]);
+        assert.equal(state.dungeon.floor, floor);
+        const map = dungeonMap(state.dungeon);
+        if (dungeon.id === 'drowned-conservatory' && floor === 19) {
+          const chest = dungeonChests(state,map).find(c=>c.items.includes('boat-amulet'));
+          walkDungeon([chest.x,chest.y],map);
+          step({type:'openChest'});
+          assert.ok(state.bag.includes('boat-amulet'));
         }
-        if(dungeon.id==='drowned-conservatory'&&floor===19){const chest=dungeonChests(state,map).find(c=>c.items.includes('boat-amulet'));for(const target of [[chest.x,chest.y],[13,13]]){const detour=pathTo([state.dungeon.x,state.dungeon.y],target,(x,y)=>map[y]?.[x]!==undefined&&map[y][x]!==1);for(const [x,y]of detour){const dir=DIRS.findIndex(d=>d[0]===x-state.dungeon.x&&d[1]===y-state.dungeon.y);while(state.dungeon.dir!==dir)step({type:'turn',delta:1});step({type:'forward'});fight();}if(target[0]===chest.x&&target[1]===chest.y)step({type:'openChest'});}assert.ok(state.bag.includes('boat-amulet'));}
+        const lower = dungeonLadders(state.dungeon,map).find(ladder=>ladder.direction==='down');
+        walkDungeon(lower ? [lower.x,lower.y] : [13,13],map);
         step({type:'descend'}); fight();
       }
       assert.equal(state.mode,'dungeon');

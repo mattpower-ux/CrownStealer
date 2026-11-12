@@ -1,3 +1,4 @@
+import {cryptChest} from './roadside-crypt.js';
 import {caveProfile,caveLootMatches} from './cave-profiles.js';
 import {dungeonFloors} from './dungeon-depths.js';
 import {SIDE_QUESTS} from './content.js';
@@ -10,10 +11,16 @@ import {SPELL_ITEMS} from './spell-items.js';
 import {GAG_ITEMS,gagDrop} from './gag-potions.js';
 import {JUNK_ITEMS} from './junk-loot.js';
 import {secretAlcove} from './secret-alcoves.js';
+import {ATTRIBUTE_NAMES,attributeLabel} from './attributes.js';
+import {BALROG_WHIP} from './bottomless-pit.js';
+import {royalTrialItems} from './royal-trials.js';
 export const RARITIES=['common','rare','epic','legendary'];
 export const rarityFor=roll=>roll<.60?'common':roll<.80?'rare':roll<.95?'epic':'legendary';
 const colors=['#b6baa5','#77bbec','#c69aef','#efcb70'];
-export const TREASURE_ITEMS={};
+export const TREASURE_ITEMS={
+ ...royalTrialItems,
+ [BALROG_WHIP]:{id:BALROG_WHIP,kind:'key',shape:'key',name:'Whip of the Balrog of Despair',rarity:'legendary',unique:true,notForSale:true,value:0,color:'#f28a50',description:'Proof of the Balrog’s defeat. Bring it to King Malachi at Bellwether Court.'},
+};
 const families=['bow','mace','wand','sword','spear','axe','crossbow'];
 for(let tier=1;tier<=3;tier++)for(let rank=0;rank<4;rank++){
  const rarity=RARITIES[rank],prefix=['Sturdy','Runed','Royal','Mythic'][rank];
@@ -61,7 +68,58 @@ TREASURE_ITEMS['holy-avenger']={
 };
 export function lootLevel(s){const region=Math.max(0,Math.min(3,s.region||0)),base=[1,8,16,26][region],character=Math.min(Math.max(1,s.level||1),base+8),depth=s.dungeon?(s.dungeon.floor||0)+1:1;return Math.max(base,character,depth);}
 export function levelAppropriate(item,s){const level=lootLevel(s);if(item.kind==='potion'){if(item.healing>40+level*5)return false;if(item.effect==='strength'&&item.power>6+level*2)return false;}if(item.kind==='scroll'&&(item.minLevel||1)>level+2)return false;return true;}
-function buildChests(s,map){const d=s.dungeon;if(!d)return [];const key=`${d.expedition||d.site||d.royal||d.index}:${d.floor}`,rng=random(hash(`${s.treasureSeed??187441}:${key}`)),count=2+Math.floor(rng()*4),cells=[],seen=new Set(),queue=[[1,1]];while(queue.length){const [x,y]=queue.shift(),k=x+','+y;if(seen.has(k)||map[y]?.[x]===undefined||map[y][x]===1)continue;seen.add(k);if(!(x===1&&y===1)&&map[y][x]!==2&&!(x===13&&y===13))cells.push({x,y});for(const [dx,dy]of [[0,1],[1,0],[0,-1],[-1,0]])queue.push([x+dx,y+dy]);}for(let i=cells.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[cells[i],cells[j]]=[cells[j],cells[i]];}return cells.slice(0,count).map((p,i)=>{const id=key+':'+i,roll=random(hash(`${s.treasureSeed??187441}:${id}:contents`)),items=[],gear=roll()<.5,tier=Math.min(3,1+Math.floor((lootLevel(s)-1)/8)),rarity=rarityFor(roll());if(gear){const pool=Object.values(TREASURE_ITEMS).filter(item=>!item.alien&&!item.unique&&levelAppropriate(item,s)&&item.rarity===rarity&&(d.site==='elf-village'?item.elven:!item.elven&&(item.kind==='potion'||item.kind==='scroll'||item.tier===tier)));const themed=pool.filter(item=>caveLootMatches(item,caveProfile(d.expedition))),choices=themed.length?themed:pool,item=choices[Math.floor(roll()*choices.length)];if(item)items.push(d.index===4&&!d.site&&!d.royal&&!d.expedition?Object.values(NAUTICAL_ITEMS).filter(n=>!n.bottomOnly&&['rare','epic','legendary'].includes(n.rarity))[Math.floor(roll()*Object.values(NAUTICAL_ITEMS).filter(n=>!n.bottomOnly&&['rare','epic','legendary'].includes(n.rarity)).length)].id:item.id);}if(d.expedition?.startsWith('planet-'))for(let n=0;n<items.length;n++)if(TREASURE_ITEMS['alien-forged-'+items[n]])items[n]='alien-forged-'+items[n];const coins=random(hash(`${s.treasureSeed??187441}:${id}:coins`));return {...p,id,item:items[0]||null,items,rarity:items.length?TREASURE_ITEMS[items[0]].rarity:'common',gold:d.floor+1+Math.floor(coins()*(2*(d.floor+1)+3)),opened:!!s.openedChests?.includes(id)};});}
+function chestBonus(s,id,allowReturn){
+ const roll=random(hash(`${s.treasureSeed??187441}:${id}:bonus`));
+ const chance=roll();
+ if(allowReturn&&chance<.2)return 'scroll-return';
+ if(chance>=.5)return null;
+ const gem=['emerald','pearl','sapphire','diamond'][Math.floor(roll()*4)];
+ const depth=(s.dungeon.floor||0)+1;
+ const size=depth>=15&&roll()<.2?'large':depth>=5&&roll()<.3?'medium':'small';
+ return size+'-'+gem;
+}
+
+function buildChests(s,map){
+ const d=s.dungeon;
+ if(!d)return [];
+ const key=`${d.expedition||d.site||d.royal||d.index}:${d.floor}`;
+ const seed=s.treasureSeed??187441,rng=random(hash(`${seed}:${key}`));
+ const count=2+Math.floor(rng()*4),cells=[],seen=new Set(),queue=[[1,1]];
+ while(queue.length){
+  const [x,y]=queue.shift(),k=x+','+y;
+  if(seen.has(k)||map[y]?.[x]===undefined||map[y][x]===1)continue;
+  seen.add(k);
+  if(!(x===1&&y===1)&&map[y][x]!==2&&!(x===13&&y===13))cells.push({x,y});
+  for(const [dx,dy] of [[0,1],[1,0],[0,-1],[-1,0]])queue.push([x+dx,y+dy]);
+ }
+ for(let i=cells.length-1;i>0;i--){
+  const j=Math.floor(rng()*(i+1));
+  [cells[i],cells[j]]=[cells[j],cells[i]];
+ }
+ const level=lootLevel(s),tier=Math.min(3,1+Math.floor((level-1)/8)),planet=d.expedition?.startsWith('planet-');
+ const nautical=d.index===4&&!d.site&&!d.royal&&!d.expedition?Object.values(NAUTICAL_ITEMS).filter(item=>!item.bottomOnly&&item.rarity!=='common'):[];
+ return cells.slice(0,count).map((p,i)=>{
+  const id=key+':'+i,roll=random(hash(`${seed}:${id}:contents`)),items=[];
+  const gear=roll()<.5,rarity=rarityFor(roll());
+  if(gear){
+   const pool=Object.values(TREASURE_ITEMS).filter(item=>!item.alien&&!item.unique&&levelAppropriate(item,s)&&item.rarity===rarity&&(
+    d.site==='elf-village'?item.elven:!item.elven&&(item.kind==='potion'||item.kind==='scroll'||item.tier===tier)
+   ));
+   const themed=pool.filter(item=>caveLootMatches(item,caveProfile(d.expedition)));
+   const choices=themed.length?themed:pool,item=choices[Math.floor(roll()*choices.length)];
+   if(item)items.push(nautical.length?nautical[Math.floor(roll()*nautical.length)].id:item.id);
+  }
+  if(planet){
+   for(let n=0;n<items.length;n++)if(TREASURE_ITEMS['alien-forged-'+items[n]])items[n]='alien-forged-'+items[n];
+  }else if(items.length){
+   const bonus=chestBonus(s,id,!nautical.length);
+   if(bonus)items.push(bonus);
+  }
+  const coins=random(hash(`${seed}:${id}:coins`));
+  return {...p,id,item:items[0]||null,items,rarity:items.length?TREASURE_ITEMS[items[0]].rarity:'common',gold:d.floor+1+Math.floor(coins()*(2*(d.floor+1)+3)),opened:!!s.openedChests?.includes(id)};
+ });
+}
+
 export function dungeonMonsterLoot(s, rarityRoll, itemRoll){
  const rarity=rarityFor(rarityRoll);
  const pool=Object.values(TREASURE_ITEMS).filter(item=>item.rarity===rarity&&!item.unique&&!item.alien&&!item.elven&&item.tier<=1+Math.floor((lootLevel(s)-1)/8)&&levelAppropriate(item,s));
@@ -69,7 +127,7 @@ export function dungeonMonsterLoot(s, rarityRoll, itemRoll){
 }
 export function merchantStock(region,town='',level=1){const tier=Math.min(3,region+1),base=Object.values(TREASURE_ITEMS).filter(i=>!i.gadget&&!i.alien&&levelAppropriate(i,{region,level})&&healingAvailable(region,i)&&!i.bottomOnly&&!i.gag&&!i.lowLoot&&!i.elven&&(i.kind==='potion'||i.kind==='scroll'&&i.minLevel<=3+region*3||i.tier===tier)&&(i.rarity==='common'||i.rarity==='rare')&&(i.variant||0)===hash(town+':'+i.id.replace(/-v[1-4]$/,''))%5).map(i=>i.id);if(['gallows-fair','ash-market','pearl-defiance','noonless-quay'].includes(town))base.push(...Object.keys(GADGETS));if(['bellwether','iron-choir','lantern-raft','hinge-town'].includes(town))base.push(...Object.values(SPELL_ITEMS).filter(i=>!i.alien&&(i.minLevel||i.spellLevel||1)<=3+region*4).map(i=>i.id));if(region>=3&&!base.some(id=>TREASURE_ITEMS[id]?.effect==='ultra-healing')&&levelAppropriate(TREASURE_ITEMS['common-ultra-healing'],{region,level}))base.push('common-ultra-healing');return [...new Set(base)];}
 const chestLayouts=new Map();
-export function dungeonChests(s,map){if(!s.dungeon)return [];if(s.dungeon.ship)return [{x:3,y:10,id:'ship:0:0',item:'alien-0-1',items:['alien-0-1'],rarity:'epic',gold:1},{x:11,y:10,id:'ship:0:1',item:'alien-2-2',items:['alien-2-2'],rarity:'epic',gold:1}].map(c=>({...c,opened:!!s.openedChests?.includes(c.id)}));const d=s.dungeon;if(d.royal==='sewer')return [sewerChest(s,map)];const room=secretAlcove(d,map),closed=room?map.map((row,y)=>row.map((tile,x)=>x===room.x&&y===room.y?1:tile)):map,key=`${s.treasureSeed??187441}:${d.expedition||d.site||d.royal||d.index}:${d.floor}:${lootLevel(s)}`;if(!chestLayouts.has(key)){if(chestLayouts.size>=128)chestLayouts.delete(chestLayouts.keys().next().value);chestLayouts.set(key,buildChests({...s,openedChests:[]},closed));}const chests=chestLayouts.get(key).map(c=>({...c,opened:!!s.openedChests?.includes(c.id)}));if(d.index===4&&d.floor===19&&!d.royal&&!d.site&&!d.expedition&&chests.length){chests[0]={...chests[0],id:'4:19:boat',item:'boat-amulet',items:['boat-amulet'],rarity:'epic',opened:!!s.openedChests?.includes('4:19:boat')};}if((d.site==='firedrak'&&d.floor===9&&s.flags.drakeDefeated)||(d.expedition&&d.floor===2&&s.flags['expedition:'+d.expedition])||(d.site==='elf-village'&&d.floor===3&&s.flags.haghildaDefeated)||(!d.expedition&&!d.site&&!d.royal&&d.floor===dungeonFloors(d)-1&&s.flags['boss:'+d.index])){const id=`${d.expedition||d.site||d.index}:${d.floor}:boss`,pool=Object.values(TREASURE_ITEMS).filter(i=>!i.unique&&!i.alien&&!i.elven&&['rare','epic','legendary'].includes(i.rarity)&&levelAppropriate(i,s)&&i.tier===Math.min(3,1+Math.floor((lootLevel(s)-1)/8))),themed=pool.filter(i=>caveLootMatches(i,caveProfile(d.expedition))),choices=themed.length?themed:pool,item=choices[hash(id)%choices.length];if(item){const reward=d.expedition?.startsWith('planet-')&&TREASURE_ITEMS['alien-forged-'+item.id]?'alien-forged-'+item.id:item.id;chests.push({id,x:13,y:13,item:reward,items:[reward],rarity:item.rarity,gold:d.floor+1,opened:!!s.openedChests?.includes(id)});}}if(d.secretRoom){const id=d.index+':'+d.floor+':secret';chests.push({...d.secretRoom,id,item:'common-lesser-healing',items:['common-lesser-healing'],rarity:'common',gold:d.floor+1,opened:!!s.openedChests?.includes(id)});}return chests;}
+export function dungeonChests(s,map){if(!s.dungeon)return [];if(s.dungeon.site==='roadside-crypt')return [cryptChest(s,TREASURE_ITEMS)];if(s.dungeon.ship)return [{x:3,y:10,id:'ship:0:0',item:'alien-0-1',items:['alien-0-1'],rarity:'epic',gold:1},{x:11,y:10,id:'ship:0:1',item:'alien-2-2',items:['alien-2-2'],rarity:'epic',gold:1}].map(c=>({...c,opened:!!s.openedChests?.includes(c.id)}));const d=s.dungeon;if(d.royal==='sewer')return [sewerChest(s,map)];const room=secretAlcove(d,map),closed=room?map.map((row,y)=>row.map((tile,x)=>x===room.x&&y===room.y?1:tile)):map,key=`${s.treasureSeed??187441}:${d.expedition||d.site||d.royal||d.index}:${d.floor}:${lootLevel(s)}`;if(!chestLayouts.has(key)){if(chestLayouts.size>=128)chestLayouts.delete(chestLayouts.keys().next().value);chestLayouts.set(key,buildChests({...s,openedChests:[]},closed));}const chests=chestLayouts.get(key).map(c=>({...c,opened:!!s.openedChests?.includes(c.id)}));if(d.index===4&&d.floor===19&&!d.royal&&!d.site&&!d.expedition&&chests.length){chests[0]={...chests[0],id:'4:19:boat',item:'boat-amulet',items:['boat-amulet'],rarity:'epic',opened:!!s.openedChests?.includes('4:19:boat')};}if((d.site==='firedrak'&&d.floor===9&&s.flags.drakeDefeated)||(d.expedition&&d.floor===2&&s.flags['expedition:'+d.expedition])||(d.site==='elf-village'&&d.floor===3&&s.flags.haghildaDefeated)||(!d.expedition&&!d.site&&!d.royal&&d.floor===dungeonFloors(d)-1&&s.flags['boss:'+d.index])){const id=`${d.expedition||d.site||d.index}:${d.floor}:boss`,pool=Object.values(TREASURE_ITEMS).filter(i=>!i.unique&&!i.alien&&!i.elven&&['rare','epic','legendary'].includes(i.rarity)&&levelAppropriate(i,s)&&i.tier===Math.min(3,1+Math.floor((lootLevel(s)-1)/8))),themed=pool.filter(i=>caveLootMatches(i,caveProfile(d.expedition))),choices=themed.length?themed:pool,item=choices[hash(id)%choices.length];if(item){const reward=d.expedition?.startsWith('planet-')&&TREASURE_ITEMS['alien-forged-'+item.id]?'alien-forged-'+item.id:item.id;chests.push({id,x:13,y:13,item:reward,items:[reward],rarity:item.rarity,gold:d.floor+1,opened:!!s.openedChests?.includes(id)});}}if(d.secretRoom){const id=d.index+':'+d.floor+':secret';chests.push({...d.secretRoom,id,item:'common-lesser-healing',items:['common-lesser-healing'],rarity:'common',gold:d.floor+1,opened:!!s.openedChests?.includes(id)});}return chests;}
 
 export const equipmentKeys=['equipped','equippedArmor','equippedRing','equippedRing2','equippedNecklace','equippedShield','equippedBoots','equippedHands','equippedHead'];
 export const equippedAccessories=s=>equipmentKeys.slice(1).map(k=>TREASURE_ITEMS[s[k]]).filter(Boolean);
@@ -82,6 +140,9 @@ for(let planet=0;planet<3;planet++)for(let slot=0;slot<3;slot++){
 }
 
 Object.assign(TREASURE_ITEMS,JUNK_ITEMS);
+TREASURE_ITEMS['dungeon-elevator']={id:'dungeon-elevator',encounterOnly:true,name:'Dungeon Elevator Scroll',kind:'consumable',shape:'scroll',rarity:'rare',unique:true,color:'#8ecfe8',value:80,description:'One use. Jump to any floor of the current dungeon, or return to its entrance on the surface.'};
+TREASURE_ITEMS['teleporter-crystal']={id:'teleporter-crystal',encounterOnly:true,name:'Teleporter Crystal',kind:'consumable',shape:'teleporter-crystal',rarity:'rare',unique:true,lowLoot:true,color:'#8af4ed',value:180,description:'One use. Insert it into an Alien Artifact to travel to a land you have already visited.'};
+TREASURE_ITEMS.webster={id:'webster',kind:'necklace',shape:'webster',lowLoot:true,unique:true,rarity:'legendary',tier:1,name:'Webster',color:'#afb7f5',value:500,description:'A crystal amulet inhabited by a demon of supposedly ultimate knowledge.'};
 
 // Upgrade legacy wand weapons to charged spell items; saved copies are migrated individually.
 for(const item of Object.values(TREASURE_ITEMS))if(item.kind==='weapon'&&item.family==='wand'){
@@ -96,5 +157,30 @@ export function migrateRangedGear(s){for(const key of ['bag','pendingLoot'])if(A
 Object.assign(TREASURE_ITEMS,ALIEN_ITEMS,SPELL_ITEMS);
 
 Object.assign(TREASURE_ITEMS,GADGETS);
+
+for (const name of ATTRIBUTE_NAMES) {
+ const label = attributeLabel(name);
+ for (const rarity of ['rare','legendary']) for (const kind of ['scroll','potion']) {
+  const permanent = rarity === 'legendary';
+  const amount = (permanent ? 2 : 3) + (kind === 'potion' ? 1 : 0);
+  const minLevel = kind === 'scroll' ? (permanent ? 8 : 2) : 1;
+  const id = `${rarity}-${name}-${kind}`;
+  TREASURE_ITEMS[id] = {
+   id, kind, rarity, minLevel, tier: permanent ? 2 : 1, shape: kind,
+   name: kind === 'scroll' ? `Scroll of ${permanent ? 'Lasting ' : ''}${label}` : `${permanent ? 'Elixir' : 'Potion'} of ${label}`,
+   color: colors[permanent ? 3 : 1], value: permanent ? 500 : 90,
+   attributeEffect: { attribute: name, amount, ...(permanent ? {} : { durationMinutes: 30 }) },
+   description: `Raises ${label} by up to ${amount} ${permanent ? 'permanently' : 'for 30 game minutes'}.${minLevel > 1 ? ` Requires level ${minLevel}.` : ''}`,
+  };
+ }
+}
+
+for (const item of Object.values(TREASURE_ITEMS)) {
+ const name = { ring:'dexterity', necklace:'wisdom', armor:'constitution', hands:'strength', head:item.shape === 'crown' ? 'charisma' : 'intelligence' }[item.kind];
+ if (!name || item.unique || !['epic','legendary'].includes(item.rarity)) continue;
+ const amount = (item.rarity === 'legendary' ? 4 : 2) + item.tier - 1;
+ item.attributeBonuses = { [name]:amount };
+ item.description += ` While worn, +${amount} ${attributeLabel(name)}.`;
+}
 
 for(const q of SIDE_QUESTS)if(q.questItem)TREASURE_ITEMS[q.questItem]={id:q.questItem,kind:'quest',unique:true,name:q.keepsakeName,shape:'scroll',rarity:'rare',value:0,description:'A commission keepsake for '+q.title+'. Return it to the Odd Jobs office.'};

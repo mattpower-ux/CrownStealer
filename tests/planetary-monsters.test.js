@@ -2,7 +2,7 @@ import test from 'node:test';import assert from 'node:assert/strict';
 import {createGame,act,loadGame,saveGame} from '../public/game/engine.js';
 import {buildEncounter,encounterPool} from '../public/game/encounters.js';
 import {MONSTER_BY_ID,monsterStats} from '../public/game/bestiary.js';
-function planet(p=0,floor=0,cave=2){const s=createGame();s.region=p+1;s.mode='dungeon';s.returnMode='dungeon';s.exploration={area:'planet-'+p,artifacts:[],home:{region:0,x:5,y:7}};s.dungeon={index:s.region*2,expedition:`planet-${p}-cave-${cave}`,floor,x:13,y:13,dir:0};return s;}
+function planet(p=0,floor=0,cave=2){const s=createGame();s.region=p+1;s.mode='dungeon';s.returnMode='dungeon';s.x=16;s.y=15;s.exploration={area:'planet-'+p,artifacts:[],home:{region:0,x:23,y:28}};s.dungeon={index:s.region*2,expedition:`planet-${p}-cave-${cave}`,floor,x:13,y:13,dir:0};return s;}
 test('all nine planet dungeons use alien beings, stronger species arrive with depth, tribbles match rats',()=>{
  for(let p=0;p<3;p++)for(let cave=0;cave<3;cave++)for(let floor=0;floor<3;floor++){const s=planet(p,floor,cave),pool=encounterPool(s);assert.ok(pool.length>=3);assert.ok(pool.every(m=>m.id.startsWith('space-')));if(floor===0)assert.ok(pool.some(m=>m.id==='space-tribble'));if(floor===2){assert.ok(pool.some(m=>m.id==='space-astronaut'));assert.ok(!pool.some(m=>m.id==='space-tribble'));}for(let i=0;i<20;i++)assert.ok(buildEncounter(s,i/20).speciesId.startsWith('space-'));}
  const s=planet(),e=buildEncounter(s,0),rat=monsterStats(MONSTER_BY_ID['tithe-rat'],1);assert.equal(e.speciesId,'space-tribble');for(const key of ['hp','attack','armor'])assert.equal(e[key],rat[key]);
