@@ -3,7 +3,7 @@ export const GAG_KEYS=['pigFace','tiny','helium'];
 export const gagActive=(s,key)=>(s?.buffExpiry?.[key]||0)>worldTimeMs(s||{});
 export const GAG_ITEMS=Object.fromEntries([
  ['potion-unique-looks','Potion of Unique Looks','pigFace',168,'#e7a3ad','Your face becomes a pig’s for one full game week! A wandering merchant in Pelagos, the third region, MIGHT carry a Potion of Cure-All. Bring 5,000 gold.'],
- ['potion-largeness','Potion of Largeness','tiny',3,'#94c976','You shrink to the size of a mouse! Physical weapon damage is halved, random encounters are half as likely, and you can slip under regional gates unnoticed. Lasts three game hours. No cure.'],
+ ['potion-largeness','Potion of Largeness','tiny',3,'#94c976','You shrink to the size of a mouse! Physical weapon damage and the chance of random encounters are halved for three game hours. No cure.'],
  ['potion-helium','Potion of Helium','helium',12,'#e8ce79','Your voice becomes an unbearable squeak. Merchants, guards and other people refuse to do business for twelve game hours. No cure.'],
  ['potion-cure-all','Potion of Cure-All','cureAll',0,'#b6e9e3','Cures a pig face and poison. Cannot cure shrinking or helium.']
 ].map(([id,name,effect,hours,color,reveal])=>[id,{id,name,kind:'potion',shape:'potion',unique:true,gag:true,rarity:id==='potion-cure-all'?'rare':'common',effect,hours,color,value:id==='potion-cure-all'?5000:50,reveal,description:id==='potion-cure-all'?reveal:'A curious sealed potion. Its label makes no trustworthy promises. Drink to discover its effect.'}]));

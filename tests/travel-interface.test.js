@@ -37,12 +37,35 @@ test('the Atlas distinguishes reachable gates and the active branch', () => {
   const s = createGame();
   s.exploration = { area: 'wild-2', artifacts: [] };
   s.flags['gateAccess:branch-0-west'] = true;
+  s.flags['gateChallengeWon:east-gate-0'] = true;
   assert.deepEqual(atlasRegions(s)[0].branches.map(({ open, current }) => [open, current]), [
-    [false, false], [false, false], [true, true],
+    [false, false], [false, false], [false, true],
   ]);
+  assert.equal(atlasRegions(s)[0].east.open, false);
   s.relics.push('tithe-vault', 'widows-bell');
   assert.equal(atlasRegions(s)[0].branches.every(branch => branch.open), true);
   assert.equal(atlasRegions(s)[0].east.open, true);
+});
+
+test('the Atlas requires a boat and both relics for sailing passages unless a dragon is equipped', () => {
+  const s = createGame();
+  const sailing = () => atlasRegions(s)[3].branches.filter(branch => branch.gate.boatOnly);
+  assert.equal(sailing().length, 2);
+  s.flags.rowboatReady = true;
+  assert.ok(sailing().every(branch => !branch.open));
+  assert.match(atlasView(s), /Sailing passage · Sealed · Boat and both relics required/);
+  s.relics.push(...atlasRegions(s)[3].dungeons.map(dungeon => dungeon.id));
+  assert.ok(sailing().every(branch => branch.open));
+  delete s.flags.rowboatReady;
+  assert.ok(sailing().every(branch => !branch.open));
+  s.relics.length = 0;
+  s.flags.mount = 'dragon';
+  assert.ok(sailing().every(branch => branch.open));
+  assert.equal(atlasRegions(s)[0].east.open, true);
+  assert.match(atlasView(s), /Sailing passage · Open/);
+  s.flags.dragonCaptured = true;
+  assert.ok(sailing().every(branch => !branch.open));
+  assert.equal(atlasRegions(s)[0].east.open, false);
 });
 
 test('the joystick has a dead zone, uses legal cardinal steps, and respects dungeon strafing', () => {

@@ -14,4 +14,10 @@ test('each palace library has three distinct readable books and a factual treasu
  }
  const all=TOWNS.flatMap(t=>castleLibraryBooks(t.id,castleLayout(t.id)));
  for(const title of ['Goat Pudding','Purple Snail Soup','Carcass Carcassone Stir Fry'])assert.ok(all.some(b=>b.name.includes(title)));
+ const hint=title=>all.find(book=>book.name.includes(title)).text;
+ assert.match(hint('Ashes on the Mountain'),/Dragonstone.*lowest level/i);
+ assert.match(hint('A Whip at the Bottom of the World'),/report.*victory/i);
+ assert.doesNotMatch(hint('A Whip at the Bottom of the World'),/whip demanded/i);
+ assert.match(hint('The Sceptre and the Slugs'),/claim.*sceptre/i);
+ assert.doesNotMatch(hint('The Sceptre and the Slugs'),/King demands/i);
 });

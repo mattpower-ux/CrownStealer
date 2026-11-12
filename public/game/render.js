@@ -330,11 +330,12 @@ export function render(canvas,s,time=0,fx=null,reduced=false){renderedHero=s;con
  if(s.dungeon&&(s.mode==='dungeon'||s.mode==='battle'&&s.returnMode==='dungeon'))canvas.dataset.wallTheme=caveProfile(s.dungeon.expedition)?.name||DUNGEON_WALLS[s.dungeon.index].name;else delete canvas.dataset.wallTheme;
 
  const contact=s.mode==='battle'&&s.returnMode==='dungeon',wildContact=s.mode==='battle'&&s.returnMode!=='dungeon'&&s.enemy?.firstContact;
- const castle=s.castle&&castleLayout(s.location);
+ const castle=s.castle&&castleLayout(s.location),arena=s.arena&&(s.mode==='town'||s.enemy?.arenaFighter);
 
- canvas.dataset.view=wildContact?(castle?'castle-contact':'wilderness-contact'):contact?(s.enemy?.firstContact?'dungeon-contact':'dungeon-battle'):s.mode==='battle'?'battle-map':s.mode==='dungeon'?'dungeon-3d':castle?'castle-map':s.mode==='town'?'town-map':'world-map';
+ canvas.dataset.view=arena?(s.mode==='battle'?'arena-battle':'arena-floor'):wildContact?(castle?'castle-contact':'wilderness-contact'):contact?(s.enemy?.firstContact?'dungeon-contact':'dungeon-battle'):s.mode==='battle'?'battle-map':s.mode==='dungeon'?'dungeon-3d':castle?'castle-map':s.mode==='town'?'town-map':'world-map';
 
- if(wildContact){if(castle)drawCastle(c,w,h,s,castle,time,fx,reduced);else drawWorldViewport(c,w,h,s);wildernessMonster(c,w,h,s);}
+ if(arena){drawArenaRing(c,w,h);if(s.mode==='battle')dungeonMonster(c,w,h,s,time,fx,reduced);}
+ else if(wildContact){if(castle)drawCastle(c,w,h,s,castle,time,fx,reduced);else drawWorldViewport(c,w,h,s);wildernessMonster(c,w,h,s);}
  else if(contact){if(!drawIllustratedBossEntrance(c,w,h,s)){dungeon(c,w,h,s,reduced?0:time);dungeonMonster(c,w,h,s,time,fx,reduced);}}
  else if(s.mode==='battle')battle(c,w,h,s,time,fx,reduced);
  else if(s.mode==='dungeon')dungeon(c,w,h,s,reduced?0:time);
@@ -342,7 +343,7 @@ export function render(canvas,s,time=0,fx=null,reduced=false){renderedHero=s;con
  else if(s.mode==='town')town(c,w,h,s,reduced?0:time);
  else drawWorldViewport(c,w,h,s);
 
- const v=c.createRadialGradient(w/2,h/2,h*.18,w/2,h/2,Math.max(w,h)*.65);v.addColorStop(0,'#00110b00');v.addColorStop(1,s.mode==='world'||s.mode==='battle'&&s.returnMode==='world'||castle?'#030e0c20':'#030e0ccc');c.fillStyle=v;c.fillRect(0,0,w,h);
+ const v=c.createRadialGradient(w/2,h/2,h*.18,w/2,h/2,Math.max(w,h)*.65);v.addColorStop(0,'#00110b00');v.addColorStop(1,s.mode==='world'||s.mode==='battle'&&s.returnMode==='world'||castle||arena?'#030e0c20':'#030e0ccc');c.fillStyle=v;c.fillRect(0,0,w,h);
 
 }
 
@@ -414,6 +415,7 @@ const guardPortraits=new Image();guardPortraits.src='/assets/palace-guards.webp'
 const castleFurnitureArt=new Image();castleFurnitureArt.src='/assets/castle-furniture.webp';
 const castleBookCovers=new Image();castleBookCovers.src='/assets/castle-library-covers.webp';
 const castleHeadArt=new Image();castleHeadArt.src='/assets/talking-trophies.webp';
+const castleChestArt=new Image();castleChestArt.src='/assets/palace-chests.webp';
 const castleBathArt=new Image();castleBathArt.src='/assets/healing-bathtub.webp';
 const governorPortraitTowns=TOWNS.filter(town=>town.id!=='bellwether').map(town=>town.id);
 
@@ -597,8 +599,21 @@ function castleFloor(layout,region){
  return castleFloorCache.base;
 }
 
+export function castleChestPortrait(chest,opened=false){
+ // The lower sprites start above the midpoint of the 1254 × 1254 atlas.
+ return {column:chest.treasurySlot===undefined?0:1,row:opened?1:0,y:opened?555:0,width:627,height:opened?699:555};
+}
+
 function drawCastleChest(c,chest,opened,size){
  const x=(chest.x+.5)*size,y=(chest.y+.5)*size;
+ if(castleChestArt.complete&&castleChestArt.naturalWidth){
+  const crop=castleChestPortrait(chest,opened),longSide=Math.max(crop.width,crop.height);
+  const aspect=Math.abs(c.getTransform().a/c.getTransform().d)||1,unit=size*Math.min(1,aspect)*.94;
+  const width=crop.width/longSide,height=crop.height/longSide;
+  c.save();c.translate(x,y);c.scale(unit/aspect,unit);
+  c.drawImage(castleChestArt,crop.column*crop.width,crop.y,crop.width,crop.height,-width/2,-height/2,width,height);c.restore();
+  return;
+ }
  c.fillStyle='#201b20aa';c.fillRect(x-size*.36,y-size*.1,size*.76,size*.41);
  c.fillStyle=opened?'#482f26':'#976138';c.fillRect(x-size*.38,y-size*.21,size*.76,size*.45);
  c.strokeStyle=opened?'#9a805b':'#e6bc70';c.lineWidth=size*.05;c.strokeRect(x-size*.38,y-size*.21,size*.76,size*.45);
@@ -627,8 +642,8 @@ function drawCastleBook(c,book,read,size){
 }
 
 function drawCastleHead(c,head,size,overview=false){
- const x=(head.x+.5)*size,y=(head.y+.5)*size,aspect=Math.abs(c.getTransform().a/c.getTransform().d)||1;
- const unit=size*Math.min(1,aspect)*(overview?.94:1.24);
+ const x=(head.x+.5+(head.mountDx||0)*.28)*size,y=(head.y+.5+(head.mountDy||0)*.28)*size,aspect=Math.abs(c.getTransform().a/c.getTransform().d)||1;
+ const unit=size*Math.min(1,aspect)*(overview?.71:.66);
  c.save();c.translate(x,y);c.scale(unit/aspect,unit);
  if(castleHeadArt.complete&&castleHeadArt.naturalWidth){
   const sw=castleHeadArt.width/2,sh=castleHeadArt.height/2;
@@ -704,7 +719,7 @@ function drawCastle(c,w,h,s,layout,time,fx,reduced){
  if(layout.talkingHead&&castlePointVisible(s,layout.talkingHead))drawCastleHead(c,layout.talkingHead,size);
  if(layout.bathtub&&castlePointVisible(s,layout.bathtub))drawCastleBath(c,layout.bathtub,size);
  const guards=castleGuards(s);
- const moving=fx?.kind==='castleGuardApproach'?guards.find(guard=>guard.id===fx.guardId):null;
+ const moving=fx&&['castleGuardApproach','castleGuardConsult','castleGuardReturned'].includes(fx.kind)?guards.find(guard=>guard.id===fx.guardId):null;
  for(const figure of [...guards,...castleFigures(s)])if(figure.id!==moving?.id&&castlePointVisible(s,figure))drawCastleFigure(c,figure,size,s.location,s.region);
  if(moving){
   const path=fx.path,step=reduced?path.length-1:clamp((time-fx.start)/fx.duration,0,1)*(path.length-1);
@@ -718,6 +733,8 @@ function drawCastle(c,w,h,s,layout,time,fx,reduced){
 }
 
 const casinoBuilding=new Image();casinoBuilding.src='/assets/gambling-house.webp';
+const arenaBuilding=new Image();arenaBuilding.src='/assets/gladiator-arena.webp';
+const arenaRing=new Image();arenaRing.src='/assets/gladiator-ring.webp';
 
 const storyBuilding=new Image();storyBuilding.src='/assets/story-house.webp';
 
@@ -744,7 +761,12 @@ function town(c,w,h,s,time){
 
   if(place.id==='court'&&s.location==='bellwether'&&settlements.complete&&settlements.naturalWidth){const sw=settlements.width/4,sh=settlements.height/3;c.save();c.shadowColor='#edcf76';c.shadowBlur=12;c.drawImage(settlements,sw,0,sw,sh,(place.bx-.6)*size,(place.by-1)*size,(place.bw+1.2)*size,(place.bh+1)*size);c.restore();}
 
-  else if(regionalBuilding(c,s.region,specialtyFacades[place.merchant]||place.id,(s.location==='mothbridge'&&place.id==='casino'?place.x+.5-place.bw/2:place.bx)*size,place.by*size,place.bw*size,place.bh*size)){}
+  else if(place.id==='arena'&&arenaBuilding.complete&&arenaBuilding.naturalWidth){
+   const width=place.bw*size, height=width*w/h*arenaBuilding.height/arenaBuilding.width;
+   c.drawImage(arenaBuilding,(place.x+.5)*size-width/2,(place.by+place.bh)*size-height,width,height);
+  }
+
+  else if(regionalBuilding(c,s.region,specialtyFacades[place.merchant]||place.id,(place.artWidth?place.x+.5-place.artWidth/2:place.bx)*size,place.by*size,(place.artWidth||place.bw)*size,place.bh*size)){}
 
   else if(s.region===2&&drawOceanBuilding(c,place.id,place.bx*size,place.by*size,place.bw*size,place.bh*size)){} 
 
@@ -758,7 +780,7 @@ function town(c,w,h,s,time){
 
   }
 
-  else if(place.id==='casino'&&casinoBuilding.complete&&casinoBuilding.naturalWidth)c.drawImage(casinoBuilding,place.bx*size,place.by*size,place.bw*size,place.bh*size);
+  else if(place.id==='casino'&&casinoBuilding.complete&&casinoBuilding.naturalWidth)c.drawImage(casinoBuilding,(place.artWidth?place.x+.5-place.artWidth/2:place.bx)*size,place.by*size,(place.artWidth||place.bw)*size,place.bh*size);
 
   else if(place.id==='quests'&&storyBuilding.complete&&storyBuilding.naturalWidth)c.drawImage(storyBuilding,place.bx*size,place.by*size,place.bw*size,place.bh*size);
 
@@ -910,7 +932,7 @@ function paintIllustratedBoss(c,enemy,x,y,w,h){
 const ghostDragon=new Image();ghostDragon.src='/assets/ghost-dragon.webp';
 
 const firedrakSprites=new Image();firedrakSprites.src='/assets/firedrak-monsters.webp';monsterAtlases['firedrak-monsters']=firedrakSprites;
-export function paintMonster(c,enemy,x,y,w,h,dungeonIndex=0){if(paintIllustratedBoss(c,enemy,x,y,w,h))return true;if(enemy.speciesId==='leviathan-levity'&&levityBoss.complete&&levityBoss.naturalWidth){c.drawImage(levityBoss,x,y,w,h);return true;}if(enemy.speciesId==='haghilda'&&haghilda.complete&&haghilda.naturalWidth){c.drawImage(haghilda,x,y,w,h);return true;}if(enemy.speciesId==='ghost-dragon'&&ghostDragon.complete&&ghostDragon.naturalWidth){c.drawImage(ghostDragon,x,y,w,h);return true;}const species=GROVE_ENEMIES.find(m=>m.id===enemy.speciesId)||MONSTER_BY_ID[enemy.speciesId]||ENEMIES.find(m=>m.name===enemy.name);const art=enemy.speciesId?.startsWith('firedrak-')||enemy.speciesId==='drake-defiler'?{sheet:'firedrak-monsters',index:enemy.speciesId==='firedrak-imp'?0:enemy.speciesId==='firedrak-elemental'?1:2}:species?.art||{sheet:'dungeon-monsters',index:enemy.guard?11:enemy.boss?[2,2,4,4,7,6,8,10][dungeonIndex]:9};const img=monsterAtlases[art.sheet];if(!img?.complete||!img.naturalWidth)return false;const cols=art.sheet==='firedrak-monsters'?3:['monsters-wild','monsters-grove'].includes(art.sheet)?2:4,rows=art.sheet==='firedrak-monsters'?1:['monsters-wild','monsters-grove'].includes(art.sheet)?1:art.sheet==='monsters-planets'?2:3,sw=img.width/cols,sh=img.height/rows,key=art.sheet+':'+art.index;
+export function paintMonster(c,enemy,x,y,w,h,dungeonIndex=0){if(paintIllustratedBoss(c,enemy,x,y,w,h))return true;if(enemy.speciesId==='leviathan-levity'&&levityBoss.complete&&levityBoss.naturalWidth){c.drawImage(levityBoss,x,y,w,h);return true;}if(enemy.speciesId==='haghilda'&&haghilda.complete&&haghilda.naturalWidth){c.drawImage(haghilda,x,y,w,h);return true;}if(enemy.speciesId==='ghost-dragon'&&ghostDragon.complete&&ghostDragon.naturalWidth){c.drawImage(ghostDragon,x,y,w,h);return true;}const species=GROVE_ENEMIES.find(m=>m.id===enemy.speciesId)||MONSTER_BY_ID[enemy.speciesId]||ENEMIES.find(m=>m.name===enemy.name);const art=enemy.speciesId?.startsWith('firedrak-')||enemy.speciesId==='drake-defiler'?{sheet:'firedrak-monsters',index:enemy.speciesId==='firedrak-imp'?0:enemy.speciesId==='firedrak-elemental'?1:2}:(enemy.arenaFighter?enemy.art||{sheet:'dungeon-monsters',index:11}:species?.art)||{sheet:'dungeon-monsters',index:enemy.guard?11:enemy.boss?[2,2,4,4,7,6,8,10][dungeonIndex]:9};const img=monsterAtlases[art.sheet];if(!img?.complete||!img.naturalWidth)return false;const cols=art.sheet==='firedrak-monsters'?3:['monsters-wild','monsters-grove'].includes(art.sheet)?2:4,rows=art.sheet==='firedrak-monsters'?1:['monsters-wild','monsters-grove'].includes(art.sheet)?1:art.sheet==='monsters-planets'?2:3,sw=img.width/cols,sh=img.height/rows,key=art.sheet+':'+art.index;
 
  if(!monsterBounds.has(art.sheet)){
 
@@ -962,6 +984,14 @@ function wildernessMonster(c,w,h,s){
 
 const monsterLayer=document.createElement('canvas');
 
+function drawArenaRing(c,w,h){
+ c.fillStyle='#4b3a26';c.fillRect(0,0,w,h);
+ if(!arenaRing.complete||!arenaRing.naturalWidth)return;
+ const scale=Math.max(w/arenaRing.width,h/arenaRing.height);
+ const width=arenaRing.width*scale,height=arenaRing.height*scale;
+ c.drawImage(arenaRing,(w-width)/2,(h-height)*.52,width,height);
+}
+
 function dungeonMonster(c,w,h,s,time,fx,reduced){
 
  const age=fx?time-fx.start:9999,hit=age>=0&&age<350&&fx.amount>0,enemyHit=hit&&fx.target==='enemy',heroHit=hit&&fx.target==='hero'&&fx.kind!=='heal';
@@ -976,7 +1006,7 @@ function dungeonMonster(c,w,h,s,time,fx,reduced){
 
  if(monsterLayer.width!==Math.ceil(width))monsterLayer.width=Math.ceil(width);if(monsterLayer.height!==Math.ceil(height))monsterLayer.height=Math.ceil(height);const mc=monsterLayer.getContext('2d');mc.clearRect(0,0,monsterLayer.width,monsterLayer.height);
 
- const painted=paintMonster(mc,s.enemy,0,0,width,height,s.dungeon.index);
+ const painted=paintMonster(mc,s.enemy,0,0,width,height,s.dungeon?.index??0);
 
  if(painted){if(enemyHit){mc.globalCompositeOperation='source-atop';mc.fillStyle=`rgba(255,20,15,${pulse*.8})`;mc.fillRect(0,0,width,height);mc.globalCompositeOperation='source-over';}const count=s.enemy.memberHp?Math.max(1,Math.ceil(s.enemy.hp/s.enemy.memberHp)):1;for(let i=0;i<count;i++)c.drawImage(monsterLayer,x+(i-(count-1)/2)*width*.42,feet-height);}else{c.fillStyle='#111a17';c.beginPath();c.ellipse(w/2,feet-height*.45,width*.25,height*.4,0,0,Math.PI*2);c.fill();circle(c,w/2-width*.06,feet-height*.72,3,'#d5b07c');circle(c,w/2+width*.06,feet-height*.72,3,'#d5b07c');}
 

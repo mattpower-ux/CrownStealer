@@ -23,3 +23,17 @@ test('the Mothbridge casino entrance opens off the east market street',()=>{
  assert.deepEqual(s.townPosition,{x:9,y:7});
  assert.equal(townPlace(s)?.id,'casino');
 });
+
+test('Mothbridge path west of the Gilded Goose stays open to the south',()=>{
+ const town=TOWNS[0];
+ let s=createGame();
+ Object.assign(s,{mode:'town',location:town.id,x:town.x,y:town.y,townPosition:{x:8,y:4}});
+ s=act(s,{type:'move',dx:0,dy:1});
+ assert.deepEqual(s.townPosition,{x:8,y:5});
+ const intoWall=act(s,{type:'move',dx:1,dy:0});
+ assert.deepEqual(intoWall.townPosition,s.townPosition);
+ for(let n=0;n<2;n++)s=act(s,{type:'move',dx:0,dy:1});
+ assert.deepEqual(s.townPosition,{x:8,y:7});
+ s=act(s,{type:'move',dx:1,dy:0});
+ assert.equal(townPlace(s)?.id,'casino');
+});

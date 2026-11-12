@@ -3,6 +3,7 @@ import { worldTile } from './engine.js';
 import { AREAS, areaFor, areaSites, branchGates } from './exploration.js';
 import { WILD_SITES } from './wild-sites.js';
 import { PUTRID_PALACE } from './royal-trials.js';
+import { MOUNTS, mountFor } from './mounts.js';
 import { WORLD_HEIGHT, WORLD_WIDTH } from './world-size.js';
 
 const LEVELS = ['1–7', '8–15', '16–25', '26+'];
@@ -18,24 +19,26 @@ const escape = value => String(value).replace(/[&<>"']/g, character => (
 
 export function atlasRegions(state) {
   const area = areaFor(state);
+  const ridingDragon = mountFor(state) === MOUNTS.dragon;
+  const boatReady = !!(state.flags.rowboatReady || state.flags.sailboatReady);
   return REGIONS.map(region => {
     const towns = TOWNS.filter(town => town.region === region.id);
     const dungeons = DUNGEONS.filter(dungeon => dungeon.region === region.id);
     const sideDungeons = PUTRID_PALACE.region === region.id ? [PUTRID_PALACE] : [];
     const relicsFound = dungeons.every(dungeon => state.relics.includes(dungeon.id));
-    const isOpen = gate => relicsFound || !!state.flags[`gateAccess:${gate.id}`];
+    const canCross = relicsFound || ridingDragon;
     const east = WILD_SITES.find(site => site.id === `east-gate-${region.id}`);
     const west = WILD_SITES.find(site => site.id === `west-gate-${region.id}`);
     const branches = branchGates(region.id).map(gate => {
       const branch = AREAS.find(candidate => candidate.id === gate.area);
       return {
-        ...branch, gate, open: gate.boatOnly ? !!(state.flags.rowboatReady || state.flags.sailboatReady) : isOpen(gate), current: area?.id === branch.id,
+        ...branch, gate, open: canCross && (!gate.boatOnly || ridingDragon || boatReady), current: area?.id === branch.id,
         sites: areaSites({ region: region.id, exploration: { area: branch.id } })
           .filter(site => ['expedition', 'bottomless-pit'].includes(site.kind) || site.id === 'bottomless-pit'),
       };
     });
     return {
-      ...region, towns, dungeons, sideDungeons, branches, east: { ...east, open: east.target < region.id || isOpen(east) }, west,
+      ...region, towns, dungeons, sideDungeons, branches, east: { ...east, open: east.target < region.id || canCross }, west,
       levels: LEVELS[region.id], color: LEVEL_COLORS[region.id],
       current: state.region === region.id && area?.kind !== 'planet',
     };
@@ -47,7 +50,8 @@ const routeStatus = open => open ? 'Open' : 'Sealed';
 
 function branchView(branch) {
   const direction = branch.gate.direction;
-  const route = branch.gate.boatOnly ? 'Sailing passage · Boat required' : direction[0].toUpperCase() + direction.slice(1) + ' gate · ' + routeStatus(branch.open);
+  const passage = branch.gate.boatOnly ? 'Sailing passage' : direction[0].toUpperCase() + direction.slice(1) + ' gate';
+  const route = passage + ' · ' + routeStatus(branch.open) + (branch.gate.boatOnly && !branch.open ? ' · Boat and both relics required' : '');
   return `<li class="atlas-branch"><details${branch.current ? ' open' : ''}>
     <summary><span>${escape(branch.name)}</span><small>${route}${branch.current ? ' · You are here' : ''}</small></summary>
     <p>${branch.gate.boatOnly ? 'Passage' : 'Gate'} ${coordinate(branch.gate)}</p><ul>${branch.sites.map(site => `<li>${escape(site.name)} ${coordinate(site)}</li>`).join('')}</ul>

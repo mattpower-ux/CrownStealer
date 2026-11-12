@@ -4,7 +4,6 @@ import {TOWNS} from '../public/game/content.js';
 import {townPlaces, townPosition, townWalkable} from '../public/game/town.js';
 import {act, createGame, loadGame, saveGame} from '../public/game/engine.js';
 import {itemById} from '../public/game/items.js';
-import {BALROG_WHIP} from '../public/game/bottomless-pit.js';
 import {ATTRIBUTE_CAP, attributePointsAvailable} from '../public/game/attributes.js';
 import {DAY_MS, buffTimeLeft, gameDay} from '../public/game/world-clock.js';
 import * as castles from '../public/game/castle-interiors.js';
@@ -377,10 +376,11 @@ function palaceAt(townId, x, y) {
     townPosition: visitor.townPosition, castle: {x, y, alarm: false}, gold: 6500};
 }
 
-test('the King offers three deliberate choices and leaving escorts a dismissed visitor to the foyer', () => {
+test('the King keeps his audience choices and leaving escorts a dismissed visitor to the foyer', () => {
   let s = palaceAt('bellwether', 9, 2);
   assert.deepEqual(castles.castleInteractionsAt(s).filter(p => p.kind !== 'guard').map(p => p.id), ['king', 'princess']);
-  assert.deepEqual(castles.castleInteractionActions(s, 'king').map(choice => choice.label), ['Leave the Room', 'Report on Your Progress', 'Attack']);
+  assert.deepEqual(castles.castleInteractionActions(s, 'king').map(choice => choice.label),
+    ['Leave the Room', 'Report on Your Progress', 'Praise', 'Threaten', 'Attack', 'Bribe']);
   s = act(s, {type: 'castleTalk', id: 'king'});
   assert.equal(s.log.at(-1), 'King Malachi the Ineffable: ' + dismissal);
   s = act(s, {type: 'castleReport', id: 'king'});
@@ -393,46 +393,75 @@ test('the King offers three deliberate choices and leaving escorts a dismissed v
   assert.equal(castles.castleInteractionAt(s, 'king'), null);
 });
 
-test('royal progress is reportable once and reports never pay for or submit quest proofs', () => {
-  let s = palaceAt('bellwether', 9, 2);
-  s.flags.royalQuest = 'escaped';
-  s = act(s, {type: 'castleReport', id: 'king'});
-  assert.equal(s.flags.royalQuest, 'wang');
-  s.flags.wangDefeated = true;
-  s.bag.push('wang-sceptre');
-  s.gold = 4999;
-  s = act(s, {type: 'castleTalk', id: 'king'});
+test('only an explicit report to the King advances a ready royal commission', () => {
+  const s = palaceAt('bellwether', 9, 2);
+  Object.assign(s.flags, {royalStoryVersion: 2, royalQuest: 'commission', 'castleReported:king': ['sewer-escape', 'wang-complete']});
+  let reports = 0;
+  const settings = {...options(), reportRoyalProgress: state => {
+    reports++;
+    state.flags.royalQuest = 'courier';
+    state.log.push('King Malachi the Ineffable: Deliver this message to Dame Isobel.');
+    return true;
+  }};
+  castles.castleAction(s, {type: 'castleTalk', id: 'king'}, settings);
+  assert.equal(reports, 0);
   assert.doesNotMatch(s.log.at(-1), /nitwit/);
-  s = loadGame(saveGame(act(s, {type: 'castleReport', id: 'king'})));
-  assert.match(s.log.at(-1), /Wang/);
-  assert.equal(s.flags.royalQuest, 'wang');
-  assert.equal(s.gold, 4999);
-  assert.ok(s.bag.includes('wang-sceptre'));
-  assert.equal(act(s, {type: 'castleReport', id: 'king'}).log.at(-1), 'King Malachi the Ineffable: ' + dismissal);
-
-  s.gold = 6500;
-  s = act(s, {type: 'castleReport', id: 'king'});
-  assert.match(s.log.at(-1), /5,000 gold/);
-  assert.equal(s.gold, 6500);
-  assert.ok(s.bag.includes('wang-sceptre'));
-  s = act(s, {type: 'royalWang'});
-  assert.equal(s.flags.wangTrialComplete, true);
-  assert.equal(s.gold, 1500);
-  assert.ok(!s.bag.includes('wang-sceptre'));
+  castles.castleAction(s, {type: 'castleReport', id: 'princess'}, settings);
+  assert.equal(reports, 0);
+  castles.castleAction(s, {type: 'castleReport', id: 'king'}, settings);
+  assert.equal(reports, 1);
+  assert.equal(s.flags.royalQuest, 'courier');
+  assert.match(s.log.at(-1), /Deliver this message/);
+  assert.deepEqual(s.flags['castleReported:king'], ['sewer-escape', 'wang-complete']);
 });
 
-test('the Princess acknowledges later royal milestones and leaves the Balrog whip for the actual turn-in', () => {
-  let s = palaceAt('bellwether', 9, 2);
-  Object.assign(s.flags, {royalQuest: 'trial', galenFreed: true, wangTrialComplete: true, 'garrison:0': true, balrogDefeated: true});
-  s.bag.push(BALROG_WHIP);
-  s = loadGame(saveGame(act(s, {type: 'castleReport', id: 'princess'})));
-  assert.match(s.log.at(-1), /^Princess Bunnyfoot: .*Galen.*garrison.*Balrog/);
-  assert.equal(s.flags.royalQuest, 'trial');
-  assert.ok(s.bag.includes(BALROG_WHIP));
-  assert.doesNotMatch(act(s, {type: 'castleReport', id: 'princess'}).log.at(-1), /Galen|Balrog/);
-  s = act(s, {type: 'royalWhip'});
-  assert.equal(s.flags.royalQuest, 'audience');
-  assert.ok(!s.bag.includes(BALROG_WHIP));
+test('royal dispatch delivery is offered only beside Dame Isobel while carrying the dispatch', () => {
+  const makeCourier = (town, x, y) => {
+    const state = palaceAt(town, x, y);
+    Object.assign(state.flags, {royalStoryVersion: 2, royalQuest: 'courier'});
+    state.bag.push('royal-dispatch');
+    return state;
+  };
+  const s = makeCourier('salt-choir', 9, 2);
+  const delivery = {type: 'royalDeliverMessage', id: 'governor'};
+  let deliveries = 0;
+  const settings = {...options(), deliverRoyalMessage: state => {
+    deliveries++;
+    state.flags.royalQuest = 'report-delivery';
+    state.bag = state.bag.filter(id => id !== 'royal-dispatch');
+  }};
+  assert.ok(castles.castleInteractionActions(s, 'governor').some(({action}) => action.type === delivery.type));
+  for (const wrong of [makeCourier('redhaven', 9, 2), makeCourier('salt-choir', 9, 4), {...s, bag: []}]) {
+    assert.ok(!castles.castleInteractionActions(wrong, 'governor').some(({action}) => action.type === delivery.type));
+    castles.castleAction(wrong, delivery, settings);
+  }
+  castles.castleAction(s, {...delivery, id: 'king'}, settings);
+  assert.equal(deliveries, 0);
+  castles.castleAction(s, delivery, settings);
+  castles.castleAction(s, delivery, settings);
+  assert.equal(deliveries, 1);
+  assert.equal(s.flags.royalQuest, 'report-delivery');
+});
+
+test('the renowned hero receives a silent bow in court and cannot provoke a ruler duel', () => {
+  const s = palaceAt('bellwether', 9, 2);
+  Object.assign(s.flags, {royalStoryVersion: 2, royalQuest: 'resolved', royalEnding: 'hero', royalHero: true});
+  assert.deepEqual(castles.castleInteractionActions(s, 'king').map(choice => choice.label), ['Leave the Room']);
+  castles.castleAction(s, {type: 'castleTalk', id: 'king'}, options());
+  assert.equal(s.log.at(-1), 'King Malachi the Ineffable: Bows silently in recognition of your deeds.');
+  castles.castleAction(s, {type: 'attackCastleRoyal', target: 'king'}, options());
+  assert.equal(s.mode, 'town');
+});
+
+test('returning to the final royal audience still welcomes the player to choose an ending', () => {
+  const s = palaceAt('bellwether', 9, 2);
+  Object.assign(s.flags, {royalStoryVersion: 2, royalQuest: 'audience', balrogDefeated: true,
+    'castleReported:king': ['balrog-defeated'], 'castleReported:princess': ['balrog-defeated']});
+  for (const id of ['king', 'princess']) {
+    castles.castleAction(s, {type: 'castleTalk', id}, options());
+    assert.match(s.log.at(-1), /future/i);
+    assert.doesNotMatch(s.log.at(-1), /nitwit/i);
+  }
 });
 
 test('nearby chests and guards are individually interactable and the guard fight leaves garrison progress alone', () => {
@@ -541,6 +570,36 @@ test('every palace treasury contains several distinct substantial chests', () =>
   }
 });
 
+test('richer chests have stronger locks and Dexterity and thief gloves raise the actual roll', () => {
+  const layout = castles.castleLayout('bellwether');
+  const chests = [...layout.chests].sort((a, b) => a.gold - b.gold);
+  for (let i = 1; i < chests.length; i++) assert.ok(chests[i].lockLevel > chests[i - 1].lockLevel);
+  const chest = chests.find(chest => chest.treasurySlot === 0);
+  const hero = palaceAt('bellwether', chest.x, chest.y);
+  const action = {type: 'robCastleChest', id: chest.id};
+  const plain = castles.castleLockpickOdds(hero, chest, 10);
+  assert.equal(plain.chance, 101 + plain.skill - chest.lockLevel);
+  const failed = structuredClone(hero);
+  const failEvents = [];
+  castles.castleAction(failed, action, {...options(.5), events: failEvents});
+  assert.deepEqual(failEvents.find(event => event.kind === 'castleLockpick'), {
+    kind: 'castleLockpick', id: chest.id, score: 50 + plain.skill, lockLevel: chest.lockLevel, success: false,
+  });
+  assert.equal(failed.gold, hero.gold);
+  assert.deepEqual(failed.bag, hero.bag);
+  assert.equal(failed.flags[chest.id], undefined);
+  assert.equal(failed.castle.alarm, true);
+
+  const dexterous = structuredClone(hero);
+  castles.castleAction(dexterous, action, {...options(.5), dexterity: () => 25});
+  assert.equal(dexterous.gold, hero.gold + chest.gold);
+
+  const gloved = {...structuredClone(hero), equippedHands: 'gloves-thief-2'};
+  assert.equal(castles.castleLockpickOdds(gloved, chest, 10).chance, plain.chance + 20);
+  castles.castleAction(gloved, action, options(.5));
+  assert.equal(gloved.gold, hero.gold + chest.gold);
+});
+
 test('treasury loot respects hero level, survives saves, and is granted only by a successful lockpick', () => {
   const [first, second, third] = castles.castleLayout('bellwether').chests.filter(chest => chest.treasurySlot !== undefined);
   let s = palaceAt('bellwether', first.x, first.y);
@@ -612,6 +671,45 @@ test('a failed robbery starts combat only after assigning a visible guard’s wa
   assert.ok(!quiet.some(event => event.kind === 'castleGuardApproach'));
 });
 
+test('stepping onto a guard offers peaceful admission, a consultation, or an explicit duel', () => {
+  const town = 'mothbridge';
+  const guard = castles.castleLayout(town).guards.find(guard => guard.x === 8 && guard.y === 13);
+  const hero = palaceAt(town, guard.x, guard.y);
+  const [visit, ignore, attack] = castles.castleInteractionActions(hero, guard.id);
+  assert.deepEqual([visit.label, ignore.label, attack.label], ['JUST VISITING', 'IGNORE', 'ATTACK']);
+  const welcomed = act(hero, visit.action);
+  assert.equal(welcomed.mode, 'town');
+  assert.equal(welcomed.enemy, null);
+  assert.match(welcomed.log.at(-1), /Behave yourself/);
+  const duel = act(hero, attack.action);
+  assert.equal(duel.enemy.castleDuel, guard.id);
+});
+
+test('ignoring a guard makes a saved consultation, and only a legal move disobeys the order', () => {
+  const town = 'mothbridge';
+  const layout = castles.castleLayout(town);
+  const guard = layout.guards.find(guard => guard.x === 8 && guard.y === 13);
+  const hero = palaceAt(town, guard.x, guard.y);
+  hero.flags.guardVictories = 3;
+  const action = {type: 'castleGuardIgnore', id: guard.id};
+  const waiting = loadGame(saveGame(act(hero, action)));
+  assert.equal(waiting.castle.guardConsultation.guardId, guard.id);
+  assert.equal(waiting.mode, 'town');
+  assert.match(waiting.log.at(-1), /WAIT HERE/);
+  const blocked = act(waiting, {type: 'move', dx: 0, dy: 1});
+  assert.equal(blocked.mode, 'town');
+  assert.deepEqual(blocked.castle.guardConsultation, waiting.castle.guardConsultation);
+  const ran = loadGame(saveGame(act(waiting, {type: 'move', dx: 1, dy: 0})));
+  assert.equal(ran.mode, 'battle');
+  assert.equal(ran.enemy.castleDuel, guard.id);
+  assert.equal(ran.castle.guardConsultation, undefined);
+  const permitted = loadGame(saveGame(act(waiting, {type: 'clockTick', elapsedMs: 10_000})));
+  assert.equal(permitted.mode, 'town');
+  assert.equal(permitted.castle.guardConsultation, undefined);
+  assert.match(permitted.log.at(-1), /may pass|behave/i);
+  assert.equal(act(permitted, {type: 'move', dx: 1, dy: 0}).mode, 'town');
+});
+
 test('palace Libraries preserve archive tiles and place distinct readable books in each library', () => {
   const ids = new Set();
   for (const town of TOWNS) {
@@ -645,7 +743,8 @@ test('reading a library book requires reaching it, journals its text, and persis
   const hero = palaceAt(town, x, y);
   assert.equal(castles.castleInteractionAt(hero, book.id).read, false);
   const [read, leave] = castles.castleInteractionActions(hero, book.id);
-  assert.equal(read.label, 'Read');
+  assert.equal(read.label, 'READ');
+  assert.equal(leave.label, 'IGNORE');
   assert.equal(act(hero, leave.action).flags[key], undefined);
   const result = loadGame(saveGame(act(hero, read.action)));
   assert.equal(result.flags[key], true);
@@ -709,6 +808,8 @@ test('each castle has exactly one reachable wall trophy and all four creatures r
     assert.equal(head.species, species[i % species.length]);
     assert.equal(head.artIndex, i % species.length);
     assert.equal(layout.tiles[head.y][head.x], 'wall');
+    assert.deepEqual([head.mountDx, head.mountDy], [0, 1]);
+    assert.equal(layout.tiles[head.y + head.mountDy][head.x + head.mountDx], 'vestibule');
     assert.equal(castles.castleInteractionsAt(hero).filter(point => point.kind === 'talking-head').length, 1);
     assert.ok(![...layout.chests, ...layout.guards, ...layout.patrols, ...layout.books].some(point =>
       (point.x === head.x && point.y === head.y) || (point.x === hero.castle.x && point.y === hero.castle.y)));

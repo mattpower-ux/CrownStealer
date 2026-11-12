@@ -10,16 +10,15 @@ export function castleTalkingHead(layout, town) {
   const occupied = new Set([...layout.chests, ...layout.guards, ...layout.patrols, ...layout.books,
     layout.entrance, layout.dungeonStair, layout.king, layout.princess, layout.governor]
     .filter(Boolean).map(point => key(point.x, point.y)));
-  const wall = Array.from({length: foyer.height}, (_, offset) => {
-    const y = foyer.y + offset, east = foyer.x + foyer.width;
-    return [{x: foyer.x - 1, y, floorX: foyer.x}, {x: east, y, floorX: east - 1}];
-  }).flat().find(({x, y, floorX}) => layout.tiles[y]?.[x] === 'wall' && !occupied.has(key(x, y)) &&
-    layout.tiles[y][floorX] === foyer.id && !occupied.has(key(floorX, y)));
-  if (!wall) return null;
+  const y = foyer.y - 1;
+  const wallX = Array.from({length: foyer.width}, (_, offset) => foyer.x + (offset + 1) % foyer.width)
+    .find(x => layout.tiles[y]?.[x] === 'wall' && !occupied.has(key(x, y)) &&
+      layout.tiles[foyer.y][x] === foyer.id && !occupied.has(key(x, foyer.y)));
+  if (wallX === undefined) return null;
   const artIndex = townIndex % species.length;
   const animal = species[artIndex];
   return {id: 'castle-head:' + town.id, kind: 'talking-head', name: 'Stuffed ' + animal,
-    species: animal, artIndex, x: wall.x, y: wall.y};
+    species: animal, artIndex, x: wallX, y, mountDx: 0, mountDy: 1};
 }
 
 export function talkingHeadReply(head, name, roll, canGiveGem) {

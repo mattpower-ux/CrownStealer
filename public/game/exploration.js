@@ -68,8 +68,8 @@ export function explorationAction(s,a,{note,encounter,clock,pointAt,random}){
  if(!area){
   const gate=branchGates(s.region).find(p=>p.x===s.x&&p.y===s.y);
   if(!gate||!(a.type==='enter'||a.type==='move'&&(a.dx<0&&gate.direction==='west'||a.dy<0&&gate.direction==='north'||a.dy>0&&gate.direction==='south')))return false;
-  if(gate.boatOnly&&!boatReady(s)){note(s,'You need a boat to take this sailing passage.');return true;}
-  s.exploration??={artifacts:[]};s.flags['gateAccess:'+gate.id]=true;
+  if(gate.boatOnly&&!boatReady(s)&&!dragonFlying(s)){note(s,'You need a boat to take this sailing passage.');return true;}
+  s.exploration??={artifacts:[]};s.flags['gateAccess:'+gate.id]=true;delete s.flags.borderTauntPending;
   s.exploration.home={region:s.region,x:gate.x,y:gate.y};travel(gate.area);return true;
  }
  if(a.type==='move'){
@@ -91,7 +91,7 @@ export function explorationAction(s,a,{note,encounter,clock,pointAt,random}){
   if(p.kind==='landedShip'){board();return true;}
   if(p.kind==='returnGate'){
    const home=s.exploration.home;
-   const mainland=home.region===3&&!boatReady(s)?boatPassageShore(area.id):null;
+   const mainland=home.region===3&&!boatReady(s)&&!dragonFlying(s)?boatPassageShore(area.id):null;
    s.exploration.area=null;s.region=home.region;
    const destination=mainland??home;s.x=destination.x;s.y=destination.y;
    note(s,mainland?'A passing boat takes you to the mainland shore.':'You return through the gate.');

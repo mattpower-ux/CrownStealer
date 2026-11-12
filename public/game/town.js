@@ -1,4 +1,4 @@
-import {SPECIALTY_SHOP_LAYOUTS,TOWN_LAYOUTS} from './town-layouts.js';
+import {ARENA_LAYOUTS,SPECIALTY_SHOP_LAYOUTS,TOWN_LAYOUTS} from './town-layouts.js';
 import {merchantPlaces} from './merchant-catalog.js';
 // Shared town geometry keeps entrances, collision, touch movement and art aligned.
 export const TOWN_SIZE=13;
@@ -19,16 +19,22 @@ export function townWalkable(x,y,s=null){if(x===6&&y===12)return true;if(x<1||x>
 function placeAt(place,footprint){
  if(!footprint)return {...place};
  const [bx,by]=footprint;
- return {...place,bx,by,x:bx+1,y:by+2};
+ return {...place,bx,by,x:bx+Math.floor(place.bw/2),y:by+place.bh};
 }
 
 export function townPlaces(s){
  const town=s?.location;
  const layout=TOWN_LAYOUTS[town];
  const [primary,secondary]=merchantPlaces(town);
- const result=TOWN_PLACES.map(place=>placeAt(place.id==='shop'&&primary?{...place,...primary}:place,layout?.[place.id]));
+ const result=TOWN_PLACES.map(place=>{
+  const building=place.id==='shop'&&primary?{...place,...primary}:place;
+  const narrowCasino=town==='mothbridge'&&place.id==='casino';
+  return placeAt(narrowCasino?{...building,bw:1,artWidth:2}:building,layout?.[place.id]);
+ });
  const specialty=Object.hasOwn(SPECIALTY_SHOP_LAYOUTS,town)?SPECIALTY_SHOP_LAYOUTS[town]:null;
  if(secondary&&specialty)result.push(placeAt({...secondary,art:1,bw:2,bh:2},specialty));
+ const arena=Object.hasOwn(ARENA_LAYOUTS,town)?ARENA_LAYOUTS[town]:null;
+ if(arena)result.push(placeAt({id:'arena',name:town==='bellwether'?'Coliseum':'Gladiator Pit',art:3,bw:2,bh:2},arena));
  if(town==='mothbridge')result.find(place=>place.id==='fortune').name='Sage of Wonk';
  return result;
 }

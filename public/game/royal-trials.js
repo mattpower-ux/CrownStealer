@@ -9,7 +9,7 @@ export const WANG_TRIAL_DIALOGUE=[
 ];
 export const royalTrialItems={
  'galen-fireball-ring':{id:'galen-fireball-ring',name:"Galen's Ring of Fireball",kind:'ring',shape:'ring',rarity:'legendary',unique:true,notForSale:true,value:0,color:'#ffb162',description:'A gift from Galen Goodfriend of Gaunt. Three fireballs, each dealing 90–120 damage. No recharge.'},
- 'wang-sceptre':{id:'wang-sceptre',name:'Sceptre of Wang the Nauseating',kind:'key',shape:'wand',rarity:'legendary',unique:true,notForSale:true,value:0,color:'#b1aa63',description:'Proof that Wang has fallen. Bring it and 5,000 gold to Bellwether.'}
+ 'wang-sceptre':{id:'wang-sceptre',name:'Sceptre of Wang the Nauseating',kind:'key',shape:'wand',rarity:'legendary',unique:true,notForSale:true,value:0,color:'#b1aa63',description:'A trophy recovered after defeating Wang the Nauseating in the Putrid Palace.'}
 };
 export function freeGalen(s){
  if(s.flags.galenFreed||!s.bag.includes('sewer-skeleton-key'))return false;

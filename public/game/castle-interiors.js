@@ -2,12 +2,14 @@ import {rareGearEffect} from './rare-gear.js';
 import {DUNGEONS,TOWNS} from './content.js';
 import {townPlace} from './town.js';
 import {ROYAL_DUNGEON_STAIR} from './royal-dungeon.js';
-import {BALROG_WHIP} from './bottomless-pit.js';
 import {castleTreasuryLoot} from './castle-treasury-loot.js';
 import {castleLibraryBooks} from './castle-library.js';
 import {castleTalkingHead, talkingHeadReply} from './castle-talking-heads.js';
 import {ATTRIBUTE_CAP, attributeLabel, prepareAttributes} from './attributes.js';
 import {gameDay, setTimedBuff} from './world-clock.js';
+import {rulerPersonality} from './ruler-personalities.js';
+import {startGuardConsultation, validGuardConsultation} from './castle-guard-audience.js';
+import {DRAGONSTONE_ID, ROYAL_COURIER_TOWN, ROYAL_DISPATCH_ID, royalCampaignEndingAvailable, royalCampaignReportAvailable} from './royal-campaign.js';
 
 export const CASTLE_FINE = 2000;
 const WIDTH = 19;
@@ -70,7 +72,7 @@ function palaceChest(town, room, treasurySlot) {
   return {
     id: `castleChest:${town.id}:${room.id}${suffix ? '-' + suffix : ''}`,
     kind: 'chest', name: room.name + ' Chest' + (suffix ? ' ' + suffix : ''),
-    x: room.x + dx, y: room.y + dy, gold,
+    x: room.x + dx, y: room.y + dy, gold, lockLevel: 60 + Math.floor(gold / 75),
     ...(treasurySlot !== undefined ? {treasurySlot} : {}),
   };
 }
@@ -152,8 +154,9 @@ export function castleFigures(s) {
 export function castleGuards(s) {
   const layout = castleLayout(s.location);
   if (!layout) return [];
+  const consultation = s.castle?.guardConsultation;
   return [...layout.guards, ...layout.patrols].map(guard => {
-    const current = s.castle?.guardPositions?.[guard.id];
+    const current = consultation?.guardId === guard.id ? consultation.destination : s.castle?.guardPositions?.[guard.id];
     return current ? {...guard, x: current.x, y: current.y} : guard;
   });
 }
@@ -184,6 +187,12 @@ export function castleChestAt(s, target) {
     (target === undefined ? figureDistance(s, chest) === 0 : chest.id === target && figureDistance(s, chest) <= 1)) ?? null;
 }
 
+export function castleLockpickOdds(s, chest, dexterity) {
+  const {lockLevel} = chest;
+  const skill = Math.floor(Math.min(50, Math.max(0, dexterity))) + Math.round(100 * rareGearEffect(s, 'lockpickBonus'));
+  return {lockLevel, skill, chance: Math.min(100, Math.max(0, 101 + skill - lockLevel))};
+}
+
 export function castleBathAt(s) {
   if (s.mode !== 'town' || !s.castle || s.castle.alarm) return null;
   const bath = castleLayout(s.location)?.bathtub;
@@ -191,7 +200,7 @@ export function castleBathAt(s) {
 }
 
 export function castleInteractionsAt(s) {
-  if (s.mode !== 'town' || !s.castle || s.castle.alarm) return [];
+  if (s.mode !== 'town' || !s.castle || s.castle.alarm || s.castle.guardConsultation) return [];
   const layout = castleLayout(s.location);
   if (!layout) return [];
   const books = layout.books.map(book => ({...book, read: s.flags[bookReadPrefix + book.id] === true,
@@ -206,19 +215,32 @@ export function castleInteractionAt(s, id) {
   return castleInteractionsAt(s).find(point => id === undefined || point.id === id) ?? null;
 }
 
+function canDeliverRoyalMessage(s, point) {
+  return point?.kind === 'governor' && s.flags.royalStoryVersion === 2 && s.flags.royalQuest === 'courier' &&
+    s.location === ROYAL_COURIER_TOWN && s.bag.includes(ROYAL_DISPATCH_ID);
+}
+
 export function castleInteractionActions(s, id) {
   const point = castleInteractionAt(s, id);
   if (!point) return [];
   const choice = (label, type) => ({label, action: {type, id: point.id}});
   if (point.kind === 'chest') return [choice('ROB', 'robCastleChest'), choice('LEAVE IT', 'leaveCastleChest')];
-  if (point.kind === 'book') return [choice('Read', 'readCastleBook'), choice('Leave It', 'leaveCastleBook')];
+  if (point.kind === 'book') return [choice('READ', 'readCastleBook'), choice('IGNORE', 'leaveCastleBook')];
   if (point.kind === 'talking-head') return [choice('Yes', 'greetCastleHead'), choice('No', 'leaveCastleHead')];
   if (point.kind === 'bath') return [choice('Bathe', 'batheCastle')];
-  if (point.kind === 'guard') return [choice('Talk', 'castleTalk'), choice('Attack', 'attackCastleGuard')];
+  if (point.kind === 'guard') return s.flags.royalHero ? [] : figureDistance(s, point) === 0
+    ? [choice('JUST VISITING', 'castleGuardVisit'), choice('IGNORE', 'castleGuardIgnore'), choice('ATTACK', 'attackCastleGuard')]
+    : [choice('Talk', 'castleTalk'), choice('Attack', 'attackCastleGuard')];
   const leave = choice('Leave the Room', 'castleLeaveRoom');
+  if (s.flags.royalHero) return [leave];
   const attack = {label: 'Attack', action: {type: 'attackCastleRoyal', target: point.id}};
-  if (point.kind === 'governor') return [leave, attack];
-  return [leave, choice('Report on Your Progress', 'castleReport'), attack];
+  const report = choice('Report on Your Progress', 'castleReport');
+  if (point.kind === 'princess') return [leave, report, attack];
+  const price = rulerPersonality(s.location).bribeGold;
+  const bribeLabel = !price ? 'Bribe' : s.flags['rulerBribed:' + s.location] ? 'Bribe · Already paid' : 'Bribe · ' + price.toLocaleString('en-US') + ' gold';
+  const story = point.kind === 'king' ? [report] : canDeliverRoyalMessage(s, point) ? [choice('Deliver the Royal Message', 'royalDeliverMessage')] : [];
+  return [leave, ...story, choice('Praise', 'castlePraise'),
+    choice('Threaten', 'castleThreaten'), attack, choice(bribeLabel, 'castleBribe')];
 }
 
 function readLibraryBook(s, book, note) {
@@ -248,20 +270,12 @@ function readLibraryBook(s, book, note) {
 
 function royalProgress(s) {
   const f = s.flags;
-  const gold = s.gold || 0;
-  const hasSceptre = s.bag?.includes('wang-sceptre');
-  const guardWins = Math.min(20, f.royalGuardWins || 0);
   const relics = s.relics?.length || 0;
   const milestones = [
     ['galen', f.galenFreed, 'Galen Goodfriend is free of the sewers.'],
-    ['sewer-escape', f.royalQuest === 'escaped' && !f.wangTrialComplete, 'You made it out of the royal sewers.'],
-    ['wang-defeated', f.wangDefeated && !f.wangTrialComplete, hasSceptre ? 'Wang has fallen, and you brought his sceptre.' : 'Wang has fallen. Bring his sceptre as proof.'],
-    ['wang-payment', f.royalQuest === 'wang' && !f.wangTrialComplete && hasSceptre && gold >= 5000, 'You have the sceptre and 5,000 gold. Present both when you are ready.'],
-    ['wang-complete', f.wangTrialComplete, 'The sceptre and gold have been received.'],
-    ['guard-wins-' + guardWins, guardWins > 0 && !f['garrison:0'], `You have defeated ${guardWins} of the 20 royal guards.`],
-    ['garrison', f['garrison:0'], 'The royal garrison has surrendered.'],
-    ['balrog-defeated', f.balrogDefeated && !f.balrogTrialComplete, s.bag?.includes(BALROG_WHIP) ? 'You defeated the Balrog. Present its whip when you are ready.' : 'You defeated the Balrog. Bring its whip as proof.'],
-    ['balrog-complete', f.balrogTrialComplete, 'The Balrog’s whip has been accepted.'],
+    ['dispatch-delivered', f.royalQuest === 'report-delivery', 'You delivered the King’s message to Dame Isobel.'],
+    ['dragonstone-recovered', s.bag?.includes(DRAGONSTONE_ID), 'You recovered the Dragonstone from Firedrak Mountain.'],
+    ['balrog-defeated', f.balrogDefeated, 'You defeated the Balrog of Despair.'],
     ['prisoners', f.royalDungeonFreed, 'You freed all three prisoners beneath the castle.'],
     ['relics-' + relics, relics > 0, `You have recovered ${relics} of the ${DUNGEONS.length} relics.`],
   ];
@@ -273,22 +287,40 @@ const isRoyal = point => point.kind === 'king' || point.kind === 'princess';
 const say = (s, point, line, note) => note(s, point.name + ': ' + line);
 
 function greet(s, point, progress, note) {
-  if (point.kind === 'king') say(s, point, progress.length ? 'Well? What progress have you made?' : kingDismissal, note);
+  if (s.flags.royalHero && (isRoyal(point) || ['governor', 'guard'].includes(point.kind))) {
+    say(s, point, 'Bows silently in recognition of your deeds.', note);
+    return;
+  }
+  if (isRoyal(point) && royalCampaignEndingAvailable(s)) {
+    say(s, point, point.kind === 'king' ? 'You have completed my trials. Tell us what future you choose.' :
+      'You kept your promise. Now the future is yours to choose.', note);
+    return;
+  }
+  if (point.kind === 'king') {
+    const ready = s.flags.royalStoryVersion === 2 && royalCampaignReportAvailable(s);
+    say(s, point, ready || progress.length ? 'Well? What progress have you made?' : kingDismissal, note);
+  }
   else if (point.kind === 'princess') say(s, point, progress.length ? 'You look like you have news. Tell me what happened.' : 'Hello again. How is your quest coming along?', note);
   else if (point.kind === 'guard') say(s, point, 'Keep your hands to yourself and there will be no trouble.', note);
-  else if (point.kind === 'governor') say(s, point, 'You may look around, but leave the palace property where it is.', note);
+  else if (point.kind === 'governor') say(s, point, canDeliverRoyalMessage(s, point)
+    ? 'That seal is the King’s. You may deliver his message to me.' : rulerPersonality(s.location).greeting, note);
   else if (point.kind === 'chest') say(s, point, 'The chest is locked.', note);
 }
 
-function converse(s, action, layout, {note, startGuard, reportRoyalProgress}) {
+function startCastleDuel(s, guard, {note, startGuard}) {
+  startGuard(s, true);
+  if (s.mode !== 'battle' || !s.enemy?.guard) return;
+  Object.assign(s.enemy, {name: guard.name, castleDuel: guard.id, gold: 0, xp: 0});
+  note(s, 'The ' + guard.name + ' steps forward to face you alone.');
+}
+
+function converse(s, action, layout, options) {
+  const {note, reportRoyalProgress} = options;
   const point = castleInteractionAt(s, action.id);
   if (!point) return;
   if (action.type === 'attackCastleGuard') {
     if (point.kind !== 'guard') return;
-    startGuard(s, true);
-    if (s.mode !== 'battle' || !s.enemy?.guard) return;
-    Object.assign(s.enemy, {name: point.name, castleDuel: point.id, gold: 0, xp: 0});
-    note(s, 'The ' + point.name + ' steps forward to face you alone.');
+    startCastleDuel(s, point, options);
     return;
   }
   const royal = isRoyal(point);
@@ -298,7 +330,12 @@ function converse(s, action, layout, {note, startGuard, reportRoyalProgress}) {
     note(s, point.kind === 'king' ? 'The guards escort you to the front foyer.' : 'You leave the room and return to the entrance hall.');
     return;
   }
-  if (action.type === 'castleReport' && !royal) return;
+  if (action.type === 'castleReport' && (!royal || point.id !== action.id)) return;
+  if (s.flags.royalHero) {
+    greet(s, point, [], note);
+    return;
+  }
+  if (action.type === 'castleReport' && point.kind === 'king' && s.flags.royalStoryVersion === 2 && reportRoyalProgress?.(s)) return;
   const history = s.flags[reportKey(point)] || [];
   const progress = royal ? royalProgress(s).filter(([id]) => !history.includes(id)) : [];
   if (action.type === 'castleTalk' || !progress.length) {
@@ -307,7 +344,6 @@ function converse(s, action, layout, {note, startGuard, reportRoyalProgress}) {
   }
   s.flags[reportKey(point)] = [...history, ...progress.map(([id]) => id)];
   say(s, point, progress.map(([, , detail]) => detail).join(' '), note);
-  if (point.kind === 'king' && progress.some(([id]) => id === 'sewer-escape')) reportRoyalProgress?.(s);
 }
 
 export function exitCastle(s, outside = false) {
@@ -365,11 +401,12 @@ export function castleGuardResponse(s, {startGuard, events = []}) {
   return true;
 }
 
-function attackRuler(s, action, layout, {note, startGuard}) {
-  const target = castleRulerAt(s, action.target);
-  if (!target) return;
+function attackRuler(s, target, layout, {note, startGuard}, reaction) {
+  if (!target || s.castle.alarm) return;
   startGuard(s, true);
   if (s.mode !== 'battle' || !s.enemy?.guard) return;
+  const reply = reaction ?? (target.kind !== 'princess' ? rulerPersonality(s.location).attack : null);
+  if (reply) say(s, target, reply, note);
   const groupSize = layout.guards.length;
   const memberHp = s.enemy.maxHp;
   const name = layout.guards[0].name;
@@ -381,6 +418,55 @@ function attackRuler(s, action, layout, {note, startGuard}) {
   s.flags['townFaction:' + s.location] = -20;
   s.flags['castleBan:' + s.location] = true;
   note(s, `Before you reach ${target.name}, all ${groupSize} ${name}s rush to intercept you.`);
+}
+
+function addressRuler(s, action, layout, options) {
+  const point = castleInteractionAt(s, action.id);
+  if (point?.id !== action.id || !['king', 'governor'].includes(point?.kind)) return;
+  const {note, imprison} = options;
+  const personality = rulerPersonality(s.location);
+  if (action.type === 'castlePraise') {
+    const key = 'rulerPraised:' + s.location;
+    if (!s.flags[key]) {
+      s.flags[key] = true;
+      s.reputation += personality.praiseReputation ?? 1;
+    }
+    say(s, point, personality.praise, note);
+    return;
+  }
+  if (action.type === 'castleBribe') {
+    const price = personality.bribeGold;
+    const key = 'rulerBribed:' + s.location;
+    if (!price) {
+      say(s, point, personality.bribe, note);
+      if (personality.temper === 'strict') imprison?.(s);
+    }
+    else if (s.flags[key]) say(s, point, 'Your favor is already recorded. Keep the rest of your gold.', note);
+    else if (s.gold < price) say(s, point, 'I require ' + price.toLocaleString('en-US') + ' gold. Keep it until you have the full amount.', note);
+    else {
+      s.gold -= price;
+      if (s.gold === 0) s.flags.fineAdmissionTown = s.location;
+      s.reputation += 2;
+      s.flags[key] = true;
+      say(s, point, personality.bribe, note);
+    }
+    return;
+  }
+  if (personality.temper === 'proud') {
+    attackRuler(s, point, layout, options, personality.threaten);
+    return;
+  }
+  if (personality.temper === 'cowardly') {
+    const key = 'rulerYielded:' + s.location;
+    if (s.flags[key]) {
+      say(s, point, 'I have already pardoned you. Please leave it at that.', note);
+      return;
+    }
+    s.flags[key] = true;
+    s.wanted[s.region] = 0;
+  }
+  say(s, point, personality.threaten, note);
+  if (personality.temper === 'strict') imprison?.(s);
 }
 
 export function castleAction(s, action, options) {
@@ -411,8 +497,27 @@ export function castleAction(s, action, options) {
     return true;
   }
   if (!s.castle || !layout) return false;
+  if (s.flags.royalHero && ['attackCastleRoyal', 'attackCastleGuard', 'castlePraise', 'castleThreaten', 'castleBribe',
+    'castleGuardVisit', 'castleGuardIgnore'].includes(action.type)) return true;
+  if (s.castle.guardConsultation && action.type !== 'move') return true;
+  if (action.type === 'castleGuardVisit' || action.type === 'castleGuardIgnore') {
+    const guard = castleInteractionAt(s, action.id);
+    if (guard?.kind !== 'guard' || guard.id !== action.id || figureDistance(s, guard) !== 0) return true;
+    if (action.type === 'castleGuardVisit') say(s, guard, 'Behave yourself. You may pass.', note);
+    else startGuardConsultation(s, guard, layout, options);
+    return true;
+  }
   if (action.type === 'attackCastleRoyal') {
-    attackRuler(s, action, layout, options);
+    if (action.target) attackRuler(s, castleRulerAt(s, action.target), layout, options);
+    return true;
+  }
+  if (['castlePraise', 'castleThreaten', 'castleBribe'].includes(action.type)) {
+    addressRuler(s, action, layout, options);
+    return true;
+  }
+  if (action.type === 'royalDeliverMessage') {
+    const recipient = castleInteractionAt(s, action.id);
+    if (recipient?.id === action.id && canDeliverRoyalMessage(s, recipient)) options.deliverRoyalMessage?.(s);
     return true;
   }
   if (['castleTalk', 'castleReport', 'castleLeaveRoom', 'attackCastleGuard'].includes(action.type)) {
@@ -459,6 +564,16 @@ export function castleAction(s, action, options) {
     }
     Object.assign(s.castle, {x, y});
     clock(s);
+    if (s.castle.guardConsultation) {
+      const {guardId} = s.castle.guardConsultation;
+      delete s.castle.guardConsultation;
+      const guard = castleGuards(s).find(guard => guard.id === guardId);
+      if (guard) {
+        note(s, 'You move before receiving permission. The guard returns and draws a weapon.');
+        startCastleDuel(s, guard, options);
+      }
+      return true;
+    }
     if (layout.tiles[y][x] === 'exit') exitCastle(s, s.castle.alarm);
     else castleGuardResponse(s, options);
     return true;
@@ -479,8 +594,12 @@ export function castleAction(s, action, options) {
     note(s, 'The alarm is still ringing. Get out of the castle.');
     return true;
   }
-  const successChance = Math.min(1,.25 + Math.min(50, Math.max(0, dexterity(s))) / 100 + rareGearEffect(s,'lockpickBonus'));
-  if (random() < successChance) {
+  const {skill, lockLevel} = castleLockpickOdds(s, chest, dexterity(s));
+  const score = 100 - Math.floor(random() * 100) + skill;
+  const success = score >= lockLevel;
+  options.events?.push({kind: 'castleLockpick', id: chest.id, score, lockLevel, success});
+  note(s, `Lockpick score ${score} against lock level ${lockLevel}.`);
+  if (success) {
     s.flags[chest.id] = true;
     s.gold = Math.min(10_000_000, s.gold + chest.gold);
     const items = castleTreasuryLoot(s, chest);
@@ -511,6 +630,7 @@ export function validCastleState(s) {
     if (guardPositions !== undefined && (!alarm || !guardPositions || typeof guardPositions !== 'object' || Array.isArray(guardPositions) ||
         Object.entries(guardPositions).some(([id, position]) => ![...layout.guards, ...layout.patrols].some(guard => guard.id === id) ||
           !Number.isInteger(position?.x) || !Number.isInteger(position?.y) || !walkable(layout, position.x, position.y)))) return false;
+    if (s.castle.guardConsultation !== undefined && !validGuardConsultation(s, layout)) return false;
   }
   if (s.enemy?.castleRoyalDefense !== undefined) {
     const e = s.enemy;
@@ -526,6 +646,12 @@ export function validCastleState(s) {
         e.guard !== true || e.castleRobbery || e.castleRoyalDefense || e.groupSize !== undefined || e.gold !== 0 || e.xp !== 0) return false;
   }
   for (const [key, value] of Object.entries(s.flags)) {
+    const rulerFlag = /^ruler(Praised|Bribed|Yielded):(.*)$/.exec(key);
+    if (rulerFlag) {
+      const [, action, town] = rulerFlag, personality = rulerPersonality(town);
+      if (value !== true || !personality || action === 'Bribed' && personality.temper !== 'greedy' ||
+          action === 'Yielded' && personality.temper !== 'cowardly') return false;
+    }
     if (key.startsWith('castleBan:') && (!layouts.has(key.slice(10)) || typeof value !== 'boolean')) return false;
     if (key.startsWith('townFaction:') && (!layouts.has(key.slice(12)) || !Number.isSafeInteger(value))) return false;
     if (key.startsWith('castleChest:') && (!layouts.get(key.split(':')[1])?.chests.some(chest => chest.id === key) || value !== true)) return false;
@@ -536,7 +662,7 @@ export function validCastleState(s) {
     }
     if (key.startsWith('castleReported:') && (!['castleReported:king', 'castleReported:princess'].includes(key) ||
         !Array.isArray(value) || value.length > 40 || new Set(value).size !== value.length ||
-        value.some(id => typeof id !== 'string' || !/^(galen|sewer-escape|wang-defeated|wang-payment|wang-complete|guard-wins-(?:[1-9]|1[0-9]|20)|garrison|balrog-defeated|balrog-complete|prisoners|relics-[1-8])$/.test(id)))) return false;
+        value.some(id => typeof id !== 'string' || !/^(galen|sewer-escape|wang-defeated|wang-payment|wang-complete|guard-wins-(?:[1-9]|1[0-9]|20)|garrison|dispatch-delivered|dragonstone-recovered|balrog-defeated|balrog-complete|prisoners|relics-[1-8])$/.test(id)))) return false;
   }
   return true;
 }

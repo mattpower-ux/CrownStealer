@@ -1,11 +1,11 @@
 const towns = ['mothbridge','bellwether','gallows-fair','redhaven','iron-choir','ash-market','salt-choir','lantern-raft','pearl-defiance','last-dawn','hinge-town','noonless-quay'];
 const hints = [
  ['The Missing Hearth Seal','The Bailiff of Bones no longer holds the Hearth Seal. Seek Haghilda on the fourth level of the abandoned elven village beyond the ruined tree fort.'],
- ['A Whip at the Bottom of the World','The Bottomless Pit lies in the Whispering Barrens. On its hundredth floor, the Balrog of Despair guards the whip demanded by the King.'],
+ ['A Whip at the Bottom of the World','The Bottomless Pit lies in the Whispering Barrens. Defeat the Balrog of Despair on the hundredth floor and report your victory to the King. The Balrog’s whip is a trophy of the fight.'],
  ['When the Widow Rings','The Rock Troll waits on the tenth level of the Widow’s Bell. The Witness Bell is the prize he guards.'],
  ['The Blind Verdict','Beneath Redhaven, the Brass Tribunal still hears dead men’s cases. Justice Without Eyes guards the Mercy Key within.'],
- ['The Sceptre and the Slugs','Wang the Nauseating rules the fifteenth level of the Putrid Palace in the Cinder Dominion. His sceptre is the proof the King demands. Fireball clears his swarming slugs.'],
- ['Ashes on the Mountain','Drake waits on the tenth level of Firedrak Mountain in the Cinder Dominion. Prepare before climbing into his stronghold.'],
+ ['The Sceptre and the Slugs','Wang the Nauseating rules the fifteenth level of the Putrid Palace in the Cinder Dominion. Defeat him to claim his sceptre. Fireball clears his swarming slugs.'],
+ ['Ashes on the Mountain','The Dragonstone lies on the tenth and lowest level of Firedrak Mountain in the Cinder Dominion. Drake the Defiler also waits there, holding captured dragons.'],
  ['The Boat in the Classroom','A chest on level twenty of the Drowned Conservatory holds the Boat Amulet. Keep it: when sailing to the Leviathan Pump, you need that boat rather than an ordinary vessel.'],
  ['The Laughing Codfish','A lake guards the approach to the Leviathan Pump. Bring the Boat Amulet from the Drowned Conservatory to reach the Leviathan of Levity and his Bone Compass.'],
  ['Confiscated Memories','The Curator of Drownings tends the Drowned Conservatory. The Tideglass Lens is hidden in that submerged place of learning.'],

@@ -9,6 +9,27 @@ import {createGame,act,saveGame,loadGame} from '../public/game/engine.js';
 test('teleportation selects all planets and home, consumes scroll and persists',()=>{for(const target of ['home',0,1,2]){let s=createGame('Traveler');s.bag.push('planet-scroll');s=act(s,{type:'alienUse',id:'planet-scroll',target});s=loadGame(saveGame(s));assert.equal(s.exploration.area,target==='home'?null:'planet-'+target);assert.equal(s.bag.includes('planet-scroll'),false);assert.equal(s.mode,'world');}});
 test('metal trees and all permanent visages survive saving',()=>{let s=createGame();s.bag.push('space-beans');s=act(s,{type:'alienUse',id:'space-beans'});assert.ok(Object.keys(s.flags).some(k=>k.startsWith('metalTree:')));for(let target=0;target<4;target++){s.bag.push('visage-transformer');s=act(s,{type:'alienUse',id:'visage-transformer',target});s=loadGame(saveGame(s));assert.equal(s.flags.visage,target);assert.ok(!s.bag.includes('visage-transformer'));}});
 test('ray has three charges and 300-500 damage; stun rod suppresses counterattack',()=>{for(const id of ['disintegration-ray','stun-rod']){let s=createGame();s.mode='battle';s.returnMode='world';s.enemy={name:'Test',level:1,hp:2000,maxHp:2000,attack:40,armor:0,gold:1};s.bag.push(id);s=act(s,{type:'useItem',id});const key=s.bag.find(x=>x.startsWith(id+'~'));assert.equal(s.wandCharges[key],id==='stun-rod'?4:2);if(id==='disintegration-ray')assert.ok(2000-s.enemy.hp>=300&&2000-s.enemy.hp<=500);else assert.equal(s.hp,s.maxHp);}});
-test('royal crown commands are persistent and cannot farm gold',()=>{let s=createGame();s.mode='town';s.location='bellwether';s.bag.push('crown-obedience');s=act(s,{type:'alienUse',id:'crown-obedience',target:'king'});assert.ok(s.flags.crownKing);const gold=s.gold;s=act(s,{type:'alienUse',id:'crown-obedience',target:'king'});assert.equal(s.gold,gold);s=act(s,{type:'alienUse',id:'crown-obedience',target:'princess'});assert.ok(loadGame(saveGame(s)).flags.crownPrincess);});
+test('legacy royal crown commands are persistent and cannot farm gold',()=>{let s=createGame();s.mode='town';s.location='bellwether';s.flags.royalStoryVersion=1;s.bag.push('crown-obedience');s=act(s,{type:'alienUse',id:'crown-obedience',target:'king'});assert.ok(s.flags.crownKing);const gold=s.gold;s=act(s,{type:'alienUse',id:'crown-obedience',target:'king'});assert.equal(s.gold,gold);s=act(s,{type:'alienUse',id:'crown-obedience',target:'princess'});const restored=loadGame(saveGame(s));assert.ok(restored.flags.crownPrincess);assert.equal(restored.flags.royalQuest,'audience');});
+test('the Crown keeps the new royal campaign and its dispatch intact when commanding the King',()=>{
+ const s={...createGame(),mode:'town',location:'bellwether',x:96,y:28};
+ Object.assign(s.flags,{royalStoryVersion:2,royalQuest:'courier'});
+ s.bag.push('crown-obedience','royal-dispatch');
+ const commanded=act(s,{type:'alienUse',id:'crown-obedience',target:'king'});
+ assert.equal(commanded.flags.royalQuest,'courier');
+ const restored=loadGame(saveGame(commanded));
+ assert.ok(restored.flags.crownKing);
+ assert.ok(restored.bag.includes('royal-dispatch'));
+ assert.equal(restored.gold,s.gold+5000);
+});
+test('P-Hopper preserves the new campaign when escaping a migrated royal cell',()=>{
+ const s={...createGame(),mode:'dungeon',returnMode:'dungeon',dungeon:{index:0,floor:0,x:1,y:1,dir:1,royal:'cell'}};
+ s.flags.royalQuest='imprisoned';
+ s.bag.push('p-hopper');
+ const legacy=loadGame(saveGame(s));
+ assert.equal(legacy.flags.royalStoryVersion,2);
+ const escaped=act(legacy,{type:'alienUse',id:'p-hopper'});
+ assert.equal(escaped.flags.royalQuest,'commission');
+ assert.equal(loadGame(saveGame(escaped)).mode,'world');
+});
 test('invalid alien item actions never grant a free enemy attack',()=>{for(const [id,target] of [['space-beans',undefined],['space-battery','missing-wand'],['visage-transformer',0],['planet-scroll','invalid']]){let s=createGame();s.mode='battle';s.returnMode='world';s.enemy={name:'Guard',guard:true,level:50,hp:500,attack:100,armor:0};s.bag.push(id);const events=[];s=act(s,{type:'alienUse',id,target},events);assert.equal(s.hp,s.maxHp,id);assert.equal(events.length,0,id);}});
 test('teleport and commanded retreat clear consecutive guard challenges',()=>{for(const id of ['planet-scroll','crown-obedience']){let s=createGame();s.mode='battle';s.returnMode='world';s.enemy={name:'Royal guard',guard:true,gateGuard:'test-gate',level:50,hp:500,attack:100};s.flags.gateAttemptWins=2;s.flags.gateAttemptId='test-gate';s.bag.push(id);s=act(s,{type:'alienUse',id,target:id==='planet-scroll'?'home':'yield'});assert.equal(s.flags.gateAttemptWins,undefined);assert.equal(s.flags.gateAttemptId,undefined);assert.equal(s.enemy,null);assert.equal(s.flags['gateAccess:test-gate'],undefined);}});
