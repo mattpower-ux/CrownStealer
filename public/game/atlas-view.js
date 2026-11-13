@@ -73,8 +73,18 @@ export function paintAtlasMaps(container,state){
  if(!canvas)return;
  const c=canvas.getContext('2d');if(!c)return;
  const lands=chartLands(state),currentArea=areaFor(state);
- c.fillStyle='#070f11';c.fillRect(0,0,1500,canvas.height);
- // Uncharted geography stays completely black: no names, outlines, or placeholders.
+ c.fillStyle='#174b6b';c.fillRect(0,0,1500,canvas.height);
+ // The shared ocean is blue; undiscovered regions retain dark, unlabelled fog.
+ if(!state.flags.previewFullMap){
+  // Cover each unknown land's chart area without drawing its coastline or labels.
+  for(const region of atlasRegions(state)){
+   const x=30+region.id*360;c.fillStyle='#070f11';
+   if(!region.discovered)c.fillRect(x,220,360,270);
+   for(const branch of region.branches)if(!branch.discovered){
+    const box=branch.gate.direction==='north'?[x+140,35,215,165]:branch.gate.direction==='south'?[x+65,510,260,165]:[x+5,55,120,145];c.fillRect(...box);
+   }
+  }
+ }
  const label=(text,x,y,size=16,color='#f3e5be',align='center')=>{
   c.font=`${size}px Georgia`;c.textAlign=align;c.textBaseline='middle';
   c.lineWidth=4;c.strokeStyle='#07100de8';c.strokeText(text,x,y);c.fillStyle=color;c.fillText(text,x,y);
@@ -86,7 +96,7 @@ export function paintAtlasMaps(container,state){
   for(let y=0;y<land.height;y+=step)for(let x=0;x<land.width;x+=step){
    const tx=Math.min((land.kind==='planet'?32:WORLD_WIDTH)-1,Math.floor(x/land.width*(land.kind==='planet'?32:WORLD_WIDTH))),ty=Math.min((land.kind==='planet'?24:WORLD_HEIGHT)-1,Math.floor(y/land.height*(land.kind==='planet'?24:WORLD_HEIGHT)));
    const tile=land.branch?areaTile(local,tx,ty):worldTile(land.id,tx,ty);
-   // One continuous dark sea joins the chart. Painting each land's water color
+   // One continuous blue sea joins the chart. Painting each land's water color
    // would expose rectangular source-map edges and turn the atlas into tiles.
    if(tile==='water')continue;
    c.fillStyle=colors[tile]||colors.grass;c.fillRect(land.x+x,land.y+y,step,step);

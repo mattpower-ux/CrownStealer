@@ -73,12 +73,12 @@ export function minorDungeonMap(d) {
 export function minorDungeonChests(s,items) {
   if(s.dungeon?.charityPit)return [];
   const d=s.dungeon,site=definitionFor(d);
-  if(!site||d.floor!==site.floors-1||(!site.treasure&&!site.trapped))return [];
+  if(!site||(site.kind!=='cemetery'&&(d.floor!==site.floors-1||(!site.treasure&&!site.trapped))))return [];
 
   const id=`minor:${site.id}:${d.floor}`;
   const found=[];
   let gold=0;
-  if(site.treasure){
+  if(site.treasure||site.kind==='cemetery'){
     let seed=((s.treasureSeed??187441)^Math.imul(site.seed+1,0x9e3779b1)^d.floor)>>>0;
     const roll=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
     const choose=pool=>pool[Math.floor(roll()*pool.length)];

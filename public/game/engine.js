@@ -393,7 +393,7 @@ export function act(input,action,events=[],previewRules={}){
  revokeBrokenOath(input,s,action||{},events.slice(actionEventStart),note,itemById);
  revokeWizard(input,s,action||{},events.slice(actionEventStart),note,itemById);
  dismissHeroEncounter(s,note);
- if(previewRules.noEncounters&&s.mode==='battle'&&input.mode!=='battle'){s.mode=s.returnMode;s.enemy=null;events.splice(actionEventStart);}
+ if(previewRules.noEncounters&&action?.type!=='engageGuardian'&&s.mode==='battle'&&input.mode!=='battle'){s.mode=s.returnMode;s.enemy=null;events.splice(actionEventStart);}
  delete s.previewRules;
  if(s.gold>0)delete s.flags.fineAdmissionTown;
  else if(s.gold<input.gold&&['pardon','payCastleFine','payGovernor'].includes(action?.type)){
@@ -657,7 +657,7 @@ function actInner(input,action,events=[]){
   return s;
  }
  if(a.type==='rummageChest'&&s.mode==='dungeon'){const chest=dungeonChests(s,dungeonMap(s.dungeon)).find(c=>c.x===s.dungeon.x&&c.y===s.dungeon.y&&c.opened);if(!chest||s.dungeon.site==='minor-site'&&!minorSiteDefinition(s.dungeon.minorId)?.treasure||s.openedChests.indexOf(chest.id)>=(s.flags.chestVisitStart??s.openedChests.length)||s.flags['missedCoins:'+chest.id])return s;const coins=1+Math.floor(rand(s)*2);s.flags['missedCoins:'+chest.id]=true;s.gold+=coins;note(s,'Someone was here before you. They missed a few coins.');return s;}
- if(a.type==='openChest'&&s.mode==='dungeon'){const chest=dungeonChests(s,dungeonMap(s.dungeon)).find(c=>c.x===s.dungeon.x&&c.y===s.dungeon.y&&!c.opened);if(!chest){note(s,'Stand on an unopened '+(isCemeteryDungeon(s.dungeon)?'coffin':'chest')+' to search it.');return s;}if(sewerGuardian(s)||roadsideGuardian(s)||minorGuardianAt(s)||startMinorResident(s,'theft',note))return s;s.openedChests??=[];s.openedChests.push(chest.id);if(chest.trap){
+ if(a.type==='openChest'&&s.mode==='dungeon'){const chest=dungeonChests(s,dungeonMap(s.dungeon)).find(c=>c.x===s.dungeon.x&&c.y===s.dungeon.y&&!c.opened);if(!chest){note(s,'Stand on an unopened '+(isCemeteryDungeon(s.dungeon)?'coffin':'chest')+' to search it.');return s;}if(!s.previewRules?.noEncounters&&(sewerGuardian(s)||roadsideGuardian(s)||minorGuardianAt(s)||startMinorResident(s,'theft',note)))return s;s.openedChests??=[];s.openedChests.push(chest.id);if(chest.trap){
   const chance=Math.min(.95,effectiveAttributes(s,itemById).dexterity/100+rareGearEffect(s,'disarmBonus'));
   if(rand(s)<chance)note(s,'You find and disarm a hidden trap before opening the chest.');
   else{const damage=5+s.region*5+Math.floor(rand(s)*11);s.hp=Math.max(0,s.hp-damage);note(s,'A hidden trap springs! You take '+damage+' damage.');if(!s.hp){recover(s,events);return s;}}

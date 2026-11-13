@@ -97,7 +97,7 @@ test('cemeteries retain geometry and tunnels add connected side passages',()=>{
 });
 
 test('minor treasure and trap-only chests have one stable identity on the last floor',()=>{
-  assert.deepEqual(minorDungeonChests(visit('minor-r0-5',0),loot),[]);
+  assert.equal(minorDungeonChests(visit('minor-r0-5',0),loot).length,1);
   for(const id of ['minor-r0-1','minor-r0-4'])assert.deepEqual(minorDungeonChests(visit(id),loot),[]);
 
   const bait=minorDungeonChests(visit('minor-r0-13'),loot);
