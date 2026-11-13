@@ -1,7 +1,13 @@
+import {atlasView,chartLands} from './atlas-view.js';
+import {areaSites} from './exploration.js';
+import {WILD_SITES} from './wild-sites.js';
+import {wildernessDiscoverySites} from './wilderness-discoveries.js';
+import {percivalCastleSite} from './percival-castle.js';
+import {twinklestarTowerSite} from './twinklestar-tower.js';
 import {ROYAL_DUNGEON_STAIR} from './royal-dungeon.js';
 import {AREAS} from './exploration.js';
 import {dungeonFloors} from './dungeon-depths.js';
-import {createGame,dungeonMap,dungeonNavigation} from './engine.js';
+import {createGame,dungeonMap,dungeonNavigation,act,minorSiteList,shipyardList} from './engine.js';
 import {REGIONS,TOWNS,DUNGEONS} from './content.js';
 import {ENEMIES} from './bestiary.js';
 import {GROVE_ENEMIES} from './wild-sites.js';
@@ -43,8 +49,24 @@ export const previewMonsters=[...ENEMIES,...GROVE_ENEMIES,
 ];
 export function previewEncounter(input,id){let monster=previewMonsters.find(m=>m.id===id);if(monster?.planetBoss)monster={...monster,hp:Math.round(monster.hp*1.6),attack:Math.round(monster.attack*1.2),armor:monster.armor+6,gold:monster.level*3,xp:monster.level*15};if(!monster)throw Error('Choose a monster.');const s=structuredClone(input);if(s.mode==='battle')s.mode=s.returnMode;clearEncounter(s);s.returnMode=s.mode;if(s.dungeon){for(let i=0;i<4&&!dungeonNavigation(s.dungeon).forward;i++)s.dungeon.dir=(s.dungeon.dir+1)%4;}s.enemy={...monster,speciesId:id,hp:monster.hp||80,maxHp:monster.hp||80,attack:monster.attack||12,armor:monster.armor||0,gold:monster.gold||20,xp:monster.xp||20,weakness:monster.weakness||'Experiment with your gear',boss:!!monster.planetBoss,guard:false,firstContact:true};s.mode='battle';return s;}
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-export function previewView(s,rules){const options=items=>items.map(i=>`<option value="${esc(i.id)}">${esc(i.name)}</option>`).join('');return `<p class="fine">Separate test character and checkpoint. Your three adventurers are untouched. Changes here test gameplay; describe artwork or story changes in chat.</p><section aria-label="Alien travel shortcuts"><h3>Alien destinations</h3><div class="panel-actions"><button class="text-button" data-preview="destination" data-destination="ship">Alien Spacecraft</button>${AREAS.filter(a=>a.kind==='planet').map(a=>`<button class="text-button" data-preview="destination" data-destination="area:${a.id}">${esc(a.name)}</button>`).join('')}</div></section><div class="preview-grid">
-<section><h3>Go anywhere</h3><label>Destination<select id="preview-destination">${options(previewDestinations)}</select></label><label>Floor (1 = first)<input id="preview-floor" type="number" min="1" max="1" value="1"></label><button data-preview="jump" class="primary">Jump to location</button><button data-preview="unlock">Grant all border relics</button></section>
-<section><h3>Stage a fight</h3><label>Monster<select id="preview-monster">${options(previewMonsters)}</select></label><button data-preview="encounter">Start encounter here</button><label class="preview-check"><input id="preview-invulnerable" type="checkbox" ${rules.invulnerable?'checked':''}> Invulnerable</label><label class="preview-check"><input id="preview-no-random" type="checkbox" ${rules.noRandom?'checked':''}> Disable random encounters</label><button data-preview="rules">Apply preview rules</button></section>
-<section><h3>Test adventurer</h3><label>Level<input id="preview-level" type="number" min="1" max="100" value="${s.level}"></label><label>Gold<input id="preview-gold" type="number" min="0" max="1000000" value="${s.gold}"></label><button data-preview="stats">Apply & restore health</button></section>
-<section><h3>Try equipment</h3><label>Item<select id="preview-item">${options(Object.entries({...WEAPONS,...TREASURE_ITEMS}).map(([id,item])=>({...item,id})))}</select></label><button data-preview="item">Add to test bag</button><button data-panel="inventory">Review / equip in Pack</button><p class="fine">Use the normal inventory to equip gear and compare stats.</p></section></div><div class="panel-actions"><button data-preview="reset">Reset test character</button><a class="text-button" href="/">Return to normal game</a></div>`;}
+export function previewMapState(s){return {...s,flags:{...s.flags,previewFullMap:true,visitedLands:[0,1,2,3,...AREAS.map(a=>a.id)]}};}
+export function previewMapLocations(s){
+ return chartLands(previewMapState(s)).flatMap(land=>{
+  const local={...s,region:land.branch?land.region:land.id,dungeon:null,exploration:{area:land.branch?land.id:null}};
+  const points=[...land.sites,...minorSiteList(local),...shipyardList(local),...wildernessDiscoverySites(local),...(land.branch?areaSites(local):WILD_SITES.filter(p=>p.region===land.id)),percivalCastleSite(local),twinklestarTowerSite(local)].filter(Boolean);
+  const seen=new Set();return points.filter(p=>!seen.has(p.id)&&seen.add(p.id)).map(p=>({...p,region:local.region,area:local.exploration.area,key:`map:${land.id}:${p.id}:${p.x}:${p.y}`,mapX:land.x+p.x/(land.kind==='planet'?32:128)*land.width,mapY:land.y+p.y/(land.kind==='planet'?24:96)*land.height}));
+ });
+}
+export function previewMapJump(input,key,rules={}){
+ const p=previewMapLocations(input).find(p=>p.key===key);if(!p)throw Error('Choose a map location.');
+ let s=previewJump(input,'land:'+p.region);s.x=p.x;s.y=p.y;s.exploration={artifacts:[],...s.exploration,area:p.area,home:{region:p.region,x:p.x,y:p.y}};
+ if(p.id==='twinklestar-tower')s.flags.rowboatReady=true;
+ delete s.arena;delete s.flags.bridgeTroll;delete s.flags.bridgeTrollApproach;
+ // Enter using the normal location handler so caves, towns and story sites keep their own rules.
+ s=act(s,{type:'enter'},[],rules);return s;
+}
+export function previewView(s,rules){
+ const markers=previewMapLocations(s).map(p=>`<button class="preview-map-pin" style="left:${p.mapX/15}%;top:${p.mapY/9.8}%" data-preview="map" data-destination="${esc(p.key)}" title="${esc(p.name)}" aria-label="Jump to ${esc(p.name)}"><span>${p.mark==='town'?'♜':'◆'}</span><small>${esc(p.name)}</small></button>`).join('');
+ const map=atlasView(previewMapState(s)).replace('<canvas data-atlas-world','<div class="preview-map-sheet"><canvas data-atlas-world').replace('</canvas>','</canvas>'+markers+previewDestinations.filter(d=>['ship','royal-dungeon','cell','sewer'].includes(d.id)).map((d,i)=>`<button class="preview-map-pin preview-map-special" style="left:${4+i*24}%;top:72%" data-preview="destination" data-destination="${d.id}">${esc(d.name)}</button>`).join('')+'</div>');
+ return `<div class="preview-map-toolbar"><p>Click a location to jump there and play.</p><div role="group" aria-label="NPC encounters"><button data-preview="encounters-off" aria-pressed="${!!rules.noEncounters}" class="${rules.noEncounters?'primary':''}">Shut Off NPC Encounters</button><button data-preview="encounters-on" aria-pressed="${!rules.noEncounters}" class="${!rules.noEncounters?'primary':''}">Include NPC Encounters</button></div></div>${map}<p class="fine">Separate preview character · <a href="/">Return to normal game</a></p>`;
+}

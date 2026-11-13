@@ -46,8 +46,8 @@ export function atlasRegions(state) {
 
 
 // Four main lands share one east–west sheet; side lands sit by their gateways.
-function chartLands(state){
- return atlasRegions(state).flatMap(region=>{
+export function chartLands(state){
+ const lands=atlasRegions(state).flatMap(region=>{
   const x=30+region.id*360;
   const main={...region,x,y:220,width:360,height:270,sites:[...region.towns.map(t=>({...t,mark:'town'})),...region.dungeons,...region.sideDungeons]};
   const branches=region.branches.map(branch=>({...branch,palette:region.palette,
@@ -56,13 +56,15 @@ function chartLands(state){
    branch:true,sites:branch.sites}));
   return [main,...branches].filter(land=>land.discovered);
  });
+ if(state.flags.previewFullMap)lands.push(...AREAS.filter(a=>a.kind==='planet').map((a,i)=>({...a,branch:true,x:40+i*490,y:745,width:450,height:210,palette:REGIONS[a.region].palette,sites:areaSites({region:a.region,exploration:{area:a.id}})})));
+ return lands;
 }
 
 export function atlasView(state){
  const names=chartLands(state).map(land=>escape(land.name+': '+land.sites.map(site=>site.name).join(', ')));
- return `<div class="atlas-chart-heading"><span>THE KNOWN WORLD</span><small>Drag or scroll to explore the map</small></div>
+ return `<div class="atlas-chart-heading"><span>${state.flags.previewFullMap?'THE WHOLE WORLD · CLICK TO EXPLORE':'THE KNOWN WORLD'}</span><small>Drag or scroll to explore the map</small></div>
  <div class="atlas-panorama" tabindex="0" role="region" aria-label="Scrollable world map">
- <canvas data-atlas-world width="1500" height="700" role="img" aria-label="World map: ${names.join(', ')}. Your position is marked with a white star."></canvas></div>
+ <canvas data-atlas-world width="1500" height="${state.flags.previewFullMap?980:700}" role="img" aria-label="World map: ${names.join(', ')}. Your position is marked with a white star."></canvas></div>
  <p class="atlas-chart-legend"><span><i class="atlas-town"></i>Settlement</span><span><i class="atlas-dungeon"></i>Dungeon</span><span class="atlas-player-key">✦ You are here</span></p>`;
 }
 
@@ -71,7 +73,7 @@ export function paintAtlasMaps(container,state){
  if(!canvas)return;
  const c=canvas.getContext('2d');if(!c)return;
  const lands=chartLands(state),currentArea=areaFor(state);
- c.fillStyle='#070f11';c.fillRect(0,0,1500,700);
+ c.fillStyle='#070f11';c.fillRect(0,0,1500,canvas.height);
  // Uncharted geography stays completely black: no names, outlines, or placeholders.
  const label=(text,x,y,size=16,color='#f3e5be',align='center')=>{
   c.font=`${size}px Georgia`;c.textAlign=align;c.textBaseline='middle';
@@ -82,7 +84,7 @@ export function paintAtlasMaps(container,state){
   const local={region:land.region,exploration:{area:land.id}};
   const step=2;
   for(let y=0;y<land.height;y+=step)for(let x=0;x<land.width;x+=step){
-   const tx=Math.min(WORLD_WIDTH-1,Math.floor(x/land.width*WORLD_WIDTH)),ty=Math.min(WORLD_HEIGHT-1,Math.floor(y/land.height*WORLD_HEIGHT));
+   const tx=Math.min((land.kind==='planet'?32:WORLD_WIDTH)-1,Math.floor(x/land.width*(land.kind==='planet'?32:WORLD_WIDTH))),ty=Math.min((land.kind==='planet'?24:WORLD_HEIGHT)-1,Math.floor(y/land.height*(land.kind==='planet'?24:WORLD_HEIGHT)));
    const tile=land.branch?areaTile(local,tx,ty):worldTile(land.id,tx,ty);
    // One continuous dark sea joins the chart. Painting each land's water color
    // would expose rectangular source-map edges and turn the atlas into tiles.
@@ -90,7 +92,7 @@ export function paintAtlasMaps(container,state){
    c.fillStyle=colors[tile]||colors.grass;c.fillRect(land.x+x,land.y+y,step,step);
   }
   for(const point of land.sites){
-   const x=land.x+point.x/WORLD_WIDTH*land.width,y=land.y+point.y/WORLD_HEIGHT*land.height;
+   const x=land.x+point.x/(land.kind==='planet'?32:WORLD_WIDTH)*land.width,y=land.y+point.y/(land.kind==='planet'?24:WORLD_HEIGHT)*land.height;
    c.fillStyle=point.mark==='town'?MARKS.town:MARKS.dungeon;
    c.beginPath();c.arc(x,y,point.mark==='town'?3.5:3,0,Math.PI*2);c.fill();
    label(point.name,x,y+11,land.branch?9:10,'#f4e6c1');
@@ -99,7 +101,7 @@ export function paintAtlasMaps(container,state){
   if(!land.branch)label('Levels '+land.levels,land.x+land.width/2,land.y+39,11,land.color);
  }
  // Only discovered passages are inked; undiscovered neighbors get no hints.
- for(const land of lands.filter(land=>land.branch)){
+ for(const land of lands.filter(land=>land.branch&&land.gate)){
   const main=lands.find(candidate=>!candidate.branch&&candidate.id===land.region);if(!main)continue;
   const gx=main.x+land.gate.x/WORLD_WIDTH*main.width,gy=main.y+land.gate.y/WORLD_HEIGHT*main.height;
   const bx=land.x+land.width/2,by=land.gate.direction==='south'?land.y:land.y+land.height;
@@ -108,19 +110,19 @@ export function paintAtlasMaps(container,state){
  }
  const here=lands.find(land=>currentArea?land.id===currentArea.id:!land.branch&&land.id===state.region);
  if(here){
-  const x=here.x+state.x/WORLD_WIDTH*here.width,y=here.y+state.y/WORLD_HEIGHT*here.height;
+  const x=here.x+state.x/(here.kind==='planet'?32:WORLD_WIDTH)*here.width,y=here.y+state.y/(here.kind==='planet'?24:WORLD_HEIGHT)*here.height;
   const glow=c.createRadialGradient(x,y,2,x,y,22);glow.addColorStop(0,'#fff1bd99');glow.addColorStop(1,'#fff1bd00');
   c.fillStyle=glow;c.fillRect(x-22,y-22,44,44);
   label('✦',x,y,26,'#fff');label('You are here',x,y-23,13,'#fff');
  }
- const pan=canvas.parentElement;
+ const pan=canvas.closest?.('.atlas-panorama')||canvas.parentElement;
  if(pan){
   if(here&&typeof requestAnimationFrame==='function')requestAnimationFrame(()=>{
-   const playerX=here.x+state.x/WORLD_WIDTH*here.width;
+   const playerX=here.x+state.x/(here.kind==='planet'?32:WORLD_WIDTH)*here.width;
    pan.scrollLeft=Math.max(0,playerX*canvas.clientWidth/1500-pan.clientWidth/2);
   });
   let drag;
-  pan.onpointerdown=event=>{if(event.pointerType==='mouse'){drag={x:event.clientX,left:pan.scrollLeft};pan.setPointerCapture(event.pointerId);}};
+  pan.onpointerdown=event=>{if(event.target.closest?.('button'))return;if(event.pointerType==='mouse'){drag={x:event.clientX,left:pan.scrollLeft};pan.setPointerCapture(event.pointerId);}};
   pan.onpointermove=event=>{if(drag)pan.scrollLeft=drag.left+drag.x-event.clientX;};
   pan.onpointerup=pan.onpointercancel=()=>{drag=null;};
  }

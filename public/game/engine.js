@@ -393,6 +393,7 @@ export function act(input,action,events=[],previewRules={}){
  revokeBrokenOath(input,s,action||{},events.slice(actionEventStart),note,itemById);
  revokeWizard(input,s,action||{},events.slice(actionEventStart),note,itemById);
  dismissHeroEncounter(s,note);
+ if(previewRules.noEncounters&&s.mode==='battle'&&input.mode!=='battle'){s.mode=s.returnMode;s.enemy=null;events.splice(actionEventStart);}
  delete s.previewRules;
  if(s.gold>0)delete s.flags.fineAdmissionTown;
  else if(s.gold<input.gold&&['pardon','payCastleFine','payGovernor'].includes(action?.type)){
