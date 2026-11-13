@@ -24,7 +24,8 @@ export function nearestUnlitTorch(s,map){
  return cemeteryTorches(s.dungeon,map).filter(t=>!s.flags?.cemeteryTorches?.includes(t.id)&&Math.hypot(t.x-s.dungeon.x,t.y-s.dungeon.y)<=1.6&&clearRay(map,s.dungeon.x+.5,s.dungeon.y+.5,t.x+.5,t.y+.5)).sort((a,b)=>Math.hypot(a.x-s.dungeon.x,a.y-s.dungeon.y)-Math.hypot(b.x-s.dungeon.x,b.y-s.dungeon.y))[0]||null;
 }
 export function lightNearestCemeteryTorch(s,map){
- const torch=nearestUnlitTorch(s,map);if(!torch)return null;
+ const torch=nearestUnlitTorch(s,map);if(!torch||!s.bag?.includes('torch'))return null;
+ s.bag.splice(s.bag.indexOf('torch'),1);
  s.flags.cemeteryTorches??=[];s.flags.cemeteryTorches.push(torch.id);return torch;
 }
 export function cemeteryLightAt(s,map,x,y,fixtures=cemeteryTorches(s.dungeon,map)){
@@ -37,7 +38,8 @@ export function cemeteryLightAt(s,map,x,y,fixtures=cemeteryTorches(s.dungeon,map
 
 let darknessCache;
 export function cemeteryTorchInk(torch,lit,u,v,time){
- if(!torch)return null;
+ if(!torch||!s.bag?.includes('torch'))return null;
+ s.bag.splice(s.bag.indexOf('torch'),1);
  if(Math.abs(u-.5)<.028&&v>.43&&v<.76)return '#49301c';
  if(Math.abs(u-.5)<.065&&v>.48&&v<.53)return '#151d1c';
  const flicker=1+Math.sin(time*.006+torch.wallX)*.12;

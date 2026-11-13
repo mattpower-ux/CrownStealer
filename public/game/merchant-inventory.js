@@ -29,6 +29,7 @@ export function stockForMerchant(s, merchant) {
   if (['alchemist', 'traveling'].includes(merchant.merchant)) {
     base.push(...Object.values(POISON_ITEMS).filter(item => item.minRegion <= s.region).map(item => item.id));
   }
+  if(['wizard','traveling'].includes(merchant.merchant))base.push('torch');
   const ids = merchantStockFor(merchant, [...new Set(base)], id => TREASURE_ITEMS[id] || POISON_ITEMS[id]);
   for (const offer of rareOffers) {
     const id = rareOffer(s, merchant, offer);

@@ -29,6 +29,7 @@ export const RARITIES=['common','rare','epic','legendary'];
 export const rarityFor=roll=>roll<.60?'common':roll<.80?'rare':roll<.95?'epic':'legendary';
 const colors=['#b6baa5','#77bbec','#c69aef','#efcb70'];
 export const TREASURE_ITEMS={
+ torch:{id:'torch',kind:'supply',shape:'torch',name:'Torch',rarity:'common',value:2,color:'#f2bc63',description:'Lights one unlit dungeon torch. Consumed when lit.'},
  ...EXPLORATION_LOOT,
  ...royalTrialItems,
  [BALROG_WHIP]:{id:BALROG_WHIP,kind:'key',shape:'key',name:'Whip of the Balrog of Despair',rarity:'legendary',unique:true,notForSale:true,value:0,color:'#f28a50',description:'Proof of the Balrog’s defeat. Bring it to King Malachi at Bellwether Court.'},

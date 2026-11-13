@@ -10,6 +10,7 @@ export function healingAvailable(region, item) {
 }
 
 function stockLimit(item) {
+  if(item?.id==='torch')return Infinity;
   if (healingType(item)) return 3;
   if (!item?.id) return Infinity;
   if (['potion', 'poison', 'scroll'].includes(item.kind) || (item.kind === 'consumable' && item.shape === 'scroll')) return 3;

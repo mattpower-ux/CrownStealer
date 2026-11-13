@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createGame,createRoyalGame,act,minorSiteList,saveGame,loadGame} from '../public/game/engine.js';
+import {stockForMerchant} from '../public/game/merchant-inventory.js';
+const count=s=>s.bag.filter(id=>id==='torch').length;
+test('new adventurers receive twenty torches, including royal opening',()=>{assert.equal(count(createGame()),20);assert.equal(count(createRoyalGame()),20);});
+test('lighting consumes one torch and reports count; empty packs cannot light',()=>{let s=createGame();const site=minorSiteList(s).find(p=>p.minorKind==='cemetery');Object.assign(s,{x:site.x,y:site.y});s=act(s,{type:'enter'});const empty=structuredClone(s);empty.bag=empty.bag.filter(id=>id!=='torch');const blocked=act(empty,{type:'lightCemeteryTorch'});assert.equal(blocked.flags.cemeteryTorches?.length||0,0);s=act(s,{type:'lightCemeteryTorch'});assert.equal(count(s),19);assert.match(s.log.at(-1),/19 Torches Left/);assert.equal(count(act(s,{type:'lightCemeteryTorch'})),19);assert.equal(count(loadGame(saveGame(s))),19);});
+test('traveling merchants and wizards stock torches, blacksmiths do not',()=>{const s=createGame();for(const merchant of ['traveling','wizard'])assert.ok(stockForMerchant(s,{id:'shop',merchant}).includes('torch'));assert.ok(!stockForMerchant(s,{id:'shop',merchant:'blacksmith'}).includes('torch'));});
+test('old saves get torches once and depleted saves stay depleted',()=>{const s=createGame();delete s.torchSupplyVersion;s.bag=s.bag.filter(id=>id!=='torch');const migrated=loadGame(saveGame(s));assert.equal(count(migrated),20);migrated.bag=migrated.bag.filter(id=>id!=='torch');assert.equal(count(loadGame(saveGame(migrated))),0);});
+test('traveling merchant sells multiple torches and charges gold',()=>{const s=createGame();s.region=2;s.flags.travelMerchant={x:s.x,y:s.y};const bought=act(s,{type:'buyItem',id:'torch',quantity:5});assert.equal(count(bought),25);assert.ok(bought.gold<s.gold);});

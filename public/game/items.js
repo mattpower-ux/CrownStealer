@@ -71,6 +71,7 @@ const legendaryDetails = {
 };
 export function itemArt(item){
  if(!item)return '';
+ if(item.id==='torch')return '<svg class="item-art" viewBox="0 0 200 220" role="img" aria-label="Torch"><path d="M87 105 L113 105 L108 210 L92 210 Z" fill="#78502b"/><path d="M100 18 Q145 70 119 103 Q100 124 81 102 Q55 76 100 18 Z" fill="#f2a63b"/><path d="M100 57 Q117 85 100 100 Q83 85 100 57 Z" fill="#fff0a0"/></svg>';
  if(item.id==='horn-of-help')return '<svg class="item-art" viewBox="0 0 200 220" role="img" aria-label="Horn of Help illustration"><path d="M37 44c3 68 22 111 76 132l40-45C91 124 62 93 52 40Z" fill="#b69a65" stroke="#e7d39c" stroke-width="5"/><ellipse cx="136" cy="154" rx="18" ry="31" transform="rotate(39 136 154)" fill="#254543" stroke="#e7d39c" stroke-width="7"/><path d="m44 56 15-5m-6 47 25-12m-4 48 31-22" stroke="#66543c" stroke-width="8"/><path d="M144 81q23-20 8-40m17 57q27-23 17-52" fill="none" stroke="#b9eee4" stroke-width="5"/></svg>';
  const baseId=String(item.id||'').split('~')[0].replace(/-v[1-4]$/,'');
  const ornament=item.rarity==='legendary'?legendaryOrnament:'';
