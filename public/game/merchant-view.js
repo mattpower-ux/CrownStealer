@@ -104,14 +104,14 @@ export function renderMerchantView(body, state, place, dispatch) {
   const all = [...buy, ...sell];
 
   const index = Math.max(0, TOWNS.findIndex(town => town.id === state.location));
-  const proprietor = place.id === 'shop' ? MERCHANTS[index] : null;
+  const proprietor = place.merchant==='gizmo' ? {name:'Allthumbs the Unlucky',portrait:'/assets/allthumbs-unlucky.webp'} : place.id === 'shop' ? MERCHANTS[index] : null;
   const columns = [
     { id: 'buy', name: 'Buy', entries: buy, offset: 0, empty: 'There are no matching items for sale.' },
     { id: 'sell', name: 'Sell', entries: sell, offset: buy.length, empty: sell.length ? 'There are no matching items to sell.' : 'You have no items this merchant buys.' },
   ];
   body.innerHTML = '<div class="trade-market" data-shop="' + escape(key) + '">' +
     '<div class="trade-summary">' +
-    (proprietor ? '<span class="trade-proprietor"><span class="merchant-portrait" aria-hidden="true" style="background-position:' + index % 4 * 100 / 3 + '% ' + Math.floor(index / 4) * 50 + '%"></span>' + escape(proprietor.name) + '</span>' : '') +
+    (proprietor ? '<span class="trade-proprietor">' + (proprietor.portrait ? '<img class="merchant-portrait custom-merchant-portrait" src="' + escape(proprietor.portrait) + '" alt="' + escape(proprietor.name) + '">' : '<span class="merchant-portrait" aria-hidden="true" style="background-position:' + index % 4 * 100 / 3 + '% ' + Math.floor(index / 4) * 50 + '%"></span>') + escape(proprietor.name) + '</span>' : '') +
     '<span class="trade-purse">Your gold <strong>' + state.gold.toLocaleString('en-US') + '</strong></span></div>' +
     '<div class="trade-tools"><label class="trade-search">Search items<input type="search" aria-label="Search trade items" placeholder="Name or category" value="' + escape(query) + '"></label>' +
     (all.some(entry => entry.bulk) ? '<label class="trade-quantity">Quantity<input type="number" min="1" max="99" value="' + escape(oldQuantity || 1) + '"></label>' : '') + '</div>' +

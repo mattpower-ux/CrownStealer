@@ -1,3 +1,4 @@
+import {leprosyCharismaLoss} from './leper-colony.js';
 import {poisonDamage} from './weapon-poisons.js';
 import {
   ATTRIBUTE_BASE, ATTRIBUTE_CAP, ATTRIBUTE_NAMES, attributeBenefits, attributeBuffMinutesLeft,
@@ -100,8 +101,10 @@ export function statsView(s) {
     ['Freeze chance', `${t.freeze}%`],
   ];
   const effects = [
+    s.flags?.leprosy && `Leprosy: charisma −${leprosyCharismaLoss(s)}; another point lost each game week. The White Wizard can cure it.`,
     s.buffs?.meal > 0 && `Meal: +4 damage · ${buffTimeLeft(s, 'meal')} game min.`,
-    s.buffs?.strength > 0 && `Strength potion: +${s.buffs.strengthPower} damage · ${buffTimeLeft(s, 'strength')} game min.`,
+    s.buffs?.strength > 0 && `Strength potion: +${s.buffs.strengthPower} damage · ${s.flags?.strengthMoves>0?s.flags.strengthMoves+' moves / combat actions':buffTimeLeft(s, 'strength')+' game min.'}`,
+    s.spellEffects?.invisibleMoves > 0 && `Invisible: ${s.spellEffects.invisibleMoves} moves / combat actions.`,
     s.buffs?.invisibility > 0 && `Invisible: ${buffTimeLeft(s, 'invisibility')} game min.`,
     t.elementDamage && `${t.element} damage: +${t.elementDamage} per hit.`,
     s.weaponCoating && `Weapon poison: +${poisonDamage(s)} damage · ${s.weaponCoating.rounds} combat rounds.`,

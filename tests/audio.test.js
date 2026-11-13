@@ -2,6 +2,47 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 const audio = await import('../public/game/audio.js').catch(() => ({}));
+const {musicScene} = await import('../public/game/location-music.js');
+
+test('kobold caves and burrows select their quiet synthesized score', () => {
+  for (const minorId of ['minor-r0-0','minor-r0-6']) {
+    const state = {mode:'dungeon',dungeon:{site:'minor-site',minorId,index:0}};
+    assert.equal(musicScene(state),'dungeon:kobold');
+    assert.equal(musicScene({...state,mode:'battle'}),'battle');
+  }
+  assert.equal(audio.recordedMusic('dungeon:kobold'),null);
+  assert.equal(audio.THEMES['dungeon:kobold'].ambient,true);
+  assert.ok(audio.THEMES['dungeon:kobold'].gain < 1);
+  assert.equal(audio.recordedMusic('dungeon:0'),'/assets/whispers-beneath-stone.mp3');
+});
+
+test('kobold ambience obeys music mute, pauses and resumes after battle', async () => {
+  const h = harness(), players = [];
+  h.options.Audio = class { constructor(src) { players.push(src); } };
+  const director = new audio.AudioDirector(h.options);
+  director.setScene('dungeon:kobold');
+  await director.unlock();
+  assert.deepEqual(players,[],'the cave score does not attempt media playback');
+  assert.equal(h.timers.size,1);
+  assert.ok(director.voices.size > 0);
+  assert.ok([...director.voices].every(v=>v.bus==='music'));
+  director.setVolumes(0,.7);
+  assert.equal(director.music.gain.value,0);
+  director.beat=75;
+  const old = [...director.voices];
+  director.setScene('battle');
+  assert.ok(old.every(v=>v.source.disconnected));
+  director.setScene('dungeon:kobold');
+  assert.ok(director.beat>=75 && director.beat<78);
+  await director.suspend();
+  assert.equal(h.timers.size,0);
+  assert.equal(director.voices.size,0);
+  await director.resume();
+  assert.equal(h.timers.size,1);
+  assert.equal(director.music.gain.value,0);
+  await director.destroy();
+  assert.equal(h.timers.size,0);
+});
 
 test('opening theme attempts playback before a blocked context resumes and retries on a gesture', async () => {
   const h = harness();

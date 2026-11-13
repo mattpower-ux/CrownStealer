@@ -17,7 +17,7 @@ export const branchGates=region=>['north','south','west'].map((direction,i)=>{
  const label=boatOnly?'Sailing passage':direction[0].toUpperCase()+direction.slice(1)+' gate';
  return scaleWorldPoint({id:`branch-${region}-${direction}`,kind:'branchGate',name:label+' · '+names[region*3+i],region,x:direction==='west'?1:16,y:direction==='north'?1:direction==='south'?22:region>0?17:12,area,direction,...(boatOnly?{boatOnly}:{})});
 });
-export const teleporterSite=region=>({id:'alien-teleporter',kind:'teleporter',name:'Alien Artifact',region,x:64,y:56});
+export const teleporterSite=region=>({id:'alien-teleporter',kind:'teleporter',name:'Alien Artifact',region,x:72,y:66});
 function legacyVisitedLands(s){
  const visited=[0],home=s.exploration?.home,artifacts=s.exploration?.artifacts??[];
  for(const region of [0,1,2,3]){
@@ -38,7 +38,7 @@ export function visitedLands(s){
 }
 export const areaSites=s=>{
  const a=areaFor(s);if(!a)return [];
- const sites=[{id:'return',kind:a.kind==='planet'?'landedShip':'returnGate',name:a.kind==='planet'?'Alien spacecraft':'Return to the occupied land',x:16,y:22},...Array.from({length:a.kind==='planet'?3:2},(_,i)=>({id:a.id+'-cave-'+i,kind:'expedition',name:(a.kind==='planet'?['Prism Vault','Spore Catacombs','Echo Laboratory'][i]:caveProfile(a.id+'-cave-'+i).name),x:[7,25,16][i],y:[7,7,15][i],index:a.region*2,expedition:a.id+'-cave-'+i})),...(a.kind==='wild'?[{...teleporterSite(a.region),x:16,y:14}]:[]),...(a.kind==='wild'&&Number(a.id.slice(5))<10?[{id:a.id,kind:'artifact',name:'Ancient alien monument',x:16,y:4}]:[])].map(p=>a.kind==='wild'?scaleWorldPoint(p):p);
+ const sites=[{id:'return',kind:a.kind==='planet'?'landedShip':'returnGate',name:a.kind==='planet'?'Alien spacecraft':'Return to the occupied land',x:16,y:22},...Array.from({length:a.kind==='planet'?3:2},(_,i)=>({id:a.id+'-cave-'+i,kind:'expedition',name:(a.kind==='planet'?['Prism Vault','Spore Catacombs','Echo Laboratory'][i]:caveProfile(a.id+'-cave-'+i).name),x:[7,25,16][i],y:[7,7,15][i],index:a.region*2,expedition:a.id+'-cave-'+i})),...(a.kind==='wild'?[{...teleporterSite(a.region),x:19,y:17}]:[]),...(a.kind==='wild'&&Number(a.id.slice(5))<10?[{id:a.id,kind:'artifact',name:'Ancient alien monument',x:11,y:11}]:[])].map(p=>a.kind==='wild'?scaleWorldPoint(p):p);
  if(a.id===BOTTOMLESS_PIT.area)sites.push(BOTTOMLESS_PIT);
  return sites;
 };
@@ -54,7 +54,7 @@ export function areaTile(s,x,y){
  return landscapeTile(s.region,area?.id,x,y,base);
 }
 export function shipMap(){const m=Array.from({length:15},()=>Array(15).fill(1)),room=(x1,y1,x2,y2)=>{for(let y=y1;y<=y2;y++)for(let x=x1;x<=x2;x++)m[y][x]=0;};room(5,1,9,6);room(6,6,8,12);room(1,2,4,5);room(10,2,13,5);room(1,9,4,12);room(10,9,13,12);room(4,4,10,4);room(4,10,10,10);m[1][7]=3;return m;}
-export function explorationAction(s,a,{note,encounter,clock,pointAt,random,championChallenge}){
+export function explorationAction(s,a,{note,encounter,clock,pointAt,random,championChallenge,bridgeStep}){
  const area=areaFor(s),ship=s.dungeon?.ship;
  const travel=(id)=>{s.exploration??={artifacts:[]};s.exploration.area=id;s.mode='world';s.returnMode='world';s.dungeon=null;s.location=null;s.x=id.startsWith('planet-')?16:64;s.y=id.startsWith('planet-')?21:87;note(s,'Arrived in '+areaFor(s).name+'.');};
  const board=()=>{s.exploration??={artifacts:[]};s.exploration.area=null;s.mode='dungeon';s.returnMode='dungeon';s.dungeon={index:s.region*2,floor:0,x:7,y:12,dir:0,ship:true};s.location=null;note(s,'A column of light lifts you into an alien starship. Find the control station at (7, 5) to choose another planet. Returning home requires a planetary teleporter or P-Hopper.');};
@@ -79,7 +79,9 @@ export function explorationAction(s,a,{note,encounter,clock,pointAt,random,champ
   for(let step=0;step<steps;step++){
    const x=s.x+a.dx,y=s.y+a.dy,t=areaTile(s,x,y);
    if(x<1||x>width-2||y<1||y>height-2||!dragonFlying(s)&&(t==='water'&&!waterAccess(s,x,y)||t==='mountain')){note(s,'Find a path around the barrier.');return true;}
+   const previous={mode:s.mode,region:s.region,x:s.x,y:s.y,exploration:s.exploration};
    s.x=x;s.y=y;clock(s);
+   if(area.kind!=='planet'&&bridgeStep?.(s,previous))return true;
    if(area.kind==='planet'&&x===16&&y===22){board();return true;}
    if(pointAt(s))return true;
    if(championChallenge?.(s,random,note))return true;

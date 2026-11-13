@@ -11,6 +11,10 @@ test('charity offer makes donation and refusal explicit, disables unaffordable p
  const html=shrinePanelMarkup(s,button,esc);assert.match(html,/data-choice="donate" disabled/);assert.match(html,/data-choice="refuse"/);assert.match(html,/Decide later/);assert.match(html,/150 damage/);assert.doesNotMatch(html,/royal-dialogue/);
  s.gold=500;assert.doesNotMatch(shrinePanelMarkup(s,button,esc),/data-choice="donate" disabled/);
 });
-test('all shrine forms draw a pedestal and distinct silhouettes',()=>{
- const outputs=[];for(const slot of [1,4,7,10,13]){const ops=[],gradient={addColorStop(){}};const c=new Proxy({createRadialGradient:()=>gradient},{get:(o,k)=>k in o?o[k]:(...args)=>ops.push([k,...args]),set:(o,k,v)=>(o[k]=v,true)});drawShrineStatue(c,400,400,200,shrineForDungeon({site:'minor-site',minorId:'minor-r0-'+slot}));assert.ok(ops.length>80);outputs.push(JSON.stringify(ops));}assert.equal(new Set(outputs).size,5);
+test('all shrine forms use distinct detailed statue assets, sized inside their visible bounds',async()=>{
+ const old=globalThis.Image;globalThis.Image=class {complete=true;naturalWidth=768;naturalHeight=1024;};
+ try{const {drawShrineStatue}=await import('../public/game/shrine-render.js?art-test');const sources=[];
+ for(const form of ['kobold','giant','goddess','lizard','blob']){let draw;drawShrineStatue({drawImage:(...args)=>draw=args},400,400,200,{form});assert.ok(draw);sources.push(draw[0].src);assert.ok(draw[3]<=250);assert.ok(draw[4]<=290);assert.equal(draw[2]+draw[4],400);}
+ assert.equal(new Set(sources).size,5);
+ }finally{globalThis.Image=old;}
 });

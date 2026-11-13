@@ -1,3 +1,4 @@
+import {EXPLORATION_LOOT} from './exploration-loot.js';
 const families=[
  ['ring-wisdom','Ring of Wisdom','ring','wisdom'],
  ['ring-intelligence','Ring of Intelligence','ring','intelligence'],
@@ -24,7 +25,7 @@ export function randomAttributeLoot(playerLevel,npcLevel,roll,choice=0){
  const pick=Math.max(0,Math.min(families.length,Math.floor(choice*(families.length+1))));
  return pick===families.length?'helm-thinkiness':families[pick][0]+'-'+attributeLootBonus('rare',npcLevel);
 }
-export const rareGearEffect=(s,effect)=>['equippedBelt','equippedHands','equippedBoots'].reduce((sum,slot)=>sum+(RARE_GEAR_ITEMS[s[slot]]?.[effect]||0),0);
+export const rareGearEffect=(s,effect)=>['equippedBelt','equippedHands','equippedBoots'].reduce((sum,slot)=>sum+((RARE_GEAR_ITEMS[s[slot]]??EXPLORATION_LOOT[s[slot]])?.[effect]||0),0);
 export const randomEncounterMultiplier=s=>1-rareGearEffect(s,'encounterReduction');
 RARE_GEAR_ITEMS['belt-double-damage']={id:'belt-double-damage',name:'Belt of Double Damage',kind:'belt',shape:'belt',rarity:'legendary',minLevel:5,tier:2,unique:true,encounterOnly:true,bottomOnly:true,color:'#efcb70',value:2500,doubleDamageChance:.5,description:'Each damaging attack has a 50% chance to deal double damage while worn.'};
 RARE_GEAR_ITEMS['helm-thinkiness']={id:'helm-thinkiness',name:'Helm of Thinkiness',kind:'head',shape:'thinkiness-helm',rarity:'rare',minLevel:5,tier:1,unique:true,encounterOnly:true,bottomOnly:true,cursed:true,color:'#99a7b5',value:120,attributeBonuses:{intelligence:-2},description:'Cursed: −2 Intelligence while worn. Once equipped, it cannot be removed or replaced. Visit the Sage of Wonk in Mothbridge for free removal. Equipping it again restores the curse.'};

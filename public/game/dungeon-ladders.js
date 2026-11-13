@@ -1,3 +1,4 @@
+import {minorSiteDefinition} from './minor-sites.js';
 import {dungeonFloors} from './dungeon-depths.js';
 
 const directions = [[0, -1], [1, 0], [0, 1], [-1, 0]];
@@ -43,6 +44,7 @@ export function dungeonLadders(d, map) {
   const points = d.royal === 'cell' ? [{x: 3, y: 3, direction: 'down'}]
     : d.royal === 'sewer' ? [{...endpoint, direction: 'up'}]
     : [{...up, direction: 'up'}, ...(hasDown ? [{...down, direction: 'down'}] : [])];
+  if(d.site==='minor-site'&&minorSiteDefinition(d.minorId)?.kind==='tunnel')points.push({...endpoint,direction:'up',tunnelExit:true});
   return points.map(point => {
     const [dx, dy] = directions.find(([x, y]) => tileAt(point.x + x, point.y + y) === 1) ?? directions[0];
     return {
@@ -58,5 +60,5 @@ export function ladderPrompt(s, map) {
   const d = s?.dungeon;
   if (s?.mode !== 'dungeon' || !d || d.ship || d.site === 'elf-village') return null;
   const ladder = dungeonLadders(d, map).find(l => l.x === d.x && l.y === d.y);
-  return ladder ? {...ladder, upAction: d.royal === 'sewer' ? 'descend' : 'leave'} : null;
+  return ladder ? {...ladder, upAction: d.royal === 'sewer'||ladder.tunnelExit ? 'descend' : 'leave'} : null;
 }

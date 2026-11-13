@@ -1,3 +1,4 @@
+import {leprosyCharismaLoss} from './leper-colony.js';
 import { worldTimeMs } from './world-clock.js';
 
 export const ATTRIBUTE_NAMES = Object.freeze(['wisdom', 'charisma', 'constitution', 'strength', 'dexterity', 'intelligence']);
@@ -78,7 +79,8 @@ export function effectiveAttributes(state, itemById) {
     // The permanent oath blessing is separate from allocated scores and is never
     // consumed by respecs, timed effects, or the ordinary training cap.
     const oath = state.flags?.percivalOath === 'accepted' && ['strength','charisma'].includes(name) ? 2 : 0;
-    return [name, Math.min(ATTRIBUTE_CAP, baseScore(state, name) + worn + temporary) + oath + (state.flags?.wizardApprentice==='accepted'&&name==='intelligence'?2:0)];
+    const total=Math.min(ATTRIBUTE_CAP, baseScore(state, name) + worn + temporary) + oath + (state.flags?.wizardApprentice==='accepted'&&name==='intelligence'?2:0);
+    return [name,name==='charisma'?Math.max(1,total-leprosyCharismaLoss(state)):total];
   }));
 }
 

@@ -1,6 +1,10 @@
+import {maybeBridgeTroll,bridgeTrollAction,validBridgeTrollState} from './bridge-trolls.js';
+import {startMinorResident,validMinorResidents} from './minor-residents.js';
+import {lightNearestCemeteryTorch} from './cemetery-light.js';
+import {colonyAction,COLONY_GREETING,prepareLeprosy} from './leper-colony.js';
 import {isDungeonCombat,battlefieldDistance,isBow,initializeDungeonCombat,validDungeonCombatState,deferDungeonEnemyTurn,resolveDungeonCombatAction} from './dungeon-ranged.js';
 import {handleBeansAction,beansBlocksEnemy,tickBeansRound,validBeansState} from './bucket-beans.js';
-import {charityAction,validShrineState} from './shrine-deities.js';
+import {charityAction,validShrineState,shrineOffering} from './shrine-deities.js';
 import {isCemeteryDungeon} from './cemetery-render.js';
 import {wizardAction,wizardInvisible,validWizardState,revokeWizard} from './wizard-apprentice.js';
 import {TWINKLESTAR_TOWER_ID,twinklestarTowerSite,twinklestarTowerMap,twinklestarEnemy,twinklestarGuardian,validTwinklestarTower} from './twinklestar-tower.js';
@@ -65,7 +69,7 @@ const hasRegionRelics=(s,region)=>DUNGEONS.filter(dungeon=>dungeon.region===regi
 function canTakeCaravan(s,destination){if(mountFor(s)===MOUNTS.dragon)return true;for(let region=s.region;region<destination;region++){if(!hasRegionRelics(s,region))return false;}return true;}
 function advance(s,chapter){if(chapter>s.chapter){s.chapter=chapter;note(s,CHAPTERS[chapter].text);}}
 export function createGame(name='Wanderer',gender='him'){
- const town=TOWNS[0];return prepareAttributes({attributeHealthAdjustment:0,wildernessTerrainVersion:2,worldMapVersion:WORLD_MAP_VERSION,wandCharges:{},wandSerial:0,spellEffects:{},worldTimeMs:8*HOUR_MS,buffExpiry:{},gender:CHARACTER_FACES.some(f=>f.id===gender)?gender:'him',cities:{},treasureSeed:hash(String(name)),openedChests:[],buffs:{},equippedBelt:null,equippedRing2:null,equippedHands:null,equippedHead:null,equippedBoots:null,equippedShield:null,equippedRing:null,equippedNecklace:null,version:1,bag:['road-sword','travel-armor','scroll-return'],equipped:'road-sword',equippedArmor:'travel-armor',equipmentVersion:1,pendingLoot:[],name:String(name).trim().slice(0,24)||'Wanderer',region:0,x:town.x-1,y:town.y,mode:'world',location:null,hp:80,maxHp:80,gold:65,meals:3,level:1,xp:0,weapon:1,armor:1,potions:3,chapter:0,relics:[],quests:[],wanted:[0,0,0,0],reputation:0,flags:{victories:0,guardVictories:0,transport:false},log:['The crown has called for a hero. Unfortunately, it has found you.',CHAPTERS[0].text],rng:187441,turns:0,dungeon:null,enemy:null,returnMode:'world',ending:null});
+ const town=TOWNS[0];return prepareAttributes({attributeHealthAdjustment:0,wildernessTerrainVersion:3,worldMapVersion:WORLD_MAP_VERSION,wandCharges:{},wandSerial:0,spellEffects:{},worldTimeMs:8*HOUR_MS,buffExpiry:{},gender:CHARACTER_FACES.some(f=>f.id===gender)?gender:'him',cities:{},treasureSeed:hash(String(name)),openedChests:[],buffs:{},equippedBelt:null,equippedRing2:null,equippedHands:null,equippedHead:null,equippedBoots:null,equippedShield:null,equippedRing:null,equippedNecklace:null,version:1,bag:['road-sword','travel-armor','scroll-return'],equipped:'road-sword',equippedArmor:'travel-armor',equipmentVersion:1,pendingLoot:[],name:String(name).trim().slice(0,24)||'Wanderer',region:0,x:town.x-1,y:town.y,mode:'world',location:null,hp:80,maxHp:80,gold:65,meals:3,level:1,xp:0,weapon:1,armor:1,potions:3,chapter:0,relics:[],quests:[],wanted:[0,0,0,0],reputation:0,flags:{victories:0,guardVictories:0,transport:false},log:['The crown has called for a hero. Unfortunately, it has found you.',CHAPTERS[0].text],rng:187441,turns:0,dungeon:null,enemy:null,returnMode:'world',ending:null});
 }
 export function createRoyalGame(name,gender){const s=createGame(name,gender),court=TOWNS[1];s.treasureSeed=crypto.getRandomValues(new Uint32Array(1))[0];s.mode='town';s.location=court.id;s.x=court.x;s.y=court.y;s.townPosition={x:6,y:11};s.gold=1;s.meals=1;s.potions=0;s.bag=['rusty-sword','travel-armor','scroll-return','starter-healing','starter-healing'];s.equipped='rusty-sword';s.equippedArmor=null;s.flags.royalStoryVersion=2;s.flags.royalQuest='opening';s.flags.royalEntranceSeen=false;s.flags.royalIntroLine=0;s.log=[ROYAL_INTRO[0].text];return s;}
 export function dungeonMap(d){if(d.site===TWINKLESTAR_TOWER_ID)return secretMap(d,twinklestarTowerMap(d));if(d.site===PERCIVAL_CASTLE_ID)return secretMap(d,percivalCastleMap(d));if(d.site===ROYAL_DUNGEON_ID)return royalDungeonMap(d);return secretMap(d, d.site==='minor-site'?minorDungeonMap(d):d.site===ROADSIDE_CRYPT?roadsideCryptMap():d.ship?shipMap():d.site==='elf-village'?forestMap(d.floor):d.royal==='cell'?royalCell():makeDungeon(d.expedition?100+hash(d.expedition)%10000:d.royal==='sewer'?8:d.site===BOTTOMLESS_PIT.id?PIT_MAP_SEED:d.site===PUTRID_PALACE.id?PUTRID_PALACE_SEED:d.index,d.floor));}
@@ -173,9 +177,10 @@ function validMinorDungeon(s){
 }
 function validMinorChestId(id){const secret=/^(minor:minor-(?:r[0-3]|w(?:[0-9]|1[01]))-\d+:[0-2]):secret$/.exec(id);if(secret)return !!secretDungeonForKey(secret[1]);const match=/^minor:(minor-(?:r[0-3]|w(?:[0-9]|1[01]))-\d+):([0-2])$/.exec(id);if(!match)return false;const site=minorSiteDefinition(match[1]);return !!site&&(site.treasure||site.trapped)&&Number(match[2])===site.floors-1;}
 function minorGuardianAt(s){
+ if(startMinorResident(s,'move',note))return true;
  if(s.dungeon?.site!=='minor-site'||s.flags['minorCleared:'+s.dungeon.minorId]||Math.abs(s.dungeon.x-13)+Math.abs(s.dungeon.y-13)>1)return false;
  const enemy=minorGuardian(s);if(!enemy)return false;
- s.enemy=enemy;s.returnMode='dungeon';s.mode='battle';s.flags.guarded=false;s.flags.combo=0;faceEncounterPassage(s.dungeon);note(s,enemy.name+' guards the far chamber.');return true;
+ s.enemy={...enemy,combatDistance:1};s.returnMode='dungeon';s.mode='battle';s.flags.guarded=false;s.flags.combo=0;faceEncounterPassage(s.dungeon);note(s,enemy.name+' guards the far chamber.');return true;
 }
 
 export function nextObjective(s){const campaign=royalCampaignObjective(s);if(campaign)return campaign;if(s.flags.dragonCaptured)return 'Rescue your dragon from Drake the Defiler on level 10 of Firedrak Mountain in the Cinder Dominion (108, 68).';if(s.dungeon?.ship)return 'Find the control station at (7, 5) to select one of three alien planets. To return home, find a planetary teleportation scroll or P-Hopper.';if(areaFor(s)?.kind==='planet')return 'Explore this planet’s three alien dungeons. '+['Hal 2000','AGI Seven','Rosie the Riveter'][Number(s.exploration.area.split('-')[1])]+' awaits in the deepest chamber of the Echo Laboratory.';if(areaFor(s))return 'Explore the caves and monuments. Alien disk pieces: '+(s.exploration.artifacts?.length||0)+'/10. Return through the southern gate.';const royal=royalObjective(s);if(royal)return royal;const d=DUNGEONS.find(d=>!s.relics.includes(d.id));return d?.id==='tithe-vault'?'Recover the Hearth Seal from Haghilda on level 4 of the abandoned elven village.':d?.id==='widows-bell'?'Recover the Witness Bell on level 10 of the Widow’s Bell. Beware the level-12 Rock Troll.':d?`Recover ${d.relic} from ${d.name}.`:'Return to the royal court and decide the fate of the crown.';}
@@ -317,11 +322,31 @@ function wildernessContext(s){return {note,random:()=>rand(s),recover,enterCrypt
 function roadsideGuardian(s){
  if(s.dungeon?.site!==ROADSIDE_CRYPT||s.flags['cryptCleared:'+s.dungeon.cryptId])return false;
  const chest=dungeonChests(s,dungeonMap(s.dungeon))[0];if(Math.abs(chest.x-s.dungeon.x)+Math.abs(chest.y-s.dungeon.y)>1)return false;
- s.enemy=cryptGuardian(s);s.returnMode='dungeon';s.mode='battle';faceEncounterPassage(s.dungeon);note(s,'An undead guardian rises before the crypt chest.');return true;
+ s.enemy={...cryptGuardian(s),combatDistance:1};s.returnMode='dungeon';s.mode='battle';faceEncounterPassage(s.dungeon);note(s,'An undead guardian rises before the crypt chest.');return true;
 }
-function sewerGuardian(s){if(s.dungeon?.royal!=='sewer'||s.flags.sewerSpiderDefeated)return false;const chest=dungeonChests(s,dungeonMap(s.dungeon))[0];if(chest.opened||Math.abs(chest.x-s.dungeon.x)+Math.abs(chest.y-s.dungeon.y)>1)return false;faceEncounterPassage(s.dungeon);s.returnMode='dungeon';s.mode='battle';s.flags.guarded=false;s.flags.combo=0;s.enemy={name:'Great Sewer Spider',speciesId:'giant-grove-spider',art:{sheet:'monsters-grove',index:1},level:6,hp:110,maxHp:110,attack:15,armor:3,gold:6,xp:30,kind:'brute',firstContact:true,boss:true,sewerChestGuard:true,weakness:'A huge spider guards the skeleton key chest.'};note(s,'A huge spider drops from its web, guarding the only chest in the sewers.');return true;}
+function sewerGuardian(s){if(s.dungeon?.royal!=='sewer'||s.flags.sewerSpiderDefeated)return false;const chest=dungeonChests(s,dungeonMap(s.dungeon))[0];if(chest.opened||Math.abs(chest.x-s.dungeon.x)+Math.abs(chest.y-s.dungeon.y)>1)return false;faceEncounterPassage(s.dungeon);s.returnMode='dungeon';s.mode='battle';s.flags.guarded=false;s.flags.combo=0;s.enemy={...sewerChestEnemy(),combatDistance:1};note(s,'A huge spider drops from its web, guarding the only chest in the sewers.');return true;}
+
+function sewerChestEnemy(){return {name:'Great Sewer Spider',speciesId:'giant-grove-spider',art:{sheet:'monsters-grove',index:1},level:6,hp:110,maxHp:110,attack:15,armor:3,gold:6,xp:30,kind:'brute',firstContact:true,boss:true,sewerChestGuard:true,weakness:'A huge spider guards the skeleton key chest.'};}
+// Share guard existence and line of sight between rendering and interaction.
+export function visibleDungeonGuardian(s){
+ if(s.mode!=='dungeon'||!s.dungeon)return null;
+ const d=s.dungeon,m=dungeonMap(d);let enemy=null,x=13,y=13;
+ if(d.site==='minor-site'&&!s.flags['minorCleared:'+d.minorId])enemy=minorGuardian(s);
+ else if(d.site===ROADSIDE_CRYPT&&!s.flags['cryptCleared:'+d.cryptId]){enemy=cryptGuardian(s);({x,y}=dungeonChests(s,m)[0]);}
+ else if(d.royal==='sewer'&&!s.flags.sewerSpiderDefeated){const chest=dungeonChests(s,m)[0];if(chest&&!chest.opened){enemy=sewerChestEnemy();({x,y}=chest);}}
+ if(!enemy)return null;
+ const [dx,dy]=DIRS[d.dir],vx=x-d.x,vy=y-d.y,depth=vx*dx+vy*dy,side=vy*dx-vx*dy;
+ if(depth<1||depth>4||Math.abs(side)>depth*Math.tan(Math.PI/5.2))return null;
+ const steps=Math.ceil(Math.hypot(vx,vy)*20);
+ for(let i=1;i<=steps;i++){
+  const px=Math.floor(d.x+.5+vx*i/steps),py=Math.floor(d.y+.5+vy*i/steps);
+  if(m[py]?.[px]===undefined||m[py][px]===1)return null;
+ }
+ return {enemy,distance:depth,side,x,y};
+}
+
 const STARTER_WEAPONS=['smiting',...['sword','mace','spear','axe'].flatMap(family=>['common-'+family+'-1','common-'+family+'-1-v1'])];
-function victory(s,events=[]){delete s.weaponCoating;s.spellEffects.stunnedTurns=0;const e=s.enemy;if(finishChampionChallenge(s,true,note,events))return;if(arenaVictory(s,note,events))return;if(royalDungeonVictory(s,e,note))return;if(e.castleDuel){s.mode=s.returnMode;s.enemy=null;note(s,'The '+e.name+' yields and lowers their weapon.');return;}if(e.castleRoyalDefense){s.mode=s.returnMode;s.enemy=null;note(s,e.castleRoyalDefense==='governor'?'You drive back the governor’s guards and escape the mansion. The governor remains protected.':'You drive back the throne guard and escape the palace. The royal family remains protected.');exitCastle(s,true);return;}if(e.percivalGuardian!==undefined)s.flags['percivalFloorCleared'+e.percivalGuardian]=true;if(e.minorGuardian)s.flags['minorCleared:'+e.minorGuardian]=true;if(e.cryptGuardian)s.flags['cryptCleared:'+e.cryptGuardian]=true;if(e.guard){s.flags.guardVictories=(s.flags.guardVictories||0)+1;if(s.flags.guardVictories===3)note(s,'Three guards have fallen. Word spreads: the guards are terrified and will leave you alone for the rest of your adventure.');}if(s.dungeon&&!e.guard){const job=SIDE_QUESTS.find(q=>q.questItem&&(q.keepsakeKind!=='tooth'||/dragon|drake/i.test(e.speciesId||e.name))&&!s.quests.includes(q.id)&&!s.bag.includes(q.questItem)&&TOWNS.find(t=>t.id===q.town)?.region===s.region);if(job){s.bag.push(job.questItem);s.pendingLoot.push(job.questItem);}}if(s.dungeon&&!e.boss&&!e.guard&&rand(s)<.30){
+function victory(s,events=[]){delete s.weaponCoating;s.spellEffects.stunnedTurns=0;const e=s.enemy;if(finishChampionChallenge(s,true,note,events))return;if(arenaVictory(s,note,events))return;if(royalDungeonVictory(s,e,note))return;if(e.castleDuel){s.mode=s.returnMode;s.enemy=null;note(s,'The '+e.name+' yields and lowers their weapon.');return;}if(e.castleRoyalDefense){s.mode=s.returnMode;s.enemy=null;note(s,e.castleRoyalDefense==='governor'?'You drive back the governor’s guards and escape the mansion. The governor remains protected.':'You drive back the throne guard and escape the palace. The royal family remains protected.');exitCastle(s,true);return;}if(e.percivalGuardian!==undefined)s.flags['percivalFloorCleared'+e.percivalGuardian]=true;if(e.bridgeTrollKey){s.flags.bridgeTrollPaid??=[];if(!s.flags.bridgeTrollPaid.includes(e.bridgeTrollKey))s.flags.bridgeTrollPaid.push(e.bridgeTrollKey);}if(e.minorResident){s.flags.minorResidentsDefeated??=[];if(!s.flags.minorResidentsDefeated.includes(e.minorResident))s.flags.minorResidentsDefeated.push(e.minorResident);}if(e.minorGuardian)s.flags['minorCleared:'+e.minorGuardian]=true;if(e.cryptGuardian)s.flags['cryptCleared:'+e.cryptGuardian]=true;if(e.guard){s.flags.guardVictories=(s.flags.guardVictories||0)+1;if(s.flags.guardVictories===3)note(s,'Three guards have fallen. Word spreads: the guards are terrified and will leave you alone for the rest of your adventure.');}if(s.dungeon&&!e.guard){const job=SIDE_QUESTS.find(q=>q.questItem&&(q.keepsakeKind!=='tooth'||/dragon|drake/i.test(e.speciesId||e.name))&&!s.quests.includes(q.id)&&!s.bag.includes(q.questItem)&&TOWNS.find(t=>t.id===q.town)?.region===s.region);if(job){s.bag.push(job.questItem);s.pendingLoot.push(job.questItem);}}if(s.dungeon&&!e.boss&&!e.guard&&rand(s)<.30){
  const item=dungeonMonsterLoot(s,rand(s),rand(s));
  if(item){s.bag.push(item);s.pendingLoot.push(item);note(s,'You found '+TREASURE_ITEMS[item].name+'.');}
 }const planet=!!s.dungeon?.expedition?.startsWith('planet-');if(planet&&!e.boss){const id=alienDrop(rand(s),rand(s));if(id){s.bag.push(id);s.pendingLoot.push(id);note(s,'Alien salvage found.');}}if(!e.boss&&!e.guard){const spellLoot=randomSpellDrop(e.level||1,rand(s),rand(s));if(spellLoot){s.bag.push(spellLoot);s.pendingLoot.push(spellLoot);note(s,'You found '+SPELL_ITEMS[spellLoot].name+'.');}}if(!e.boss&&!e.guard){const prank=gagDrop(rand(s),rand(s));if(prank){s.bag.push(prank);s.pendingLoot.push(prank);note(s,'You found '+GAG_ITEMS[prank].name+'.');}}if(!e.boss&&!e.guard&&e.level<=5){const found=lowLevelLoot(e.level,rand(s),rand(s));if(found){s.bag.push(found);s.pendingLoot.push(found);note(s,'You found '+TREASURE_ITEMS[found].name+'.');}}if(e.speciesId==='ghost-dragon'){s.flags.ghostDragonDefeated=true;if(!s.flags.frostburnAwarded){s.flags.frostburnAwarded=true;s.bag.push('shield-frostburn');s.pendingLoot.push('shield-frostburn');note(s,'The dragon leaves an Epic Shield of Frostburn.');}}const attributeLoot=randomAttributeLoot(s.level,e.level||1,random(hash(s.rng+':'+s.flags.victories+':attribute-loot'))(),random(hash(s.rng+':'+s.flags.victories+':attribute-choice'))());if(attributeLoot){s.bag.push(attributeLoot);s.pendingLoot.push(attributeLoot);note(s,'You found '+TREASURE_ITEMS[attributeLoot].name+'.');}const legendaryGear=randomLegendaryGearLoot(s.level,e.level||1,random(hash(s.rng+':'+s.flags.victories+':legendary-gear'))());if(legendaryGear){s.bag.push(legendaryGear);s.pendingLoot.push(legendaryGear);note(s,'You found '+TREASURE_ITEMS[legendaryGear].name+'.');}s.gold+=e.gold;s.xp+=e.xp??(e.boss?60:20);s.flags.victories++;
@@ -388,6 +413,7 @@ export function act(input,action,events=[],previewRules={}){
   const before=visitedLands(input), after=visitedLands(s);
   if(!s.flags.visitedLands||after.some(id=>!before.includes(id)))s.flags.visitedLands=[...new Set([...before,...after])];
  }
+ if(input.arena&&!input.arena.prisoner&&input.mode==='battle'&&action?.type==='flee'&&s.mode==='town'&&events.some(e=>e.kind==='retreat'&&e.target==='hero')){const paid=Math.min(5,s.gold);s.gold-=paid;s.flags.arenaRetreatNotice={paid};note(s,'The crowd jeers as you retreat! The Coliseum takes '+paid+' gold from your purse.');}
  if(input.mode==='battle'&&s.enemy&&(events.length||action?.type==='flee'))s.enemy.firstContact=false;
  if(s.dungeon){const room=s.flags['secretRoom:'+secretRoomKey(s.dungeon)];if(room)s.dungeon.secretRoom={...room};}
  if(s.flags.mount==='dragon'&&!s.flags.dragonCaptured&&input.mode==='world'&&s.mode==='dungeon'&&!s.dungeon.ship&&!s.dungeon.expedition?.startsWith('planet-'))s.flags.dragonWatch={hp:s.flags.dragonHp||350,maxHp:350,moves:0};
@@ -395,10 +421,11 @@ export function act(input,action,events=[],previewRules={}){
  if(s.mode==='world'&&input.mode==='dungeon'&&s.flags.dragonWatch){s.flags.dragonHp=s.flags.dragonWatch.hp;delete s.flags.dragonWatch;}
  prepareWands(s);
  if(s.equippedMagic&&!s.bag.includes(s.equippedMagic))s.equippedMagic=null;
- if(s.spellEffects.invisibleMoves>0&&!(action?.type==='useItem'&&spellItem(action.id,s)?.spell==='invisibility')){
+ if(s.spellEffects.invisibleMoves>0||s.flags.strengthMoves>0){
   const moving=['move','forward','back','strafe'].includes(action?.type),p=input.mode==='town'?input.castle||input.townPosition||{x:6,y:11}:input.mode==='dungeon'?input.dungeon:input,q=s.mode==='town'?s.castle||s.townPosition||{x:6,y:11}:s.mode==='dungeon'?s.dungeon:s;
   let moves=moving&&(p?.x!==q?.x||p?.y!==q?.y)?input.mode===s.mode&&input.region===s.region?Math.max(1,Math.abs(p.x-q.x)+Math.abs(p.y-q.y)):1:input.mode==='battle'&&(events.length||['attack','guard','flee'].includes(action?.type))?1:0;
-  s.spellEffects.invisibleMoves=Math.max(0,s.spellEffects.invisibleMoves-moves);
+  if(s.spellEffects.invisibleMoves>0&&!(action?.type==='useItem'&&spellItem(action.id,s)?.spell==='invisibility'))s.spellEffects.invisibleMoves=Math.max(0,s.spellEffects.invisibleMoves-moves);
+  if(s.flags.strengthMoves>0&&!(action?.type==='useItem'&&TREASURE_ITEMS[action.id]?.effect==='strength')){s.flags.strengthMoves=Math.max(0,s.flags.strengthMoves-moves);if(!s.flags.strengthMoves)s.buffs.strength=0;}
  }
  if(s.mode==='world'&&!dragonFlying(s)&&!waterAccess(s)&&(areaFor(s)?areaTile(s,s.x,s.y):worldTile(s.region,s.x,s.y))==='water'){let shore=null,best=Infinity;for(let y=1;y<worldSize(s).height-1;y++)for(let x=1;x<worldSize(s).width-1;x++){const tile=areaFor(s)?areaTile(s,x,y):worldTile(s.region,x,y),distance=Math.abs(x-s.x)+Math.abs(y-s.y);if(tile!=='water'&&tile!=='mountain'&&distance<best){best=distance;shore={x,y};}}if(shore){Object.assign(s,shore);note(s,'Your water breathing fades. You swim back to the nearest safe shore.');}}
  cityTick(s,note,()=>rand(s));
@@ -410,12 +437,14 @@ export function act(input,action,events=[],previewRules={}){
   }
  }
  if(s.mode==='dungeon'&&input.mode==='dungeon'&&['forward','back','strafe'].includes(action?.type)&&(input.dungeon?.x!==s.dungeon.x||input.dungeon?.y!==s.dungeon.y)){const room=hiddenSecretNearby(s,dungeonMap(s.dungeon)),key=secretRoomKey(s.dungeon);if(room&&!s.flags.secretChecks?.includes(key)){s.flags.secretChecks??=[];s.flags.secretChecks.push(key);if(rand(s)<seeHiddenChance(s)){revealSecretRoom(s,room);note(s,'You notice a hidden door. A secret stash lies beyond it.');}}}
+ const bank=input.enemy?.bridgeApproach;if(input.mode==='battle'&&s.mode==='world'&&bank&&!s.flags.bridgeTrollPaid?.includes(input.enemy.bridgeTrollKey)&&s.region===bank.region&&(s.exploration?.area??null)===bank.area&&s.x===bank.atX&&s.y===bank.atY){s.x=bank.x;s.y=bank.y;note(s,'You withdraw to the approach bank. The troll still controls this crossing.');}
+ const toll=s.flags.bridgeTroll;if(toll&&(s.mode!=='world'||s.x!==toll.x||s.y!==toll.y||!toll.key.startsWith((s.exploration?.area??'r'+s.region)+':')))delete s.flags.bridgeTroll;
  revealNearbyDiscoveries(s,note);
  if(s.castle&&(!['town','battle'].includes(s.mode)||s.location!==input.location))delete s.castle;
  return s;
 }
 function actInner(input,action,events=[]){
- const s=structuredClone(input);migrateRangedGear(s);prepareWands(s);prepareAttributes(s);prepareClock(s);finishGuardConsultation(s,note,events);const a={...(action||{})};if(isDungeonCombat(s)&&a.type==='attack'&&battlefieldDistance(s)>1&&!isBow(itemById(s.equipped,s))){note(s,'The enemy is out of melee reach. Use a bow or wand, or close the distance.');return s;}if(isDungeonCombat(s)&&['equipMagic','unequipMagic'].includes(a.type)){note(s,'Changing combat weapons takes one round. Use Switch weapon.');return s;}const wizardResult=wizardAction(s,a,note,itemById,{canTeleport:a.type!=='wizardTeleport'||TOWNS.some(t=>t.region===s.region&&t.id!=='bellwether'&&!s.flags['palaceBan:'+t.id]&&!castleFineFor(s,t.id)&&!cityOf(s,t.id)?.destroyed)});if(wizardResult==='teleport'){s.bag.push('scroll-return');a.type='useItem';a.id='scroll-return';}else if(wizardResult)return s;if(handlePaladinOath(s,a,note,itemById)||paladinOathBlocks(s,a,note,itemById))return s;if(arenaAction(s,a,note,itemById))return s;if(a.type==='equipMagic'){const item=itemById(a.id,s);if(item&&a.id!=='dungeon-elevator'&&(['scroll','wand'].includes(item.kind)||item.shape==='scroll')&&s.bag.includes(a.id)&&!(item.kind==='scroll'&&effectiveLevel(s)<item.minLevel)){s.equippedMagic=a.id;note(s,'Magic equipped: '+item.name+'.');}else note(s,'Choose a usable scroll or wand from your bag.');return s;}if(a.type==='unequipMagic'){s.equippedMagic=null;return s;}if(a.type==='useMagic'){if(!s.equippedMagic||!s.bag.includes(s.equippedMagic)){s.equippedMagic=null;note(s,'Equip a scroll or wand in your inventory first.');return s;}a.type='useItem';a.id=s.equippedMagic;}if(a.type==='acknowledgeDragon'){delete s.flags.dragonGreeting;delete s.flags.dragonNotice;return s;}if(a.type==='dragonOrder'){dragonOrder(s,a.order,()=>rand(s));return s;}if(s.flags.dragonWatch?.enemy&&s.mode==='dungeon'){note(s,'Your dragon needs orders outside. Resolve its battle before continuing.');return s;}if(a.type==='acknowledgeRescue'){delete s.flags.rescuePending;delete s.flags.rescueMessage;return s;}if(a.type==='useItem'&&SPELL_ITEMS[a.id]?.kind==='wand')a.id=s.bag.find(id=>id.startsWith(a.id+'~'))||a.id;expireBuffs(s);expireAttributeEffects(s);syncAttributeHealth(s,itemById);if(a.type==='clockTick'){
+ const s=structuredClone(input);migrateRangedGear(s);prepareWands(s);prepareAttributes(s);prepareClock(s);prepareLeprosy(s);finishGuardConsultation(s,note,events);const a={...(action||{})};if(isDungeonCombat(s)&&a.type==='attack'&&battlefieldDistance(s)>1&&!isBow(itemById(s.equipped,s))){note(s,'The enemy is out of melee reach. Use a bow or wand, or close the distance.');return s;}if(isDungeonCombat(s)&&['equipMagic','unequipMagic'].includes(a.type)){note(s,'Changing combat weapons takes one round. Use Switch weapon.');return s;}const wizardResult=wizardAction(s,a,note,itemById,{canTeleport:a.type!=='wizardTeleport'||TOWNS.some(t=>t.region===s.region&&t.id!=='bellwether'&&!s.flags['palaceBan:'+t.id]&&!castleFineFor(s,t.id)&&!cityOf(s,t.id)?.destroyed)});if(wizardResult==='teleport'){s.bag.push('scroll-return');a.type='useItem';a.id='scroll-return';}else if(wizardResult)return s;if(handlePaladinOath(s,a,note,itemById)||paladinOathBlocks(s,a,note,itemById))return s;if(a.type==='acknowledgeArenaRetreat'){delete s.flags.arenaRetreatNotice;return s;}if(arenaAction(s,a,note,itemById))return s;if(a.type==='lightCemeteryTorch'){const torch=s.dungeon?lightNearestCemeteryTorch(s,dungeonMap(s.dungeon)):null;if(torch)note(s,'You light the nearest torch. Its flame throws wavering shadows across the stones.');return s;}if(a.type==='equipMagic'){const item=itemById(a.id,s);if(item&&a.id!=='dungeon-elevator'&&(['scroll','wand'].includes(item.kind)||item.shape==='scroll')&&s.bag.includes(a.id)&&!(item.kind==='scroll'&&effectiveLevel(s)<item.minLevel)){s.equippedMagic=a.id;note(s,'Magic equipped: '+item.name+'.');}else note(s,'Choose a usable scroll or wand from your bag.');return s;}if(a.type==='unequipMagic'){s.equippedMagic=null;return s;}if(a.type==='useMagic'){if(!s.equippedMagic||!s.bag.includes(s.equippedMagic)){s.equippedMagic=null;note(s,'Equip a scroll or wand in your inventory first.');return s;}a.type='useItem';a.id=s.equippedMagic;}if(a.type==='acknowledgeDragon'){delete s.flags.dragonGreeting;delete s.flags.dragonNotice;return s;}if(a.type==='dragonOrder'){dragonOrder(s,a.order,()=>rand(s));return s;}if(s.flags.dragonWatch?.enemy&&s.mode==='dungeon'){note(s,'Your dragon needs orders outside. Resolve its battle before continuing.');return s;}if(a.type==='acknowledgeRescue'){delete s.flags.rescuePending;delete s.flags.rescueMessage;return s;}if(a.type==='useItem'&&SPELL_ITEMS[a.id]?.kind==='wand')a.id=s.bag.find(id=>id.startsWith(a.id+'~'))||a.id;expireBuffs(s);expireAttributeEffects(s);syncAttributeHealth(s,itemById);if(a.type==='clockTick'){
  const previousHour=Math.floor(worldTimeMs(s)/HOUR_MS);
  const previousTime=worldTimeMs(s);
  const levelBefore=effectiveLevel(s);
@@ -538,6 +567,7 @@ function actInner(input,action,events=[]){
   onDamage:(spell,amount)=>{if(spell==='fireball')clearWangSlugs(s,amount);},
  }))return s;
  if(a.type==='useItem'&&GAG_ITEMS[a.id]){const index=s.bag.indexOf(a.id);if(index<0||s.mode==='ending'||s.flags.royalQuest==='opening')return s;s.bag.splice(index,1);s.pendingLoot=s.pendingLoot.filter(id=>id!==a.id||s.bag.includes(id));note(s,applyGag(s,GAG_ITEMS[a.id]));if(s.mode==='battle')enemyTurn(s,false,events);return s;}
+ if(bridgeTrollAction(s,a,note))return s;
  if(wildernessEventAction(s,a,wildernessContext(s)))return s;
  if(royalDungeonAction(s,a,note,events))return s;
  if(royalHeroAction(s,a,note))return s;
@@ -559,12 +589,15 @@ function actInner(input,action,events=[]){
   if(['peacefulAccept','peacefulLeave','move'].includes(a.type))delete s.flags.peacefulEncounter;
   if(a.type.startsWith('peaceful'))return s;
  }
+ if(a.type==='attackWatcher'){startMinorResident(s,'attack',note);return s;}
+ if(a.type==='shrineOffering'){shrineOffering(s,a,note);return s;}
  if(a.type==='shrineCharity'){if(charityAction(s,a,{random:()=>rand(s),note,events})==='defeated')recover(s,events);return s;}
  if(a.type==='leave'&&s.mode==='dungeon'&&s.dungeon?.charityPit){if(s.dungeon.x===1&&s.dungeon.y===1){delete s.dungeon.charityPit;s.dungeon.x=7;s.dungeon.y=9;s.dungeon.dir=2;note(s,'You climb out of the pit. The other cheapskates wish you better luck.');}else note(s,'Reach the ladder at (1, 1) to climb out of the pit.');return s;}
  if(a.type==='searchSecrets'&&s.mode==='dungeon'){s.turns++;advanceClock(s,6250);const room=hiddenSecretNearby(s,dungeonMap(s.dungeon));if(room&&rand(s)<seeHiddenChance(s)){revealSecretRoom(s,room);note(s,'Your careful search reveals a hidden door and a secret stash.');}else note(s,'You search the nearby walls for five game minutes, but find nothing new.');return s;}
  if(a.type==='robDiscoveryChest'){if(robDiscoveryChest(s,a.id,{random:()=>rand(s),note,events})==='defeated')recover(s,events);return s;}
  if(a.type==='enter'&&s.mode==='world'&&pointAt(s)?.id===TWINKLESTAR_TOWER_ID){if(!s.flags.rowboatReady&&!s.flags.sailboatReady){note(s,'Twinklestar Tower can only be reached by boat. Bring a launched rowboat or sailboat to its island.');return s;}s.mode=s.returnMode='dungeon';s.location=TWINKLESTAR_TOWER_ID;s.dungeon={index:6,floor:0,x:1,y:1,dir:1,site:TWINKLESTAR_TOWER_ID,ladderLayout:1};s.dungeon.dir=openDungeonDirection(s.dungeon);note(s,'You moor your boat beneath Twinklestar Tower. The White Wizard is imprisoned on the ninth floor.');return s;}
  if(a.type==='searchDiscovery'){searchWildernessDiscovery(s,a.id,note);return s;}
+ if(colonyAction(s,a,{random:()=>rand(s),note,events}))return s;
  if(a.type==='mothbridgeAid'){
   const atGate=s.mode==='world'&&pointAt(s)?.id==='mothbridge';
   if((atGate||s.mode==='town'&&s.location==='mothbridge')&&s.hp<s.maxHp&&!s.flags.mothbridgeAid&&s.level<=3){
@@ -593,7 +626,7 @@ function actInner(input,action,events=[]){
   s.region=area?.region??a.land;s.location=null;delete s.flags.travelMerchant;
   s.exploration??={artifacts:[]};s.exploration.area=area?.id??null;
   if(area){const gate=branchGates(area.region).find(gate=>gate.area===area.id);s.exploration.home={region:area.region,x:gate.x,y:gate.y};}
-  const booth=teleporterSite(s.region);s.x=booth.x;s.y=booth.y;
+  const booth=area?areaSites(s).find(site=>site.kind==='teleporter'):teleporterSite(s.region);s.x=booth.x;s.y=booth.y;
   note(s,'The Alien Artifact delivers you to '+(area?.name??REGIONS[s.region].name)+'.');
   return s;
  }
@@ -609,7 +642,7 @@ function actInner(input,action,events=[]){
   const site=pointAt(s);s.dungeon={site:'minor-site',minorId:site.id,index:site.index,floor:0,x:1,y:1,dir:2,ladderLayout:1,...(site.other?{tunnelExit:{...site.other}}:{})};
   s.mode=s.returnMode='dungeon';s.location=site.id;s.dungeon.dir=openDungeonDirection(s.dungeon);note(s,'You explore '+site.name+'. '+site.floors+' level'+(site.floors===1?'':'s')+' lie within.');return s;
  }
- if(explorationAction(s,a,{note,encounter,clock,pointAt,random:()=>rand(s),championChallenge:tryChampionChallenge}))return s;
+ if(explorationAction(s,a,{note,encounter,clock,pointAt,random:()=>rand(s),championChallenge:tryChampionChallenge,bridgeStep:(s,previous)=>!dragonFlying(s)&&maybeBridgeTroll(s,previous,(x,y)=>areaTile(s,x,y),note)}))return s;
  if(a.type==='attackBorderGuards'){const gate=pointAt(s);if(s.mode!=='world'||!s.flags.borderTauntPending||!gate||!['gate','branchGate'].includes(gate.kind)||s.flags['gateAccess:'+gate.id]||s.flags['gateChallengeWon:'+gate.id]||s.flags.royalHero)return s;delete s.flags.borderTauntPending;s.flags.gateAttemptWins=0;s.flags.gateAttemptId=gate.id;startGateGuard(s,gate.id);return s;}
  if(a.type==='acknowledgeBorder'){delete s.flags.borderTauntPending;return s;}
  if(s.flags.royalQuest==='opening'){
@@ -623,7 +656,7 @@ function actInner(input,action,events=[]){
   return s;
  }
  if(a.type==='rummageChest'&&s.mode==='dungeon'){const chest=dungeonChests(s,dungeonMap(s.dungeon)).find(c=>c.x===s.dungeon.x&&c.y===s.dungeon.y&&c.opened);if(!chest||s.dungeon.site==='minor-site'&&!minorSiteDefinition(s.dungeon.minorId)?.treasure||s.openedChests.indexOf(chest.id)>=(s.flags.chestVisitStart??s.openedChests.length)||s.flags['missedCoins:'+chest.id])return s;const coins=1+Math.floor(rand(s)*2);s.flags['missedCoins:'+chest.id]=true;s.gold+=coins;note(s,'Someone was here before you. They missed a few coins.');return s;}
- if(a.type==='openChest'&&s.mode==='dungeon'){const chest=dungeonChests(s,dungeonMap(s.dungeon)).find(c=>c.x===s.dungeon.x&&c.y===s.dungeon.y&&!c.opened);if(!chest){note(s,'Stand on an unopened '+(isCemeteryDungeon(s.dungeon)?'coffin':'chest')+' to search it.');return s;}if(sewerGuardian(s)||roadsideGuardian(s)||minorGuardianAt(s))return s;s.openedChests??=[];s.openedChests.push(chest.id);if(chest.trap){
+ if(a.type==='openChest'&&s.mode==='dungeon'){const chest=dungeonChests(s,dungeonMap(s.dungeon)).find(c=>c.x===s.dungeon.x&&c.y===s.dungeon.y&&!c.opened);if(!chest){note(s,'Stand on an unopened '+(isCemeteryDungeon(s.dungeon)?'coffin':'chest')+' to search it.');return s;}if(sewerGuardian(s)||roadsideGuardian(s)||minorGuardianAt(s)||startMinorResident(s,'theft',note))return s;s.openedChests??=[];s.openedChests.push(chest.id);if(chest.trap){
   const chance=Math.min(.95,effectiveAttributes(s,itemById).dexterity/100+rareGearEffect(s,'disarmBonus'));
   if(rand(s)<chance)note(s,'You find and disarm a hidden trap before opening the chest.');
   else{const damage=5+s.region*5+Math.floor(rand(s)*11);s.hp=Math.max(0,s.hp-damage);note(s,'A hidden trap springs! You take '+damage+' damage.');if(!s.hp){recover(s,events);return s;}}
@@ -666,7 +699,7 @@ function actInner(input,action,events=[]){
   else enemyTurn(s,false,events);
  }return s;
  }
- if(a.type==='useItem'){const item=TREASURE_ITEMS[a.id],index=s.bag.indexOf(a.id);if(item?.kind!=='potion'||index<0||s.mode==='ending')return s;const halfHealth=Math.ceil(s.maxHp/2);if(item.healsToHalf&&s.hp>=halfHealth){note(s,'You are already at half health or higher.');return s;}if(item.healing&&s.hp===s.maxHp){note(s,'You are already at full health.');return s;}s.bag.splice(index,1);s.pendingLoot=s.pendingLoot.filter(id=>id!==a.id||s.bag.includes(id));s.buffs??={};if(item.healing||item.healsToHalf){const amount=item.healsToHalf?halfHealth-s.hp:Math.min(s.maxHp-s.hp,Math.floor(item.healing));s.hp+=amount;events.push({kind:'heal',target:'hero',amount,sound:'magic'});}else{s.buffs[item.effect]=item.duration;setTimedBuff(s,item.effect,item.duration*5);s.buffs.strengthPower=item.effect==='strength'?item.power:s.buffs.strengthPower||0;}note(s,'Used '+item.name+'. '+item.description);if(s.mode==='battle')enemyTurn(s,false,events);return s;}
+ if(a.type==='useItem'){const item=TREASURE_ITEMS[a.id],index=s.bag.indexOf(a.id);if(item?.kind!=='potion'||index<0||s.mode==='ending')return s;const halfHealth=Math.ceil(s.maxHp/2);if(item.healsToHalf&&s.hp>=halfHealth){note(s,'You are already at half health or higher.');return s;}if(item.healing&&s.hp===s.maxHp){note(s,'You are already at full health.');return s;}s.bag.splice(index,1);s.pendingLoot=s.pendingLoot.filter(id=>id!==a.id||s.bag.includes(id));s.buffs??={};if(item.healing||item.healsToHalf){const amount=item.healsToHalf?halfHealth-s.hp:Math.min(s.maxHp-s.hp,Math.floor(item.healing));s.hp+=amount;events.push({kind:'heal',target:'hero',amount,sound:'magic'});}else if(item.durationMoves){if(item.effect==='strength'){s.flags.strengthMoves=item.durationMoves;s.buffs.strength=1;s.buffs.strengthPower=item.power;delete s.buffExpiry.strength;}else{s.spellEffects??={};s.spellEffects.invisibleMoves=item.durationMoves;s.buffs.invisibility=0;delete s.buffExpiry.invisibility;}}else{if(item.effect==='strength')s.flags.strengthMoves=0;if(item.effect==='invisibility')s.spellEffects.invisibleMoves=0;s.buffs[item.effect]=item.duration;setTimedBuff(s,item.effect,item.duration*5);s.buffs.strengthPower=item.effect==='strength'?item.power:s.buffs.strengthPower||0;}note(s,'Used '+item.name+'. '+item.description);if(s.mode==='battle')enemyTurn(s,false,events);return s;}
  if(a.type==='acknowledgeGuards'){delete s.flags.pennilessTown;delete s.flags.guardTauntPending;return s;}
  if(a.type==='royalSearch'&&s.mode==='dungeon'&&s.dungeon?.royal==='cell'){s.flags.royalTrapFound=true;note(s,'Behind the royal chamber pot you find a trapdoor at (3, 3). The lid reads: EMERGENCY EXIT. NO REFUNDS.');return s;}
  if(a.type==='royalSewerReturn'&&s.mode==='town'&&hasRoyalAdmission(s,s.location)&&!s.flags.galenFreed){
@@ -762,7 +795,7 @@ function actInner(input,action,events=[]){
  }
  if(a.type==='move'&&s.mode==='world'){
   if(!Number.isInteger(a.dx)||!Number.isInteger(a.dy)||Math.abs(a.dx)+Math.abs(a.dy)!==1)return s;
-  const steps=travelSteps(s);if(!steps){note(s,'Your snowshoes drag. One square takes two moves away from snow.');return s;}for(let step=0;step<steps;step++){const x=s.x+a.dx,y=s.y+a.dy;const gate=pointAt(s);if(gate?.kind==='gate'&&a.dy===0&&(gate.target>s.region?a.dx>0:a.dx<0)){crossBorder(s,gate);return s;}const tile=worldTile(s.region,x,y);if(x<1||x>WORLD_WIDTH-2||y<1||y>WORLD_HEIGHT-2||!dragonFlying(s)&&(tile==='water'&&!waterAccess(s,x,y)||tile==='mountain')){note(s,'That route is impassable. Follow the paths around it.');return s;}s.x=x;s.y=y;delete s.flags.travelMerchant;clock(s);const bones=WILD_SITES.find(p=>p.kind==='dragon');if(s.region===bones.region&&!s.flags.ghostDragonDefeated&&!(s.spellEffects?.invisibleMoves>0)&&Math.max(Math.abs(s.x-bones.x),Math.abs(s.y-bones.y))<=1){s.returnMode='world';s.enemy={speciesId:'ghost-dragon',name:'Ghost of the Ancient Dragon',level:12,hp:220,maxHp:220,attack:28,armor:9,gold:260,xp:180,kind:'spectral',weakness:'steady pressure',firstContact:true};s.enemy=nightEnemy(s,s.enemy);s.mode='battle';s.flags.guarded=false;s.flags.combo=0;note(s,'The BEWARE sign shudders. A level-12 ghost dragon rises from its bones!');return s;}if(s.turns>4&&!pointAt(s)&&tryChampionChallenge(s,()=>rand(s),note))return s;if(s.turns>4&&!pointAt(s)&&rand(s)<wildernessChance(s,mountFor(s)?.reduction!==undefined?.08*(1-mountFor(s).reduction):s.flags.transport?.06:.08)*(1-(TREASURE_ITEMS[s.equippedBoots]?.encounterReduction||0)))encounter(s);if(s.mode==='world'&&s.region===2&&!areaFor(s)&&!pointAt(s)&&rand(s)<.02){s.flags.travelMerchant={x:s.x,y:s.y};note(s,'A traveling merchant appears with a suspiciously expensive cure.');return s;}if(s.mode!=='world'||s.flags.wildernessEvent||s.flags.impaledMoves||s.flags.peacefulEncounter||pointAt(s))return s;}return s;
+  const steps=travelSteps(s);if(!steps){note(s,'Your snowshoes drag. One square takes two moves away from snow.');return s;}for(let step=0;step<steps;step++){const x=s.x+a.dx,y=s.y+a.dy;const gate=pointAt(s);if(gate?.kind==='gate'&&a.dy===0&&(gate.target>s.region?a.dx>0:a.dx<0)){crossBorder(s,gate);return s;}const tile=worldTile(s.region,x,y);if(x<1||x>WORLD_WIDTH-2||y<1||y>WORLD_HEIGHT-2||!dragonFlying(s)&&(tile==='water'&&!waterAccess(s,x,y)||tile==='mountain')){note(s,'That route is impassable. Follow the paths around it.');return s;}const previous={mode:s.mode,region:s.region,x:s.x,y:s.y,exploration:s.exploration};s.x=x;s.y=y;delete s.flags.travelMerchant;clock(s);if(!dragonFlying(s)&&maybeBridgeTroll(s,previous,(x,y)=>worldTile(s.region,x,y),note))return s;const bones=WILD_SITES.find(p=>p.kind==='dragon');if(s.region===bones.region&&!s.flags.ghostDragonDefeated&&!(s.spellEffects?.invisibleMoves>0)&&Math.max(Math.abs(s.x-bones.x),Math.abs(s.y-bones.y))<=1){s.returnMode='world';s.enemy={speciesId:'ghost-dragon',name:'Ghost of the Ancient Dragon',level:12,hp:220,maxHp:220,attack:28,armor:9,gold:260,xp:180,kind:'spectral',weakness:'steady pressure',firstContact:true};s.enemy=nightEnemy(s,s.enemy);s.mode='battle';s.flags.guarded=false;s.flags.combo=0;note(s,'The BEWARE sign shudders. A level-12 ghost dragon rises from its bones!');return s;}if(s.turns>4&&!pointAt(s)&&tryChampionChallenge(s,()=>rand(s),note))return s;if(s.turns>4&&!pointAt(s)&&rand(s)<wildernessChance(s,mountFor(s)?.reduction!==undefined?.08*(1-mountFor(s).reduction):s.flags.transport?.06:.08)*(1-(TREASURE_ITEMS[s.equippedBoots]?.encounterReduction||0)))encounter(s);if(s.mode==='world'&&s.region===2&&!areaFor(s)&&!pointAt(s)&&rand(s)<.02){s.flags.travelMerchant={x:s.x,y:s.y};note(s,'A traveling merchant appears with a suspiciously expensive cure.');return s;}if(s.mode!=='world'||s.flags.wildernessEvent||s.flags.impaledMoves||s.flags.peacefulEncounter||pointAt(s))return s;}return s;
  }
  if(a.type==='payGovernor'&&s.mode==='world'){const p=pointAt(s);if(p?.kind!=='town'||!s.flags['palaceBan:'+p.id])return s;if(s.gold<5000){note(s,'The entrance guards demand the full 5,000 gold.');return s;}s.gold-=5000;delete s.flags['palaceBan:'+p.id];s.wanted[p.region]=0;note(s,'The guards deliver 5,000 gold to the governor. You may enter '+p.name+' again.');return s;}
  if(a.type==='enter'&&s.mode==='world'){
@@ -771,6 +804,7 @@ function actInner(input,action,events=[]){
   if(p.id===PUTRID_PALACE.id){s.mode='dungeon';s.returnMode='dungeon';s.location=p.id;s.dungeon={index:p.index,floor:0,x:1,y:1,dir:1,site:p.id,ladderLayout:1};note(s,'You enter the Putrid Palace. Wang the Nauseating lurks on level 15.');return s;}
   if(p.id==='firedrak-mountain'){s.mode='dungeon';s.location=p.id;s.dungeon={index:2,floor:0,x:1,y:1,dir:1,site:'firedrak',ladderLayout:1};s.dungeon.dir=openDungeonDirection(s.dungeon);note(s,isRoyalCampaign(s)&&s.flags.royalQuest==='dragonstone'?'You enter Mount Firedrake. The Dragonstone lies on its tenth and lowest level.':'You enter Mount Firedrake. Ten levels of imps and fire elementals lie below. Drake the Defiler holds captured dragons on the bottom level.');return s;}
   if(p.id==='leviathan-pump'&&!s.flags.rowboatReady&&!dragonFlying(s)){note(s,'The Leviathan Pump stands on an island in rough water. Find the Boat Amulet in the Drowned Conservatory’s bottom-floor chest.');return s;}
+  if(p.kind==='leperColony'){note(s,COLONY_GREETING);return s;}
   if(p.kind==='teleporter')return s;
   if(p.kind==='gate'){crossBorder(s,p);return s;}
   if(p.kind==='dragon'){note(s,s.flags.ghostDragonDefeated?'The old bones finally lie quiet.':'The sign reads BEWARE. A chill hangs over the bones.');return s;}
@@ -799,6 +833,11 @@ function actInner(input,action,events=[]){
   else note(s,'Return to the upward ladder to leave this floor.');}return s;
  }
  if(s.mode==='dungeon'){
+  if(a.type==='engageGuardian'){
+   const target=visibleDungeonGuardian(s);
+   if(target){s.enemy={...target.enemy,combatDistance:target.distance};s.returnMode='dungeon';s.mode='battle';s.flags.guarded=false;s.flags.combo=0;note(s,target.enemy.name+' guards the passage '+target.distance+' squares ahead.');}
+   return s;
+  }
   const d=s.dungeon,m=dungeonMap(d),ladders=dungeonLadders(d,m);
   const lower=ladders.find(l=>l.direction==='down');
   const canDescend=lower?.x===d.x&&lower.y===d.y;
@@ -913,8 +952,8 @@ function claimRelic(s){const d=DUNGEONS[s.dungeon.index];if(s.relics.includes(d.
 export function availableActions(s){if(s.mode==='battle')return ['attack','guard','heal','flee'];if(s.mode==='town')return ['talk','rest','buy','gamble','steal','pardon','quest','travel','leave'];if(s.mode==='dungeon')return ['forward','back','strafe','turn','descend','leave','heal'];return ['move','enter','heal'];}
 export function saveGame(s){return JSON.stringify({...s,savedAt:Date.now()});}
 function migrateWildernessTerrain(s){
- if(s.wildernessTerrainVersion===2)return;
- if(s.wildernessTerrainVersion!==undefined&&s.wildernessTerrainVersion!==1)throw Error('Invalid wilderness terrain version.');
+ if(s.wildernessTerrainVersion===3)return;
+ if(s.wildernessTerrainVersion!==undefined&&![1,2].includes(s.wildernessTerrainVersion))throw Error('Invalid wilderness terrain version.');
  if(((s.mode==='world'||s.mode==='battle'&&s.returnMode==='world')&&!s.dungeon||s.dungeon?.site===ROADSIDE_CRYPT)&&!areaFor(s)?.id.startsWith('planet-')&&!dragonFlying(s)){
   const area=areaFor(s),tileAt=(x,y)=>area?areaTile(s,x,y):worldTile(s.region,x,y);
   const accessible=(x,y)=>{const t=tileAt(x,y);return t!=='mountain'&&(t!=='water'||waterAccess(s,x,y));};
@@ -942,7 +981,7 @@ function migrateWildernessTerrain(s){
    if(nearest){Object.assign(s,nearest);note(s,'The changing wilderness leaves you safely on nearby dry ground.');}
   }
  }
- s.wildernessTerrainVersion=2;
+ s.wildernessTerrainVersion=3;
 }
 export function loadGame(json){
  const s=JSON.parse(json);if(!s||s.version!==1||typeof s.name!=='string'||s.name.length>24)throw Error('This is not a valid Bar the Gates save.');
@@ -971,6 +1010,8 @@ export function loadGame(json){
  for(const [key,value]of Object.entries(s.flags))if((key.startsWith('merchantStock:')||key.startsWith('merchantHealing:'))&&(!Number.isInteger(value)||value<0||value>3))throw Error('Invalid merchant stock.');
  if(s.flags.secretChecks!==undefined&&(!Array.isArray(s.flags.secretChecks)||s.flags.secretChecks.length>2000||new Set(s.flags.secretChecks).size!==s.flags.secretChecks.length||s.flags.secretChecks.some(key=>typeof key!=='string'||!secretDungeonForKey(key))))throw Error('Invalid secret detection history.');
  if(!validShrineState(s))throw Error('Invalid shrine state.');
+ if(!validBridgeTrollState(s))throw Error('Invalid bridge troll.');
+ if(!validMinorResidents(s))throw Error('Invalid dungeon residents.');
  if(!validTwinklestarTower(s))throw Error('Invalid Twinklestar Tower state.');
  if(!validPercivalCastle(s))throw Error('Invalid Percival castle state.');
  if(!validDiscoveryState(s))throw Error('Invalid wilderness discovery state.');
@@ -991,7 +1032,7 @@ export function loadGame(json){
  if(s.equipmentVersion===undefined){if(Array.isArray(s.bag)&&!s.bag.includes('travel-armor'))s.bag.push('travel-armor');s.equippedArmor='travel-armor';s.equipmentVersion=1;}
  if(s.dungeon?.ladderLayout!==undefined&&s.dungeon.ladderLayout!==1)throw Error('Invalid ladder layout.');
  // Older coastal layouts can move a minor site's surface door, never its saved interior.
- if(s.wildernessTerrainVersion!==2&&s.dungeon?.site==='minor-site'){
+ if(s.wildernessTerrainVersion!==3&&s.dungeon?.site==='minor-site'){
   const doors=minorSiteList(s).filter(p=>p.id===s.dungeon.minorId);
   const door=doors.sort((a,b)=>(Math.abs(a.x-s.x)+Math.abs(a.y-s.y))-(Math.abs(b.x-s.x)+Math.abs(b.y-s.y)))[0];
   if(door){s.x=door.x;s.y=door.y;if(door.other)s.dungeon.tunnelExit={...door.other};}
@@ -1024,6 +1065,8 @@ export function loadGame(json){
  if(!validBeansState(s))throw Error('Invalid beans duration.');
  if(!validDungeonCombatState(s))throw Error('Invalid dungeon combat distance.');
  if(!validWizardState(s))throw Error('Invalid wizard apprenticeship.');
+ if(s.flags.leprosySince!==undefined&&(!Number.isSafeInteger(s.flags.leprosySince)||s.flags.leprosySince<0||s.flags.leprosySince>worldTimeMs(s)))throw Error('Invalid leprosy onset.');
+ if(s.flags.leprosy!==undefined&&typeof s.flags.leprosy!=='boolean')throw Error('Invalid leprosy status.');
  if(!validPaladinState(s))throw Error('Invalid paladin oath.');
  if(s.enemy?.heroGhost!==undefined&&typeof s.enemy.heroGhost!=='boolean')throw Error('Invalid Horn of Help ghost.');
  if(s.enemy?.speciesId===WANG_ID&&(!Number.isInteger(s.enemy.slugs)||s.enemy.slugs<0||s.enemy.slugs>100_000))throw Error('Invalid slug swarm.');
@@ -1034,10 +1077,13 @@ export function loadGame(json){
  if(!Number.isInteger(s.treasureSeed)||s.treasureSeed<0||s.treasureSeed>4294967295||!Array.isArray(s.openedChests)||s.openedChests.length>10000||new Set(s.openedChests).size!==s.openedChests.length||s.openedChests.some(id=>typeof id!=='string'||!validMinorChestId(id)&&id!==DRAGONSTONE_CHEST_ID&&!/^(?:crypt:[1-9][0-9]*:0|ship:0:[01]|4:19:boat|sewer:0:key|(?:[0-7]:(?:[0-9]|[1-9][0-9])|(?:cell|sewer):0|elf-village:[0-3]|percivals-lament:[0-2]|twinklestar-tower:[0-8]|firedrak:[0-9]|bottomless-pit:(?:[0-9]|[1-9][0-9])|putrid-palace:(?:[0-9]|1[0-4])|(?:wild-(?:[0-9]|1[01])-cave-[01]|planet-[0-2]-cave-[0-2]):[0-2]):(?:[0-5]|secret|boss))$/.test(id)))throw Error('Invalid chest progress.');
  for(const kind of ['ring','ring2','necklace','shield','boots','head','hands','belt']){const id=s[gearKey(kind)];if(id!==null&&(itemById(id)?.kind!==(kind==='ring2'?'ring':kind)||!s.bag.includes(id)))throw Error('Invalid jewelry.');}
  if(s.equippedRing&&s.equippedRing===s.equippedRing2&&s.bag.filter(id=>id===s.equippedRing).length<2)throw Error('Two equipped rings require two owned copies.');
+ if(s.flags.cemeteryTorches!==undefined&&(!Array.isArray(s.flags.cemeteryTorches)||s.flags.cemeteryTorches.length>10000||s.flags.cemeteryTorches.some(id=>typeof id!=='string'||!/^(?:minor-(?:r[0-3]|w(?:[0-9]|1[01]))-\d+|dungeon-\d+):\d+:\d+:\d+$/.test(id))))throw Error('Invalid cemetery torches.');
+ if(s.flags.arenaRetreatNotice!==undefined&&(!s.flags.arenaRetreatNotice||!Number.isInteger(s.flags.arenaRetreatNotice.paid)||s.flags.arenaRetreatNotice.paid<0||s.flags.arenaRetreatNotice.paid>5))throw Error('Invalid arena retreat notice.');
+ if(s.flags.strengthMoves!==undefined&&(!Number.isInteger(s.flags.strengthMoves)||s.flags.strengthMoves<0||s.flags.strengthMoves>30))throw Error('Invalid strength potion duration.');
  if(!s.buffs||typeof s.buffs!=='object'||Array.isArray(s.buffs)||Object.entries(s.buffs).some(([k,v])=>!['strength','strengthPower','invisibility','meal','poison','waterBreathing','seeHidden'].includes(k)||!Number.isInteger(v)||v<0||v>100))throw Error('Invalid potion effects.');
  if(s.enemy?.frozen!==undefined&&(!Number.isInteger(s.enemy.frozen)||s.enemy.frozen<0||s.enemy.frozen>3))throw Error('Invalid freeze effect.');
  if(s.flags.haghildaDefeated){grantSlimeBoots(s);grantHearthSeal(s);}if(s.mode==='battle'&&s.returnMode==='dungeon')faceEncounterPassage(s.dungeon);
- if(s.mode==='ending'&&!Object.hasOwn(ENDINGS,s.ending)&&!Object.hasOwn(ROYAL_ENDINGS,s.ending)&&!Object.hasOwn(ROYAL_CAMPAIGN_ENDINGS,s.ending))throw Error('Unknown ending.');if(!s.savedAt&&s.mode==='dungeon'&&s.dungeon.x===1&&s.dungeon.y===1&&!dungeonNavigation(s.dungeon).forward)s.dungeon.dir=openDungeonDirection(s.dungeon);migrateWorldSize(s);migrateWildernessTerrain(s);const size=worldSize(s);if(s.x>=size.width||s.y>=size.height)throw Error('Invalid world position.');prepareClock(s);expireBuffs(s);expireAttributeEffects(s);syncAttributeHealth(s,itemById);return s;
+ if(s.mode==='ending'&&!Object.hasOwn(ENDINGS,s.ending)&&!Object.hasOwn(ROYAL_ENDINGS,s.ending)&&!Object.hasOwn(ROYAL_CAMPAIGN_ENDINGS,s.ending))throw Error('Unknown ending.');if(!s.savedAt&&s.mode==='dungeon'&&s.dungeon.x===1&&s.dungeon.y===1&&!dungeonNavigation(s.dungeon).forward)s.dungeon.dir=openDungeonDirection(s.dungeon);migrateWorldSize(s);migrateWildernessTerrain(s);const size=worldSize(s);if(s.x>=size.width||s.y>=size.height)throw Error('Invalid world position.');prepareClock(s);prepareLeprosy(s);expireBuffs(s);expireAttributeEffects(s);syncAttributeHealth(s,itemById);return s;
 }
 
 function crossBorder(s,gate){const forward=gate.target>s.region;if(forward&&!dragonFlying(s)&&!hasRegionRelics(s,s.region)){s.flags.borderTauntPending=true;s.flags.borderVoice=Math.floor(rand(s)*3);note(s,'Three royal guards bar the gate. Recover both relics from this land before crossing. They introduce your head to a barrel of cold water.');return;}if(forward&&hasRegionRelics(s,s.region)){s.flags['gateAccess:'+gate.id]=true;s.flags['returnAccess:'+s.region]=true;}s.region=gate.target;s.x=forward?5:119;s.y=48;s.mode='world';s.dungeon=null;s.location=null;s.turns++;delete s.flags.borderTauntPending;note(s,dragonFlying(s)?'Your dragon soars over the gate.':s.flags.royalHero?'The gate guards bow and let you pass.':'The gate opens. You cross into a new land.');if(s.region===1&&s.relics.length>=2)advance(s,5);if(s.region===2&&s.relics.length>=4)advance(s,9);if(s.region===3&&s.relics.length>=6)advance(s,13);}

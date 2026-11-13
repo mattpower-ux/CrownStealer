@@ -92,11 +92,12 @@ test('rivers block movement except at bridges and wetlands remain walkable', () 
   assert.ok(left, 'the river intersects the main road');
   let right = left;
   while (at(right, 48) === 'bridge') right++;
-  let s = {...createGame(), x: left - 1, y: 48};
+  let s = {...createGame(), gold:1000, x: left - 1, y: 48};
   const east = {type: 'move', dx: 1, dy: 0};
   for (let x = left; x <= right; x++) {
     s = act(s, east, [], {noRandom: true});
     assert.equal(s.x, x);
+    if(s.flags.bridgeTroll)s=act(s,{type:'bridgeTroll',choice:'gold'});
   }
   const bank = Array.from({length: 127}, (_, x) => x).find(x => walkable(at(x, 47)) && at(x + 1, 47) === 'water');
   assert.ok(bank, 'the same river has an unbridged bank');

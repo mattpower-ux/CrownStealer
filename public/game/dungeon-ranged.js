@@ -8,9 +8,9 @@ export const isBow=item=>item?.kind==='weapon'&&['bow','crossbow'].includes(item
 export const enemyCanShoot=e=>!!e&&(e.ranged===true||['ranged','magic','mental'].includes(e.attackType)||e.kind==='caster'||e.royalDungeonNpc==='royal-heckler');
 export const dexterityModifier=dex=>Math.floor((dex-10)/2);
 export function initializeDungeonCombat(s,random){
- if(!isDungeonCombat(s)||s.enemy.combatDistance!==undefined)return;
- s.enemy.combatDistance=2+Math.floor(random()*3);
- s.enemy.surpriseShotsRemaining=s.enemy.surprised||random()<.2?2:0;
+ if(!isDungeonCombat(s))return;
+ s.enemy.combatDistance??=2+Math.floor(random()*3);
+ s.enemy.surpriseShotsRemaining??=s.enemy.surprised||random()<.2?2:0;
  delete s.enemy.surprised;
 }
 export function validDungeonCombatState(s){

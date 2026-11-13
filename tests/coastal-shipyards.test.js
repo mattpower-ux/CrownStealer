@@ -30,7 +30,7 @@ test('scarce shipyards are reachable on dry land next to water; purchases persis
 test('version-one coastal saves move safely and retain minor dungeon progress',()=>{
  const s={...engine.createGame(),region:2,x:84,y:2,wildernessTerrainVersion:1};
  const restored=engine.loadGame(engine.saveGame(s));
- assert.equal(restored.wildernessTerrainVersion,2);
+ assert.equal(restored.wildernessTerrainVersion,3);
  assert.ok(!['water','mountain'].includes(engine.worldTile(2,restored.x,restored.y)));
  const site=engine.minorSiteList(s).find(p=>p.minorKind==='koboldCave');
  const dungeon={site:'minor-site',minorId:site.id,index:site.index,floor:0,x:1,y:1,dir:2,ladderLayout:1};

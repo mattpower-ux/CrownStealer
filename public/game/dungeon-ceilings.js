@@ -1,3 +1,4 @@
+import {artLoaded} from './art-revision.js';
 // Stone grit is sampled once per cached corridor; metal retains its structural ribs.
 export function drawDungeonCeiling(c,w,h,wall,{metal=false,phase=0}={}){
  if(!metal){drawStoneCeiling(c,w,h,wall,phase);return;}
@@ -25,22 +26,16 @@ function drawStoneCeiling(c,w,h,wall,phase){
  c.putImageData(img,0,0);
 }
 
-// Occasional recessed burial cubbies; bones are part of the wall material and obey ray occlusion.
+// Pre-sampled relief art shares the wall's perspective, lighting and occlusion.
+const burialArt={};
+if(typeof Image!=='undefined'&&typeof document!=='undefined')for(const name of ['niche','ossuary']){
+ const image=new Image();image.onload=()=>{const canvas=document.createElement('canvas');canvas.width=512;canvas.height=512;const c=canvas.getContext('2d',{willReadFrequently:true});c.drawImage(image,0,0,512,512);burialArt[name]=c.getImageData(0,0,512,512).data;artLoaded();};image.src='/assets/crypt-'+name+'.webp';
+}
 export function shrineWallInk(kind,u,v,light=1){
  if(kind%5!==0)return null;
- const x=(u-.5)/.36,y=(v-.52)/.24;
- const inside=Math.abs(x)<1&&Math.abs(y)<1;if(!inside)return null;
- const lit=(r,g,b)=>'#'+[r,g,b].map(n=>Math.max(0,Math.min(255,Math.floor(n*Math.max(.3,light)))).toString(16).padStart(2,'0')).join('');
- if(Math.abs(x)>.89||y>.8)return lit(116,109,89);
- if(y<-.84)return lit(43,44,37);
- let bone=false;
- const skull=((x+.58)/.13)**2+((y+.03)/.25)**2<1;
- const eyes=skull&&(Math.abs(x+.62)<.024||Math.abs(x+.53)<.024)&&y>-.12&&y<-.02;
- bone=skull||Math.abs(y-.15)<.035&&x>-.48&&x<.3;
- // Rib cage, paired leg bones and jaw give the horizontal skeleton a readable silhouette.
- for(const rib of [-.34,-.23,-.12,-.01])if(Math.abs(((x-rib)/.043)**2+((y-.14)/.19)**2-1)<.28)bone=true;
- if(x>.12&&x<.76&&(Math.abs(y-.08-(x-.12)*.1)<.028||Math.abs(y-.25+(x-.12)*.08)<.028))bone=true;
- if(skull&&y>.14&&Math.abs(Math.sin(x*100))<.25)return lit(76,70,51);
- if(bone&&!eyes)return lit(186,176,137);
- return lit(eyes?8:18,eyes?9:22,eyes?7:18);
+ const ossuary=kind%10===0, data=burialArt[ossuary?'ossuary':'niche'];if(!data)return null;
+ const left=ossuary?.12:.08,top=ossuary?.07:.31,width=ossuary?.76:.84,height=ossuary?.86:.4;
+ const x=(u-left)/width,y=(v-top)/height;if(x<0||x>=1||y<0||y>=1)return null;
+ const i=(Math.floor(y*511)*512+Math.floor(x*511))*4;if(data[i+3]<128)return null;
+ return '#'+[0,1,2].map(k=>Math.max(0,Math.min(255,Math.floor(data[i+k]*light))).toString(16).padStart(2,'0')).join('');
 }

@@ -1,5 +1,5 @@
 import {worldTile,minorSiteList,shipyardList} from './engine.js';
-import {areaFor,areaSites,areaTile,branchGates,teleporterSite} from './exploration.js';
+import {areaFor,areaSites,areaTile,branchGates,teleporterSite,visitedLands} from './exploration.js';
 import {TOWNS,DUNGEONS} from './content.js';
 import {WILD_SITES} from './wild-sites.js';
 import {PUTRID_PALACE} from './royal-trials.js';
@@ -62,7 +62,7 @@ export function wildernessDiscoverySites(s){
     ...(searched?{chestOdds:discoveryChestOdds(s),chestRisk:'Difficult lock. Each attempt takes five game minutes. A failed attempt may spring a trap for 28–48 damage; Dexterity and lockpicking gloves improve your odds.'}:{}),
     result:chestOpened?'The buried chest is empty. You recovered its gold, three gems and the Crown of Charisma.':'Beneath a collapsed hearth you uncover a buried iron chest. Its difficult lock is still intact, and a concealed mechanism warns of a dangerous trap.'};
   }
-  const result=site.type==='hero-remains'?"Beneath the boulders lies a hero’s skeleton pierced with orc arrows. You recover 75 gold and the Horn of Help. Its fallen owner can answer three calls.":site.type==='abandoned-camp'?`Inside the pack you find ${gold} gold and one hearty meal.`:site.type==='hollow-tree'?`A leather purse hidden beneath the roots holds ${gold} gold.`:'The inscription reads: “The road remembers courage. Search beyond the worn path, and honor those who walked before you.”';
+  const result=site.type==='standing-stones'&&land==='r0'?STANDING_STONES_INCANTATION+' Read the inscription aloud. A giant dodo offers a waking-dream flight over the whole Hearthmarch, then returns you to the stones.':site.type==='hero-remains'?"Beneath the boulders lies a hero’s skeleton pierced with orc arrows. You recover 75 gold and the Horn of Help. Its fallen owner can answer three calls.":site.type==='abandoned-camp'?`Inside the pack you find ${gold} gold and one hearty meal.`:site.type==='hollow-tree'?`A leather purse hidden beneath the roots holds ${gold} gold.`:'The inscription reads: “The road remembers courage. Search beyond the worn path, and honor those who walked before you.”';
   return {...site,name:searched&&site.type==='hero-remains'?'Hero’s remains':site.name,discovered:!!s.flags.discoverySeen?.includes(site.id),searched,gold,meals,result};
  });
 }
@@ -84,6 +84,7 @@ export function searchWildernessDiscovery(s,id,note){
  if(s.mode!=='world')return;
  const site=wildernessDiscoveries(s).find(p=>p.id===id&&p.x===s.x&&p.y===s.y);
  if(!site)return;
+ if(site.type==='standing-stones'&&s.region===0&&!s.exploration?.area){readStandingStones(s,id,note);return;}
  if(site.searched){note(s,'You have already searched this place.');return;}
  s.flags.discoverySeen??=[];if(!s.flags.discoverySeen.includes(id))s.flags.discoverySeen.push(id);
  s.flags.discoverySearched??=[];s.flags.discoverySearched.push(id);
@@ -117,4 +118,14 @@ export function robDiscoveryChest(s,id,{random,note,events}){
  s.flags.discoveryChests??=[];s.flags.discoveryChests.push(id);
  s.gold+=gold;s.bag.push(...loot);
  note(s,'The lock yields. You recover '+gold+' gold, three gems and the Crown of Charisma.');
+}
+export const STANDING_STONES_INCANTATION='Annal Nathrac Uth Spas Vessud.';
+export function readStandingStones(s,id,note){
+ const site=wildernessDiscoverySites(s).find(p=>p.id===id&&p.type==='standing-stones');
+ if(s.mode!=='world'||s.region!==0||s.exploration?.area||!site||site.x!==s.x||site.y!==s.y)return false;
+ s.flags.discoverySeen??=[];if(!s.flags.discoverySeen.includes(id))s.flags.discoverySeen.push(id);
+ s.flags.discoverySearched??=[];if(!s.flags.discoverySearched.includes(id))s.flags.discoverySearched.push(id);
+ s.flags.hearthmarchDream=true;s.flags.visitedLands=[...new Set([...visitedLands(s),0])];
+ s.flags.minorDiscovered=[...new Set([...(s.flags.minorDiscovered??[]),...minorSiteList(s).map(p=>p.id)])];
+ s.turns++;note(s,STANDING_STONES_INCANTATION+' A giant dodo bows. You climb onto its back and soar in a waking dream above every river, village and hidden hollow of Hearthmarch. The dream reveals Hearthmarch alone. You awaken beside the standing stones.');return true;
 }

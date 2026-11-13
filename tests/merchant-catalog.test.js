@@ -136,3 +136,7 @@ test('existing regional stock gives every storefront its intended item families'
     }
   }
 });
+test('potions sort by price from lowest to highest, including tonic supplies',()=>{
+ const items=[{id:'grand',kind:'potion',value:135},{id:'potion',kind:'potion',base:18},{id:'small',kind:'potion',value:13}];
+ assert.deepEqual(items.sort(compareMerchantItems).map(i=>i.id),['small','potion','grand']);
+});

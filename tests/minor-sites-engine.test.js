@@ -67,7 +67,7 @@ test('mountain tunnel checkpoints preserve both directions in the main and branc
   let inside=checkpoint(s);
   assert.deepEqual(inside.dungeon.tunnelExit,site.other);
   assert.equal(dungeonFloors(inside.dungeon),1);
-  assert.deepEqual(dungeonChests(inside,dungeonMap(inside.dungeon)),[]);
+  assert.equal(dungeonChests(inside,dungeonMap(inside.dungeon)).length,1);
   for(const entrance of [{x:site.x,y:site.y},site.other]){
    assert.deepEqual([inside.x,inside.y],[entrance.x,entrance.y]);
    const exit=inside.dungeon.tunnelExit;
@@ -112,7 +112,7 @@ test('minor wilderness progress rejects unknown sites and impossible chest floor
   [s=>{s.flags['minorCleared:minor-r0-0']=false;},/minor guardian progress/i],
   [s=>{s.openedChests.push('minor:minor-r0-5:0');},/chest progress/i],
   [s=>{s.openedChests.push('minor:minor-r0-4:0');},/chest progress/i],
-  [s=>{s.openedChests.push('minor:minor-r0-24:0');},/chest progress/i],
+  [s=>{s.openedChests.push('minor:minor-r0-24:1');},/chest progress/i],
  ]){
   const invalid=createGame();
   mutate(invalid);
@@ -140,7 +140,7 @@ test('pre-terrain saves stranded by new mountains or water relocate once to near
   const legacy={...createGame(),x,y};
   delete legacy.wildernessTerrainVersion;
   const restored=loadGame(saveGame(legacy));
-  assert.equal(restored.wildernessTerrainVersion,2);
+  assert.equal(restored.wildernessTerrainVersion,3);
   assert.notDeepEqual([restored.x,restored.y],[x,y]);
   assert.ok(!['water','mountain'].includes(worldTile(0,restored.x,restored.y)));
   const reloaded=loadGame(saveGame(restored));

@@ -39,12 +39,15 @@ test('a crystal reaches only visited lands and preserves the branch return gate'
   s = act(s, {type: 'enter'});
   assert.equal(s.exploration.area, gate.area);
   assert.ok(visitedLands(s).includes(gate.area));
-  Object.assign(s, {x: booth.x, y: booth.y});
+  const branchBooth=areaSites(s).find(p=>p.kind==='teleporter');
+  Object.assign(s, {x: branchBooth.x, y: branchBooth.y});
   s = act(s, {type: 'crystalTravel', land: 0});
   assert.equal(s.exploration.area, null);
   s = act(loadGame(saveGame(s)), {type: 'crystalTravel', land: gate.area});
   assert.equal(s.exploration.area, gate.area);
   assert.ok(!s.bag.includes('teleporter-crystal'));
+  assert.equal(pointAt(s)?.kind,'teleporter');
+  assert.deepEqual([s.x,s.y],[branchBooth.x,branchBooth.y]);
   const branchReturn = areaSites(s).find(p => p.kind === 'returnGate');
   Object.assign(s, {x: branchReturn.x, y: branchReturn.y});
   s = act(s, {type: 'enter'});

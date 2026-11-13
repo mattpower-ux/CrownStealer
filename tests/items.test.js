@@ -18,7 +18,7 @@ test('named legendary rewards use their own art and quest bones and teeth differ
     const item = itemById(id);
     assert.ok(itemArt(item).includes('aria-label="'+item.name+' illustration"'), id);
   }
-  assert.match(itemArt(itemById('job-keepsake-the-husband-in-the-ledger')), /aria-label="book illustration"/);
+  assert.match(itemArt(itemById('job-keepsake-the-husband-in-the-ledger')), /src="\/assets\/ancient-book.webp"/);
   assert.match(itemArt(itemById('job-keepsake-an-unflattering-history')), /aria-label="bone illustration"/);
   assert.match(itemArt(itemById('job-keepsake-amnesty-in-small-print')), /aria-label="tooth illustration"/);
 });

@@ -33,9 +33,11 @@ function pathTo(start, target, passable) {
 function campaign(outlaw) {
   let state = createGame(outlaw ? 'Outlaw route' : 'Honorable route');
   // Route/migration fixture spans level-200+ enemies on the final 100-floor dungeon.
+  // Reserve enough HP for a three-lich level-200 pack without relying on the random
+  // loot stream to supply invisibility. This fixture tests traversal, not balance.
   // Keep it overleveled; combat difficulty is measured separately in combat-challenge.test.js.
   // An adventurer who earned the old Tithe Vault relic keeps it.
-  state.relics=['tithe-vault'];state.level=300;state.hp=state.maxHp=4266;state.gold=100000;state.weapon=80;state.armor=300;state.potions=10000;
+  state.relics=['tithe-vault'];state.level=300;state.hp=state.maxHp=20000;state.gold=100000;state.weapon=80;state.armor=300;state.potions=10000;
   let actions = 0, battles = 0;
   const checkpoints = [];
   function step(action) {
@@ -77,6 +79,7 @@ function campaign(outlaw) {
         assert.ok(++tries <= 12, 'Route cannot progress through a wilderness interruption');
         step({type:'move',dx:x-state.x,dy:y-state.y});
         fight();
+        if (state.flags.bridgeTroll){const gold=state.gold,{toll,key}=state.flags.bridgeTroll;if(gold>=toll){step({type:'bridgeTroll',choice:'gold'});assert.equal(state.gold,gold-toll);}else{step({type:'bridgeTroll',choice:'fight'});fight();}assert.ok(state.flags.bridgeTrollPaid.includes(key));assert.equal(state.flags.bridgeTroll,undefined);}
         if (state.flags.wildernessEvent) step({type:'wildernessChoice',choice:'leave'});
         if (state.dungeon?.site === 'roadside-crypt') step({type:'leave'});
         assert.equal(state.mode, 'world');

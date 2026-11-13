@@ -1,5 +1,6 @@
+import {artLoaded} from './art-revision.js';
 import {ROYAL_DUNGEON_CELLS} from './royal-dungeon.js';
-const bodies=Object.fromEntries(['royal-torturer','royal-heckler'].map(id=>{const image=new Image();image.src='/assets/'+id+'-body.webp';return [id,image];}));
+const bodies=Object.fromEntries(['royal-torturer','royal-heckler'].map(id=>{const image=new Image();image.onload=artLoaded;image.src='/assets/'+id+'-body.webp';return [id,image];}));
 export function paintRoyalBody(c,enemy,x,y,w,h){
  const art=bodies[enemy.speciesId];if(!art)return false;
  if(!art.complete||!art.naturalWidth)return false;
@@ -9,20 +10,12 @@ export function paintRoyalBody(c,enemy,x,y,w,h){
 export function royalVisualMap(map){const copy=map.map(row=>[...row]);for(const cell of ROYAL_DUNGEON_CELLS)for(let y=cell.bars.top;y<=cell.bars.bottom;y++)copy[y][cell.bars.x]=0;return copy;}
 const poly=(c,pts,color)=>{c.fillStyle=color;c.beginPath();pts.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.closePath();c.fill();};
 const oval=(c,x,y,rx,ry,color)=>{c.fillStyle=color;c.beginPath();c.ellipse(x,y,rx,ry,0,0,Math.PI*2);c.fill();};
+const prisonerArt=Object.fromEntries(['kobold','maiden','peasant'].map(id=>{const image=new Image();image.onload=artLoaded;image.src='/assets/prisoner-'+id+'.webp';return [id,image];}));
 function prisoner(c,type){
- const kobold=type.includes('kobold'),maiden=type.includes('maiden'),skin=kobold?'#a29664':'#c5a27b',shirt=kobold?'#665242':maiden?'#a7b2aa':'#776e55';
- oval(c,.5,.97,.24,.035,'#0008');
- poly(c,[[.34,.54],[.48,.55],[.46,.93],[.33,.93]],'#4b4739');poly(c,[[.51,.55],[.66,.55],[.71,.92],[.56,.94]],'#383a30');
- oval(c,.36,.94,.13,.045,'#40372a');oval(c,.65,.94,.13,.045,'#302c23');
- poly(c,[[.32,.29],[.65,.3],[.73,.61],[.28,.63]],shirt);if(maiden)poly(c,[[.33,.48],[.65,.48],[.78,.9],[.23,.9]],'#899b98');
- poly(c,[[.33,.3],[.21,.36],[.16,.61],[.23,.65],[.35,.46]],shirt);poly(c,[[.64,.3],[.74,.34],[.82,.56],[.74,.64],[.62,.46]],shirt);
- oval(c,.2,.64,.05,.07,skin);oval(c,.76,.63,.05,.07,skin);
- oval(c,.49,.2,kobold?.16:.115,kobold?.12:.14,skin);
- if(kobold){poly(c,[[.35,.14],[.18,.07],[.31,.27]],skin);poly(c,[[.62,.14],[.79,.09],[.67,.27]],skin);poly(c,[[.37,.22],[.6,.21],[.62,.29],[.4,.3]],'#b3a775');}
- else{poly(c,[[.37,.12],[.4,.04],[.57,.04],[.62,.14],[.58,.18],[.53,.1],[.4,.15]],maiden?'#8d603a':'#6b5948');if(maiden){poly(c,[[.37,.1],[.36,.36],[.4,.4],[.43,.13]],'#735035');poly(c,[[.57,.1],[.64,.36],[.59,.39],[.55,.15]],'#986e47');}}
- oval(c,.45,.19,.012,.015,'#171b16');oval(c,.55,.19,.012,.015,'#171b16');
- c.strokeStyle='#634e39';c.lineWidth=.012;c.beginPath();c.moveTo(.46,.28);c.lineTo(.54,.28);c.stroke();
- if(!kobold&&!maiden){oval(c,.47,.25,.07,.035,'#aa7964');c.save();c.translate(.18,.54);c.rotate(-.2);poly(c,[[0,0],[.07,0],[.07,.14],[0,.14]],'#58452b');c.strokeStyle='#9a8257';c.lineWidth=.012;c.strokeRect(0,0,.07,.14);c.restore();}
+ const art=prisonerArt[type.includes('kobold')?'kobold':type.includes('maiden')?'maiden':'peasant'];
+ if(!art.complete||!art.naturalWidth)return;
+ const scale=Math.min(1/art.naturalWidth,1/art.naturalHeight),w=art.naturalWidth*scale,h=art.naturalHeight*scale;
+ c.drawImage(art,(1-w)/2,1-h,w,h);
 }
 function cauldron(c,time){
  oval(c,.5,.92,.41,.06,'#0007');for(const x of [.21,.68])poly(c,[[x,.69],[x+.1,.69],[x+.13,.94],[x-.03,.94]],'#252927');

@@ -1,3 +1,4 @@
+import {LEPER_COLONY} from './leper-colony.js';
 import {PUTRID_PALACE} from './royal-trials.js';
 import {scaleWorldPoint} from './world-size.js';
 export {gameDay} from './world-clock.js';
@@ -8,7 +9,7 @@ export const WILD_SITES=[
  {id:'dragon-bones',kind:'dragon',region:0,x:28,y:19,name:'Ancient dragon bones'},
  {id:'wayside-fountain',kind:'fountain',region:0,x:14,y:9,name:'Wayside Fountain'},
  {id:'elf-village',kind:'forest',region:0,x:7,y:17,name:'Ruined tree fort',description:'Beyond the broken ladder lies an abandoned elven village. Goblin footprints cross the moss; immense webs hang between its empty homes.'}
-].map(scaleWorldPoint).concat(PUTRID_PALACE);
+].map(scaleWorldPoint).concat(PUTRID_PALACE,LEPER_COLONY);
 
 export function forestMap(floor=0){const m=Array.from({length:15},()=>Array(15).fill(1));for(let y=1;y<14;y++)for(let x=1;x<14;x++)if([1,4,7,10,13].includes(x)||[1,4,7,10,13].includes(y)||x>=6&&x<=8&&y>=6&&y<=8)m[y][x]=0;if(floor===3)for(let y=5;y<=9;y++)for(let x=5;x<=9;x++)m[y][x]=0;m[1][1]=3;return m;}
 export const GROVE_ENEMIES=[

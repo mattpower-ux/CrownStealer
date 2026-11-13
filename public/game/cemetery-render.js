@@ -1,8 +1,11 @@
+import {artLoaded} from './art-revision.js';
 import {minorSiteDefinition} from './minor-sites.js';
 export const isCemeteryDungeon=d=>!!d&&(d.site==='minor-site'?minorSiteDefinition(d.minorId)?.kind==='cemetery':!d.site&&!d.royal&&!d.ship&&!d.expedition&&d.index===0);
 function poly(c,points,color,stroke){c.beginPath();points.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.closePath();c.fillStyle=color;c.fill();if(stroke){c.strokeStyle=stroke;c.stroke();}}
 function stroke(c,points,color,width=.015){c.beginPath();points.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.strokeStyle=color;c.lineWidth=width;c.stroke();}
+const remainsArt=typeof Image==='undefined'?null:new Image();if(remainsArt)remainsArt.onload=artLoaded;if(remainsArt)remainsArt.src='/assets/crypt-sarcophagus.webp';
 export function drawCemeteryCoffin(c,size,opened,{stone=false}={}){
+ if(opened&&remainsArt?.complete&&remainsArt.naturalWidth){const w=size*1.25,h=w*remainsArt.naturalHeight/remainsArt.naturalWidth;c.drawImage(remainsArt,-w*.5,-h,w,h);return;}
  c.save();c.scale(size,size*.62);c.lineJoin='round';c.lineWidth=.025;
  const outline=[[-.22,-.84],[.22,-.84],[.43,-.64],[.28,-.13],[-.28,-.13],[-.43,-.64]];
  poly(c,[[-.43,-.64],[-.28,-.13],[.28,-.13],[.43,-.64],[.43,-.47],[.28,.04],[-.28,.04],[-.43,-.47]],stone?'#45483e':'#30231e','#171813');

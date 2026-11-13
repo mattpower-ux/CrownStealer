@@ -86,10 +86,10 @@ test('kobold burrows form broad connected chambers across every land and preserv
  }
 });
 
-test('cemeteries and tunnels retain their existing map geometry',()=>{
+test('cemeteries retain geometry and tunnels add connected side passages',()=>{
  for(const [slot,want] of [
   [2,[0,14,8,8,28,28,2044,1052,7964,7936,7936,14336,12288,12288,0]],
-  [24,[0,126,64,64,1984,1024,1024,1024,1024,1024,1024,15360,8192,8192,0]],
+  [24,[0,126,960,64,1984,1024,1024,1024,1024,1024,1024,16256,8320,8320,0]],
  ]){
   const map=minorDungeonMap(visit('minor-r0-'+slot,0).dungeon);
   assert.deepEqual(map.map(row=>row.reduce((mask,tile,x)=>mask+(tile===1?0:2**x),0)),want);
@@ -134,12 +134,12 @@ test('guarded minor sites have themed non-boss encounters independent of treasur
   assert.ok(minorGuardian(visit('minor-r3-2')).level>minorGuardian(visit('minor-r0-2')).level);
 });
 
-test('mountain tunnels connect the entrance and exit without treasure or a guardian',()=>{
+test('mountain tunnels connect the entrance and exit with treasure and no automatic guardian',()=>{
   const state=visit('minor-r0-24');
   const map=minorDungeonMap(state.dungeon);
   assert.equal(map[1][1],3);
   assert.equal(map[13][13],2);
-  assert.equal(map.flat().filter(tile=>tile!==1).length,25);
-  assert.deepEqual(minorDungeonChests(state,loot),[]);
+  assert.equal(map.flat().filter(tile=>tile!==1).length,33);
+  assert.equal(minorDungeonChests(state,loot).length,1);
   assert.equal(minorGuardian(state),null);
 });

@@ -60,6 +60,11 @@ export function minorDungeonMap(d) {
   }
   // Open a broad ceremonial room without removing any old walkable tiles.
   if(site.kind==='ruinedShrine')for(let y=4;y<=11;y++)for(let x=3;x<=11;x++)map[y][x]=0;
+  if(site.kind==='tunnel'){
+    // Short blind spurs branch from the old connected route; existing saves stay walkable.
+    const bx=4+offset;carve(bx,2,bx+3,2);carve(bx,2,bx,4);
+    carve(7,9+offset,10,9+offset);carve(7,9+offset,7,13);
+  }
   map[1][1]=3;
   map[13][13]=2;
   return map;
@@ -92,6 +97,8 @@ export function minorDungeonChests(s,items) {
   }
   const deity=shrineForDungeon(d);
   if(site.treasure&&deity?.loot){const gifts=deity.loot.filter(id=>items[id]);if(gifts.length)found.splice(0,found.length,...gifts);}
+  if(site.kind==='tunnel'){found.splice(0,found.length,...['tusk-mountain-history','armyates-scroll','old-lockpicks','small-sapphire','rusty-mountain-sword','miners-cap'].filter(id=>items[id]));gold=45;}
+  if(site.kind==='ruinedShrine'&&site.treasure&&items['ancient-shrine-tablet'])found.push('ancient-shrine-tablet');
   return [{
     id,x:13,y:13,item:found[0]??null,items:found,rarity:items[found[0]]?.rarity??'common',
     gold,trap:site.trapped,opened:s.openedChests?.includes(id)??false,

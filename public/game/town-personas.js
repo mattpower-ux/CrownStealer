@@ -1,7 +1,7 @@
 export const MERCHANTS=[
  {name:'Mabel Applebarrel',line:'A full belly and a sharp blade. Everything else is gossip.'},
  {name:'Osric Pinchpurse',line:'Royal quality. Regrettably royal prices.'},
- {name:'Jory Threepockets',line:'All honestly acquired. No further questions.'},
+ {name:'Loquacia Ragspittle',portrait:'/assets/loquacia-ragspittle.webp',line:'Drink the labelled bottle, dear. The unlabelled one is still arguing with the cork.'},
  {name:'Auntie Saffron',line:'Mind the spices. One sneeze and the whole stall explodes.'},
  {name:'Bram Cinderhand',line:'I made it to last longer than its owner.'},
  {name:'Nessa Bottleglass',line:'Drink the labelled bottles. Especially if you enjoy having eyebrows.'},

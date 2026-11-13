@@ -1,3 +1,4 @@
+import {EXPLORATION_LOOT} from './exploration-loot.js';
 import {SEE_HIDDEN_ITEMS} from './see-hidden.js';
 import {WIZARD_ROBES} from './wizard-apprentice.js';
 import {POISON_ITEMS} from './weapon-poisons.js';
@@ -28,6 +29,7 @@ export const RARITIES=['common','rare','epic','legendary'];
 export const rarityFor=roll=>roll<.60?'common':roll<.80?'rare':roll<.95?'epic':'legendary';
 const colors=['#b6baa5','#77bbec','#c69aef','#efcb70'];
 export const TREASURE_ITEMS={
+ ...EXPLORATION_LOOT,
  ...royalTrialItems,
  [BALROG_WHIP]:{id:BALROG_WHIP,kind:'key',shape:'key',name:'Whip of the Balrog of Despair',rarity:'legendary',unique:true,notForSale:true,value:0,color:'#f28a50',description:'Proof of the Balrog’s defeat. Bring it to King Malachi at Bellwether Court.'},
 };
@@ -49,6 +51,17 @@ for(const base of Object.values(TREASURE_ITEMS))for(let style=1;style<=4;style++
  else if(base.kind==='potion'){title=['','Concentrated','Lingering','Fortified','Grand'][style];if(item.healing){item.healing=Math.floor(item.healing*(1+style*.2));extra=`This brew restores up to ${item.healing} health.`;}else{item.duration+=style===3?-1:style+1;item.power+=style*2;extra=item.effect==='strength'?`This brew grants +${item.power} weapon damage for ${item.duration*5} game minutes.`:`This brew grants invisibility for ${item.duration*5} game minutes.`;}item.description='';}
  else{title=['','Precise','Resolute','Restorative','Elusive'][style];if(style===1){item.accuracy=2+rank;extra=`Grants +${item.accuracy} accuracy bonus while equipped.`;}if(style===2){item.protection=(item.protection||0)+2+rank;extra=`Additional physical protection: ${2+rank}.`;}if(style===3){item.regeneration=1+rank;extra=`Restores ${item.regeneration} health after surviving an enemy strike.`;}if(style===4){item.evasion=.06+rank*.02;extra=`Adds ${Math.round(item.evasion*100)}% chance to evade an enemy strike.`;}}
  item.name=title+' '+base.name;item.description=(item.description+' '+extra).trim();TREASURE_ITEMS[item.id]=item;
+}
+// Ordinary invisibility brews expire by movement; the concentrated legendary
+// recipe retains its explicitly timed ten-minute effect.
+for(const item of Object.values(TREASURE_ITEMS).filter(item=>['invisibility','strength'].includes(item.effect))){
+ if(item.id==='legendary-invisibility-v1'){
+  item.duration=2;
+  item.description='Evades attacks and prevents random wilderness/dungeon encounters for 10 game minutes.';
+ }else{
+  item.durationMoves=[10,15,20,10,30][item.variant||0];
+  item.description=item.effect==='strength'?`Adds ${item.power} weapon damage for ${item.durationMoves} moves or combat actions.`:`Invisible to non-boss mobs for ${item.durationMoves} moves or combat actions. Prevents random encounters while active; bosses can still see you.`;
+ }
 }
 // Elven heirlooms use the existing gear effects and rarity bands.
 for(const rarity of RARITIES)for(const family of ['bow','sword','ring','necklace']){const base=TREASURE_ITEMS[`${rarity}-${family}-1`],id=`elven-${rarity}-${family}`;TREASURE_ITEMS[id]={...base,id,elven:true,name:`Elven ${base.name}`,description:'Recovered from the abandoned woodland homes. '+base.description};}

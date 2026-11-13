@@ -75,6 +75,7 @@ export function canMerchantSell(merchant, item) {
 
 // Storefronts buy the same categories they sell; traveling traders are generalists.
 export function canMerchantBuy(merchant, item) {
+  if(item?.shrineTablet){const type=typeof merchant==='string'?merchant:merchant?.merchant;return ['wizard','enclave'].includes(type);}
   return canMerchantSell(merchant, item);
 }
 
@@ -87,6 +88,7 @@ export function compareMerchantItems(a, b) {
   // Keep actual weapons together, strongest first; upgrades without damage follow.
   const aWeapon = a.kind === 'weapon', bWeapon = b.kind === 'weapon';
   if (aWeapon !== bWeapon) return aWeapon ? -1 : 1;
+  if(a.kind==='potion'&&b.kind==='potion')return (a.value??a.base??0)-(b.value??b.base??0)||String(a.name||a.id).localeCompare(String(b.name||b.id),'en');
   if (!aWeapon) return 0;
   return weaponDamage(b) - weaponDamage(a) ||
     (b.toHit || 0) - (a.toHit || 0) ||

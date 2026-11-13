@@ -7,7 +7,7 @@ test('branch gates, ten unique artifacts, ship controls and three planetary retu
  let s=createGame();s.relics=DUNGEONS.map(d=>d.id);
  for(let i=0;i<10;i++){
   s.region=Math.floor(i/3);const gate=branchGates(s.region)[i%3];s.x=gate.x;s.y=gate.y;s=act(s,{type:'enter'});assert.equal(s.exploration.area,'wild-'+i);assert.equal(areaSites(s).filter(p=>p.kind==='expedition').length,2);
-  s.x=64;s.y=16;s=act(s,{type:'enter'});s=loadGame(saveGame(s));assert.equal(s.exploration.artifacts.length,i+1);
+  const monument=areaSites(s).find(p=>p.kind==='artifact');s.x=monument.x;s.y=monument.y;s=act(s,{type:'enter'});s=loadGame(saveGame(s));assert.equal(s.exploration.artifacts.length,i+1);
   if(i<9){s=act(s,{type:'enter'});assert.equal(s.exploration.artifacts.length,i+1);s.x=64;s.y=88;s=act(s,{type:'enter'});assert.equal(s.exploration.area,null);}
  }
  assert.equal(s.dungeon.ship,true);

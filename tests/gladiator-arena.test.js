@@ -70,6 +70,9 @@ test('every town has a voluntary arena that can be entered from its door and lef
     const retreated = save(act({...fight, rng: 1024}, {type: 'flee'}));
     assert.equal(retreated.arena.wins, 0);
     assert.equal(retreated.mode, 'town');
+    assert.equal(retreated.gold,Math.max(0,fight.gold-5));
+    assert.equal(retreated.flags.arenaRetreatNotice.paid,Math.min(5,fight.gold));
+    assert.match(retreated.log.at(-1),/crowd|jeer/i);
     const left = save(act(retreated, {type: 'leaveArena'}));
     assert.equal(left.arena, undefined);
     assert.deepEqual(left.bag, outside.bag);

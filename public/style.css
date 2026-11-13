@@ -299,17 +299,19 @@ dialog[data-panel="bossIntro"] img.intro-backdrop { object-fit: cover; }
 
 .wilderness-health{
   position:absolute;top:12px;left:12px;pointer-events:none;
-  width:max-content;min-width:clamp(122px,17vw,164px);box-sizing:border-box;padding:7px 9px 8px;
+  width:clamp(244px,34vw,328px);max-width:calc(100% - 24px);box-sizing:border-box;padding:10px 12px;
   color:#ece0bd;background:#071912ed;border:1px solid #cdb67966;border-radius:4px;
 }
 .wilderness-health-label{display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:12px;line-height:1.15}
 .wilderness-health-label strong{font-variant-numeric:tabular-nums;white-space:nowrap}
-.wilderness-health-track{height:6px;margin-top:5px;background:#2b3527;border-radius:3px;overflow:hidden}
+.wilderness-health-track{height:12px;margin-top:5px;background:#2b3527;border-radius:3px;overflow:hidden}
 .wilderness-health-track span{display:block;height:100%;background:#adc184;border-radius:inherit}
 .wilderness-health.is-low{border-color:#ef9678}
 .wilderness-health.is-low strong{color:#ffc1aa}
 .wilderness-health.is-low .wilderness-health-track span{background:#e98e75}
-.wilderness-health:not([hidden]) + .mode-badge{top:60px;left:12px}
+.wilderness-health:not([hidden]) + .mode-badge{top:120px;left:12px}
+.wilderness-hero-name,.wilderness-hero-level{font:800 16px/1.35 Arial,Helvetica,sans-serif;overflow-wrap:anywhere}
+.wilderness-hero-level{margin-bottom:6px;color:var(--gold)}
 
 /* Tiddlywinks uses a felt board, brass cup and three individually colored discs. */
 .winks-game{
@@ -738,3 +740,16 @@ dialog[data-panel="wizardArts"] .wizard-arts-grid{display:grid;grid-template-col
 @media(max-width:540px){#combat-panel[data-dungeon="true"] #actions{grid-template-columns:repeat(4,minmax(0,1fr));overflow-y:auto}.combat-switch-group{grid-column:span 3}#combat-panel[data-dungeon="true"]{height:42svh!important;max-height:42svh!important}.game-layout:has(#combat-panel[data-dungeon="true"]:not([hidden])) .scene-wrap{height:58%!important}}
 
 .royal-dungeon-conversation img{aspect-ratio:2/3;height:min(52svh,440px);object-fit:contain;border:0;background:radial-gradient(ellipse at 50% 95%,#0006,transparent 60%)}@media(max-width:590px){.royal-dungeon-conversation img{height:30svh;max-height:30svh}}
+
+/* Clear reading sizes for potion choices and item detail dialogs. */
+dialog[data-panel="potions"] #panel-body{font-size:18px;line-height:1.55}
+dialog[data-panel="potions"] .shop-item p{font-size:18px;line-height:1.5}
+dialog[data-panel="potions"] .shop-item h3{font-size:24px!important}
+dialog.merchant-detail{font-size:18px;line-height:1.5}
+dialog.merchant-detail h3{font-size:25px}
+dialog[data-panel="inventory"] .inventory-item-popup .gear-description,dialog[data-panel="inventory"] .inventory-item-popup p{font-size:17px;line-height:1.45}
+dialog[data-panel="inventory"] .inventory-item-popup{aspect-ratio:auto;min-height:200px}
+#saved-notice{margin:0;right:auto;bottom:auto;position:fixed;z-index:10000;left:50%;top:50%;transform:translate(-50%,-50%);padding:24px 44px;border:2px solid var(--gold);border-radius:10px;background:#10271ff5;color:var(--ink);font-size:28px;font-weight:bold;box-shadow:0 12px 50px #0009;pointer-events:none}
+.trade-proprietor img.custom-merchant-portrait{object-fit:cover;object-position:center 25%;background:none}
+.arena-mocking-crowd{display:block;width:100%;max-height:50vh;object-fit:contain;border-radius:8px}.torch-question{font-size:24px;line-height:1.5}
+.geared-avatar .avatar-bandages{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:8}

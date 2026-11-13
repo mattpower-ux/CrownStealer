@@ -83,6 +83,9 @@ export function landscapeTile(region, area, x, y, base) {
   if (y > 0 && y < lake.y && Math.abs(x - river[y]) <= 1) {
     return base === 'road' || y === footbridge ? 'bridge' : 'water';
   }
+  // A western tributary winds toward the south coast with frequent foot crossings.
+  const tributaryX=29+Math.round(Math.sin(y*.13+(region||0)) * 3);
+  if(y>24&&y<82&&Math.abs(x-tributaryX)<=1)return base==='road'||[32,44,60,76].includes(y)?'bridge':'water';
   if (base === 'road') return base;
   if (Math.abs(x - lake.x) <= lake.radiusX * 1.4 && Math.abs(y - lake.y) <= lake.radiusY * 1.4) {
     const shore = ((x - lake.x) / lake.radiusX) ** 2 + ((y - lake.y) / lake.radiusY) ** 2;

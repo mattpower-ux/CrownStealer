@@ -3,6 +3,10 @@ import {LOCATION_THEMES} from './location-music.js';
 // Soft triangle leads, plucked bass and low-level brushed noise keep long loops restful.
 export const THEMES = Object.freeze({
   ...LOCATION_THEMES,
+  // Soft low drones and sparse unresolved notes for earthen kobold tunnels.
+  'dungeon:kobold': {...LOCATION_THEMES['dungeon:0'], bpm:52, gain:.65,
+    melody:LOCATION_THEMES['dungeon:0'].melody.map(n=>n===null?null:n-2),
+    roots:LOCATION_THEMES['dungeon:0'].roots.map(n=>n-2)},
   snow:{...LOCATION_THEMES['land:3'],melody:LOCATION_THEMES['land:3'].melody.map(n=>n===null?null:n+1)},
   desert: {...LOCATION_THEMES['land:1'],melody:LOCATION_THEMES['land:1'].melody.map(n=>n===null?null:n-1)},
   title: { bpm: 76, melody: [69,null,72,76,74,null,72,69,67,null,64,67,69,72,71,null,69,null,72,76,79,null,76,74,72,71,69,67,64,null,67,null], roots: [45,41,48,43], mood: 'hushed', gain: .8 },
@@ -14,7 +18,7 @@ export const THEMES = Object.freeze({
   victory: { bpm: 112, melody: [72,null,72,76,79,null,84,null,83,79,76,79,81,null,79,null,77,81,84,86,88,null,84,81,79,76,74,71,72,null,null,null], roots: [48,45,41,43], mood: 'bright', gain: .85 },
 });
 
-export const recordedMusic=scene=>scene==='boss'?'/assets/mob-boss.mp3':scene==='dungeon:ship'?'/assets/hollow-signal.mp3':scene==='dungeon:6'?'/assets/the-echoing-clock.mp3':scene==='dungeon:sewer'?'/assets/below-the-grates.mp3':scene==='snow'?'/assets/against-the-whiteout.mp3':scene==='desert'?'/assets/sands-beyond-the-horizon.mp3':scene==='land:0'?'/assets/countryside-wander.mp3':scene==='dungeon'||scene.startsWith('dungeon:')?'/assets/whispers-beneath-stone.mp3':null;
+export const recordedMusic=scene=>scene==='dungeon:kobold'?null:scene==='boss'?'/assets/mob-boss.mp3':scene==='dungeon:ship'?'/assets/hollow-signal.mp3':scene==='dungeon:6'?'/assets/the-echoing-clock.mp3':scene==='dungeon:sewer'?'/assets/below-the-grates.mp3':scene==='snow'?'/assets/against-the-whiteout.mp3':scene==='desert'?'/assets/sands-beyond-the-horizon.mp3':scene==='land:0'?'/assets/countryside-wander.mp3':scene==='dungeon'||scene.startsWith('dungeon:')?'/assets/whispers-beneath-stone.mp3':null;
 export const RECORDED_EFFECTS={hit:'sfx-strike',hurt:'sfx-hurt',roulette:'sfx-roulette',cards:'sfx-cards',rescue:'sfx-rescue',dungeonEntrance:'sfx-dungeon',casinoWin:'sfx-casino-win',goldFound:'sfx-gold',townEntrance:'sfx-town',defeat:'sfx-defeat',wolfEncounter:'sfx-wolf','dragon-greep':'sfx-gleep',drakeVoice:'voice-drake','voice-rock-troll':'voice-rock-troll','voice-bailiff':'voice-bailiff','voice-haghilda':'voice-haghilda','voice-leviathan':'voice-leviathan','voice-morgana':'voice-morgana'};
 const hz = midi => 440 * 2 ** ((midi - 69) / 12);
 const volume = (value, fallback) => Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : fallback;

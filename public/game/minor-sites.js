@@ -23,7 +23,7 @@ export function minorSiteDefinition(id) {
   const index = region * 2;
   const area = branch ? 'wild-' + landNumber : null;
   if (slot === siteCount) {
-    return {id, kind: 'tunnel', name: 'Mountain Tunnel', floors: 1, guarded: false, treasure: false, trapped: false, index, seed: 60000 + ordinal, region, area};
+    return {id, kind: 'tunnel', name: 'Mountain Tunnel', floors: 1, guarded: false, treasure: true, trapped: false, index, seed: 60000 + ordinal, region, area};
   }
   const variant = Math.floor(slot / kinds.length);
   const {kind, names} = kinds[(slot + ordinal) % kinds.length];
@@ -90,7 +90,9 @@ export function minorSites(s, {tileAt, landmarks = []}) {
     if (landmarks.some(site => Math.max(Math.abs(x - site.x), Math.abs(y - site.y)) <= 3) ||
         entrances.some(site => Math.max(Math.abs(x - site.x), Math.abs(y - site.y)) <= 1)) continue;
     const sector = Math.floor((y - 1) / sectorHeight) * columns + Math.floor((x - 1) / sectorWidth);
-    const rank = hash((x + y * width) ^ Math.imul(salt, 0x9e3779b1));
+    const kind=minorSiteDefinition('minor-'+land+'-'+sector)?.kind;
+    const rocky= directions.some(([dx,dy])=>['mountain','hill','rocks'].includes(tileAt(x+dx,y+dy)));
+    const rank = hash((x + y * width) ^ Math.imul(salt, 0x9e3779b1)) + (kind==='koboldCave'&&!rocky?4294967296:0);
     const candidate = {x, y, rank};
     candidates.push(candidate);
     if (!picks[sector] || rank < picks[sector].rank) picks[sector] = candidate;
