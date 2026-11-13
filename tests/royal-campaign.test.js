@@ -133,10 +133,10 @@ test('the Balrog defeat must be reported before the four new endings are availab
   s.dungeon.x = s.dungeon.y = 13;
   s = act(s, {type: 'descend'});
   assert.equal(s.enemy.speciesId, 'balrog-of-despair');
-  s.enemy.hp = 1;
+  s.enemy.combatDistance = 1; s.enemy.hp = 1;
   s.level = 100;
   s.attributes.wisdom = 50;
-  s.rng = 0;
+  s.rng = 440;
   s = act(s, {type: 'attack'});
   assert.equal(s.flags.balrogDefeated, true);
   s = act(s, {type: 'pitElevator'});

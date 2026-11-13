@@ -22,7 +22,7 @@ import {secretAlcove,secretStash} from './secret-alcoves.js';
 import {ATTRIBUTE_NAMES,attributeLabel} from './attributes.js';
 import {BALROG_WHIP} from './bottomless-pit.js';
 import {royalTrialItems} from './royal-trials.js';
-import {BRAVERY_NECKLACE,ROYAL_DUNGEON_ID} from './royal-dungeon.js';
+import {BRAVERY_NECKLACE,ROYAL_DUNGEON_ID,ROYAL_DUNGEON_LOOT} from './royal-dungeon.js';
 import {dragonstoneChest,royalCampaignItems} from './royal-campaign.js';
 export const RARITIES=['common','rare','epic','legendary'];
 export const rarityFor=roll=>roll<.60?'common':roll<.80?'rare':roll<.95?'epic':'legendary';
@@ -161,10 +161,8 @@ for(const item of Object.values(TREASURE_ITEMS))if(item.kind==='weapon'&&item.fa
  item.kind='wand';item.spellItem=true;item.spell=item.stormDamage?'lightning-strike':item.element==='frost'?'frost-ray':item.element==='fire'?'fireball':'lightning-strike';item.spellLevel=[3,8,15][item.tier-1];item.maxCharges=5;item.description='Any character level. Spell level '+item.spellLevel+'. '+item.maxCharges+' charges when new; only electric wands accept alien batteries. '+({fireball:'Deals 20–30 fire damage.','frost-ray':'Deals 10–18 frost damage and prevents the next enemy attack.','lightning-strike':'Deals 5–10 damage per wand spell level.'}[item.spell]);SPELL_ITEMS[item.id]=item;
 }
 
-// Retire ranged gear until ranged combat exists. Preserve older saves with melee replacements.
-const retiredRanged=new Map();
-for(const [id,item]of Object.entries(TREASURE_ITEMS))if(['bow','crossbow'].includes(item.family)){const replacement=id.startsWith('elven-')?id.replace('-bow','-sword'):id.replace('-crossbow-','-axe-').replace('-bow-','-spear-');if(!TREASURE_ITEMS[replacement])throw Error('Missing melee replacement for '+id);retiredRanged.set(id,replacement);delete TREASURE_ITEMS[id];}
-export function migrateRangedGear(s){for(const key of ['bag','pendingLoot'])if(Array.isArray(s[key]))s[key]=s[key].map(id=>retiredRanged.get(id)||id);if(retiredRanged.has(s.equipped))s.equipped=retiredRanged.get(s.equipped);return s;}
+// Bows and crossbows are live ranged weapons; preserve their original save identities.
+export function migrateRangedGear(s){return s;}
 
 Object.assign(TREASURE_ITEMS,ALIEN_ITEMS,SPELL_ITEMS);
 
@@ -197,4 +195,4 @@ for (const item of Object.values(TREASURE_ITEMS)) {
 
 for(const q of SIDE_QUESTS)if(q.questItem)TREASURE_ITEMS[q.questItem]={id:q.questItem,kind:'quest',unique:true,name:q.keepsakeName,shape:'scroll',rarity:'rare',value:0,description:'A commission keepsake for '+q.title+'. Return it to the Odd Jobs office.'};
 
-Object.assign(TREASURE_ITEMS,SEE_HIDDEN_ITEMS,RARE_GEAR_ITEMS,POISON_ITEMS,royalCampaignItems,{[BRAVERY_NECKLACE.id]:BRAVERY_NECKLACE});
+Object.assign(TREASURE_ITEMS,ROYAL_DUNGEON_LOOT,SEE_HIDDEN_ITEMS,RARE_GEAR_ITEMS,POISON_ITEMS,royalCampaignItems,{[BRAVERY_NECKLACE.id]:BRAVERY_NECKLACE});

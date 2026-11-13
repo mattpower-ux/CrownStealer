@@ -1,3 +1,6 @@
+import {battlefieldDistance} from './dungeon-ranged.js';
+import {beansEnemyReaction} from './bucket-beans.js';
+import {paintRoyalBody,royalVisualMap,drawRoyalDungeonScenery} from './royal-dungeon-render.js';
 import {drawShrineScene} from './shrine-render.js';
 import {isCemeteryDungeon,drawCemeteryCoffin,drawCemeteryRemains} from './cemetery-render.js';
 import {TWINKLESTAR_TOWER_ID,twinklestarTowerSite} from './twinklestar-tower.js';
@@ -358,6 +361,7 @@ export function render(canvas,s,time=0,fx=null,reduced=false){renderedHero=s;con
 
  if(s.dungeon&&(s.mode==='dungeon'||s.mode==='battle'&&s.returnMode==='dungeon'))canvas.dataset.wallTheme=s.dungeon.site===TWINKLESTAR_TOWER_ID?'Twinklestar’s arcane tower':s.dungeon.site===PERCIVAL_CASTLE_ID?'Percival’s haunted crypt':isKoboldBurrow(s.dungeon)?'Kobold earth burrow':caveProfile(s.dungeon.expedition)?.name||DUNGEON_WALLS[s.dungeon.index].name;else delete canvas.dataset.wallTheme;
 
+ if(s.mode==='battle'&&s.returnMode==='dungeon')canvas.dataset.combatDistance=String(battlefieldDistance(s));else delete canvas.dataset.combatDistance;
  const contact=s.mode==='battle'&&s.returnMode==='dungeon',wildContact=s.mode==='battle'&&s.returnMode!=='dungeon'&&s.enemy?.firstContact;
  const castle=s.castle&&castleLayout(s.location),arena=s.arena&&(s.mode==='town'||s.enemy?.arenaFighter);
 
@@ -372,6 +376,7 @@ export function render(canvas,s,time=0,fx=null,reduced=false){renderedHero=s;con
  else if(s.mode==='town')town(c,w,h,s,reduced?0:time);
  else drawWorldViewport(c,w,h,s);
 
+ if(s.flags.beansRounds)drawBeansGas(c,w,h,s,time,fx,reduced);
  if(wizardAudienceAvailable(s))drawWhiteWizard(c,w,h,{label:false});
  if(percivalAudienceAvailable(s))drawHeroGhost(c,w,h,time,reduced,{x:.5,y:.72,scale:.5,label:'SIR PERCIVAL'});
  if(s.mode==='battle'&&s.enemy?.heroGhost)drawHeroGhost(c,w,h,time,reduced);
@@ -853,9 +858,9 @@ function drawRoyalDungeonFigures(c,w,h,s){
  visible.sort((a,b)=>b.depth-a.depth);
  for(const {npc,depth,side} of visible){
   const height=Math.min(h*.58,h*.83/depth),width=Math.min(w*.36,height*.84);
-  const x=w*.5+side/depth*w*.72,y=h*.5+h*.27/depth-height;
-  if(paintIllustratedBoss(c,{speciesId:npc.id},x-width/2,y,width,height)){
-   label(c,npc.name,x,y+height+15,Math.max(11,Math.min(17,height*.095)),'#f4e1ac');
+  const x=w*.5+side/depth*w*.72,y=h*.5+h*.425/depth-height;
+  if(paintRoyalBody(c,{speciesId:npc.id},x-width/2,y,width,height)){
+   if(depth<=3)label(c,npc.name,x,y+height+15,Math.max(11,Math.min(17,height*.095)),'#f4e1ac');
   }
  }
 }
@@ -918,13 +923,15 @@ function dungeonUncached(c,w,h,s,time){const d=s.dungeon;if(!d)return;if(d.ship)
 
  if(burrow)drawBurrowPlanes(c,w,h,d,dx,dy,fov,m);if(twinkling)drawWizardPlanes(c,w,h,d,dx,dy,fov,m);
  drawLadderOpenings(c,w,h,d,ladders,dx,dy,fov);
+ const rayMap=d.site===ROYAL_DUNGEON_ID?royalVisualMap(m):m;
  const lightSources=new Map();c.canvas.dungeonLights=[];
  const wallImage=c.getImageData(0,0,w,h),wallPixels=new Uint32Array(wallImage.data.buffer),wallDepth=new Float32Array(w).fill(18);
- for(let col=0;col<w;col+=step){const a=angle+Math.atan((col/w-.5)*2*Math.tan(fov/2));const vx=Math.cos(a),vy=Math.sin(a);let dist=.02,x=d.x+.5,y=d.y+.5;while(dist<18){x=d.x+.5+vx*dist;y=d.y+.5+vy*dist;if(m[Math.floor(y)]?.[Math.floor(x)]===1||m[Math.floor(y)]?.[Math.floor(x)]===undefined)break;dist+=.025;}if(dist<18){let low=Math.max(0,dist-.025),high=dist;for(let n=0;n<7;n++){const mid=(low+high)/2,mx=d.x+.5+vx*mid,my=d.y+.5+vy*mid;if(m[Math.floor(my)]?.[Math.floor(mx)]===1||m[Math.floor(my)]?.[Math.floor(mx)]===undefined)high=mid;else low=mid;}dist=high;x=d.x+.5+vx*dist;y=d.y+.5+vy*dist;}const corrected=dist*Math.cos(a-angle),height=Math.min(h*2,h*.85/corrected),top=(h-height)/2;for(let px=col;px<Math.min(w,col+step);px++)wallDepth[px]=corrected;const fracX=x-Math.floor(x),fracY=y-Math.floor(y),vertical=fracX<.04||fracX>.96,tex=vertical?fracY:fracX;const light=clamp(1-dist/11,.09,.95)*(vertical?.77:1);const detail=wallDetailKind(Math.floor(x),Math.floor(y),d.index);const barred=d.site===ROYAL_DUNGEON_ID&&!d.cellsOpen&&ROYAL_DUNGEON_CELLS.some(cell=>cell.door.x===Math.floor(x)&&cell.door.y===Math.floor(y));const mounted=ladders.find(l=>l.wallX===Math.floor(x)&&l.wallY===Math.floor(y)&&l.x===Math.floor(x-vx*.07)&&l.y===Math.floor(y-vy*.07));const candle=burrow&&((Math.floor(x)*3+Math.floor(y)*5)%4===0)&&!mounted;const torch=!burrow&&!haunted&&!twinkling&&!d.expedition?.startsWith('planet-')&&![4,6,8].includes(d.royal==='sewer'?8:d.index)&&detail>=7&&detail<9;
+ for(let col=0;col<w;col+=step){const a=angle+Math.atan((col/w-.5)*2*Math.tan(fov/2));const vx=Math.cos(a),vy=Math.sin(a);let dist=.02,x=d.x+.5,y=d.y+.5;while(dist<18){x=d.x+.5+vx*dist;y=d.y+.5+vy*dist;if(rayMap[Math.floor(y)]?.[Math.floor(x)]===1||rayMap[Math.floor(y)]?.[Math.floor(x)]===undefined)break;dist+=.025;}if(dist<18){let low=Math.max(0,dist-.025),high=dist;for(let n=0;n<7;n++){const mid=(low+high)/2,mx=d.x+.5+vx*mid,my=d.y+.5+vy*mid;if(rayMap[Math.floor(my)]?.[Math.floor(mx)]===1||rayMap[Math.floor(my)]?.[Math.floor(mx)]===undefined)high=mid;else low=mid;}dist=high;x=d.x+.5+vx*dist;y=d.y+.5+vy*dist;}const corrected=dist*Math.cos(a-angle),height=Math.min(h*2,h*.85/corrected),top=(h-height)/2;for(let px=col;px<Math.min(w,col+step);px++)wallDepth[px]=corrected;const fracX=x-Math.floor(x),fracY=y-Math.floor(y),vertical=fracX<.04||fracX>.96,tex=vertical?fracY:fracX;const light=clamp(1-dist/11,.09,.95)*(vertical?.77:1);const detail=wallDetailKind(Math.floor(x),Math.floor(y),d.index);const barred=d.site===ROYAL_DUNGEON_ID&&!d.cellsOpen&&ROYAL_DUNGEON_CELLS.some(cell=>cell.door.x===Math.floor(x)&&cell.door.y===Math.floor(y));const mounted=ladders.find(l=>l.wallX===Math.floor(x)&&l.wallY===Math.floor(y)&&l.x===Math.floor(x-vx*.07)&&l.y===Math.floor(y-vy*.07));const candle=burrow&&((Math.floor(x)*3+Math.floor(y)*5)%4===0)&&!mounted;const torch=!burrow&&!haunted&&!twinkling&&!d.expedition?.startsWith('planet-')&&![4,6,8].includes(d.royal==='sewer'?8:d.index)&&detail>=7&&detail<9;
  if((candle||torch||twinkling&&detail%3===1&&!mounted)&&Math.abs(tex-.5)<.035){const id=Math.floor(x)+':'+Math.floor(y)+':'+vertical,previous=lightSources.get(id),error=Math.abs(tex-.5);if(!previous||error<previous.error)lightSources.set(id,{x:col/w,y:(top+height*(candle?.365:.36))/h,size:height*(candle?.022:.065)/h,phase:Math.floor(x)*1.7+Math.floor(y)*2.3,error});}
  for(let yy=Math.max(0,top);yy<Math.min(h,top+height);yy+=2){const v=(yy-top)/height;const row=Math.floor(v*wall.rows);const mortar=(v*wall.rows)%1<.06||((tex*wall.columns+(row%2)*.5)%1)<.045;const grain=Math.sin(tex*190+v*140)*4;const wear=wall.wear===1&&(row+Math.floor(tex*9))%7===0?-9:wall.wear===2&&(tex*wall.columns)%1<.12?8:0;const base=mortar?28:78+grain+wear;let color=(255<<24)|(Math.max(0,Math.floor((base+wall.tint[2])*light))<<16)|(Math.max(0,Math.floor((base+wall.tint[1])*light))<<8)|Math.max(0,Math.floor((base+wall.tint[0])*light));if(burrow){color=burrowPixel('wall',vertical?y:x,v,light,((Math.floor(x)*3+Math.floor(y)*5)%4===0)&&!mounted);}else{const material=wallMaterialPixel(twinkling?7:haunted?1:cave?.wall??(d.expedition?.startsWith('planet-1')?4:d.site==='firedrak'?3:d.index),tex,v,light);if(material!==null)color=material;const ink=shrine?shrineWallInk(detail,tex,v,light):twinkling?twinklestarWallInk(detail,tex,v):haunted?percivalWallInk(detail,tex,v):d.expedition?.startsWith('planet-')?alienWallInk(detail,tex,v):wallDetail(detail,tex,v,time,d.royal==='sewer'?8:d.index);if(ink)color=inkPixel(ink);if(cave){const r=Math.max(0,Math.min(255,(color&255)+cave.tint[0])),g=Math.max(0,Math.min(255,((color>>>8)&255)+cave.tint[1])),b=Math.max(0,Math.min(255,((color>>>16)&255)+cave.tint[2]));color=(255<<24)|(b<<16)|(g<<8)|r;}}if(twinkling)color=wizardWallPixel(detail,tex,v,light);if(mounted){const arrowV=mounted.direction==='up'?.22:.78;const arrow=Math.abs(Math.abs(tex-.5)-Math.abs(v-arrowV)*1.4)<.025&&(mounted.direction==='up'?v>arrowV&&v<arrowV+.1:v<arrowV&&v>arrowV-.1);if(arrow)color=inkPixel(mounted.direction==='up'?'#a6e4ef':'#ffe1a0');}if(barred){const beam=tex<.08||tex>.92||v<.07||v>.93||Math.abs(v-.48)<.025||(tex*9)%1<.19;color=inkPixel(beam?'#717675':'#141d20');}const y0=Math.max(0,Math.floor(yy)),y1=Math.min(h,y0+2),x1=Math.min(w,col+step);for(let py=y0;py<y1;py++){let offset=py*w+col;for(let px=col;px<x1;px++)wallPixels[offset++]=color;}}}
  c.putImageData(wallImage,0,0);
  c.canvas.dungeonLights=[...lightSources.values()];
+ if(d.site===ROYAL_DUNGEON_ID)drawRoyalDungeonScenery(c,w,h,s,m,wallDepth,time);
  if(cemetery)drawCemeteryRemains(c,w,h,d,m,dx,dy,fov,wallDepth);
  if(burrow)drawBurrowDebris(c,w,h,d,m,dx,dy,fov,wallDepth);
  drawSecretDoor(c,w,h,d,m,dx,dy,fov,wallDepth);
@@ -962,6 +969,7 @@ const illustratedBossArt=Object.fromEntries([
 ].map(([id,src])=>{const image=new Image();image.src=src;return [id,image];}));
 
 function drawIllustratedBossEntrance(c,w,h,s){
+ if(s.returnMode==='dungeon')return false;
  const art=illustratedBossArt[s.enemy?.speciesId];
  if(!s.enemy?.firstContact||!art?.naturalWidth)return false;
  const scale=Math.max(w/art.width,h/art.height);
@@ -971,6 +979,7 @@ function drawIllustratedBossEntrance(c,w,h,s){
 }
 
 function paintIllustratedBoss(c,enemy,x,y,w,h){
+ if(paintRoyalBody(c,enemy,x,y,w,h))return true;
  const art=illustratedBossArt[enemy.speciesId];
  if(!art?.naturalWidth)return false;
  if(enemy.firstContact){
@@ -978,9 +987,8 @@ function paintIllustratedBoss(c,enemy,x,y,w,h){
   c.drawImage(art,x+(w-width)/2,y+(h-height)/2,width,height);
   return true;
  }
- c.save();c.beginPath();c.ellipse(x+w/2,y+h/2,w*.48,h*.49,0,0,Math.PI*2);c.clip();
- c.drawImage(art,art.width*.22,0,art.width*.58,art.height*.89,x,y,w,h);
- c.restore();
+ const scale=Math.min(w/art.width,h/art.height),width=art.width*scale,height=art.height*scale;
+ c.drawImage(art,x+(w-width)/2,y+h-height,width,height);
  return true;
 }
 
@@ -1093,7 +1101,8 @@ function dungeonMonster(c,w,h,s,time,fx,reduced){
 
  if(fade===0)return;
 
- const height=Math.min(h*.67,w*.72),width=height*.85,x=w/2-width/2,feet=h*.82;
+ const distance=s.returnMode==='dungeon'?battlefieldDistance(s):1,reaction=s.flags.beansRounds?beansEnemyReaction(s.enemy):null,fleeing=reaction==='fleeing',perspective=1/(1+(distance-1)*.48)*(fleeing?.64:1);
+ const height=Math.min(h*.67,w*.72)*perspective,width=height*.85,x=w/2-width/2+(fleeing?w*.11:0),feet=h*.5+h*.32/(distance+(fleeing?1:0));
 
  c.save();c.globalAlpha=fade;const shadow=c.createRadialGradient(w/2,feet-3,2,w/2,feet-3,width*.55);shadow.addColorStop(0,'#000000b0');shadow.addColorStop(1,'#00000000');c.fillStyle=shadow;c.beginPath();c.ellipse(w/2,feet-3,width*.6,height*.07,0,0,Math.PI*2);c.fill();
 
@@ -1103,7 +1112,7 @@ function dungeonMonster(c,w,h,s,time,fx,reduced){
 
  if(painted){if(enemyHit){mc.globalCompositeOperation='source-atop';mc.fillStyle=`rgba(255,20,15,${pulse*.8})`;mc.fillRect(0,0,width,height);mc.globalCompositeOperation='source-over';}const count=s.enemy.memberHp?Math.max(1,Math.ceil(s.enemy.hp/s.enemy.memberHp)):1;for(let i=0;i<count;i++)c.drawImage(monsterLayer,x+(i-(count-1)/2)*width*.42,feet-height);}else{c.fillStyle='#111a17';c.beginPath();c.ellipse(w/2,feet-height*.45,width*.25,height*.4,0,0,Math.PI*2);c.fill();circle(c,w/2-width*.06,feet-height*.72,3,'#d5b07c');circle(c,w/2+width*.06,feet-height*.72,3,'#d5b07c');}
 
- label(c,s.enemy.name+(s.enemy.level?' · Lv '+s.enemy.level:''),w/2,Math.max(85,feet-height-18),Math.max(17,Math.min(25,w*.035)), '#ffe0a2');
+ label(c,(reaction&&reaction!=='immune'?reaction.toUpperCase()+' · ':'')+s.enemy.name+(s.enemy.level?' · Lv '+s.enemy.level:''),w/2,Math.max(85,feet-height-18),Math.max(17,Math.min(25,w*.035)), '#ffe0a2');
 
  c.fillStyle='#492c28';c.fillRect(w/2-100,feet+12,200,6);c.fillStyle='#cb7860';c.fillRect(w/2-100,feet+12,200*Math.max(0,s.enemy.hp)/s.enemy.maxHp,6);c.restore();
 
@@ -1273,3 +1282,11 @@ function drawMetalTrees(c,s,size,view){const prefix='metalTree:'+String(s.explor
 
 
 
+
+function drawBeansGas(c,w,h,s,time,fx,reduced){
+ const age=fx?.kind==='beans'?time-fx.start:10000;if(age<0)return;
+ c.save();const swell=reduced?0:Math.sin(time*.0013)*.015;
+ for(let i=0;i<3;i++){const x=w*(.18+i*.31),y=h*(.84+swell*Math.sin(i+1)),r=w*.29;const haze=c.createRadialGradient(x,y,0,x,y,r);haze.addColorStop(0,'#8d963b18');haze.addColorStop(1,'#737a2d00');c.fillStyle=haze;c.fillRect(x-r,y-r,r*2,r*2);}
+ if(!reduced&&age>0&&age<1400){const fade=Math.sin(age/1400*Math.PI)*.075;c.fillStyle='rgba(255,159,54,'+fade+')';c.fillRect(0,h*.2,w,h*.8);}
+ c.restore();
+}

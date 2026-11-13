@@ -1,3 +1,4 @@
+import {BUCKET_BEANS} from './bucket-beans.js';
 export const ROYAL_DUNGEON_ID = 'royal-dungeon';
 export const ROYAL_DUNGEON_NAME = 'The Royal Dungeon';
 export const ROYAL_DUNGEON_STAIR = {x: 10, y: 13};
@@ -22,6 +23,13 @@ export const BRAVERY_NECKLACE = {
   description: 'While worn, +5 Charisma. A gift from the prisoners of Bellwether Castle.',
 };
 
+// The Torturer is also the castle's executioner; these are his weapons, not a
+// third staff member. Both use effects already supported by weapon combat.
+export const ROYAL_DUNGEON_LOOT={[BUCKET_BEANS.id]:BUCKET_BEANS,
+ 'whip-of-command':{id:'whip-of-command',name:'Whip of Command',kind:'weapon',shape:'whip',rarity:'epic',tier:2,unique:true,encounterOnly:true,bottomOnly:true,color:'#c4a278',value:480,toHit:3,damage:[12,20],freezeChance:.20,description:'The executioner’s cruel command lash. A hit has a 20% chance to freeze its target for one turn.'},
+ 'mace-of-pain':{id:'mace-of-pain',name:'Mace of Pain',kind:'weapon',shape:'mace',rarity:'epic',tier:2,unique:true,encounterOnly:true,bottomOnly:true,color:'#bd8da4',value:540,toHit:1,damage:[18,28],elementDamage:4,description:'The executioner’s heavy mace. Each hit adds 4 magical damage, increased by your Intelligence bonus.'},
+};
+
 export const ROYAL_DUNGEON_NPCS = [
   {
     id: 'royal-torturer', name: 'Royal Torturer', kind: 'npc', x: 7, y: 8,
@@ -30,21 +38,21 @@ export const ROYAL_DUNGEON_NPCS = [
   },
   {
     id: 'royal-heckler', name: 'Royal Heckler', kind: 'npc', x: 7, y: 3,
-    art: {sheet: 'royal-heckler', index: 0}, level: 7, hp: 90, attack: 14, armor: 3,
+    art: {sheet: 'royal-heckler', index: 0}, level: 7, hp: 90, attack: 14, armor: 3, attackType:'mental',
     dialogue: heckles,
   },
 ];
 
 export const ROYAL_DUNGEON_CELLS = [
   {
-    id: 'royal-west-cell', kind: 'cell', name: 'West cell', x: 6, y: 6, door: {x: 5, y: 6},
+    id: 'royal-west-cell', kind: 'cell', name: 'West cell', x: 6, y: 6, door: {x: 5, y: 6}, bars:{x:5,top:4,bottom:8,facing:3},
     prisoners: [
       {id: 'royal-prisoner-kobold', name: 'Kobold', x: 3, y: 5},
       {id: 'royal-prisoner-peasant', name: 'Drunken peasant', x: 3, y: 7},
     ],
   },
   {
-    id: 'royal-east-cell', kind: 'cell', name: 'East cell', x: 8, y: 10, door: {x: 9, y: 10},
+    id: 'royal-east-cell', kind: 'cell', name: 'East cell', x: 8, y: 10, door: {x: 9, y: 10}, bars:{x:9,top:8,bottom:12,facing:1},
     prisoners: [{id: 'royal-prisoner-maiden', name: 'Young maiden', x: 11, y: 10}],
   },
 ];
@@ -96,8 +104,18 @@ export function royalDungeonFigures(s) {
 export function royalDungeonAt(s) {
   if (s.mode !== 'dungeon' || !isRoyalDungeon(s)) return null;
   if (at(s.dungeon, entrance)) return entrance;
-  return ROYAL_DUNGEON_CELLS.find(cell => at(s.dungeon, cell)) ??
+  return royalDungeonCellAt(s) ??
     royalDungeonFigures(s).find(npc => near(s.dungeon, npc)) ?? null;
+}
+
+export function royalDungeonCellAt(s){
+ if(!isRoyalDungeon(s))return null;
+ const d=s.dungeon;
+ return ROYAL_DUNGEON_CELLS.find(cell=>{
+  if(at(d,cell))return true;
+  const {bars}=cell, distance=bars.facing===3?d.x-bars.x:bars.x-d.x;
+  return d.dir===bars.facing&&distance>=1&&distance<=2&&d.y>=bars.top&&d.y<=bars.bottom;
+ })??null;
 }
 
 export function royalDungeonActions(s) {
@@ -122,7 +140,7 @@ export function leaveRoyalDungeon(s, note) {
 }
 
 function startFight(s, npc, note, events) {
-  const {id, name, art, level, hp, attack, armor} = npc;
+  const {id, name, art, level, hp, attack, armor, attackType} = npc;
   s.mode = 'battle';
   s.returnMode = 'dungeon';
   s.flags.guarded = false;
@@ -130,7 +148,7 @@ function startFight(s, npc, note, events) {
   delete s.flags.clockStopped;
   s.enemy = {
     speciesId: id, royalDungeonNpc: id, name, art, level, hp, maxHp: hp, attack, armor,
-    gold: 0, xp: 0, kind: 'brute', weakness: 'steady pressure', firstContact: true,
+    gold: 0, xp: 0, kind: 'brute', weakness: 'steady pressure', firstContact: true,...(attackType?{attackType}:{}),
   };
   note(s, 'The ' + name + ' rushes to fight you.');
   if (id === 'royal-torturer') {
@@ -140,8 +158,8 @@ function startFight(s, npc, note, events) {
 }
 
 function freePrisoners(s, id, note, events) {
-  const cell = ROYAL_DUNGEON_CELLS.find(cell => cell.id === id && at(s.dungeon, cell));
-  if (!cell || s.dungeon.cellsOpen) return;
+  const cell = royalDungeonCellAt(s);
+  if (!cell || cell.id!==id || s.dungeon.cellsOpen) return;
   const guard = royalDungeonFigures(s)[0];
   if (guard) {
     note(s, 'The keys rattle as you test the cell door.');
@@ -191,8 +209,14 @@ export function royalDungeonAction(s, action, note, events = []) {
 export function royalDungeonVictory(s, enemy, note) {
   const npc = ROYAL_DUNGEON_NPCS.find(npc => npc.id === enemy.royalDungeonNpc);
   if (!isRoyalDungeon(s) || !npc) return false;
+  const firstVictory=!s.flags[defeatedKey(npc)];
   s.flags[defeatedKey(npc)] = true;
-  s.flags.victories++;
+  if(firstVictory){
+    s.flags.victories++;
+    const loot=npc.id==='royal-heckler'?['medium-emerald','medium-pearl','medium-sapphire','small-diamond','bucket-of-beans']:['weapon-poison-5','whip-of-command','mace-of-pain'];
+    s.bag.push(...loot);s.pendingLoot.push(...loot);
+    note(s,npc.id==='royal-heckler'?'The Heckler’s bag holds four valuable gems and a Bucket of Beans.':'The Torturer also served as executioner. You recover Black Lotus Venom, the Whip of Command and the Mace of Pain.');
+  }
   s.mode = 'dungeon';
   s.enemy = null;
   note(s, 'The ' + npc.name + ' falls.');
@@ -217,5 +241,5 @@ export function validRoyalDungeonState(s) {
   const npc = royalDungeonFigures(s).find(npc => enemy?.royalDungeonNpc === npc.id);
   return !!npc && enemy.speciesId === npc.id && enemy.name === npc.name && enemy.level === npc.level &&
     enemy.maxHp === npc.hp && enemy.hp <= npc.hp && enemy.attack === npc.attack && enemy.armor === npc.armor &&
-    (near(d, npc) || ROYAL_DUNGEON_CELLS.some(cell => at(d, cell)));
+    (near(d, npc) || !!royalDungeonCellAt(s));
 }

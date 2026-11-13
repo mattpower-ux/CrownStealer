@@ -267,3 +267,12 @@ test('royal dungeon clips queue to completion and stop cleanly when the game sus
   assert.equal(clips[1].paused, true);
   await director.destroy();
 });
+
+test('psychic crackle is short, effects-volume controlled, and cannot autoplay when muted',async()=>{
+ const h=harness(),director=new audio.AudioDirector(h.options);director.effect('psychic-crackle');assert.equal(h.contexts.length,0);
+ await director.unlock();const calls=[];director.tone=(...args)=>calls.push(['tone',...args]);director.brush=(...args)=>calls.push(['brush',...args]);
+ director.setVolumes(.2,0);director.effect('psychic-crackle');assert.equal(calls.length,0);
+ director.setVolumes(.2,.4);director.effect('psychic-crackle');assert.ok(calls.length>=10);assert.ok(calls.length<=20);
+ for(const [kind,...args] of calls){const start=kind==='tone'?args[1]:args[0],duration=kind==='tone'?args[2]:args[1],bus=kind==='tone'?args[5]:args[3],amplitude=kind==='tone'?args[4]:args[2];assert.ok(start+duration<.7);assert.equal(bus,'effects');assert.ok(amplitude<=.12);}
+ const count=calls.length;await director.suspend();director.effect('psychic-crackle');assert.equal(calls.length,count);await director.destroy();
+});

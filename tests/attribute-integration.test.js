@@ -75,7 +75,8 @@ test('a cemetery vampire drains a level after a failed Constitution save and the
   base.dungeon = { index: 0, floor: 6, x: 1, y: 1, dir: 0 };
   base.level = 4;
   base.hp = base.maxHp = 122;
-  base.rng = 0;
+  // Seed includes the two initiative rolls before the vampire Constitution save.
+  base.rng = 12;
   const drained = act(base, { type: 'guard' });
   assert.equal(effectiveLevel(drained), 3);
   assert.equal(drained.level, 4);

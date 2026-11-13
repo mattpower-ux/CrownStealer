@@ -45,6 +45,7 @@ function walkTo(s, tx, ty) {
 }
 
 function win(s) {
+  s.enemy.combatDistance = 1;
   s.enemy.hp = 1;
   s.level = 100;
   s.rng = 187441;

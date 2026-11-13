@@ -301,7 +301,7 @@ export class AudioDirector {
   }
 
   effect(name,fallback=false) {
-    if (!this.context || this.paused || this.destroyed || this.context.state !== 'running') return;
+    if (!this.context || this.paused || this.destroyed || !this.effectsVolume || this.context.state !== 'running') return;
     if(!fallback&&RECORDED_EFFECTS[name]&&this.fetch&&this.context.decodeAudioData)return this.playRecordedEffect(name);
     const now = this.context.currentTime + .005;
     const combatGain=['hit','hurt','block','magic','miss'].includes(name)?2.2:1;
@@ -333,6 +333,11 @@ export class AudioDirector {
       case 'hurt': tone(210, 0, .21, .16, 70, 'sawtooth'); break;
       case 'applause': for(let i=0;i<42;i++)this.brush(now+i*.047+(i%3)*.009,.055+(i%4)*.012,.045*(1-i/60),'effects',1100+(i%7)*370); [72,76,79,84].forEach((n,i)=>tone(hz(n),i*.09,.35,.055)); break;
       case 'fire-whoosh': for(let i=0;i<8;i++)this.brush(now+i*.06,.25,.16,'effects',250+i*220);break;
+      case 'psychic-crackle':
+        // Short, dry arcs and a descending buzz suggest electricity inside the head.
+        // Low amplitudes feed the ordinary effects bus; no media/autoplay is created.
+        for(let i=0;i<12;i++)this.brush(now+i*.031,.025+(i%3)*.008,.075,'effects',2200+(i%4)*730);
+        tone(1320,0,.23,.045,330,'square');tone(610,.13,.25,.035,120,'sawtooth');break;
       case 'lightning-crackle': for(let i=0;i<16;i++)this.brush(now+i*.035,.04,.19,'effects',1800+(i%4)*1100);break;
       case 'buzzer': tone(110,0,.35,.25,undefined,'sawtooth');tone(103,.12,.4,.19,undefined,'sawtooth');break;
       case 'townEntrance': tone(784,0,.14,.12);tone(1175,.1,.25,.10);break;

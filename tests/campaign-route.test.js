@@ -58,6 +58,7 @@ function campaign(outlaw) {
       if (dangerousPack && !state.spellEffects.invisibleMoves && state.bag.includes('scroll-invisibility')) step({type:'useItem',id:'scroll-invisibility'});
       else if (state.hp < Math.min(45, state.maxHp / 2) && state.potions) step({type:'heal'});
       else if (state.enemy.weakness === 'guard then counter' && !state.flags.guarded) step({type:'guard'});
+      else if(state.enemy.combatDistance>1)step({type:'advanceCombat'});
       else step({type:'attack'});
     }
     const drainedMinutes = levelDrainMinutesLeft(state);

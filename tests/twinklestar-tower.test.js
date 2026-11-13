@@ -28,7 +28,7 @@ test('all nine tower floors connect their stairs and preserve chest progress',()
 test('only ninth-floor guardian defeat unlocks the White Wizard rescue',()=>{
  let s=island();s.flags.rowboatReady=true;s=act(s,{type:'enter'});s.dungeon.floor=8;s.dungeon.x=13;s.dungeon.y=13;
  s=act(s,{type:'descend'});assert.equal(s.enemy.speciesId,'twinklestar-jailer');assert.equal(s.flags.twinklestarGuardianDefeated,undefined);
- assert.doesNotThrow(()=>loadGame(saveGame(s)));s.enemy.hp=1;s.rng=0;
+ assert.doesNotThrow(()=>loadGame(saveGame(s)));s.enemy.combatDistance=1;s.enemy.hp=1;s.rng=0;
  for(let i=0;i<10&&s.mode==='battle';i++)s=act(s,{type:'attack'});
  assert.equal(s.mode,'dungeon');assert.equal(s.flags.twinklestarGuardianDefeated,true);assert.equal(s.flags['boss:6'],undefined);assert.deepEqual(s.relics,[]);
  const again=act(loadGame(saveGame(s)),{type:'descend'});assert.equal(again.mode,'dungeon');assert.equal(again.gold,s.gold);

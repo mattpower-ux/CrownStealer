@@ -59,7 +59,7 @@ export function revokeBrokenOath(before,s,a,events,note,itemById){
    before.bag.filter(owned=>owned===instance).length>s.bag.filter(owned=>owned===instance).length;
   if(spent||attacked||JSON.stringify(before.weaponCoating)!==JSON.stringify(s.weaponCoating))reason='You used poison.';
  }
- if(a.type==='equip'&&s.equipped!==before.equipped&&s.equipped===id&&poisoningItem(item))reason='You equipped a poisoning weapon.';
+ if(['equip','switchCombatWeapon'].includes(a.type)&&s.equipped!==before.equipped&&s.equipped===id&&poisoningItem(item))reason='You equipped a poisoning weapon.';
  if(a.type==='attack'&&attacked&&(before.weaponCoating||poisoningItem(itemById(before.equipped,before))))reason='You attacked with poison.';
  const trader=a.type==='peacefulAccept'?before.flags.peacefulEncounter:before.flags.travelMerchant;
  const traded=s.gold!==before.gold||s.meals!==before.meals||s.bag.length!==before.bag.length;

@@ -18,12 +18,12 @@ test('Wang awaits on the fifteenth floor and fireballs burn his one-health slugs
  }
  Object.assign(s.dungeon,{x:13,y:13});
  s=act(s,{type:'descend'});assert.equal(s.enemy.speciesId,'wang-nauseating');
- s.hp=s.maxHp=1000;
+ s.enemy.combatDistance=1;s.hp=s.maxHp=1000;
  const events=[];
  s=act(s,{type:'guard'},events);assert.equal(s.enemy.slugs,100);
  assert.equal(events.filter(e=>e.kind==='block'&&e.target==='hero').length,3);
  s.bag.push('sewer-skeleton-key');
- freeGalen(s);s.rng=187441;
+ freeGalen(s);s.rng=9;
  s=act(s,{type:'useItem',id:'galen-fireball-ring'});
  assert.equal(s.flags.galenRingCharges,2);
  assert.match(s.log.slice(-6).join(' '),/fireball burns 100 of Wang’s slugs/i);

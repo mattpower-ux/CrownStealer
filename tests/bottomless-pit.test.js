@@ -102,7 +102,7 @@ test('the main game enters the pit, follows 99 lower ladders, and returns to the
 function challengeBalrog() {
   const s = enterPit();
   Object.assign(s.dungeon, {floor: 99, x: 13, y: 13});
-  return act(s, {type: 'descend'});
+  const challenged=act(s, {type: 'descend'}); challenged.enemy.combatDistance=1; return challenged;
 }
 
 test('the Balrog attacks three times while a failed Wisdom save skips the hero strike', () => {
@@ -120,8 +120,8 @@ test('the Balrog attacks three times while a failed Wisdom save skips the hero s
 test('a Balrog fear roll equal to Wisdom fails, while one below it succeeds', () => {
   const s = challengeBalrog();
   s.hp = s.maxHp = 5000;
-  // This seed rolls 10 on a d100.
-  s.rng = 2227;
+  // Player wins initiative; the subsequent fear save rolls 10 on a d100.
+  s.rng = 440;
   const matching = act(s, {type: 'attack'});
   assert.match(matching.log.slice(-4).join(' '), /gibbering/i);
   s.attributes.wisdom = 11;

@@ -7,7 +7,7 @@ import {dungeonLadders} from '../public/game/dungeon-ladders.js';
 import {dungeonChests} from '../public/game/treasure.js';
 
 function entered(){let s=createGame();s.region=1;const site=percivalCastleSite(s);s.x=site.x;s.y=site.y;return act(s,{type:'enter'},[],{noRandom:true});}
-function win(s){s.enemy.hp=1;s.rng=0;for(let n=0;n<10&&s.mode==='battle';n++)s=act(s,{type:'attack'},[],{noRandom:true});assert.equal(s.mode,'dungeon');return s;}
+function win(s){s.enemy.combatDistance=1;s.enemy.hp=1;s.rng=0;for(let n=0;n<10&&s.mode==='battle';n++)s=act(s,{type:'attack'},[],{noRandom:true});assert.equal(s.mode,'dungeon');return s;}
 test('Percival castle is unique, reachable, enters independently of relics and saves',()=>{
  const s=createGame();assert.equal(percivalCastleSite(s),null);s.region=1;
  const site=percivalCastleSite(s);assert.equal(pointAt({...s,x:site.x,y:site.y}).id,PERCIVAL_CASTLE_ID);
