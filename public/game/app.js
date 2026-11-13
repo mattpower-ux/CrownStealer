@@ -1,3 +1,4 @@
+import {beginCemeteryHaunting,drawCemeteryHaunting} from './cemetery-haunting.js';
 import {bridgeTrollView} from './bridge-trolls.js';
 import {drawHearthmarchDream} from './standing-stones-view.js';
 import {nearbyWatcher} from './minor-residents.js';
@@ -115,7 +116,7 @@ function flushClock(refresh=true,allowHidden=false){const now=performance.now(),
 setInterval(()=>flushClock(),1000);
 
 let oddJobId=null;
-function start(s){cemeteryPrompted.clear();oddJobId=null;castleHeadVisit=null;castleHeadReply=null;castleBathReply=null;castleTileVisit=null;castleGuardReply=null;arenaResult=null;guardConsultFx=null;clockLast=performance.now();displayedDungeonLevel=null;finishCombat();cancelAnimationFrame(frame);state=s;$('title-screen').hidden=true;$('game').hidden=false;update();audio.unlock().then(()=>sceneMusic());frame=requestAnimationFrame(draw);if(state.flags.wizardForsakenPending)openPanel('wizardForsaken');else if(state.flags.paladinForsakenPending)openPanel('paladinForsaken');else if(state.flags.boatReveal)openPanel('boatReveal');else if(state.flags.rescuePending)openPanel('rescue');else if(state.flags.gagReveal)openPanel('gagReveal');else if(state.flags.peacefulEncounter)openPanel('peaceful');else if(state.flags.travelMerchant)openPanel('travelMerchant');else if(state.mode==='town'&&state.flags.gossipGuardTown)openPanel('gossipGuard');else if(state.flags.borderTauntPending)openPanel('borderTaunt');else if(state.flags.guardTauntPending)openPanel('guardTaunt');else if(state.flags.royalQuest==='opening')openPanel('royalIntro');else if(state.mode==='ending')openPanel('ending');else if(state.casino?.active)openPanel('casino');else showLoot();}
+function start(s){cemeteryHaunt=null;hauntPosition=null;cemeteryPrompted.clear();oddJobId=null;castleHeadVisit=null;castleHeadReply=null;castleBathReply=null;castleTileVisit=null;castleGuardReply=null;arenaResult=null;guardConsultFx=null;clockLast=performance.now();displayedDungeonLevel=null;finishCombat();cancelAnimationFrame(frame);state=s;$('title-screen').hidden=true;$('game').hidden=false;update();audio.unlock().then(()=>sceneMusic());frame=requestAnimationFrame(draw);if(state.flags.wizardForsakenPending)openPanel('wizardForsaken');else if(state.flags.paladinForsakenPending)openPanel('paladinForsaken');else if(state.flags.boatReveal)openPanel('boatReveal');else if(state.flags.rescuePending)openPanel('rescue');else if(state.flags.gagReveal)openPanel('gagReveal');else if(state.flags.peacefulEncounter)openPanel('peaceful');else if(state.flags.travelMerchant)openPanel('travelMerchant');else if(state.mode==='town'&&state.flags.gossipGuardTown)openPanel('gossipGuard');else if(state.flags.borderTauntPending)openPanel('borderTaunt');else if(state.flags.guardTauntPending)openPanel('guardTaunt');else if(state.flags.royalQuest==='opening')openPanel('royalIntro');else if(state.mode==='ending')openPanel('ending');else if(state.casino?.active)openPanel('casino');else showLoot();}
 $('new-game').onclick=()=>{if(!selectedGender){toast('Choose HIM, HER, or OTHER first.');return;}if(hasSave()){openPanel('new');return;}beginNewAdventurer();};
 $('continue-game').onclick=()=>{try{start(loadGame(localStorage.getItem(SAVE)));}catch(e){toast('Cannot read save: '+e.message);}};
 $('home').onclick=()=>{audio.stopRoyalDungeonVoice();flushClock(false);clearTimeout(levelBannerTimer);$('level-banner').hidden=true;displayedDungeonLevel=null;finishCombat();persist();$('game').hidden=true;$('title-screen').hidden=false;refreshSlotPicker();audio.setScene('title');cancelAnimationFrame(frame);};
@@ -524,12 +525,24 @@ function update(){updateClockDisplay();updateWildernessHealth();if(!nearCastleHe
  updateCombatPanel(state);
  $('event-log').innerHTML=state.log.slice(-5).map(t=>`<p>${esc(t)}</p>`).join('');$('event-log').scrollTop=$('event-log').scrollHeight;
 }
+let cemeteryHaunt=null,hauntPosition=null;
+function updateCemeteryHaunt(t){
+ const d=state.dungeon,place=d?`${d.site}:${d.minorId}:${d.index}:${d.floor}`:'';
+ if(cemeteryHaunt&&(state.mode!=='dungeon'||activePanel||document.hidden||place!==cemeteryHaunt.place||t-cemeteryHaunt.start>10000)){cemeteryHaunt=null;return;}
+ const position=`${place}:${d?.x}:${d?.y}`;
+ if(!cemeteryHaunt&&position!==hauntPosition&&state.mode==='dungeon'&&!activePanel&&!combatView&&!document.hidden){hauntPosition=position;const event=beginCemeteryHaunting(state,dungeonMap(d));if(event){cemeteryHaunt={...event,place,start:t,spoken:0};persist();}}
+ if(!cemeteryHaunt)return;
+ const elapsed=t-cemeteryHaunt.start,beat=Math.floor((elapsed-2200)/1900);
+ if(beat>=0&&beat<3&&cemeteryHaunt.spoken<=beat){cemeteryHaunt.spoken=beat+1;if(volumes.effects>0&&window.speechSynthesis&&window.SpeechSynthesisUtterance){const whisper=new SpeechSynthesisUtterance(cemeteryHaunt.name);whisper.rate=.7;whisper.pitch=.65+beat*.18;whisper.volume=volumes.effects*.45;speechSynthesis.speak(whisper);}}
+ drawCemeteryHaunting($('scene'),elapsed,cemeteryHaunt.name,matchMedia('(prefers-reduced-motion: reduce)').matches);
+}
 function draw(t){
  if(t-wizardUiLast>250){wizardUiLast=t;updateWizardCooldowns();}
  if($('game').hidden)return;
  if(t-lastFrame>33){
   const consultation=state.mode==='town'&&state.castle&&guardConsultFx?.town===state.location&&t<guardConsultFx.start+guardConsultFx.duration?guardConsultFx:null;
   render($('scene'),combatView||state,t,combatFx||consultation||beansFx,matchMedia('(prefers-reduced-motion: reduce)').matches);
+  updateCemeteryHaunt(t);
   lastFrame=t;
  }
  frame=requestAnimationFrame(draw);
@@ -910,7 +923,7 @@ let introducedBoss;
 const cemeteryPrompted=new Set();
 function showLoot(){
  if(state?.flags.arenaRetreatNotice&&!activePanel&&!combatView&&!document.hidden&&!$('game').hidden){openPanel('arenaRetreat');return;}
- if(state?.mode==='dungeon'&&!activePanel&&!combatView&&!document.hidden&&!$('game').hidden){const map=dungeonMap(state.dungeon),torch=nearestUnlitTorch(state,map);if(torch&&!state.flags.autoTorches&&!cemeteryPrompted.has(torch.id)&&cemeteryLightAt(state,map,state.dungeon.x+.5,state.dungeon.y+.5)<.18){cemeteryPrompted.add(torch.id);openPanel('cemeteryTorch');return;}}
+ if(state?.mode==='dungeon'&&!cemeteryHaunt&&!activePanel&&!combatView&&!document.hidden&&!$('game').hidden){const map=dungeonMap(state.dungeon),torch=nearestUnlitTorch(state,map);if(torch&&!state.flags.autoTorches&&!cemeteryPrompted.has(torch.id)&&cemeteryLightAt(state,map,state.dungeon.x+.5,state.dungeon.y+.5)<.18){cemeteryPrompted.add(torch.id);openPanel('cemeteryTorch');return;}}
  if(state?.flags.wizardForsakenPending&&activePanel!=='wizardForsaken'&&!combatView&&!document.hidden&&!$('game').hidden){openPanel('wizardForsaken');return;}
  if(state&&wizardAudienceAvailable(state)&&!activePanel&&!combatView&&!document.hidden&&!$('game').hidden){openPanel('wizardAudience');return;}
  if(state?.flags.paladinForsakenPending&&activePanel!=='paladinForsaken'&&!combatView&&!document.hidden&&!$('game').hidden){openPanel('paladinForsaken');return;}

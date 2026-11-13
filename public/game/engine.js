@@ -110,6 +110,7 @@ export function makeDungeon(index,floor){
  const r=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
  const stack=[[1,1]];m[1][1]=0;
  while(stack.length){const [x,y]=stack.at(-1);const opts=DIRS.filter(([dx,dy])=>{const nx=x+dx*2,ny=y+dy*2;return nx>0&&ny>0&&nx<14&&ny<14&&m[ny][nx]===1;});if(!opts.length){stack.pop();continue;}const [dx,dy]=opts[Math.floor(r()*opts.length)];m[y+dy][x+dx]=0;m[y+dy*2][x+dx*2]=0;stack.push([x+dx*2,y+dy*2]);}
+ if(index===0)for(let y=5;y<=9;y++)for(let x=5;x<=9;x++)m[y][x]=0;
  m[1][1]=3;m[13][13]=2;dungeonCache.set(key,m);return m;
 }
 function arriveAtLadder(d,direction) {
