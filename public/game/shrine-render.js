@@ -20,6 +20,11 @@ export function drawShrineScene(c,w,h,s,map,dx,dy,fov,wallDepth){
    c.save();c.translate(o.screenX,o.screenY);c.scale(size*.65,size*.65);c.lineWidth=.012;c.lineJoin='round';if(o.lantern){const glow=c.createRadialGradient(0,-.12,0,0,-.12,.65);glow.addColorStop(0,'#e6a95166');glow.addColorStop(1,'#b57d2800');c.fillStyle=glow;c.fillRect(-.7,-.8,1.4,1.4);poly(c,[[-.07,0],[-.06,-.22],[.06,-.22],[.07,0]],'#ad8950','#e3c27c');poly(c,[[-.04,-.04],[-.035,-.18],[.035,-.18],[.04,-.04]],'#edbd6c');line(c,[[-.05,-.22],[-.05,-.29],[.05,-.29],[.05,-.22]],'#8d8d71',.012);line(c,[[0,-.30],[-.06,-.42],[.05,-.55],[-.02,-.68]],'#b1ada433',.035);c.restore();return;}oval(c,0,0,.24,.06,'#03070788');poly(c,[[-.16,-.10],[-.11,-.36],[.03,-.43],[.18,-.19],[.25,-.04]],o.tone,'#343d32');oval(c,-.02,-.46,.07,.085,'#b5a080');line(c,[[-.09,-.29],[.05,-.15],[.20,-.12]],'#8f8770',.06);line(c,[[-.11,-.06],[-.21,0],[.03,.01]],'#4c4b40',.065);c.restore();
   });return;
  }
- projectObjects(c,w,h,d,map,dx,dy,fov,wallDepth,[{x:profile.x??7,y:profile.y??8}],(o,size)=>drawShrineStatue(c,o.screenX,o.screenY,size,profile));
+ projectObjects(c,w,h,d,map,dx,dy,fov,wallDepth,[{x:profile.x??7,y:profile.y??8}],(o,size)=>{
+ const x=o.screenX,y=o.screenY,top=Math.max(0,y-size*2.3);
+ const beam=c.createLinearGradient(x,top,x,y);beam.addColorStop(0,'#fff1cb55');beam.addColorStop(.7,'#fff0c52a');beam.addColorStop(1,'#fff0c508');c.fillStyle=beam;
+ c.beginPath();c.moveTo(x-size*.07,top);c.lineTo(x+size*.07,top);c.lineTo(x+size*.58,y);c.lineTo(x-size*.58,y);c.closePath();c.fill();
+ oval(c,x,y,size*.55,size*.12,'#fff1cb20');drawShrineStatue(c,x,y,size,profile);
+ });
 }
 export function drawShrinePortrait(canvas,profile){const c=canvas.getContext('2d');c.clearRect(0,0,canvas.width,canvas.height);drawShrineStatue(c,canvas.width*.5,canvas.height*.96,canvas.height*.65,profile);}

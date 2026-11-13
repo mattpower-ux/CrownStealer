@@ -38,8 +38,7 @@ export function cemeteryLightAt(s,map,x,y,fixtures=cemeteryTorches(s.dungeon,map
 
 let darknessCache;
 export function cemeteryTorchInk(torch,lit,u,v,time){
- if(!torch||!s.bag?.includes('torch'))return null;
- s.bag.splice(s.bag.indexOf('torch'),1);
+ if(!torch)return null;
  if(Math.abs(u-.5)<.028&&v>.43&&v<.76)return '#49301c';
  if(Math.abs(u-.5)<.065&&v>.48&&v<.53)return '#151d1c';
  const flicker=1+Math.sin(time*.006+torch.wallX)*.12;

@@ -386,8 +386,10 @@ export function act(input,action,events=[],previewRules={}){
   }
   return state;
  }
+ if(action?.type==='autoTorches'){const s=structuredClone(input);s.flags.autoTorches=action.enabled===true;if(s.flags.autoTorches&&s.mode==='dungeon'&&lightNearestCemeteryTorch(s,dungeonMap(s.dungeon)))note(s,s.bag.filter(id=>id==='torch').length+' Torches Left');return s;}
  const actionEventStart=events.length;
  const s=resolveDungeonCombatAction({...input,previewRules},action,events,{execute:actInner,enemyTurn,random:rand,note,itemById});
+ if(s.flags.autoTorches&&s.mode==='dungeon'&&['enter','forward','back','strafe','ascend','descend'].includes(action?.type)&&lightNearestCemeteryTorch(s,dungeonMap(s.dungeon)))note(s,s.bag.filter(id=>id==='torch').length+' Torches Left');
  if(isDungeonCombat(s)&&(input.mode!=='battle'||events.slice(actionEventStart).some(e=>e.kind==='victory')))initializeDungeonCombat(s,()=>rand(s));
  if(input.mode!=='battle'&&input.flags?.beansRounds&&['move','forward','back','strafe'].includes(action?.type)&&s.turns>input.turns)for(let step=0;step<s.turns-input.turns;step++)tickBeansRound(s,note);
  revokeBrokenOath(input,s,action||{},events.slice(actionEventStart),note,itemById);

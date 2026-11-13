@@ -761,3 +761,17 @@ dialog[data-panel="inventory"] .inventory-item-popup{aspect-ratio:auto;min-heigh
 .preview-map-sheet canvas{aspect-ratio:1500/980}.preview-map-special{border-radius:4px;padding:4px 8px;font-size:14px;transform:none}
 
 #panel[data-panel="developer"] #panel-body{overflow:visible}#panel[data-panel="developer"] .atlas-panorama{max-height:calc(96svh - 270px);min-height:220px;overflow:auto}.preview-map-sheet canvas{width:100%}
+
+/* Travel HUD: independent rows prevent actions from covering navigation text. */
+#travel-controls{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto;align-items:end;gap:10px 18px;inset:auto 16px 12px!important;padding:12px!important;background:#071b17ed!important;border-top:1px solid #d5b47766!important;border-radius:10px}
+#travel-controls .travel-status{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;font-size:16px;padding-bottom:8px;border-bottom:1px solid #d5b47744}
+.travel-status strong{color:#ffe5a0;margin-right:16px}.travel-status button{min-height:36px;min-width:44px;padding:6px 12px}
+#travel-controls .actions{max-width:none;margin:0;justify-content:flex-start;gap:8px;align-self:center}
+#travel-controls .actions button{font-size:16px;min-height:48px;padding:10px 14px}
+#travel-controls .travel-tools{flex-wrap:nowrap;gap:8px}
+#travel-controls .travel-tools button{min-width:60px;min-height:64px;padding:8px}
+#travel-controls .movement{grid-template-columns:repeat(3,52px);grid-template-rows:repeat(2,48px)}
+.scene-caption{bottom:auto!important;top:58px;left:16px!important;max-width:calc(100% - 310px)!important;font-size:14px;background:#071b17bd;padding:6px 10px;border-radius:4px}
+.shrine-offering{text-align:center;margin:24px 0}
+@media(max-width:900px){#travel-controls{grid-template-columns:auto minmax(0,1fr);gap:8px!important;inset:auto 8px 8px!important;padding:8px!important}#travel-controls .travel-tools{grid-column:2;justify-content:flex-end}#travel-controls .movement{grid-row:2/4}#travel-controls .actions{grid-column:2}#travel-controls .travel-status{font-size:14px;gap:8px}#travel-controls .actions button{font-size:14px;min-height:44px;padding:8px}.scene-caption{display:none}}
+@media(max-width:520px){#travel-controls .movement{grid-template-columns:repeat(3,40px);grid-template-rows:repeat(2,44px);gap:3px;padding:4px}#travel-controls .travel-tools{gap:4px}#travel-controls .travel-tools button{min-width:40px;min-height:48px;padding:4px}#travel-controls .travel-tools span{font-size:12px}#travel-controls .travel-tools button[data-panel="atlas"]{min-width:48px}#travel-controls .travel-tools button[data-panel="atlas"]>span:last-child{font-size:9px}}
