@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {townPlaces} from '../public/game/town.js';
 import assert from 'node:assert/strict';
 import {act, createGame, dungeonMap, dungeonName, loadGame, saveGame} from '../public/game/engine.js';
 import {effectiveAttributes} from '../public/game/attributes.js';
@@ -197,4 +198,12 @@ test('fleeing preserves the dungeon and special escapes lead to valid destinatio
   assert.equal(returned.castle, undefined);
   assert.equal(returned.dungeon, null);
   assert.equal(returned.bag.filter(id => id === 'scroll-return').length, fight.bag.filter(id => id === 'scroll-return').length - 1);
+});
+
+test('Bellwether palace doorway and walked stair enter the staffed royal dungeon',()=>{
+ const town=TOWNS.find(t=>t.id==='bellwether');let s=createGame();Object.assign(s,{mode:'town',returnMode:'town',location:town.id,region:town.region,x:town.x,y:town.y,townPosition:{x:4,y:3}});s.townPosition=townPlaces(s).find(p=>p.id==='court');
+ s=act(s,{type:'enterCastle'});assert.deepEqual({x:s.castle.x,y:s.castle.y},castleLayout(town.id).entrance);
+ s=act(s,{type:'move',dx:0,dy:-1});s=act(s,{type:'move',dx:1,dy:0});assert.equal(s.castle.x,ROYAL_DUNGEON_STAIR.x);assert.equal(s.castle.y,ROYAL_DUNGEON_STAIR.y);
+ s=roundTrip(act(s,{type:'enterRoyalDungeon'}));assert.equal(s.dungeon.site,'royal-dungeon');assert.equal(ROYAL_DUNGEON_CELLS.length,2);assert.equal(ROYAL_DUNGEON_CELLS.flatMap(c=>c.prisoners).length,3);
+ for(const npc of ROYAL_DUNGEON_NPCS){s=walkTo(s,npc.x,npc.y);assert.equal(royalDungeonAt(s).id,npc.id);assert.ok(royalDungeonActions(s).some(a=>a.action.type==='royalDungeonTalk'));}
 });

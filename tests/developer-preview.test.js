@@ -6,3 +6,9 @@ test('every preview destination and floor saves and reloads',()=>{for(const d of
 test('every preview monster can be staged and saved in a dungeon',()=>{for(const m of previewMonsters){const s=loadGame(saveGame(previewEncounter(previewJump(previewCharacter(),'elf',4),m.id)));assert.equal(s.returnMode,'dungeon');assert.equal(s.enemy.speciesId,m.id);}});
 test('preview protection is explicit and never stored in saved state',()=>{let s=previewEncounter(previewCharacter(),'royal-pursuer');s.previewRules={invulnerable:true};const normal=act(s,{type:'guard'});assert.ok(normal.hp<s.hp);const protectedState=act(s,{type:'guard'},[],{invulnerable:true});assert.equal(protectedState.hp,s.hp);assert.equal(protectedState.previewRules,undefined);for(const id of [1,2,3])assert.notEqual(PREVIEW_KEYS.save,slotKeys(id).save);});
 test('random encounters can be suppressed in preview',()=>{let s=previewJump(previewCharacter(),'dungeon:0',1);for(let i=0;i<150;i++){const next=act(s,{type:i%2?'back':'forward'},[],{noRandom:true});assert.equal(next.mode,'dungeon');s=next;}});
+
+test('Royal Dungeon preview stages the Bellwether ladder rather than the story prison',()=>{
+ const s=loadGame(saveGame(previewJump(previewCharacter(),'royal-dungeon')));assert.equal(s.mode,'town');assert.equal(s.location,'bellwether');assert.ok(s.castle);assert.equal(s.dungeon,null);
+ const entered=loadGame(saveGame(act(s,{type:'enterRoyalDungeon'})));assert.equal(entered.dungeon.site,'royal-dungeon');assert.equal(entered.dungeon.royal,undefined);
+ const legacy=previewJump(s,'cell');assert.equal(legacy.castle,undefined);assert.equal(legacy.dungeon.royal,'cell');assert.match(previewDestinations.find(d=>d.id==='cell').name,/Story prison/);
+});

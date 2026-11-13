@@ -86,9 +86,8 @@ test('kobold burrows form broad connected chambers across every land and preserv
  }
 });
 
-test('shrines, cemeteries and tunnels retain their existing map geometry',()=>{
+test('cemeteries and tunnels retain their existing map geometry',()=>{
  for(const [slot,want] of [
-  [1,[0,2,2,2,2,2,2,2014,2014,2046,2012,2012,13312,15360,0]],
   [2,[0,14,8,8,28,28,2044,1052,7964,7936,7936,14336,12288,12288,0]],
   [24,[0,126,64,64,1984,1024,1024,1024,1024,1024,1024,15360,8192,8192,0]],
  ]){

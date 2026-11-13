@@ -38,14 +38,14 @@ export function burrowPixel(surface,u,v,light=1,candle=false){
  return pack(r|0,g|0,b|0);
 }
 
-export function drawBurrowPlanes(c,w,h,d,dx,dy,fov){
+export function drawBurrowPlanes(c,w,h,d,dx,dy,fov,map){
  const image=c.getImageData(0,0,w,h),pixels=new Uint32Array(image.data.buffer),focal=w/(2*Math.tan(fov/2));
  for(let y=0;y<h;y+=2){
   const depth=Math.min(24,h*.425/Math.max(1,Math.abs(y-h/2))),surface=y<h/2?'ceiling':'floor';
   const light=Math.max(.07,.84-depth*.075);
   for(let x=0;x<w;x+=2){
    const side=(x-w/2)*depth/focal,u=d.x+.5+dx*depth-dy*side,v=d.y+.5+dy*depth+dx*side;
-   const color=burrowPixel(surface,u,v,light);
+   const color=(surface==='floor'&&burrowDebrisPixel(u,v,light,map))||burrowPixel(surface,u,v,light);
    for(let yy=y;yy<Math.min(h,y+2);yy++)for(let xx=x;xx<Math.min(w,x+2);xx++)pixels[yy*w+xx]=color;
   }
  }
@@ -56,4 +56,68 @@ export function drawBurrowDarkness(c,w,h){
  const shade=c.createRadialGradient(w*.5,h*.46,h*.13,w*.5,h*.46,Math.max(w,h)*.6);
  shade.addColorStop(0,'#08050300');shade.addColorStop(.62,'#08050318');shade.addColorStop(1,'#040302d9');
  c.fillStyle=shade;c.fillRect(0,0,w,h);
+}
+
+// World-anchored scraps occupy wall corners only; they never change walkable cells.
+export function burrowDebrisPixel(u,v,light,map){
+ const tx=Math.floor(u),ty=Math.floor(v);if(!map||map[ty]?.[tx]===1)return null;
+ const fx=u-tx,fy=v-ty;
+ for(const sx of [-1,1])for(const sy of [-1,1]){
+  if(map[ty]?.[tx+sx]!==1||map[ty+sy]?.[tx]!==1)continue;
+  const x=sx<0?fx:1-fx,y=sy<0?fy:1-fy;if(x>.43||y>.43)continue;
+  const seed=hash(tx+sx*9,ty+sy*17),grit=hash(Math.floor(u*170),Math.floor(v*170));
+  let tone=null;
+  // Faded rag, its torn hem and a folded edge beneath the rubble.
+  if(x>.05&&x<.36+Math.sin(y*90)*.013&&y>.08&&y<.29+Math.sin(x*70)*.022)tone=[57+grit*15,49+grit*12,35+grit*9];
+  // Splintered boards with visible longitudinal grain.
+  const q=x*.8+y*.6,t=y*.8-x*.6;
+  if(q>.06&&q<.45&&Math.abs(t-.02)<.025+(q<.39?.009:Math.sin(q*160)*.018)){const g=65+grit*19+Math.sin(t*600)*8;tone=[g,g*.65,g*.32];}
+  // Overlapping angular stones: dark skirt and brighter upper facets.
+  for(let i=0;i<4;i++){const cx=.07+(i%2)*.12+seed*.03,cy=.06+Math.floor(i/2)*.11;const ax=(x-cx)/(.074+i*.004),ay=(y-cy)/.065;if(Math.abs(ax)*.7+Math.abs(ay)<1.05){const shade=ay<-.12?1.22:ax<0?1:.64;const g=(66+grit*17)*shade;tone=[g,g*.87,g*.68];}}
+  if(tone)return pack(...tone.map(n=>Math.floor(n*light)));
+ }
+ return null;
+}
+
+// Only the small luminous overlays animate; the expensive ray-cast image stays cached.
+export function drawDungeonFlicker(c,w,h,lights,time=0){
+ c.save();c.globalCompositeOperation='screen';
+ for(const light of lights||[]){const phase=light.phase,t=time*.001,pulse=.73+Math.sin(t*3.1+phase)*.12+Math.sin(t*7.7+phase*1.7)*.07;
+  const x=light.x*w,y=light.y*h,r=light.size*h;
+  const halo=c.createRadialGradient(x,y,0,x,y,r*5);halo.addColorStop(0,'rgba(255,172,61,'+(.065*pulse)+')');halo.addColorStop(1,'rgba(255,131,30,0)');c.fillStyle=halo;c.fillRect(x-r*5,y-r*5,r*10,r*10);
+  c.globalAlpha=.24*pulse;c.fillStyle='#fff0ae';c.beginPath();c.ellipse(x+Math.sin(t*4+phase)*r*.07,y-r*.1,r*.23,r*(.6+pulse*.13),0,0,Math.PI*2);c.fill();c.globalAlpha=1;
+ }
+ c.restore();
+}
+
+export function drawSecretDoor(c,w,h,d,map,dx,dy,fov,wallDepth){
+ const room=d.secretRoom;if(!room)return;
+ const side=[[0,-1],[1,0],[0,1],[-1,0]].find(([x,y])=>map[room.y+y]?.[room.x+x]!==undefined&&map[room.y+y]?.[room.x+x]!==1);if(!side)return;
+ const [nx,ny]=side,cx=room.x-d.x+nx*.49,cy=room.y-d.y+ny*.49,focal=w/(2*Math.tan(fov/2));
+ const project=(u,z)=>{const x=cx-ny*u,y=cy+nx*u,depth=x*dx+y*dy;if(depth<=.08)return null;return {x:w*.5+(-dy*x+dx*y)*focal/depth,y:h*.5-z*h*.85/depth,depth};};
+ const corners=[project(-.43,.48),project(.43,.48),project(.43,-.48),project(-.43,-.48)];if(corners.some(p=>!p))return;
+ const min=Math.max(0,Math.floor(Math.min(...corners.map(p=>p.x)))),max=Math.min(w,Math.ceil(Math.max(...corners.map(p=>p.x))));if(max<=min)return;
+ c.save();c.beginPath();for(let x=min;x<max;x+=2){const t=(x-corners[0].x)/(corners[1].x-corners[0].x),depth=corners[0].depth+(corners[1].depth-corners[0].depth)*t;if(depth<=wallDepth[Math.min(w-1,x)]+.1)c.rect(x,0,2,h);}c.clip();
+ c.strokeStyle='#271c10';c.lineWidth=Math.max(2,h*.025/Math.max(.5,corners[0].depth));c.beginPath();c.moveTo(corners[3].x,corners[3].y);for(const p of corners.slice(0,3))c.lineTo(p.x,p.y);c.stroke();c.strokeStyle='#94794b';c.lineWidth=Math.max(1,c.lineWidth*.3);c.stroke();c.restore();
+}
+
+export function isRuinedShrine(d){return d?.site==='minor-site'&&minorSiteDefinition(d.minorId)?.kind==='ruinedShrine';}
+
+export function drawBurrowDebris(c,w,h,d,map,dx,dy,fov,wallDepth){
+ const piles=[],focal=w/(2*Math.tan(fov/2));
+ for(let ty=1;ty<14;ty++)for(let tx=1;tx<14;tx++)if(map[ty][tx]!==1){for(const sx of [-1,1])for(const sy of [-1,1]){
+  if(map[ty]?.[tx+sx]!==1||map[ty+sy]?.[tx]!==1)continue;
+  const rx=tx-d.x+sx*.32,ry=ty-d.y+sy*.32,depth=rx*dx+ry*dy;if(depth<.45||depth>7)continue;
+  const x=w*.5+(-dy*rx+dx*ry)*focal/depth,y=h*.5+h*.425/depth,size=h*.19/depth;
+  if(x+size<0||x-size>w||y-size*.4>h)continue;piles.push({x,y,size,depth,seed:hash(tx,ty)});
+ }}
+ piles.sort((a,b)=>b.depth-a.depth);
+ for(const p of piles){c.save();c.beginPath();for(let x=Math.max(0,Math.floor(p.x-p.size));x<Math.min(w,p.x+p.size);x+=2)if(p.depth<=wallDepth[x]+.15)c.rect(x,0,2,h);c.clip();c.translate(p.x,p.y);c.scale(p.size,p.size);c.globalAlpha=Math.max(.35,1-p.depth*.07);
+  c.fillStyle='#090704aa';c.beginPath();c.ellipse(0,0,.78,.16,0,0,Math.PI*2);c.fill();
+  const poly=(pts,color)=>{c.fillStyle=color;c.beginPath();pts.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.closePath();c.fill();};
+  poly([[-.66,-.04],[-.45,-.19],[.43,-.11],[.55,-.03],[.41,.03],[.31,.01],[.18,.07],[-.14,.01],[-.4,.06]],'#5e5441');poly([[-.45,-.19],[-.12,-.1],[.43,-.11],[.05,-.03]],'#77664c');
+  poly([[-.63,-.06],[-.59,-.14],[.65,-.27],[.58,-.21],[.69,-.2],[-.55,.01]],'#69472b');c.strokeStyle='#a37a49';c.lineWidth=.015;c.beginPath();c.moveTo(-.53,-.08);c.lineTo(.53,-.23);c.stroke();
+  for(let i=0;i<5;i++){const x=-.4+i*.19,y=-.04-(i%2)*.1,sz=.15+(i%3)*.03;poly([[x-sz,y],[x-sz*.6,y-sz*.9],[x+sz*.4,y-sz],[x+sz,y-sz*.35],[x+sz*.8,y+.03]],'#514a3c');poly([[x-sz,y],[x-sz*.6,y-sz*.9],[x+sz*.4,y-sz],[x+sz*.1,y-sz*.35]],'#817461');poly([[x+sz*.1,y-sz*.35],[x+sz*.4,y-sz],[x+sz,y-sz*.35],[x+sz*.8,y+.03]],'#625747');}
+  c.restore();
+ }
 }

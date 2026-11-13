@@ -10,11 +10,12 @@ try{
  await page.goto('http://ladder.test/game/ladder-render.js');
  await page.setContent('<style>body{margin:0}canvas{width:960px;height:600px}</style><canvas></canvas>');
  await mkdir('artifacts',{recursive:true});
- for(const view of ['burrow','entrance','normal']){
+ for(const view of ['burrow','entrance','normal','shrine']){
   const details=await page.evaluate(async view=>{
    const {render}=await import('/game/render.js');const {createGame,dungeonMap}=await import('/game/engine.js');
    const s=createGame('Isolated burrow preview');s.mode='dungeon';s.dungeon={site:'minor-site',minorId:'minor-r0-0',index:0,floor:0,x:1,y:1,dir:2,ladderLayout:1};
-   if(view==='normal'){s.dungeon={index:0,floor:0,x:1,y:2,dir:0};}
+   if(view==='shrine'){s.dungeon.minorId='minor-r0-1';const {wallDetailKind}=await import('/game/wall-details.js');const m=dungeonMap(s.dungeon);let found=false;for(let y=1;y<14&&!found;y++)for(let x=1;x<14&&!found;x++)if(m[y][x]!==1)for(const [dir,[dx,dy]] of [[0,[0,-1]],[1,[1,0]],[2,[0,1]],[3,[-1,0]]]){let steps=1;while(m[y+dy*steps]?.[x+dx*steps]!==undefined&&m[y+dy*steps][x+dx*steps]!==1)steps++;if(steps>=2&&steps<=3&&wallDetailKind(x+dx*steps,y+dy*steps,0)%5===0){Object.assign(s.dungeon,{x,y,dir});found=true;break;}}}
+   else if(view==='normal'){s.dungeon={index:0,floor:0,x:1,y:2,dir:0};}
    else if(view==='burrow'){
     const m=dungeonMap(s.dungeon),choices=[];
     for(let y=1;y<14;y++)for(let x=1;x<14;x++)if(m[y][x]!==1)for(const [dir,[dx,dy]] of [[0,[0,-1]],[1,[1,0]],[2,[0,1]],[3,[-1,0]]]){
@@ -23,7 +24,8 @@ try{
     }
     choices.sort((a,b)=>Math.abs(a.steps-3)-Math.abs(b.steps-3));if(choices.length)Object.assign(s.dungeon,choices[0]);
    }
-   const t=performance.now();render(document.querySelector('canvas'),s);const renderMs=performance.now()-t;const t2=performance.now();render(document.querySelector('canvas'),s);return {d:s.dungeon,theme:document.querySelector('canvas').dataset.wallTheme,renderMs,cachedMs:performance.now()-t2};
+   if(view==='normal'){const {wallDetailKind}=await import('/game/wall-details.js');const m=dungeonMap(s.dungeon);let found=false;for(let y=1;y<14&&!found;y++)for(let x=1;x<14&&!found;x++)if(m[y][x]!==1)for(const [dir,[dx,dy]] of [[0,[0,-1]],[1,[1,0]],[2,[0,1]],[3,[-1,0]]]){let steps=1;while(m[y+dy*steps]?.[x+dx*steps]!==undefined&&m[y+dy*steps][x+dx*steps]!==1)steps++;const kind=wallDetailKind(x+dx*steps,y+dy*steps,0);if(steps>=2&&steps<=3&&kind>=7&&kind<9){Object.assign(s.dungeon,{x,y,dir});found=true;break;}}}
+   const t=performance.now();render(document.querySelector('canvas'),s);const renderMs=performance.now()-t;const t2=performance.now();render(document.querySelector('canvas'),s);const cachedMs=performance.now()-t2;const canvas=document.querySelector('canvas');render(canvas,s,100);const one=canvas.toDataURL();render(canvas,s,1700);const animated=one!==canvas.toDataURL();render(canvas,s,100,null,true);const reducedOne=canvas.toDataURL();render(canvas,s,1700,null,true);const reducedStable=reducedOne===canvas.toDataURL();if(['burrow','normal'].includes(view)&&(!animated||!reducedStable))throw Error('Flame animation or reduced-motion mismatch');return {d:s.dungeon,theme:document.querySelector('canvas').dataset.wallTheme,renderMs,cachedMs,animated,reducedStable};
   },view);
   await page.screenshot({path:`artifacts/${view}-theme.png`});console.log(view,details);
  }

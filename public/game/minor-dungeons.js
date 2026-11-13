@@ -1,5 +1,6 @@
 import {MONSTER_BY_ID,monsterStats} from './bestiary.js';
 import {minorSiteDefinition} from './minor-sites.js';
+import {shrineForDungeon,charityPitMap} from './shrine-deities.js';
 
 const guardians={
   koboldCave:{id:'grove-goblin',name:'Kobold Cave Watcher',kind:'swift',weakness:'quick strikes',art:{sheet:'monsters-grove',index:0}},
@@ -23,6 +24,7 @@ function definitionFor(d) {
 }
 
 export function minorDungeonMap(d) {
+  if(d.charityPit)return charityPitMap();
   const map=Array.from({length:15},()=>Array(15).fill(1));
   const site=definitionFor(d);
   if(!site)return map;
@@ -56,12 +58,15 @@ export function minorDungeonMap(d) {
       if(chambers.some(([cx,cy,rx,ry])=>((x-cx)/rx)**2+((y-cy)/ry)**2<=1))carve(x,y,x,y);
     }
   }
+  // Open a broad ceremonial room without removing any old walkable tiles.
+  if(site.kind==='ruinedShrine')for(let y=4;y<=11;y++)for(let x=3;x<=11;x++)map[y][x]=0;
   map[1][1]=3;
   map[13][13]=2;
   return map;
 }
 
 export function minorDungeonChests(s,items) {
+  if(s.dungeon?.charityPit)return [];
   const d=s.dungeon,site=definitionFor(d);
   if(!site||d.floor!==site.floors-1||(!site.treasure&&!site.trapped))return [];
 
@@ -85,6 +90,8 @@ export function minorDungeonChests(s,items) {
     }
     gold=20+site.region*12+d.floor*5+Math.floor(roll()*16);
   }
+  const deity=shrineForDungeon(d);
+  if(site.treasure&&deity?.loot){const gifts=deity.loot.filter(id=>items[id]);if(gifts.length)found.splice(0,found.length,...gifts);}
   return [{
     id,x:13,y:13,item:found[0]??null,items:found,rarity:items[found[0]]?.rarity??'common',
     gold,trap:site.trapped,opened:s.openedChests?.includes(id)??false,
@@ -94,7 +101,7 @@ export function minorDungeonChests(s,items) {
 export function minorGuardian(s) {
   const d=s.dungeon,site=definitionFor(d);
   if(!site?.guarded||d.floor!==site.floors-1)return null;
-  const species=guardians[site.kind];
+  const species=shrineForDungeon(d)?.guardian||guardians[site.kind];
   const level=[2,7,13,20][site.region]+d.floor;
   const stats=monsterStats(species,level);
   return {
