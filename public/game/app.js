@@ -663,7 +663,13 @@ function openPanel(name,{winkShot=false,winkResult=null}={}){if(developerMode&&n
   }
   if(lastDiscoveryAttempt?.id===site.id)body.insertAdjacentHTML('beforeend','<p role="status">'+esc(lastDiscoveryAttempt.text)+'</p>');
   body.insertAdjacentHTML('beforeend','<div class="panel-actions"><button type="button" data-close-discovery>Leave this place</button></div>');
+  if(site.type==='standing-stones'){
+   const canvas=$('discovery-art'),illustration=document.createElement('img');
+   illustration.src='/assets/standing-stone-circle.webp';illustration.alt='Ancient rune-carved standing stones in a mossy woodland circle, illuminated by a shaft of sunlight';illustration.className='standing-stones-illustration';
+   canvas.replaceWith(illustration);illustration.nextElementSibling.classList.add('standing-stones-inscription');
+  }else{
   const art=$('discovery-art').getContext('2d');const shade=art.createRadialGradient(320,140,10,320,140,300);shade.addColorStop(0,'#58604555');shade.addColorStop(1,'#0b1b1700');art.fillStyle=shade;art.fillRect(0,0,640,280);drawDiscoveryArt(art,site.type,320,130,175,site);
+  }
  }
  if(name==='leperColony'){
   if(!atLeperColony(state)){closePanel();return;}

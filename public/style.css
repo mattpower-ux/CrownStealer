@@ -775,3 +775,7 @@ dialog[data-panel="inventory"] .inventory-item-popup{aspect-ratio:auto;min-heigh
 .shrine-offering{text-align:center;margin:24px 0}
 @media(max-width:900px){#travel-controls{grid-template-columns:auto minmax(0,1fr);gap:8px!important;inset:auto 8px 8px!important;padding:8px!important}#travel-controls .travel-tools{grid-column:2;justify-content:flex-end}#travel-controls .movement{grid-row:2/4}#travel-controls .actions{grid-column:2}#travel-controls .travel-status{font-size:14px;gap:8px}#travel-controls .actions button{font-size:14px;min-height:44px;padding:8px}.scene-caption{display:none}}
 @media(max-width:520px){#travel-controls .movement{grid-template-columns:repeat(3,40px);grid-template-rows:repeat(2,44px);gap:3px;padding:4px}#travel-controls .travel-tools{gap:4px}#travel-controls .travel-tools button{min-width:40px;min-height:48px;padding:4px}#travel-controls .travel-tools span{font-size:12px}#travel-controls .travel-tools button[data-panel="atlas"]{min-width:48px}#travel-controls .travel-tools button[data-panel="atlas"]>span:last-child{font-size:9px}}
+
+/* Standing-stone discovery artwork and readable inscription. */
+.standing-stones-illustration{display:block;width:100%;height:auto;max-height:40vh;object-fit:cover;border-radius:8px;border:1px solid #796943}
+#panel .standing-stones-inscription{font-size:clamp(24px,2.2vw,30px);line-height:1.6;color:#f4e8c9;margin:24px 0}
