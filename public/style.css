@@ -764,6 +764,7 @@ dialog[data-panel="inventory"] .inventory-item-popup{aspect-ratio:auto;min-heigh
 
 /* Travel HUD: independent rows prevent actions from covering navigation text. */
 #travel-controls{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto;align-items:end;gap:10px 18px;inset:auto 16px 12px!important;padding:12px!important;background:#071b17ed!important;border-top:1px solid #d5b47766!important;border-radius:10px}
+#travel-controls[hidden]{display:none!important}
 #travel-controls .travel-status{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;font-size:16px;padding-bottom:8px;border-bottom:1px solid #d5b47744}
 .travel-status strong{color:#ffe5a0;margin-right:16px}.travel-status button{min-height:36px;min-width:44px;padding:6px 12px}
 #travel-controls .actions{max-width:none;margin:0;justify-content:flex-start;gap:8px;align-self:center}
