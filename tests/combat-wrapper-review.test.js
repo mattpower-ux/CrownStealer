@@ -24,3 +24,11 @@ test('poison counts surprise and caster rounds exactly once, preserving the appl
  }
  const s=battle();s.enemy.speciesId='ogre';s.enemy.combatDistance=3;s.bag.push('weapon-poison-5');const next=act(s,{type:'useItem',id:'weapon-poison-5'});assert.equal(next.weaponCoating.rounds,5);
 });
+
+test('a spear strikes at two dungeon squares and cannot strike at three',()=>{
+ const s=battle();s.enemy.speciesId='ogre';s.enemy.name='Ogre';s.bag.push('common-spear-1');s.equipped='common-spear-1';
+ s.enemy.combatDistance=3;assert.equal(act(s,{type:'attack'}).enemy.combatDistance,3);
+ s.enemy.combatDistance=2;const events=[];const next=act(s,{type:'attack'},events);
+ assert.ok(events.some(e=>e.target==='enemy'&&['hit','miss','block'].includes(e.kind)));
+ assert.equal(next.enemy.combatDistance,1);
+});

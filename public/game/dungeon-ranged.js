@@ -5,6 +5,7 @@ import {spendPoisonRound} from './weapon-poisons.js';
 export const isDungeonCombat=s=>s?.mode==='battle'&&s.returnMode==='dungeon'&&!!s.dungeon&&!!s.enemy;
 export const battlefieldDistance=s=>isDungeonCombat(s)?s.enemy.combatDistance??1:1;
 export const isBow=item=>item?.kind==='weapon'&&['bow','crossbow'].includes(item.family||item.shape);
+export const weaponReach=item=>isBow(item)?4:item?.kind==='weapon'&&(item.family==='spear'||item.shape==='spear')?2:1;
 export const enemyCanShoot=e=>!!e&&(e.ranged===true||['ranged','magic','mental'].includes(e.attackType)||e.kind==='caster'||e.royalDungeonNpc==='royal-heckler');
 export const dexterityModifier=dex=>Math.floor((dex-10)/2);
 export function initializeDungeonCombat(s,random){
