@@ -808,7 +808,8 @@ test('each castle has exactly one reachable wall trophy and all four creatures r
     assert.equal(head.species, species[i % species.length]);
     assert.equal(head.artIndex, i % species.length);
     assert.equal(layout.tiles[head.y][head.x], 'wall');
-    assert.deepEqual([head.mountDx, head.mountDy], [0, 1]);
+    assert.equal(Math.abs(head.mountDx),1);
+    assert.equal(head.mountDy,0);
     assert.equal(layout.tiles[head.y + head.mountDy][head.x + head.mountDx], 'vestibule');
     assert.equal(castles.castleInteractionsAt(hero).filter(point => point.kind === 'talking-head').length, 1);
     assert.ok(![...layout.chests, ...layout.guards, ...layout.patrols, ...layout.books].some(point =>

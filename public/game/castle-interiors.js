@@ -9,7 +9,7 @@ import {ATTRIBUTE_CAP, attributeLabel, prepareAttributes} from './attributes.js'
 import {gameDay, setTimedBuff} from './world-clock.js';
 import {rulerPersonality} from './ruler-personalities.js';
 import {startGuardConsultation, validGuardConsultation} from './castle-guard-audience.js';
-import {DRAGONSTONE_ID, ROYAL_COURIER_TOWN, ROYAL_DISPATCH_ID, royalCampaignEndingAvailable, royalCampaignReportAvailable} from './royal-campaign.js';
+import {DRAGONSTONE_ID, PRINCESS_REPORT_LINE, ROYAL_COURIER_TOWN, ROYAL_DISPATCH_ID, royalCampaignEndingAvailable, royalCampaignReportAvailable} from './royal-campaign.js';
 
 export const CASTLE_FINE = 2000;
 const WIDTH = 19;
@@ -338,6 +338,11 @@ function converse(s, action, layout, options) {
   if (action.type === 'castleReport' && point.kind === 'king' && s.flags.royalStoryVersion === 2 && reportRoyalProgress?.(s)) return;
   const history = s.flags[reportKey(point)] || [];
   const progress = royal ? royalProgress(s).filter(([id]) => !history.includes(id)) : [];
+  if (action.type === 'castleReport' && point.kind === 'princess') {
+    if (progress.length) s.flags[reportKey(point)] = [...history, ...progress.map(([id]) => id)];
+    say(s, point, PRINCESS_REPORT_LINE, note);
+    return;
+  }
   if (action.type === 'castleTalk' || !progress.length) {
     greet(s, point, progress, note);
     return;

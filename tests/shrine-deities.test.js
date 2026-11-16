@@ -32,6 +32,25 @@ test('insufficient funds do not force punishment; explicit refusal falls into a 
  const hp=s.hp;s=act(s,{type:'shrineCharity',choice:'refuse'});assert.equal(s.flags.charityChoice,'refused');assert.equal(s.dungeon.charityPit,true);assert.ok(hp-s.hp>=1&&hp-s.hp<=150);s=loadGame(saveGame(s));
  Object.assign(s.dungeon,{x:1,y:1});s=act(s,{type:'leave'});assert.equal(s.mode,'dungeon');assert.equal(s.dungeon.charityPit,undefined);assert.deepEqual([s.dungeon.x,s.dungeon.y],[7,9]);assert.equal(charityAudienceAvailable(s),false);
 });
+test('Lady Charity accepts 10 gold for full healing only after the first donation',()=>{
+ let s=charity();
+ const offering={type:'shrineOffering',amount:10};
+ assert.equal(act(s,offering).gold,800);
+ s=act(s,{type:'shrineCharity',choice:'donate'});
+ s.hp=2;
+ s.flags['shrineStrength:minor-r0-1']=true;
+ const events=[];
+ const healed=act(loadGame(saveGame(s)),offering,events);
+ assert.equal(healed.hp,healed.maxHp);
+ assert.equal(healed.gold,290);
+ assert.deepEqual(healed.attributes,s.attributes);
+ assert.equal(events.filter(event=>event.kind==='charityHealed').length,1);
+ healed.gold=9;
+ healed.hp=2;
+ const broke=act(healed,offering);
+ assert.equal(broke.hp,2);
+ assert.equal(broke.gold,9);
+});
 test('fatal charity falls use normal recovery and keep valid saves',()=>{
  let s=charity();s.hp=1;s=act(s,{type:'shrineCharity',choice:'refuse'});assert.ok(s.hp>0);assert.equal(s.mode,'world');assert.equal(s.flags.rescuePending,true);assert.doesNotThrow(()=>loadGame(saveGame(s)));
 });

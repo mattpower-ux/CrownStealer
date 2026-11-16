@@ -4,6 +4,57 @@ import assert from 'node:assert/strict';
 const audio = await import('../public/game/audio.js').catch(() => ({}));
 const {musicScene} = await import('../public/game/location-music.js');
 
+test('ruined shrines alone use the supplied Shrine of Dead Gods soundtrack',()=>{
+ for(const minorId of ['minor-r0-1','minor-r0-4']){
+  const s={mode:'dungeon',dungeon:{site:'minor-site',minorId,index:0}};
+  assert.equal(musicScene(s),'dungeon:ruined-shrine');
+  assert.equal(audio.recordedMusic(musicScene(s)),'/assets/shrine-of-dead-gods.mp3');
+  assert.equal(musicScene({...s,mode:'battle'}),'battle');
+ }
+ assert.equal(audio.recordedMusic(musicScene({mode:'dungeon',dungeon:{site:'minor-site',minorId:'minor-r0-2',index:0}})),'/assets/whispers-beneath-stone.mp3');
+ assert.equal(audio.recordedMusic('dungeon:kobold'),null);
+});
+
+test('Title playback errors cannot overlap the synthesized fallback',async()=>{
+ const h=harness();h.options.Audio=class{paused=true;play(){this.paused=false;return Promise.resolve();}pause(){this.paused=true;}};
+ const d=new audio.AudioDirector(h.options);await d.unlock();
+ d.titlePlayer.onerror();
+ assert.equal(d.titlePlayer.paused,true);
+ assert.equal(h.timers.size,1);
+ d.titlePlayer.paused=false;d.titlePlayer.onplaying();
+ assert.equal(d.titlePlayer.paused,true,'failed recording cannot revive over the fallback');
+ await d.destroy();
+});
+
+test('late countryside play completion is silenced after entering Bellwether',async()=>{
+ const h=harness();let finish;
+ h.options.Audio=class{paused=true;constructor(src){this.src=src;}play(){if(this.src.includes('countryside'))return new Promise(resolve=>{finish=()=>{this.paused=false;resolve();};});this.paused=false;return Promise.resolve();}pause(){this.paused=true;}};
+ const d=new audio.AudioDirector(h.options);d.setScene('land:0');await d.unlock();
+ d.setScene(musicScene({mode:'town',location:'bellwether'}));finish();await Promise.resolve();
+ assert.equal(d.scene,'town:bellwether');
+ assert.equal(d.backgroundPlayers.get('/assets/countryside-wander.mp3').paused,true);
+ assert.equal(h.timers.size,1);
+ await d.destroy();
+});
+
+test('a rejected shrine recording stops before fallback synthesis starts',async()=>{
+ const h=harness();h.options.Audio=class{paused=true;play(){this.paused=false;return Promise.reject(new Error('decode failure'));}pause(){this.paused=true;}};
+ const d=new audio.AudioDirector(h.options);d.setScene('dungeon:ruined-shrine');await d.unlock();await Promise.resolve();
+ assert.equal(d.backgroundPlayers.get('/assets/shrine-of-dead-gods.mp3')?.paused,true);
+ assert.equal(h.timers.size,1);
+ await d.destroy();
+});
+
+test('shrine music loops exclusively, follows mute and resumes after combat and suspension',async()=>{
+ const h=harness();h.options.Audio=class{paused=true;currentTime=0;play(){this.paused=false;return Promise.resolve();}pause(){this.paused=true;}};
+ const d=new audio.AudioDirector(h.options);await d.unlock();d.setVolumes(.6,.7);d.setScene('dungeon:ruined-shrine');await Promise.resolve();
+ const player=d.backgroundPlayers.get('/assets/shrine-of-dead-gods.mp3');
+ assert.equal(player.loop,true);assert.equal(player.volume,.3);assert.equal(d.titlePlayer.paused,true);assert.equal(h.timers.size,0);
+ player.currentTime=42;d.setScene('battle');assert.equal(player.paused,true);d.setScene('dungeon:ruined-shrine');await Promise.resolve();assert.equal(player.currentTime,42);assert.equal(player.paused,false);assert.equal(h.timers.size,0);
+ d.setVolumes(0,.7);assert.equal(player.volume,0);await d.suspend();assert.equal(player.paused,true);await d.resume();assert.equal(player.paused,false);assert.equal(player.volume,0);
+ d.setScene('title');assert.equal(player.paused,true);await d.destroy();
+});
+
 test('kobold caves and burrows select their quiet synthesized score', () => {
   for (const minorId of ['minor-r0-0','minor-r0-6']) {
     const state = {mode:'dungeon',dungeon:{site:'minor-site',minorId,index:0}};

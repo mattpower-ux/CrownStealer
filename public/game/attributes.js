@@ -4,7 +4,12 @@ import { worldTimeMs } from './world-clock.js';
 export const ATTRIBUTE_NAMES = Object.freeze(['wisdom', 'charisma', 'constitution', 'strength', 'dexterity', 'intelligence']);
 export const ATTRIBUTE_BASE = 10;
 export const ATTRIBUTE_CAP = 50;
+export const WILDERNESS_RECOVERY_HP = 2;
 export const attributeLabel = name => name.charAt(0).toUpperCase() + name.slice(1);
+
+export function wildernessRecoveryInterval(state, itemById) {
+  return 100_000 / effectiveAttributes(state, itemById).constitution;
+}
 
 const LEVEL_HEALTH = 14;
 const MAX_HEALTH = 100_000;
@@ -20,6 +25,16 @@ const integerBetween = (value, min, max) => Number.isSafeInteger(value) && value
 const isAttribute = name => ATTRIBUTE_NAMES.includes(name);
 const earnedPoints = state => 2 * ((state.level ?? 1) - 1);
 const baseScore = (state, name) => state.attributes?.[name] ?? ATTRIBUTE_BASE;
+const classBlessing = (state, name) =>
+  (state.flags?.percivalOath === 'accepted' && ['strength', 'charisma'].includes(name) ? 2 : 0) +
+  (state.flags?.wizardApprentice === 'accepted' && name === 'intelligence' ? 2 : 0);
+
+export function permanentAttributeGains(before, after) {
+  return ATTRIBUTE_NAMES.flatMap(name => {
+    const amount = baseScore(after, name) - baseScore(before, name) + classBlessing(after, name) - classBlessing(before, name);
+    return amount > 0 ? [{name, amount}] : [];
+  });
+}
 const raisedPoints = state => ATTRIBUTE_NAMES.reduce((sum, name) => sum + baseScore(state, name) - ATTRIBUTE_BASE, 0);
 const spentPoints = state => state.attributePointsSpent ?? Math.min(earnedPoints(state), raisedPoints(state));
 const isActive = (effect, now) => effect?.expiresAt > now;
@@ -78,8 +93,7 @@ export function effectiveAttributes(state, itemById) {
     const temporary = isActive(buff, now) ? buff.amount : 0;
     // The permanent oath blessing is separate from allocated scores and is never
     // consumed by respecs, timed effects, or the ordinary training cap.
-    const oath = state.flags?.percivalOath === 'accepted' && ['strength','charisma'].includes(name) ? 2 : 0;
-    const total=Math.min(ATTRIBUTE_CAP, baseScore(state, name) + worn + temporary) + oath + (state.flags?.wizardApprentice==='accepted'&&name==='intelligence'?2:0);
+    const total=Math.min(ATTRIBUTE_CAP, baseScore(state, name) + worn + temporary) + classBlessing(state,name);
     return [name,name==='charisma'?Math.max(1,total-leprosyCharismaLoss(state)):total];
   }));
 }

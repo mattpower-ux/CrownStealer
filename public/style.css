@@ -866,3 +866,17 @@ dialog[data-panel="sageJournal"] #save-checkpoint { display: none; }
 .peebles-audience img { width:100%;max-height:56svh;object-fit:contain; }
 .peebles-earth-orb { background:radial-gradient(circle at 35% 32%,#c8e7fb,#3285ae 27%,#499854 42%,#215181 65%,#0a2738); }
 @media(max-width:540px){.peebles-audience{display:block}.peebles-audience img{max-height:34svh}}
+
+#reward-celebration {
+ width: min(44rem, calc(100vw - 2rem));
+ margin: auto;
+ padding: clamp(1.5rem, 5vw, 3.5rem);
+ border: 2px solid var(--gold);
+ background: radial-gradient(ellipse at 50% 0%, #334638, var(--panel) 75%);
+ color: var(--ink);
+ text-align: center;
+}
+#reward-celebration::backdrop { background: #03110caa; }
+#reward-celebration h2 { color: #f4d794; font-size: clamp(1.65rem, 4.5vw, 3rem); line-height: 1.14; margin: 0 0 1.2rem; }
+#reward-celebration-details p { color: #fff3d0; font: 700 clamp(1.4rem, 3.5vw, 2.4rem)/1.18 Georgia, serif; margin: .5rem 0; }
+#reward-celebration form { margin-top: 1.8rem; }

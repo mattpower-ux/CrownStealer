@@ -42,7 +42,7 @@ import {CHARACTER_FACES} from './character-faces.js';
 import {gossipFor} from './gossip.js';
 import {migrateRangedGear,randomAttributeLoot} from './treasure.js';
 import {CEMETERY_DUNGEONS} from './dungeon-populations.js';
-import {allocateAttribute,applyAttributeItem,applyLevelDrain,attributeBenefits,attributeLabel,attributeSave,effectiveAttributes,effectiveLevel,expireAttributeEffects,prepareAttributes,syncAttributeHealth,validateAttributeState} from './attributes.js';
+import {allocateAttribute,applyAttributeItem,applyLevelDrain,attributeBenefits,attributeLabel,attributeSave,effectiveAttributes,effectiveLevel,expireAttributeEffects,prepareAttributes,syncAttributeHealth,validateAttributeState,WILDERNESS_RECOVERY_HP,wildernessRecoveryInterval} from './attributes.js';
 import {dungeonFloors} from './dungeon-depths.js';
 import {dungeonLadders,rememberDungeonLadder} from './dungeon-ladders.js';
 import {BOTTOMLESS_PIT,PIT_MAP_SEED,BALROG_ID,BALROG_ATTACKS,BALROG_WHIP,ROYAL_BALROG_TRIAL,pitBottomAction,pitVictory} from './bottomless-pit.js';
@@ -511,10 +511,10 @@ function actInner(input,action,events=[]){
  if(s.mode==='world'&&s.hp>0&&Number.isFinite(a.elapsedMs)&&a.elapsedMs>=0&&a.elapsedMs<=3600000){
   if(s.hp>=s.maxHp)s.wildernessHealProgress=0;
   else{
-   const progress=(s.wildernessHealProgress||0)+a.elapsedMs*effectiveAttributes(s,itemById).constitution/100000;
-   const restored=Math.floor(progress+1e-9);
-   s.hp=Math.min(s.maxHp,s.hp+restored);
-   s.wildernessHealProgress=s.hp===s.maxHp?0:Math.max(0,progress-restored);
+   const progress=(s.wildernessHealProgress||0)+a.elapsedMs/wildernessRecoveryInterval(s,itemById);
+   const pulses=Math.floor(progress+1e-9);
+   s.hp=Math.min(s.maxHp,s.hp+pulses*WILDERNESS_RECOVERY_HP);
+   s.wildernessHealProgress=s.hp===s.maxHp?0:Math.max(0,progress-pulses);
   }
  }
  advanceClock(s,a.elapsedMs);
@@ -668,7 +668,7 @@ function actInner(input,action,events=[]){
   if(a.type.startsWith('peaceful'))return s;
  }
  if(a.type==='attackWatcher'){startMinorResident(s,'attack',note);return s;}
- if(a.type==='shrineOffering'){shrineOffering(s,a,note);return s;}
+ if(a.type==='shrineOffering'){shrineOffering(s,a,note,events);return s;}
  if(a.type==='shrineCharity'){if(charityAction(s,a,{random:()=>rand(s),note,events})==='defeated')recover(s,events);return s;}
  if(a.type==='leave'&&s.mode==='dungeon'&&s.dungeon?.charityPit){if(s.dungeon.x===1&&s.dungeon.y===1){delete s.dungeon.charityPit;s.dungeon.x=7;s.dungeon.y=9;s.dungeon.dir=2;note(s,'You climb out of the pit. The other cheapskates wish you better luck.');}else note(s,'Reach the ladder at (1, 1) to climb out of the pit.');return s;}
  if(a.type==='searchSecrets'&&s.mode==='dungeon'){s.turns++;advanceClock(s,6250);const room=hiddenSecretNearby(s,dungeonMap(s.dungeon));if(room&&rand(s)<seeHiddenChance(s)){revealSecretRoom(s,room);note(s,'Your careful search reveals a hidden door and a secret stash.');}else note(s,'You search the nearby walls for five game minutes, but find nothing new.');return s;}

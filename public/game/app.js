@@ -50,7 +50,7 @@ import {clockLabel,isNight,buffTimeLeft,worldTimeMs} from './world-clock.js';
 import {faceMarkup,facePickerMarkup,CUSTOMIZATION_JOKES} from './character-faces.js';
 import {dealerVoice} from './casino.js';
 import {gossipView} from './gossip.js';
-import {ATTRIBUTE_CAP,effectiveAttributes,effectiveLevel,levelDrainMinutesLeft,syncAttributeHealth} from './attributes.js';
+import {ATTRIBUTE_CAP,attributeLabel,effectiveAttributes,effectiveLevel,levelDrainMinutesLeft,permanentAttributeGains,syncAttributeHealth} from './attributes.js';
 import {atlasView,paintAtlasMaps} from './atlas-view.js';
 import {attachTouchJoystick} from './touch-joystick.js';
 import {AREAS,areaFor,areaTile,PLANETS,visitedLands} from './exploration.js';
@@ -162,8 +162,28 @@ function launchPlanetFlight(action){
  function frame(now){const elapsed=now-start;if(elapsed>=4000){overlay.remove();shipInFlight=false;dispatch(action);return;}const w=innerWidth,h=innerHeight;if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}ctx.fillStyle='#030b18';ctx.fillRect(0,0,w,h);for(const star of stars){const t=reduced?star.offset:(star.offset+elapsed*.0005*star.speed)%1,r=t*t*Math.hypot(w,h)*.65,x=w/2+Math.cos(star.angle)*r,y=h/2+Math.sin(star.angle)*r;ctx.strokeStyle=star.offset>.5?'#c2eaff':'#7bc8dd';ctx.lineWidth=1+t*2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-Math.cos(star.angle)*(reduced?2:8+t*95),y-Math.sin(star.angle)*(reduced?2:8+t*95));ctx.stroke();}requestAnimationFrame(frame);}
  requestAnimationFrame(frame);
 }
+const rewardCelebration=$('reward-celebration');
+function showRewardCelebration(title, lines, sound) {
+ $('reward-celebration-title').textContent=title;
+ $('reward-celebration-details').replaceChildren(...lines.map(line=>{
+  const p=document.createElement('p');p.textContent=line;return p;
+ }));
+ if(!rewardCelebration.open)rewardCelebration.showModal();
+ audio.unlock().then(()=>audio.effect(sound));
+}
+
 let completingFlight=false;
 function dispatch(a,automatic=false){if(a.type==='autoAttack'){toggleAutoAttack();return;}if(!state||combatView||shipInFlight)return;if(!automatic&&autoAttackEnabled)stopAutoAttack();if(a.type==='inspectCastle'){inspectCastle(a.id);return;}if(a.type==='mapTurn'){state.flags.mapFacing=((state.flags.mapFacing||0)+a.delta+4)%4;persist();toast('Facing '+['north','east','south','west'][state.flags.mapFacing]);return;}if(a.type==='mapStep'){const dir=state.castle?0:state.flags.mapFacing||0;let dx=a.dx,dy=a.dy;for(let i=0;i<dir;i++)[dx,dy]=[-dy,dx];a={type:'move',dx,dy};}if(a.type==='navigatePlanet'&&!completingFlight&&state.mode==='dungeon'&&state.dungeon?.ship&&Math.abs(state.dungeon.x-7)+Math.abs(state.dungeon.y-5)<=7&&Number.isInteger(a.planet)&&a.planet>=0&&a.planet<3){completingFlight=true;launchPlanetFlight(a);return;}completingFlight=false;flushClock(false);entryPrompt.hidden=true;ladderPopup.hidden=true;if(state.mode==='world'&&a.type==='enter'&&pointAt(state)?.kind==='wildernessDiscovery'){openPanel('discovery');return;}if(a.type==='enter'&&atLeperColony(state)){state=act(state,a);persist();update();openPanel('leperColony');return;}if(state.mode==='world'&&a.type==='enter'&&pointAt(state)?.kind==='shipyard'){openPanel('shipyard');return;}if(state.mode==='world'&&a.type==='enter'&&pointAt(state)?.kind==='teleporter'){openPanel('crystalTravel');return;}if(state.mode==='town'&&a.type==='enter'){interactTown();return;}const before=state,events=[];state=act(state,a,events,developerMode?previewRules:{});if(state.log.at(-1)!==before.log.at(-1)&&(state.flags.impaledMoves||before.flags.impaledMoves))toast(state.log.at(-1));
+const gained=permanentAttributeGains(before,state);
+const charityDonation=a.type==='shrineCharity'&&state.flags.charityChoice==='donated'&&before.flags.charityChoice!=='donated';
+const charityHealed=events.some(event=>event.kind==='charityHealed');
+if(charityDonation||charityHealed){
+ closePanel();update();persist();
+ if(charityDonation)showRewardCelebration('LADY CHARITY ACCEPTS YOUR OFFERING',['+1 Permanent Charisma!'],'stat-fanfare');
+ else showRewardCelebration('LADY CHARITY SMILES UPON YOU.',['Full Health Granted.'],'magic');
+ return;
+}
+if(gained.length)queueMicrotask(()=>showRewardCelebration('CONGRATS!',gained.map(({name,amount})=>'+'+amount+' Permanent '+attributeLabel(name)+'!'),'stat-fanfare'));
 if(a.type==='visitEarth'&&canVisitEarth(before)){persist();update();openPanel('peeblesEarth');return;}
 if(a.type==='rolandCandles'&&rolandCellActive(state)&&!rolandCellActive(before)){
  closePanel();persist();update();openPanel('rolandFall');return;
@@ -449,7 +469,7 @@ function updateWildernessHealth(){
  wildernessXpTrack.firstElementChild.style.width=`${xp/xpGoal*100}%`;
 }
 
-function update(){if(state.mode!=='battle')impactIndex=0;updateClockDisplay();updateWildernessHealth();if(!nearCastleHead())castleHeadVisit=null;if(castleTileVisit!==castleTileKey())castleTileVisit=null;
+function update(){if(state.mode!=='battle')impactIndex=0;updateClockDisplay();updateWildernessHealth();if(!state.castle)castleHeadVisit=null;if(castleTileVisit!==castleTileKey())castleTileVisit=null;
  const minor=state.dungeon?.site==='minor-site'?minorSiteDefinition(state.dungeon.minorId):null;
  updateLevelBanner();
  document.querySelector('.portrait').innerHTML=faceMarkup(state);
@@ -642,7 +662,7 @@ function cancelArrowTap(){if(arrowTap)clearTimeout(arrowTap.timer);arrowTap=null
 window.addEventListener('blur',cancelArrowTap);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)cancelArrowTap();});
 let nextWildernessStep=0;
-document.addEventListener('keydown',e=>{if(!state||$('game').hidden||e.target.matches('input,select,textarea,[contenteditable=true]'))return;
+document.addEventListener('keydown',e=>{if(!state||$('game').hidden||$('reward-celebration').open||e.target.matches('input,select,textarea,[contenteditable=true]'))return;
  if(e.key.toLowerCase()==='i'&&!e.ctrlKey&&!e.metaKey&&!e.altKey){e.preventDefault();if(e.repeat)return;cancelArrowTap();if(activePanel==='inventory')closePanel();else if(!$('panel').open)openPanel('inventory');return;}
  if($('panel').open)return;
  if(e.key==='Enter'&&state.mode==='dungeon'&&state.dungeon.site===ROYAL_DUNGEON_ID){

@@ -3,6 +3,7 @@ import {poisonDamage} from './weapon-poisons.js';
 import {
   ATTRIBUTE_BASE, ATTRIBUTE_CAP, ATTRIBUTE_NAMES, attributeBenefits, attributeBuffMinutesLeft,
   attributeLabel, attributePointsAvailable, effectiveAttributes, effectiveLevel, levelDrainMinutesLeft,
+  WILDERNESS_RECOVERY_HP, wildernessRecoveryInterval,
 } from './attributes.js';
 import { gagActive } from './gag-potions.js';
 import { travelSpeed } from './junk-loot.js';
@@ -95,7 +96,7 @@ export function statsView(s) {
     ['Magic resistance', `${t.magic}%`],
     ['Spell damage bonus', `${t.spellBonus > 0 ? '+' : ''}${t.spellBonus}`],
     ['Dodge chance', `${t.evasion}%`],
-    ['Wilderness recovery', `1 HP / ${(100 / effectiveAttributes(s, itemById).constitution).toFixed(1)} seconds`],
+    ['Wilderness recovery', `${WILDERNESS_RECOVERY_HP} HP / ${(wildernessRecoveryInterval(s, itemById) / 1000).toFixed(1)} seconds`],
     ['Regeneration', `${t.regeneration} / enemy attack`],
     ['Life drain', `${t.lifeSteal} / hit`],
     ['Freeze chance', `${t.freeze}%`],

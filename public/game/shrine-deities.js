@@ -49,8 +49,15 @@ export function validShrineState(s){
  return true;
 }
 export function shrineAudienceAvailable(s){const god=shrineForDungeon(s.dungeon);return !!god&&s.mode==='dungeon'&&!s.dungeon.charityPit&&Math.abs(s.dungeon.x-god.x)+Math.abs(s.dungeon.y-god.y)<=2;}
-export function shrineOffering(s,a,note){
+export function shrineOffering(s,a,note,events=[]){
  const god=shrineForDungeon(s.dungeon);if(!shrineAudienceAvailable(s))return false;
+ if(god.charity){
+  if(s.flags.charityChoice!=='donated'||(a.amount??10)!==10||s.gold<10)return false;
+  s.gold-=10;s.hp=s.maxHp;s.wildernessHealProgress=0;s.turns++;
+  note(s,'LADY CHARITY SMILES UPON YOU. Full Health Granted.');
+  events.push({kind:'charityHealed'});
+  return true;
+ }
  const id=s.dungeon.minorId;
  if(s.flags['shrineStrength:'+id]){note(s,'This shrine has already bestowed its blessing.');return false;}
  const amount=a.amount??10;if(!Number.isSafeInteger(amount)||amount<10){note(s,'An offering of at least 10 gold is required.');return false;}

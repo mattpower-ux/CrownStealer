@@ -19,7 +19,7 @@ export const THEMES = Object.freeze({
   victory: { bpm: 112, melody: [72,null,72,76,79,null,84,null,83,79,76,79,81,null,79,null,77,81,84,86,88,null,84,81,79,76,74,71,72,null,null,null], roots: [48,45,41,43], mood: 'bright', gain: .85 },
 });
 
-export const recordedMusic=scene=>scene==='dungeon:druid-grove'?'/assets/druidic-tomb.mp3':scene==='dungeon:kobold'?null:scene==='boss'?'/assets/mob-boss.mp3':scene==='dungeon:ship'?'/assets/hollow-signal.mp3':scene==='dungeon:6'?'/assets/the-echoing-clock.mp3':scene==='dungeon:sewer'?'/assets/below-the-grates.mp3':scene==='snow'?'/assets/against-the-whiteout.mp3':scene==='desert'?'/assets/sands-beyond-the-horizon.mp3':scene==='land:0'?'/assets/countryside-wander.mp3':scene==='dungeon'||scene.startsWith('dungeon:')?'/assets/whispers-beneath-stone.mp3':null;
+export const recordedMusic=scene=>scene==='dungeon:ruined-shrine'?'/assets/shrine-of-dead-gods.mp3':scene==='dungeon:druid-grove'?'/assets/druidic-tomb.mp3':scene==='dungeon:kobold'?null:scene==='boss'?'/assets/mob-boss.mp3':scene==='dungeon:ship'?'/assets/hollow-signal.mp3':scene==='dungeon:6'?'/assets/the-echoing-clock.mp3':scene==='dungeon:sewer'?'/assets/below-the-grates.mp3':scene==='snow'?'/assets/against-the-whiteout.mp3':scene==='desert'?'/assets/sands-beyond-the-horizon.mp3':scene==='land:0'?'/assets/countryside-wander.mp3':scene==='dungeon'||scene.startsWith('dungeon:')?'/assets/whispers-beneath-stone.mp3':null;
 export const RECORDED_EFFECTS={...Object.fromEntries(["sfx-impact-him-0","sfx-impact-him-1","sfx-impact-him-2","sfx-impact-her-0","sfx-impact-her-1","sfx-impact-her-2"].map(name=>[name,name])),hit:'sfx-strike',hurt:'sfx-hurt',roulette:'sfx-roulette',cards:'sfx-cards',rescue:'sfx-rescue',dungeonEntrance:'sfx-dungeon',casinoWin:'sfx-casino-win',goldFound:'sfx-gold',townEntrance:'sfx-town',defeat:'sfx-defeat',wolfEncounter:'sfx-wolf','dragon-greep':'sfx-gleep',drakeVoice:'voice-drake','voice-rock-troll':'voice-rock-troll','voice-bailiff':'voice-bailiff','voice-haghilda':'voice-haghilda','voice-leviathan':'voice-leviathan','voice-morgana':'voice-morgana'};
 const hz = midi => 440 * 2 ** ((midi - 69) / 12);
 const volume = (value, fallback) => Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : fallback;
@@ -103,20 +103,35 @@ export class AudioDirector {
       this.titlePlayer.loop = true;
       this.titlePlayer.preload = 'auto';
       this.titlePlayer.volume = this.musicVolume;
-      this.titlePlayer.onplaying=()=>{
-        if(this.scene!=='title'||this.paused||this.destroyed)this.titlePlayer.pause();
-      };
+      this.titlePlayer.onplaying=()=>this.claimMusicPlayer(this.titlePlayer);
       this.titlePlayer.onerror = () => {
+        this.titlePlayer.pause();
         this.titleUnavailable = true;
         if (this.scene === 'title' && !this.paused && !this.destroyed) this.start();
       };
     }
-    if (this.titlePlayer.paused) this.titlePlayer.play().catch(error => {
+    if (this.titlePlayer.paused) this.titlePlayer.play().then(()=>this.claimMusicPlayer(this.titlePlayer)).catch(error => {
       // Policy denial and an interrupted load are recoverable on the next gesture.
       if (error?.name === 'NotAllowedError' || error?.name === 'AbortError') return;
+      this.titlePlayer.pause();
       this.titleUnavailable = true;
       if (this.scene === 'title' && !this.paused && !this.destroyed) this.start();
     });
+    return true;
+  }
+
+  // A late media callback must never revive an old track or layer a recording
+  // over its Web Audio fallback. Effects and dialogue keep their separate bus.
+  claimMusicPlayer(player, recording=null) {
+    const current=recording
+      ? recordedMusic(this.scene)===recording&&!this.backgroundUnavailable.has(recording)
+      : this.scene==='title'&&!this.titleUnavailable;
+    if(!current||this.paused||this.destroyed){player.pause();return false;}
+    if(player.paused)return false;
+    if(this.titlePlayer&&this.titlePlayer!==player)this.titlePlayer.pause();
+    for(const other of this.backgroundPlayers.values())if(other!==player)other.pause();
+    this.stopSchedule();
+    this.retire('music');
     return true;
   }
 
@@ -156,7 +171,7 @@ export class AudioDirector {
         player.preload='none';
         this.backgroundPlayers.set(recording,player);
         const isCurrent=()=>recordedMusic(this.scene)===recording&&!this.paused&&!this.destroyed;
-        player.onplaying=()=>{if(!isCurrent())player.pause();};
+        player.onplaying=()=>this.claimMusicPlayer(player,recording);
         player.onerror=()=>{
           player.pause();
           this.backgroundUnavailable.add(recording);
@@ -164,7 +179,7 @@ export class AudioDirector {
         };
       }
       player.volume=this.musicVolume*.5;
-      if(player.paused)player.play().catch(error=>{if(error?.name==='AbortError')return;this.backgroundUnavailable.add(recording);if(recordedMusic(this.scene)===recording&&!this.paused&&!this.destroyed)this.start();});
+      if(player.paused)player.play().then(()=>this.claimMusicPlayer(player,recording)).catch(error=>{if(error?.name==='AbortError')return;player.pause();this.backgroundUnavailable.add(recording);if(recordedMusic(this.scene)===recording&&!this.paused&&!this.destroyed)this.start();});
       return;
     }
     this.beat = this.positions.get(this.scene)||0;
@@ -328,6 +343,18 @@ export class AudioDirector {
     const tone = (frequency, delay, length, amplitude = .14, end, type = 'triangle') =>
       this.tone(frequency, now + delay, length, type, amplitude*combatGain, 'effects', end);
     switch (name) {
+      case 'stat-fanfare': {
+        const brass = (midi, delay, length, gain) => {
+          const note = hz(midi);
+          tone(note,delay,length,gain);
+          tone(note*2,delay,length,gain*.32,undefined,'sine');
+          tone(note*3,delay+.018,length*.72,gain*.21,undefined,'sine');
+          tone(note,delay+.095,length+.16,gain*.17,undefined,'sine');
+        };
+        [60,64,67,72].forEach((midi,i)=>brass(midi,i*.16,i===3?.92:.21,.17));
+        [48,55,64,67].forEach(midi=>brass(midi,.48,.92,.065));
+        break;
+      }
       case 'lousy-ballad': [196,247,208,277,185,233,207,130].forEach((pitch,i)=>tone(pitch,i*.3,.26,.045,pitch*.98,'triangle'));break;
       case 'hal-panic': for(let i=0;i<12;i++)tone(220+(i%3)*160,i*.16,.18,.14,80,'square');break;
       case 'hal-explode': this.brush(now,1.1,.5,'effects',800);tone(90,0,.9,.4,22,'sawtooth');break;

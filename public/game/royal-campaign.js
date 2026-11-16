@@ -5,6 +5,8 @@ export const ROYAL_COURIER_TOWN = 'salt-choir';
 export const ROYAL_DISPATCH_ID = 'royal-dispatch';
 export const DRAGONSTONE_ID = 'dragonstone';
 export const DRAGONSTONE_CHEST_ID = 'firedrak:9:dragonstone';
+export const KING_COURIER_LINE = 'Ah, the little pig tender is back. I admit I didn’t expect to see your grubby feet on my polished floors again. Since you brought the 500 gold, here’s another job for you. Deliver this sealed scroll to Dame Isobel Crowfoot at Salt Choir, two fiefdoms East. If you survive the trip, you may come back and tell me how she reacts. NOW GET OUT!';
+export const PRINCESS_REPORT_LINE = "Oh GOODY! You're not dead yet. I do SOO love to have people fight over me!";
 const stages = ['opening', 'banished', 'imprisoned', 'sewers', 'commission', 'courier', 'report-delivery', 'dragonstone', 'pit', 'audience', 'resolved'];
 const admittedStages = ['commission', 'courier', 'report-delivery', 'dragonstone', 'pit', 'audience', 'resolved'];
 const king = 'King Malachi the Ineffable';
@@ -74,9 +76,8 @@ export function reportRoyalCampaign(s, note) {
   switch (s.flags.royalQuest) {
     case 'commission':
       s.bag.push(ROYAL_DISPATCH_ID);
-      s.pendingLoot.push(ROYAL_DISPATCH_ID);
       s.flags.royalQuest = 'courier';
-      say('You brought five hundred gold, as I asked. Keep it for the journey. Deliver this sealed dispatch to Dame Isobel Crowfoot at Salt Choir, two regions east. The eastward gates require both relics from the land you are leaving. A riding dragon can fly past them. Come straight back when Dame Isobel receives the dispatch.');
+      say(KING_COURIER_LINE);
       break;
     case 'report-delivery':
       s.flags.royalQuest = 'dragonstone';

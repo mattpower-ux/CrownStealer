@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {castleLayout} from '../public/game/castle-interiors.js';import {TOWNS} from '../public/game/content.js';
+test('talking trophies occupy side outer foyer walls away from through corridor',()=>{for(const town of TOWNS){const layout=castleLayout(town.id),head=layout.talkingHead,foyer=layout.rooms.find(p=>p.id==='vestibule');assert.ok(head.x===foyer.x-1||head.x===foyer.x+foyer.width);assert.equal(head.mountDy,0);assert.equal(layout.tiles[head.y][head.x],'wall');assert.equal(layout.tiles[head.y+head.mountDy][head.x+head.mountDx],'vestibule');assert.ok(Math.abs(head.x-layout.entrance.x)>1);}});
+import {townWalkable,townPlaces} from '../public/game/town.js';
+test('Bellwether central avenue stays open from gate square to north court lane',()=>{const s={location:'bellwether'};for(let y=1;y<=11;y++)assert.ok(townWalkable(7,y,s),'central avenue blocked at 7,'+y);const places=townPlaces(s);assert.equal(places.filter(p=>p.bw).length,8);for(const p of places.filter(p=>p.bw))assert.ok(townWalkable(p.x,p.y,s),p.id);});

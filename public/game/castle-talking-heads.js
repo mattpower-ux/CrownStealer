@@ -10,15 +10,19 @@ export function castleTalkingHead(layout, town) {
   const occupied = new Set([...layout.chests, ...layout.guards, ...layout.patrols, ...layout.books,
     layout.entrance, layout.dungeonStair, layout.king, layout.princess, layout.governor]
     .filter(Boolean).map(point => key(point.x, point.y)));
-  const y = foyer.y - 1;
-  const wallX = Array.from({length: foyer.width}, (_, offset) => foyer.x + (offset + 1) % foyer.width)
-    .find(x => layout.tiles[y]?.[x] === 'wall' && !occupied.has(key(x, y)) &&
-      layout.tiles[foyer.y][x] === foyer.id && !occupied.has(key(x, foyer.y)));
-  if (wallX === undefined) return null;
+  // Side exterior walls keep the trophy out of the entrance-to-throne traffic.
+  const mounts=Array.from({length:foyer.height},(_,offset)=>foyer.y+offset).flatMap(y=>[
+    {x:foyer.x-1,y,mountDx:1,mountDy:0},
+    {x:foyer.x+foyer.width,y,mountDx:-1,mountDy:0},
+  ]);
+  const mount=mounts.find(p=>layout.tiles[p.y]?.[p.x]==='wall'&&
+    !occupied.has(key(p.x,p.y))&&layout.tiles[p.y+p.mountDy]?.[p.x+p.mountDx]===foyer.id&&
+    !occupied.has(key(p.x+p.mountDx,p.y+p.mountDy)));
+  if(!mount)return null;
   const artIndex = townIndex % species.length;
   const animal = species[artIndex];
   return {id: 'castle-head:' + town.id, kind: 'talking-head', name: 'Stuffed ' + animal,
-    species: animal, artIndex, x: wallX, y, mountDx: 0, mountDy: 1};
+    species: animal, artIndex, ...mount};
 }
 
 export function talkingHeadReply(head, name, roll, canGiveGem) {
