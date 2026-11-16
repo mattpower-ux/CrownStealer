@@ -1,5 +1,6 @@
 import {effectiveLevel} from './attributes.js';
 import {undead} from './spell-items.js';
+import {AVENGER_SWORD} from './roadside-crypt.js';
 
 export const PERCIVAL_REJECTION="I'm sorry, I should have taken you for just barely above average when I met you. Farewell, Schmuck.";
 export const PALADIN_FORSAKEN='FORSAKEN! BREAK YOU YOUR SACRED PALADIN VOWS! BEGONE WITH YOUR POWERS. GOOD LUCK, SCHMUCK!';
@@ -81,7 +82,7 @@ export function turnDead(s,events,note){
  note(s,message);events.push({kind:'magic',target:'enemy',amount,targets,turnDead:true,sound:'magic',message});return true;
 }
 
-export const paladinWeaponMultiplier=(s,enemy)=>isPaladin(s)&&s.equipped==='holy-sword'&&undead(enemy)?2:1;
+export const paladinWeaponMultiplier=(s,enemy)=>isPaladin(s)&&['holy-sword',AVENGER_SWORD].includes(s.equipped)&&undead(enemy)?2:1;
 
 export function validPaladinState(s){
  const pending=s.flags?.paladinForsakenPending;

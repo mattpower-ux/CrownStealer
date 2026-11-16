@@ -33,7 +33,7 @@ function hallwayTiles(tileAt) {
 }
 
 export function dungeonLadders(d, map) {
-  if(d.site==='sage-maze')return [];
+  if(d.site==='sage-maze'||d.rolandCell)return [];
   if (d.ship) return [];
   // Secret alcoves open after a floor is generated. Keep its ladders fixed.
   const tileAt = (x, y) => d.secretRoom?.x === x && d.secretRoom.y === y ? 1 : (map[y]?.[x] ?? 1);

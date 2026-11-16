@@ -26,7 +26,7 @@ export function discoveryChestOdds(s){return castleLockpickOdds(s,{lockLevel:110
 // Cache only stable geometry. Discovery and search state always come from the save.
 export function wildernessDiscoverySites(s){
  const area=areaFor(s);
- if(area?.kind==='planet'||s.dungeon?.ship||!Number.isInteger(s.region)||s.region<0||s.region>3)return [];
+ if((area&&area.kind!=='wild')||s.dungeon?.ship||!Number.isInteger(s.region)||s.region<0||s.region>3)return [];
  const land=area?'w'+area.id.slice(5):'r'+s.region;
  if(!cache.has(land)){
   const tile=(x,y)=>area?areaTile(s,x,y):worldTile(s.region,x,y);

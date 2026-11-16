@@ -1,5 +1,6 @@
 import {drawPeebles,drawPebblePlanes,pebbleMaterialRevision,pebblePixel} from './pebble-materials.js';
 import {BRIDGE_TROLL_ART} from './bridge-trolls.js';
+import {ROADSIDE_CRYPT} from './roadside-crypt.js';
 import {isPebbleRun} from './peebles.js';
 import {artRevision,artLoaded} from './art-revision.js';
 import {SAGE_MAZE_ID,SAGE_PEN_ID,sageRemains} from './sage-challenge.js';
@@ -189,7 +190,7 @@ function paintGroundTile(c,map,gx,gy,x,y,size){
 
  const {region,tileAt,width,height,area}=map,t=tileAt(gx,gy),b=BIOMES[region];
 
- if(t==='water'||t==='bridge'){c.fillStyle=area?.kind==='planet'?['#28243d','#243c39','#2b3151'][Number(area.id.at(-1))]:area?'#448b99':REGIONS[region].palette.water;c.fillRect(x,y,size+.5,size+.5);const watery=c.createLinearGradient(0,0,size,size);watery.addColorStop(0,'#79c9d525');watery.addColorStop(1,'#081e3320');c.fillStyle=watery;c.fillRect(x,y,size+.5,size+.5);c.strokeStyle='#94dde43d';c.lineWidth=.7;for(let k=0;k<5;k++){const yy=size*(k+.4)/5;c.beginPath();c.moveTo(size*.06,yy);c.quadraticCurveTo(size*.3,yy-size*.045,size*.48,yy);c.quadraticCurveTo(size*.7,yy+size*.035,size*.94,yy-size*.01);c.stroke();}for(const [dx,dy] of DIRS){if(['water','bridge'].includes(tileAt(gx+dx,gy+dy)))continue;c.strokeStyle=region===3?'#d6e7e3aa':'#cfcca177';c.lineWidth=size*.08;c.lineCap='round';c.beginPath();if(dx){const xx=dx>0?size:0;c.moveTo(xx,size*.1);c.quadraticCurveTo(xx-dx*size*.06,size*.5,xx,size*.9);}else{const yy=dy>0?size:0;c.moveTo(size*.1,yy);c.quadraticCurveTo(size*.5,yy-dy*size*.06,size*.9,yy);}c.stroke();}
+ if(t==='water'||t==='bridge'){c.fillStyle=area?.kind==='planet'?['#28243d','#243c39','#2b3151'][Number(area.id.at(-1))]:area?.kind==='exile'?'#274d69':area?'#448b99':REGIONS[region].palette.water;c.fillRect(x,y,size+.5,size+.5);const watery=c.createLinearGradient(0,0,size,size);watery.addColorStop(0,'#79c9d525');watery.addColorStop(1,'#081e3320');c.fillStyle=watery;c.fillRect(x,y,size+.5,size+.5);c.strokeStyle='#94dde43d';c.lineWidth=.7;for(let k=0;k<5;k++){const yy=size*(k+.4)/5;c.beginPath();c.moveTo(size*.06,yy);c.quadraticCurveTo(size*.3,yy-size*.045,size*.48,yy);c.quadraticCurveTo(size*.7,yy+size*.035,size*.94,yy-size*.01);c.stroke();}for(const [dx,dy] of DIRS){if(['water','bridge'].includes(tileAt(gx+dx,gy+dy)))continue;c.strokeStyle=region===3?'#d6e7e3aa':'#cfcca177';c.lineWidth=size*.08;c.lineCap='round';c.beginPath();if(dx){const xx=dx>0?size:0;c.moveTo(xx,size*.1);c.quadraticCurveTo(xx-dx*size*.06,size*.5,xx,size*.9);}else{const yy=dy>0?size:0;c.moveTo(size*.1,yy);c.quadraticCurveTo(size*.5,yy-dy*size*.06,size*.9,yy);}c.stroke();}
  if(t==='bridge'){
   const route=(tx,ty)=>['road','bridge'].includes(tileAt(tx,ty));
   const vertical=Number(route(gx,gy-1))+Number(route(gx,gy+1))>Number(route(gx-1,gy))+Number(route(gx+1,gy));
@@ -197,7 +198,7 @@ function paintGroundTile(c,map,gx,gy,x,y,size){
  }
  return;}
 
- c.fillStyle=b.ground;c.fillRect(x,y,size+.5,size+.5);if(regionGround.complete&&regionGround.naturalWidth){const sw=regionGround.width/2,sh=regionGround.height/2;c.drawImage(regionGround,(region%2)*sw+gx/width*sw,Math.floor(region/2)*sh+gy/height*sh,sw/width,sh/height,x,y,size+.5,size+.5);}
+ c.fillStyle=area?.kind==='exile'?'#d0dce1':b.ground;c.fillRect(x,y,size+.5,size+.5);if(area?.kind!=='exile'&&regionGround.complete&&regionGround.naturalWidth){const sw=regionGround.width/2,sh=regionGround.height/2;c.drawImage(regionGround,(region%2)*sw+gx/width*sw,Math.floor(region/2)*sh+gy/height*sh,sw/width,sh/height,x,y,size+.5,size+.5);}
  if(t==='swamp'||t==='sand'){c.fillStyle=t==='swamp'?'#36584175':'#dfbb6b55';c.fillRect(x,y,size+.5,size+.5);}
 
  let seed=((gx*73856093)^(gy*19349663)^(region*83492791))>>>0;
@@ -362,7 +363,7 @@ function drawWorldViewport(c,w,h,s){
 
  drawMetalTrees(c,s,size,view);
  const x=(s.x+.5)*size,y=(s.y+.5)*size,inWater=map.tileAt(s.x,s.y)==='water';
- if(inWater&&(s.flags.rowboatReady||s.flags.sailboatReady))drawRowboat(c,x,y,size);
+ if(inWater&&(s.flags.rowboatReady||s.flags.sailboatReady||s.flags.rolandExile?.boat))drawRowboat(c,x,y,size);
  const troll=s.flags.bridgeTroll;
  if(troll&&bridgeTrollArt.complete&&bridgeTrollArt.naturalWidth){
   const height=size*2.1,width=height*bridgeTrollArt.naturalWidth/bridgeTrollArt.naturalHeight;
@@ -945,6 +946,37 @@ const sageRemainsArt=Object.fromEntries(['randal','clarissa'].map(id=>{
  const image=new Image();image.onload=artLoaded;image.src='/assets/sage-'+id+'.webp';
  return [id,image];
 }));
+const rolandAltarArt=new Image();
+rolandAltarArt.onload=artLoaded;
+rolandAltarArt.src='/assets/roland-altar.webp';
+
+function drawRolandCrypt(c,w,h,d,dx,dy,fov,wallDepth){
+ const cell=d.rolandCell;
+ const art=cell?sageRemainsArt.randal:rolandAltarArt;
+ if(!art.complete||!art.naturalWidth)return;
+ const rx=(cell?7:9)-d.x,ry=(cell?8:7)-d.y,here=!rx&&!ry;
+ const depth=here?.8:rx*dx+ry*dy;
+ if(depth<=0||depth>10)return;
+ const focal=w/(2*Math.tan(fov/2)),x=w/2+(-dy*rx+dx*ry)*focal/depth;
+ const width=Math.min(w*.66,h*.74/depth),height=width*art.naturalHeight/art.naturalWidth;
+ const ground=Math.min(h*.79,h*.5+h*.41/depth);
+ c.save();c.beginPath();
+ for(let col=Math.max(0,Math.floor(x-width/2));col<Math.min(w,x+width/2);col+=2){
+  if(depth<=wallDepth[col]+.12)c.rect(col,0,2,h);
+ }
+ c.clip();
+ c.drawImage(art,x-width/2,ground-height,width,height);
+ c.restore();
+}
+
+function rolandScratchInk(x,y,u,v){
+ if(x!==7||y!==6||u<.12||u>.88||v<.28||v>.62)return null;
+ const row=v<.45?0:1,slot=Math.floor((u-.12)/.048);
+ if(slot>=(row?15:16))return null;
+ const height=v-(row?.48:.30);
+ const track=(u-.12-slot*.048)/.048;
+ return height>=0&&height<.12&&Math.abs(track-.44-Math.sin(slot*7)*height*1.7)<.1?'#c0b09a':null;
+}
 
 function drawSageRemains(c,w,h,d,dx,dy,fov,wallDepth){
  const focal=w/(2*Math.tan(fov/2));
@@ -979,7 +1011,7 @@ function dungeonUncached(c,w,h,s,time){const d=s.dungeon;if(!d)return;if(d.ship)
  const wallImage=c.getImageData(0,0,w,h),wallPixels=new Uint32Array(wallImage.data.buffer),wallDepth=new Float32Array(w).fill(18);
  for(let col=0;col<w;col+=step){const a=angle+Math.atan((col/w-.5)*2*Math.tan(fov/2));const vx=Math.cos(a),vy=Math.sin(a);let dist=.02,x=d.x+.5,y=d.y+.5;while(dist<18){x=d.x+.5+vx*dist;y=d.y+.5+vy*dist;if(rayMap[Math.floor(y)]?.[Math.floor(x)]===1||rayMap[Math.floor(y)]?.[Math.floor(x)]===undefined)break;dist+=.025;}if(dist<18){let low=Math.max(0,dist-.025),high=dist;for(let n=0;n<7;n++){const mid=(low+high)/2,mx=d.x+.5+vx*mid,my=d.y+.5+vy*mid;if(rayMap[Math.floor(my)]?.[Math.floor(mx)]===1||rayMap[Math.floor(my)]?.[Math.floor(mx)]===undefined)high=mid;else low=mid;}dist=high;x=d.x+.5+vx*dist;y=d.y+.5+vy*dist;}const corrected=dist*Math.cos(a-angle),height=Math.min(h*2,h*.85/corrected),top=(h-height)/2+(tunnel?height*(.16*(Math.abs(col/w-.5)*2)**2+.012*Math.sin(x*27+y*19)):0);for(let px=col;px<Math.min(w,col+step);px++)wallDepth[px]=corrected;const fracX=x-Math.floor(x),fracY=y-Math.floor(y),vertical=fracX<.04||fracX>.96,tex=vertical?fracY:fracX;const light=clamp(1-dist/11,.09,.95)*(vertical?.77:1);const wallTorch=cemeteryFixtures.get(Math.floor(x)+':'+Math.floor(y)),torchLit=wallTorch&&s.flags.cemeteryTorches?.includes(wallTorch.id);const detail=wallDetailKind(Math.floor(x),Math.floor(y),d.index);const barred=d.site===ROYAL_DUNGEON_ID&&!d.cellsOpen&&ROYAL_DUNGEON_CELLS.some(cell=>cell.door.x===Math.floor(x)&&cell.door.y===Math.floor(y));const mounted=ladders.find(l=>l.wallX===Math.floor(x)&&l.wallY===Math.floor(y)&&l.x===Math.floor(x-vx*.07)&&l.y===Math.floor(y-vy*.07));const candle=burrow&&((Math.floor(x)*3+Math.floor(y)*5)%4===0)&&!mounted;const torch=cemetery?!!torchLit:!burrow&&!tunnel&&!haunted&&!twinkling&&!d.expedition?.startsWith('planet-')&&![4,6,8].includes(d.royal==='sewer'?8:d.index)&&detail>=7&&detail<9;
  if((candle||torch||twinkling&&detail%3===1&&!mounted)&&Math.abs(tex-.5)<.035){const id=Math.floor(x)+':'+Math.floor(y)+':'+vertical,previous=lightSources.get(id),error=Math.abs(tex-.5);if(!previous||error<previous.error)lightSources.set(id,{x:col/w,y:(top+height*(candle?.365:.36))/h,size:height*(candle?.022:.065)/h,phase:Math.floor(x)*1.7+Math.floor(y)*2.3,error});}
- for(let yy=Math.max(0,top);yy<Math.min(h,top+height);yy+=2){const v=(yy-top)/height;const row=Math.floor(v*wall.rows);const mortar=(v*wall.rows)%1<.06||((tex*wall.columns+(row%2)*.5)%1)<.045;const grain=Math.sin(tex*190+v*140)*4;const wear=wall.wear===1&&(row+Math.floor(tex*9))%7===0?-9:wall.wear===2&&(tex*wall.columns)%1<.12?8:0;const base=mortar?28:78+grain+wear;let color=(255<<24)|(Math.max(0,Math.floor((base+wall.tint[2])*light))<<16)|(Math.max(0,Math.floor((base+wall.tint[1])*light))<<8)|Math.max(0,Math.floor((base+wall.tint[0])*light));if(druid){color=druidRootPixel(tex,v,light,(Math.floor(x)*7+Math.floor(y)*3)%6===0)??color;}else if(pebble){const face=Math.floor(x)*7+Math.floor(y)*11;color=pebblePixel('wall',tex,v,light,face%11===0?Math.floor(face/11)%3:-1)??color;}else if(tunnel){color=tunnelRockPixel(vertical?y:x,v,light);}else if(burrow){color=burrowPixel('wall',vertical?y:x,v,light,((Math.floor(x)*3+Math.floor(y)*5)%4===0)&&!mounted);}else{const material=wallMaterialPixel(twinkling?7:haunted?1:cave?.wall??(d.expedition?.startsWith('planet-1')?4:d.site==='firedrak'?3:d.index),tex,v,light);if(material!==null)color=material;if(shrine)color=obsidianPixel(tex,v,light);const ink=cemetery?(cemeteryTorchInk(wallTorch,torchLit,tex,v,time)||shrineWallInk(detail,tex,v,light)):shrine?shrineWallInk(detail,tex,v,light):twinkling?twinklestarWallInk(detail,tex,v):haunted?percivalWallInk(detail,tex,v):d.expedition?.startsWith('planet-')?alienWallInk(detail,tex,v):wallDetail(detail,tex,v,time,d.royal==='sewer'?8:d.index);if(ink)color=inkPixel(ink);if(cave){const r=Math.max(0,Math.min(255,(color&255)+cave.tint[0])),g=Math.max(0,Math.min(255,((color>>>8)&255)+cave.tint[1])),b=Math.max(0,Math.min(255,((color>>>16)&255)+cave.tint[2]));color=(255<<24)|(b<<16)|(g<<8)|r;}}if(twinkling)color=wizardWallPixel(detail,tex,v,light);if(mounted){const arrowV=mounted.direction==='up'?.22:.78;const arrow=Math.abs(Math.abs(tex-.5)-Math.abs(v-arrowV)*1.4)<.025&&(mounted.direction==='up'?v>arrowV&&v<arrowV+.1:v<arrowV&&v>arrowV-.1);if(arrow)color=inkPixel(mounted.direction==='up'?'#a6e4ef':'#ffe1a0');}if(barred){const beam=tex<.08||tex>.92||v<.07||v>.93||Math.abs(v-.48)<.025||(tex*9)%1<.19;color=inkPixel(beam?'#717675':'#141d20');}const y0=Math.max(0,Math.floor(yy)),y1=Math.min(h,y0+2),x1=Math.min(w,col+step);for(let py=y0;py<y1;py++){let offset=py*w+col;for(let px=col;px<x1;px++)wallPixels[offset++]=color;}}}
+ for(let yy=Math.max(0,top);yy<Math.min(h,top+height);yy+=2){const v=(yy-top)/height;const row=Math.floor(v*wall.rows);const mortar=(v*wall.rows)%1<.06||((tex*wall.columns+(row%2)*.5)%1)<.045;const grain=Math.sin(tex*190+v*140)*4;const wear=wall.wear===1&&(row+Math.floor(tex*9))%7===0?-9:wall.wear===2&&(tex*wall.columns)%1<.12?8:0;const base=mortar?28:78+grain+wear;let color=(255<<24)|(Math.max(0,Math.floor((base+wall.tint[2])*light))<<16)|(Math.max(0,Math.floor((base+wall.tint[1])*light))<<8)|Math.max(0,Math.floor((base+wall.tint[0])*light));if(druid){color=druidRootPixel(tex,v,light,(Math.floor(x)*7+Math.floor(y)*3)%6===0)??color;}else if(pebble){const face=Math.floor(x)*7+Math.floor(y)*11;color=pebblePixel('wall',tex,v,light,face%11===0?Math.floor(face/11)%3:-1)??color;}else if(tunnel){color=tunnelRockPixel(vertical?y:x,v,light);}else if(burrow){color=burrowPixel('wall',vertical?y:x,v,light,((Math.floor(x)*3+Math.floor(y)*5)%4===0)&&!mounted);}else{const material=wallMaterialPixel(twinkling?7:haunted?1:cave?.wall??(d.expedition?.startsWith('planet-1')?4:d.site==='firedrak'?3:d.index),tex,v,light);if(material!==null)color=material;if(shrine)color=obsidianPixel(tex,v,light);const ink=d.rolandCell?rolandScratchInk(Math.floor(x),Math.floor(y),tex,v):d.site===ROADSIDE_CRYPT?shrineWallInk((Math.floor(x)*7+Math.floor(y)*11)%4===0?10:(Math.floor(x)+2*Math.floor(y))%3===0?5:1,tex,v,light):cemetery?(cemeteryTorchInk(wallTorch,torchLit,tex,v,time)||shrineWallInk(detail,tex,v,light)):shrine?shrineWallInk(detail,tex,v,light):twinkling?twinklestarWallInk(detail,tex,v):haunted?percivalWallInk(detail,tex,v):d.expedition?.startsWith('planet-')?alienWallInk(detail,tex,v):wallDetail(detail,tex,v,time,d.royal==='sewer'?8:d.index);if(ink)color=inkPixel(ink);if(cave){const r=Math.max(0,Math.min(255,(color&255)+cave.tint[0])),g=Math.max(0,Math.min(255,((color>>>8)&255)+cave.tint[1])),b=Math.max(0,Math.min(255,((color>>>16)&255)+cave.tint[2]));color=(255<<24)|(b<<16)|(g<<8)|r;}}if(twinkling)color=wizardWallPixel(detail,tex,v,light);if(mounted){const arrowV=mounted.direction==='up'?.22:.78;const arrow=Math.abs(Math.abs(tex-.5)-Math.abs(v-arrowV)*1.4)<.025&&(mounted.direction==='up'?v>arrowV&&v<arrowV+.1:v<arrowV&&v>arrowV-.1);if(arrow)color=inkPixel(mounted.direction==='up'?'#a6e4ef':'#ffe1a0');}if(barred){const beam=tex<.08||tex>.92||v<.07||v>.93||Math.abs(v-.48)<.025||(tex*9)%1<.19;color=inkPixel(beam?'#717675':'#141d20');}const y0=Math.max(0,Math.floor(yy)),y1=Math.min(h,y0+2),x1=Math.min(w,col+step);for(let py=y0;py<y1;py++){let offset=py*w+col;for(let px=col;px<x1;px++)wallPixels[offset++]=color;}}}
  c.putImageData(wallImage,0,0);
  c.canvas.dungeonLights=[...lightSources.values()];
  if(d.site===ROYAL_DUNGEON_ID)drawRoyalDungeonScenery(c,w,h,s,m,wallDepth,time);
@@ -999,6 +1031,7 @@ function dungeonUncached(c,w,h,s,time){const d=s.dungeon;if(!d)return;if(d.ship)
  drawShrineScene(c,w,h,s,m,dx,dy,fov,wallDepth);
  drawDungeonChests(c,w,h,s,m,dx,dy,twinkling?drawWizardChest:cemetery?drawCemeteryCoffin:null);
 
+ if(d.site===ROADSIDE_CRYPT)drawRolandCrypt(c,w,h,d,dx,dy,fov,wallDepth);
  if(d.site===SAGE_MAZE_ID)drawSageRemains(c,w,h,d,dx,dy,fov,wallDepth);
 
  // A clear floor map makes touch navigation usable without a separate overlay.
@@ -1304,7 +1337,7 @@ const illustrated=site.kind==='firedrak'?8:['gate','branchGate'].includes(site.k
 
 
 function drawAreaSites(c,s,area,size,view){
- for(const p of areaSites(s).filter(point=>visibleWorldPoint(point,view))){const x=(p.x+.5)*size,y=(p.y+.5)*size;if(p.kind==='teleporter'){drawWildSite(c,p,x,y,size);continue;}if(p.kind==='artifact'){path(c,[[x,y-size],[x+size*.6,y],[x,y+size*.5],[x-size*.6,y]],'#9fe9e0','#fff4b8');circle(c,x,y-size*.2,size*.2,'#fbf7bf');}else if(p.kind==='landedShip'){c.fillStyle='#7db8bb';c.beginPath();c.ellipse(x,y,size*.9,size*.3,0,0,Math.PI*2);c.fill();c.fillStyle='#b5ecec';c.beginPath();c.ellipse(x,y-size*.2,size*.4,size*.35,0,Math.PI,0);c.fill();for(const dx of [-.5,0,.5])circle(c,x+size*dx,y,size*.08,'#fff3ac');}else if(p.kind==='returnGate'){c.fillStyle='#abb59a';c.fillRect(x-size*.6,y-size*.6,size*1.2,size*.2);c.fillRect(x-size*.6,y-size*.5,size*.2,size);c.fillRect(x+size*.4,y-size*.5,size*.2,size);}else if(p.kind==='bottomlessPit'){c.save();c.beginPath();c.ellipse(x,y,size*.86,size*.57,0,0,Math.PI*2);c.fillStyle='#675449';c.fill();c.beginPath();c.ellipse(x,y+size*.03,size*.64,size*.4,0,0,Math.PI*2);c.fillStyle='#110e11';c.fill();c.strokeStyle='#cc713d';c.lineWidth=size*.08;c.stroke();c.restore();}else{drawDungeonIcon(c,{...p,region:area.region},x,y,size,!!s.flags['expedition:'+p.expedition]);}label(c,p.name,x,y+size*1.1,Math.max(10,size*.35));}
+ for(const p of areaSites(s).filter(point=>visibleWorldPoint(point,view))){const x=(p.x+.5)*size,y=(p.y+.5)*size;if(p.kind==='teleporter'){drawWildSite(c,p,x,y,size);continue;}if(p.kind.startsWith('roland')){if(p.kind==='rolandCave')drawDungeonIcon(c,{...p,kind:'expedition',region:area.region},x,y,size,false);if(p.kind==='rolandShore'||p.kind==='rolandPassage'&&s.flags.rolandExile?.boat)circle(c,x,y,size*.16,'#cfe6e9');if(p.kind!=='rolandPassage'||s.flags.rolandExile?.boat)label(c,p.name,x,y+size*.75,Math.max(11,size*.32));continue;}if(p.kind==='artifact'){path(c,[[x,y-size],[x+size*.6,y],[x,y+size*.5],[x-size*.6,y]],'#9fe9e0','#fff4b8');circle(c,x,y-size*.2,size*.2,'#fbf7bf');}else if(p.kind==='landedShip'){c.fillStyle='#7db8bb';c.beginPath();c.ellipse(x,y,size*.9,size*.3,0,0,Math.PI*2);c.fill();c.fillStyle='#b5ecec';c.beginPath();c.ellipse(x,y-size*.2,size*.4,size*.35,0,Math.PI,0);c.fill();for(const dx of [-.5,0,.5])circle(c,x+size*dx,y,size*.08,'#fff3ac');}else if(p.kind==='returnGate'){c.fillStyle='#abb59a';c.fillRect(x-size*.6,y-size*.6,size*1.2,size*.2);c.fillRect(x-size*.6,y-size*.5,size*.2,size);c.fillRect(x+size*.4,y-size*.5,size*.2,size);}else if(p.kind==='bottomlessPit'){c.save();c.beginPath();c.ellipse(x,y,size*.86,size*.57,0,0,Math.PI*2);c.fillStyle='#675449';c.fill();c.beginPath();c.ellipse(x,y+size*.03,size*.64,size*.4,0,0,Math.PI*2);c.fillStyle='#110e11';c.fill();c.strokeStyle='#cc713d';c.lineWidth=size*.08;c.stroke();c.restore();}else{drawDungeonIcon(c,{...p,region:area.region},x,y,size,!!s.flags['expedition:'+p.expedition]);}label(c,p.name,x,y+size*1.1,Math.max(10,size*.35));}
 }
 
 function drawShip(c,w,h,s){
