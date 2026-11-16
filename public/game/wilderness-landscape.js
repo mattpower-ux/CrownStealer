@@ -46,7 +46,7 @@ export function mountainTunnelEnds(region, area) {
   ] : [];
 }
 
-export const boatOnlyArea = area => area === 'wild-10' || area === 'wild-11';
+export const boatOnlyArea = area => area === 'wild-2' || area === 'wild-10' || area === 'wild-11';
 export function boatPassageShore(area) {
   if (area === 'wild-10') return {x: centerX, y: WORLD_HEIGHT - 2 - southCoveDepth};
   if (area === 'wild-11') return {x: westCoveDepth + 1, y: westLandingY};

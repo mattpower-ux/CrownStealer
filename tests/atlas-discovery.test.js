@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {atlasView,paintAtlasMaps} from '../public/game/atlas-view.js';
-import {createGame,saveGame,loadGame} from '../public/game/engine.js';
+import {atlasView,chartLands,paintAtlasMaps} from '../public/game/atlas-view.js';
+import {act,createGame,saveGame,loadGame} from '../public/game/engine.js';
 import {REGIONS,TOWNS} from '../public/game/content.js';
-import {AREAS,visitedLands} from '../public/game/exploration.js';
+import {AREAS,branchGates,visitedLands} from '../public/game/exploration.js';
 
 test('unexplored lands expose neither names, landmarks nor terrain canvases',()=>{
   const s=createGame(),html=atlasView(s);
@@ -36,10 +36,23 @@ test('legacy return access and branch progress reveal only explored lands',()=>{
 });
 
 test('one panorama paints only discovered place names and marks the player',()=>{
- const labels=[],context=new Proxy({fillText:text=>labels.push(text),measureText:text=>({width:text.length*7}),createRadialGradient:()=>({addColorStop(){}})}, {get(target,key){return target[key]??(()=>{});},set(target,key,value){target[key]=value;return true;}});
+ const labels=[],context=new Proxy({fillText:text=>labels.push(text),measureText:text=>({width:text.length*7}),createRadialGradient:()=>({addColorStop(){}}),createLinearGradient:()=>({addColorStop(){}})}, {get(target,key){return target[key]??(()=>{});},set(target,key,value){target[key]=value;return true;}});
  const canvas={width:1500,height:700,getContext:()=>context};
  paintAtlasMaps({querySelector:()=>canvas},createGame());
  assert.ok(labels.includes(REGIONS[0].name));assert.ok(labels.includes('You are here'));
  for(const region of REGIONS.slice(1))assert.ok(!labels.includes(region.name));
  for(const area of AREAS)assert.ok(!labels.includes(area.name));
+});
+
+test('the remote Pit island is revealed by sailing there after the Hearthmarch relics',()=>{
+ const gate=branchGates(0).find(p=>p.area==='wild-2');
+ let s=createGame();s.x=gate.x;s.y=gate.y;s.relics.push('tithe-vault','widows-bell');
+ assert.equal(act(s,{type:'enter'}).exploration?.area??null,null);
+ assert.doesNotMatch(atlasView(s),/The Bottomless Pit/);
+ s.flags.rowboatReady=true;
+ s=act(s,{type:'enter'});
+ assert.equal(s.exploration.area,'wild-2');
+ const island=chartLands(s).find(land=>land.id==='wild-2');
+ assert.ok(island.y>600);
+ assert.match(atlasView(s),/The Bottomless Pit/);
 });

@@ -263,7 +263,7 @@ dialog[data-panel="bossIntro"] img.intro-backdrop { object-fit: cover; }
 .atlas-chart-heading small{letter-spacing:0;color:#a8b3a6;font-size:11px}
 .atlas-panorama{width:100%;overflow:auto;background:#070f11;overscroll-behavior:contain;cursor:grab;scrollbar-color:#67705c #070f11;touch-action:pan-x pan-y}
 .atlas-panorama:active{cursor:grabbing}
-.atlas-panorama canvas{position:static;display:block;width:max(100%,1100px);height:auto;aspect-ratio:15/7;max-width:none;touch-action:pan-x pan-y}
+.atlas-panorama canvas{position:static;display:block;width:max(100%,1100px);height:auto;max-width:none;touch-action:pan-x pan-y}
 .atlas-chart-legend{display:flex;flex-wrap:wrap;gap:18px;margin:10px 0 0;font-size:11px;color:#aebcaf}
 .atlas-chart-legend i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px}
 .atlas-town{background:#fff0c4}.atlas-dungeon{background:#ffa4a1}.atlas-player-key{color:#fff3cf}
@@ -758,7 +758,7 @@ dialog[data-panel="inventory"] .inventory-item-popup{aspect-ratio:auto;min-heigh
 .preview-map-toolbar{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:12px}.preview-map-toolbar p{margin:0;font-size:18px}.preview-map-toolbar [role=group]{display:flex;gap:8px;flex-wrap:wrap}.preview-map-toolbar button{font-size:16px;min-height:44px}
 .preview-map-sheet{position:relative;width:max(100%,1500px)}.preview-map-sheet canvas{width:100%;min-width:0}.preview-map-pin{position:absolute;transform:translate(-50%,-50%);background:#112820;border:1px solid #d5b66e;color:#ffe5a0;min-width:20px;min-height:20px;padding:0 3px;line-height:18px;z-index:1;border-radius:50%;font-size:13px}.preview-map-pin small{display:none;position:absolute;left:50%;bottom:100%;transform:translateX(-50%);white-space:nowrap;background:#071811;padding:4px 8px;border:1px solid #d5b66e;font-size:15px}.preview-map-pin:hover,.preview-map-pin:focus-visible{z-index:3;outline:3px solid #ffe5a0}.preview-map-pin:hover small,.preview-map-pin:focus-visible small{display:block}.preview-other-worlds{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.preview-other-worlds button{font-size:14px}
 
-.preview-map-sheet canvas{aspect-ratio:1500/980}.preview-map-special{border-radius:4px;padding:4px 8px;font-size:14px;transform:none}
+.preview-map-special{border-radius:4px;padding:4px 8px;font-size:14px;transform:none}
 
 #panel[data-panel="developer"] #panel-body{overflow:visible}#panel[data-panel="developer"] .atlas-panorama{max-height:calc(96svh - 270px);min-height:220px;overflow:auto}.preview-map-sheet canvas{width:100%}
 

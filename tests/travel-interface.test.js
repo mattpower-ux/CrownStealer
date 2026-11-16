@@ -45,6 +45,8 @@ test('the Atlas distinguishes reachable gates and the active branch', () => {
   ]);
   assert.equal(atlasRegions(s)[0].east.open, false);
   s.relics.push('tithe-vault', 'widows-bell');
+  assert.equal(atlasRegions(s)[0].branches.find(branch=>branch.id==='wild-2').open,false);
+  s.flags.rowboatReady=true;
   assert.equal(atlasRegions(s)[0].branches.every(branch => branch.open), true);
   assert.equal(atlasRegions(s)[0].east.open, true);
 });

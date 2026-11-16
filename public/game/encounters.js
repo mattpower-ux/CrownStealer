@@ -1,4 +1,4 @@
-import {planetaryDungeon,planetaryPool,planetaryBoss} from './planetary-monsters.js';
+import {planetaryDungeon,planetaryLevel,planetaryPool,planetaryBoss} from './planetary-monsters.js';
 import {depthPool,depthWeight} from './dungeon-populations.js';
 import {dungeonFloors} from './dungeon-depths.js';
 import {nightEnemy} from './world-clock.js';
@@ -28,7 +28,7 @@ function baseEncounter(s,roll,boss=false,guard=false){
  let ticket=clamp(roll,0,.999999)*weights.reduce((a,b)=>a+b,0),m=pool.at(-1);for(let i=0;i<pool.length;i++){ticket-=weights[i];if(ticket<0){m=pool[i];break;}}
  // Depth has an absolute difficulty; revisiting does not secretly scale a dungeon to the hero.
  const region=clamp(s.region||0,0,3),regionalBonus=inDungeon&&!planetaryDungeon(s.dungeon)?REGION_DUNGEON_BONUS[region]:0;
- const level=inDungeon?m.level+regionalBonus+(s.dungeon.index===1&&!s.dungeon.site?s.dungeon.floor:s.dungeon.floor*2):clamp(Math.round(m.level*.15+target*.85),REGION_MIN_LEVELS[region],REGION_MAX_TARGETS[region]+2),stats=monsterStats(m,level);
+ const level=inDungeon&&planetaryDungeon(s.dungeon)?planetaryLevel(s.dungeon,m):inDungeon?m.level+regionalBonus+(s.dungeon.index===1&&!s.dungeon.site?s.dungeon.floor:s.dungeon.floor*2):clamp(Math.round(m.level*.15+target*.85),REGION_MIN_LEVELS[region],REGION_MAX_TARGETS[region]+2),stats=monsterStats(m,level);
  return {...stats,gold:level+Math.floor(clamp((roll*7919)%1,0,.999999)*(2*level+3)),speciesId:m.id,name:m.name,level,maxHp:stats.hp,kind:m.kind,element:m.element,attackType:m.attackType,undead:!!m.undead,weakness:m.weakness,boss:false,guard:false,firstContact:true};
 }
 

@@ -5,3 +5,14 @@ test('distant wilderness has increasing minimum levels even for a new hero',()=>
 test('wilderness grows gradually with the hero while each farther land stays stronger',()=>{for(let level=1;level<=80;level++){let previous=0;for(let region=0;region<4;region++){const target=wildernessTarget(state(region,level));assert.ok(target>previous);if(level>1)assert.ok(target-wildernessTarget(state(region,level-1))<=1);previous=target;}}});
 test('ordinary dungeon entrance difficulty rises by land and remains independent of hero level',()=>{let previous=0;for(let region=0;region<4;region++){const s={...state(region),mode:'dungeon',dungeon:{index:region*2,floor:0}},enemy=buildEncounter(s,.2);assert.ok(enemy.level>previous);assert.equal(buildEncounter({...s,level:99},.2).level,enemy.level);assert.ok(buildEncounter({...s,dungeon:{...s.dungeon,floor:4}},.2).level>enemy.level);previous=enemy.level;}});
 test('specified guards and bosses retain fixed levels',()=>{const s=state(3,99);assert.equal(buildEncounter(s,.5,false,true).level,50);assert.equal(buildEncounter({...state(0),mode:'dungeon',dungeon:{index:0,floor:3,site:'elf-village'}},.5,true).level,12);assert.equal(buildEncounter({...state(1),mode:'dungeon',dungeon:{index:2,floor:9,site:'firedrak'}},.5,true).level,25);});
+
+test('planet dungeon foes become stronger by destination and depth',()=>{
+ let previous=0;
+ for(let planet=0;planet<3;planet++){
+  const s={...state(planet+1),mode:'dungeon',dungeon:{index:planet*2,floor:0,expedition:'planet-'+planet+'-cave-0'}};
+  const levels=Array.from({length:12},(_,i)=>buildEncounter(s,i/12).level);
+  assert.ok(Math.min(...levels)>previous);
+  assert.ok(buildEncounter({...s,dungeon:{...s.dungeon,floor:2}},.2).level>Math.min(...levels));
+  previous=Math.max(...levels);
+ }
+});

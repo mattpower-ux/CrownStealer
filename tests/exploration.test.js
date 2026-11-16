@@ -4,7 +4,7 @@ import {createGame,act,saveGame,loadGame} from '../public/game/engine.js';
 import {DUNGEONS} from '../public/game/content.js';
 import {branchGates,areaSites} from '../public/game/exploration.js';
 test('branch gates, ten unique artifacts, ship controls and three planetary return routes survive saves',()=>{
- let s=createGame();s.relics=DUNGEONS.map(d=>d.id);
+ let s=createGame();s.relics=DUNGEONS.map(d=>d.id);s.flags.rowboatReady=true;
  for(let i=0;i<10;i++){
   s.region=Math.floor(i/3);const gate=branchGates(s.region)[i%3];s.x=gate.x;s.y=gate.y;s=act(s,{type:'enter'});assert.equal(s.exploration.area,'wild-'+i);assert.equal(areaSites(s).filter(p=>p.kind==='expedition').length,2);
   const monument=areaSites(s).find(p=>p.kind==='artifact');s.x=monument.x;s.y=monument.y;s=act(s,{type:'enter'});s=loadGame(saveGame(s));assert.equal(s.exploration.artifacts.length,i+1);

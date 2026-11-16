@@ -125,6 +125,7 @@ test('the Balrog defeat must be reported before the four new endings are availab
   const gate = branchGates(0).find(gate => gate.area === BOTTOMLESS_PIT.area);
   const denied = act({...s, mode: 'world', location: null, castle: undefined, relics: [], x: gate.x, y: gate.y}, enter);
   assert.equal(denied.exploration?.area, undefined);
+  s.flags.rowboatReady=true;
   s = act({...s, mode: 'world', location: null, castle: undefined, x: gate.x, y: gate.y}, {type: 'enter'});
   assert.equal(s.exploration.area, BOTTOMLESS_PIT.area);
   s = act({...s, x: BOTTOMLESS_PIT.x, y: BOTTOMLESS_PIT.y}, {type: 'enter'});

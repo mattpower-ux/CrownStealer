@@ -1,4 +1,4 @@
-import {atlasView,chartLands} from './atlas-view.js';
+import {atlasView,atlasPoint,chartLands,ATLAS_WIDTH,PREVIEW_ATLAS_HEIGHT} from './atlas-view.js';
 import {areaSites} from './exploration.js';
 import {WILD_SITES} from './wild-sites.js';
 import {wildernessDiscoverySites} from './wilderness-discoveries.js';
@@ -54,7 +54,10 @@ export function previewMapLocations(s){
  return chartLands(previewMapState(s)).flatMap(land=>{
   const local={...s,region:land.branch?land.region:land.id,dungeon:null,exploration:{area:land.branch?land.id:null}};
   const points=[...land.sites,...minorSiteList(local),...shipyardList(local),...wildernessDiscoverySites(local),...(land.branch?areaSites(local):WILD_SITES.filter(p=>p.region===land.id)),percivalCastleSite(local),twinklestarTowerSite(local)].filter(Boolean);
-  const seen=new Set();return points.filter(p=>!seen.has(p.id)&&seen.add(p.id)).map(p=>({...p,region:local.region,area:local.exploration.area,key:`map:${land.id}:${p.id}:${p.x}:${p.y}`,mapX:land.x+p.x/(land.kind==='planet'?32:128)*land.width,mapY:land.y+p.y/(land.kind==='planet'?24:96)*land.height}));
+  const seen=new Set();return points.filter(p=>!seen.has(p.id)&&seen.add(p.id)).map(p=>{
+   const {x:mapX,y:mapY}=atlasPoint(land,p);
+   return {...p,region:local.region,area:local.exploration.area,key:`map:${land.id}:${p.id}:${p.x}:${p.y}`,mapX,mapY};
+  });
  });
 }
 export function previewMapJump(input,key,rules={}){
@@ -65,8 +68,16 @@ export function previewMapJump(input,key,rules={}){
  // Enter using the normal location handler so caves, towns and story sites keep their own rules.
  s=act(s,{type:'enter'},[],rules);return s;
 }
+function previewMarker(p){
+ if(p.mark==='town'||p.kind==='town')return '♜';
+ if(p.kind==='shipyard'||p.boatOnly)return '⚓';
+ if(p.kind==='branchGate'||p.kind==='gate'||p.kind==='returnGate')return '↗';
+ if(p.kind==='bottomlessPit')return '◉';
+ if(p.kind==='wildernessDiscovery')return '✦';
+ return {koboldCave:'▲',cemetery:'†',ruinedShrine:'◇',tunnel:'↔'}[p.theme||p.kind]||'◆';
+}
 export function previewView(s,rules){
- const markers=previewMapLocations(s).map(p=>`<button class="preview-map-pin" style="left:${p.mapX/15}%;top:${p.mapY/9.8}%" data-preview="map" data-destination="${esc(p.key)}" title="${esc(p.name)}" aria-label="Jump to ${esc(p.name)}"><span>${p.mark==='town'?'♜':'◆'}</span><small>${esc(p.name)}</small></button>`).join('');
- const map=atlasView(previewMapState(s)).replace('<canvas data-atlas-world','<div class="preview-map-sheet"><canvas data-atlas-world').replace('</canvas>','</canvas>'+markers+previewDestinations.filter(d=>['ship','royal-dungeon','cell','sewer'].includes(d.id)).map((d,i)=>`<button class="preview-map-pin preview-map-special" style="left:${4+i*24}%;top:72%" data-preview="destination" data-destination="${d.id}">${esc(d.name)}</button>`).join('')+'</div>');
+ const markers=previewMapLocations(s).map(p=>`<button class="preview-map-pin" style="left:${p.mapX/ATLAS_WIDTH*100}%;top:${p.mapY/PREVIEW_ATLAS_HEIGHT*100}%" data-preview="map" data-destination="${esc(p.key)}" title="${esc(p.name)}" aria-label="Jump to ${esc(p.name)}"><span>${previewMarker(p)}</span><small>${esc(p.name)}</small></button>`).join('');
+ const map=atlasView(previewMapState(s)).replace('<canvas data-atlas-world','<div class="preview-map-sheet"><canvas data-atlas-world').replace('</canvas>','</canvas>'+markers+previewDestinations.filter(d=>['ship','royal-dungeon','cell','sewer'].includes(d.id)).map((d,i)=>`<button class="preview-map-pin preview-map-special" style="left:${4+i*24}%;top:77%" data-preview="destination" data-destination="${d.id}">${esc(d.name)}</button>`).join('')+'</div>');
  return `<div class="preview-map-toolbar"><p>Click a location to jump there and play.</p><div role="group" aria-label="NPC encounters"><button data-preview="encounters-off" aria-pressed="${!!rules.noEncounters}" class="${rules.noEncounters?'primary':''}">Shut Off NPC Encounters</button><button data-preview="encounters-on" aria-pressed="${!rules.noEncounters}" class="${!rules.noEncounters?'primary':''}">Include NPC Encounters</button></div></div>${map}<p class="fine">Separate preview character · <a href="/">Return to normal game</a></p>`;
 }

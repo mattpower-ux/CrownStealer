@@ -15,7 +15,7 @@ const boatReady=s=>s.flags.rowboatReady||s.flags.sailboatReady;
 export const branchGates=region=>['north','south','west'].map((direction,i)=>{
  const area='wild-'+(region*3+i),boatOnly=boatOnlyArea(area);
  const label=boatOnly?'Sailing passage':direction[0].toUpperCase()+direction.slice(1)+' gate';
- return scaleWorldPoint({id:`branch-${region}-${direction}`,kind:'branchGate',name:label+' · '+names[region*3+i],region,x:direction==='west'?1:16,y:direction==='north'?1:direction==='south'?22:region>0?17:12,area,direction,...(boatOnly?{boatOnly}:{})});
+ return scaleWorldPoint({id:`branch-${region}-${direction}`,kind:'branchGate',name:area===BOTTOMLESS_PIT.area?'Offshore sailing passage':label+' · '+names[region*3+i],region,x:direction==='west'?1:16,y:direction==='north'?1:direction==='south'?22:region>0?17:12,area,direction,...(boatOnly?{boatOnly}:{})});
 });
 export const teleporterSite=region=>({id:'alien-teleporter',kind:'teleporter',name:'Alien Artifact',region,x:72,y:66});
 function legacyVisitedLands(s){

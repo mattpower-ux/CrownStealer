@@ -45,26 +45,83 @@ export function atlasRegions(state) {
 }
 
 
-// Four main lands share one east–west sheet; side lands sit by their gateways.
+export const ATLAS_WIDTH=1500;
+export const ATLAS_HEIGHT=820;
+export const PREVIEW_ATLAS_HEIGHT=1080;
+
+// Position the maps around their playable border connections. The wider
+// channels across eastern waters and around the Barrens stay open sea.
+const placements={
+  0:[237,235,346,245],1:[565,224,360,239],
+  2:[1032,365,304,244],3:[1065,68,277,224],
+  'wild-0':[290,70,260,200],'wild-1':[296,444,238,188],'wild-2':[82,674,160,116],
+  'wild-3':[631,56,244,198],'wild-4':[652,432,225,176],'wild-5':[480,133,157,130],
+  'wild-6':[1225,271,198,129],'wild-7':[976,567,181,137],'wild-8':[888,449,144,144],
+  'wild-9':[1199,3,239,132],'wild-10':[1373,198,108,134],'wild-11':[885,21,127,104],
+};
+
+function placement(id){
+ const [x,y,width,height]=placements[id];
+ return {x,y,width,height};
+}
+
 export function chartLands(state){
  const lands=atlasRegions(state).flatMap(region=>{
-  const x=30+region.id*360;
-  const main={...region,x,y:220,width:360,height:270,sites:[...region.towns.map(t=>({...t,mark:'town'})),...region.dungeons,...region.sideDungeons]};
-  const branches=region.branches.map(branch=>({...branch,palette:region.palette,
-   ...(branch.gate.direction==='north'?{x:x+140,y:35,width:215,height:165}:
-       branch.gate.direction==='south'?{x:x+65,y:510,width:260,height:165}:{x:x+5,y:55,width:120,height:145}),
-   branch:true,sites:branch.sites}));
+  const main={...region,...placement(region.id),sites:[...region.towns.map(t=>({...t,mark:'town'})),...region.dungeons,...region.sideDungeons]};
+  const branches=region.branches.map(branch=>({...branch,...placement(branch.id),palette:region.palette,branch:true}));
   return [main,...branches].filter(land=>land.discovered);
  });
- if(state.flags.previewFullMap)lands.push(...AREAS.filter(a=>a.kind==='planet').map((a,i)=>({...a,branch:true,x:40+i*490,y:745,width:450,height:210,palette:REGIONS[a.region].palette,sites:areaSites({region:a.region,exploration:{area:a.id}})})));
+ if(state.flags.previewFullMap)lands.push(...AREAS.filter(a=>a.kind==='planet').map((a,i)=>({...a,branch:true,x:40+i*490,y:862,width:450,height:184,palette:REGIONS[a.region].palette,sites:areaSites({region:a.region,exploration:{area:a.id}})})));
  return lands;
+}
+
+export function atlasPoint(land,point){
+ const planet=land.kind==='planet';
+ return {x:land.x+point.x/(planet?32:WORLD_WIDTH)*land.width,y:land.y+point.y/(planet?24:WORLD_HEIGHT)*land.height};
+}
+
+function connections(lands){
+ const chart=new Map(lands.map(land=>[land.id,land]));
+ const routes=[];
+ for(const land of lands){
+  if(!land.branch){
+   const neighbor=chart.get(land.id+1);
+   if(neighbor)routes.push({from:atlasPoint(land,land.east),to:atlasPoint(neighbor,neighbor.west),land:land.id===0,palette:land.palette});
+  }else if(land.gate&&chart.has(land.region)){
+   const main=chart.get(land.region);
+   const exit=areaSites({region:land.region,exploration:{area:land.id}}).find(site=>site.kind==='returnGate');
+   const mainland=['wild-0','wild-1','wild-3','wild-4','wild-5'].includes(land.id);
+   const from=atlasPoint(main,land.gate);
+   const landing=mainland&&land.gate.direction==='south'?{x:WORLD_WIDTH*.5,y:4}
+    :mainland&&land.gate.direction==='west'?{x:WORLD_WIDTH*.78,y:WORLD_HEIGHT*.76}:exit;
+   routes.push({from,to:atlasPoint(land,landing),land:mainland,palette:main.palette,
+    ...(land.id==='wild-2'?{via:{x:45,y:493}}:{})});
+  }
+ }
+ return routes;
+}
+
+function drawRoute(c,route){
+ const {from,to,land,via}=route;
+ c.beginPath();
+ c.moveTo(from.x,from.y);
+ if(via)c.quadraticCurveTo(via.x,via.y,to.x,to.y);
+ else c.lineTo(to.x,to.y);
+ if(land){
+  c.lineCap='round';
+  c.strokeStyle=route.palette.land;c.lineWidth=26;c.stroke();
+  c.strokeStyle=route.palette.forest||route.palette.land;c.lineWidth=13;c.stroke();
+ }
+ c.strokeStyle=land?'#c5ab7a':'#a5d0d09a';
+ c.lineWidth=land?3:1.6;
+ c.setLineDash(land?[]:[4,7]);c.stroke();c.setLineDash([]);
 }
 
 export function atlasView(state){
  const names=chartLands(state).map(land=>escape(land.name+': '+land.sites.map(site=>site.name).join(', ')));
  return `<div class="atlas-chart-heading"><span>${state.flags.previewFullMap?'THE WHOLE WORLD · CLICK TO EXPLORE':'THE KNOWN WORLD'}</span><small>Drag or scroll to explore the map</small></div>
  <div class="atlas-panorama" tabindex="0" role="region" aria-label="Scrollable world map">
- <canvas data-atlas-world width="1500" height="${state.flags.previewFullMap?980:700}" role="img" aria-label="World map: ${names.join(', ')}. Your position is marked with a white star."></canvas></div>
+ <canvas data-atlas-world width="${ATLAS_WIDTH}" height="${state.flags.previewFullMap?PREVIEW_ATLAS_HEIGHT:ATLAS_HEIGHT}" role="img" aria-label="World map: ${names.join(', ')}. Your position is marked with a white star."></canvas></div>
  <p class="atlas-chart-legend"><span><i class="atlas-town"></i>Settlement</span><span><i class="atlas-dungeon"></i>Dungeon</span><span class="atlas-player-key">✦ You are here</span></p>`;
 }
 
@@ -73,18 +130,22 @@ export function paintAtlasMaps(container,state){
  if(!canvas)return;
  const c=canvas.getContext('2d');if(!c)return;
  const lands=chartLands(state),currentArea=areaFor(state);
- c.fillStyle='#174b6b';c.fillRect(0,0,1500,canvas.height);
- // The shared ocean is blue; undiscovered regions retain dark, unlabelled fog.
+ const sea=c.createLinearGradient(0,0,ATLAS_WIDTH,ATLAS_HEIGHT);
+ sea.addColorStop(0,'#1b536e');sea.addColorStop(.55,'#143d59');sea.addColorStop(1,'#0b2940');
+ c.fillStyle=sea;c.fillRect(0,0,ATLAS_WIDTH,canvas.height);
  if(!state.flags.previewFullMap){
-  // Cover each unknown land's chart area without drawing its coastline or labels.
-  for(const region of atlasRegions(state)){
-   const x=30+region.id*360;c.fillStyle='#070f11';
-   if(!region.discovered)c.fillRect(x,220,360,270);
-   for(const branch of region.branches)if(!branch.discovered){
-    const box=branch.gate.direction==='north'?[x+140,35,215,165]:branch.gate.direction==='south'?[x+65,510,260,165]:[x+5,55,120,145];c.fillRect(...box);
-   }
+  const known=new Set(lands.map(land=>land.id));
+  for(const id of Object.keys(placements)){
+   const key=id.startsWith('wild-')?id:Number(id);
+   if(known.has(key))continue;
+   const box=placement(key),x=box.x+box.width/2,y=box.y+box.height/2,r=Math.max(box.width,box.height)*.6;
+   const fog=c.createRadialGradient(x,y,r*.18,x,y,r);
+   fog.addColorStop(0,'#090f18ce');fog.addColorStop(1,'#090f1800');
+   c.fillStyle=fog;c.fillRect(x-r,y-r,r*2,r*2);
   }
  }
+ const routes=connections(lands);
+ for(const route of routes.filter(route=>route.land))drawRoute(c,route);
  const label=(text,x,y,size=16,color='#f3e5be',align='center')=>{
   c.font=`${size}px Georgia`;c.textAlign=align;c.textBaseline='middle';
   c.lineWidth=4;c.strokeStyle='#07100de8';c.strokeText(text,x,y);c.fillStyle=color;c.fillText(text,x,y);
@@ -101,26 +162,25 @@ export function paintAtlasMaps(container,state){
    if(tile==='water')continue;
    c.fillStyle=colors[tile]||colors.grass;c.fillRect(land.x+x,land.y+y,step,step);
   }
+ }
+ for(const route of routes.filter(route=>!route.land))drawRoute(c,route);
+ if(state.flags.previewFullMap)label('OFF-WORLD DESTINATIONS',ATLAS_WIDTH/2,846,13,'#bfd3e0');
+ for(const land of lands){
   for(const point of land.sites){
-   const x=land.x+point.x/(land.kind==='planet'?32:WORLD_WIDTH)*land.width,y=land.y+point.y/(land.kind==='planet'?24:WORLD_HEIGHT)*land.height;
-   c.fillStyle=point.mark==='town'?MARKS.town:MARKS.dungeon;
-   c.beginPath();c.arc(x,y,point.mark==='town'?3.5:3,0,Math.PI*2);c.fill();
+   const {x,y}=atlasPoint(land,point);
+   c.fillStyle=point.mark==='town'?MARKS.town:point.kind==='bottomlessPit'?'#f19e73':MARKS.dungeon;
+   c.beginPath();
+   if(point.mark==='town')c.rect(x-3.5,y-3.5,7,7);
+   else {c.moveTo(x,y-4);c.lineTo(x+4,y);c.lineTo(x,y+4);c.lineTo(x-4,y);c.closePath();}
+   c.fill();
    label(point.name,x,y+11,land.branch?9:10,'#f4e6c1');
   }
-  label(land.name,land.x+land.width/2,land.y+18,land.branch?13:21);
+  label(land.name,land.x+land.width/2,land.y+18,land.branch?13:20);
   if(!land.branch)label('Levels '+land.levels,land.x+land.width/2,land.y+39,11,land.color);
- }
- // Only discovered passages are inked; undiscovered neighbors get no hints.
- for(const land of lands.filter(land=>land.branch&&land.gate)){
-  const main=lands.find(candidate=>!candidate.branch&&candidate.id===land.region);if(!main)continue;
-  const gx=main.x+land.gate.x/WORLD_WIDTH*main.width,gy=main.y+land.gate.y/WORLD_HEIGHT*main.height;
-  const bx=land.x+land.width/2,by=land.gate.direction==='south'?land.y:land.y+land.height;
-  c.strokeStyle=land.gate.boatOnly?'#8ed7f199':'#d8bc7a99';c.lineWidth=2;c.setLineDash([4,5]);
-  c.beginPath();c.moveTo(gx,gy);c.lineTo(bx,by);c.stroke();c.setLineDash([]);
  }
  const here=lands.find(land=>currentArea?land.id===currentArea.id:!land.branch&&land.id===state.region);
  if(here){
-  const x=here.x+state.x/(here.kind==='planet'?32:WORLD_WIDTH)*here.width,y=here.y+state.y/(here.kind==='planet'?24:WORLD_HEIGHT)*here.height;
+  const {x,y}=atlasPoint(here,state);
   const glow=c.createRadialGradient(x,y,2,x,y,22);glow.addColorStop(0,'#fff1bd99');glow.addColorStop(1,'#fff1bd00');
   c.fillStyle=glow;c.fillRect(x-22,y-22,44,44);
   label('✦',x,y,26,'#fff');label('You are here',x,y-23,13,'#fff');
@@ -128,8 +188,9 @@ export function paintAtlasMaps(container,state){
  const pan=canvas.closest?.('.atlas-panorama')||canvas.parentElement;
  if(pan){
   if(here&&typeof requestAnimationFrame==='function')requestAnimationFrame(()=>{
-   const playerX=here.x+state.x/(here.kind==='planet'?32:WORLD_WIDTH)*here.width;
-   pan.scrollLeft=Math.max(0,playerX*canvas.clientWidth/1500-pan.clientWidth/2);
+   const {x,y}=atlasPoint(here,state),scale=canvas.clientWidth/ATLAS_WIDTH;
+   pan.scrollLeft=Math.max(0,x*scale-pan.clientWidth/2);
+   pan.scrollTop=Math.max(0,y*scale-pan.clientHeight/2);
   });
   let drag;
   pan.onpointerdown=event=>{if(event.target.closest?.('button'))return;if(event.pointerType==='mouse'){drag={x:event.clientX,left:pan.scrollLeft};pan.setPointerCapture(event.pointerId);}};

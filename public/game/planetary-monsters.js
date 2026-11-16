@@ -12,8 +12,14 @@ const roster=[
 export const PLANET_SPECIES=roster.map(([key,name,level,kind,element,attackVerb,index])=>({id:'space-'+key,name,level,kind,element,attackVerb,planetary:true,planetBoss:index>=5,attackType:[3,5,6].includes(index)?'ranged':'melee',art:{sheet:'monsters-planets',index}}));
 export const planetaryDungeon=d=>/^planet-[0-2]-cave-[0-2]$/.test(d?.expedition||'');
 export function planetaryPool(d,all){const floor=Math.max(0,Math.min(2,d.floor)),ids=[['space-tribble','space-blob','space-mutant-et'],['space-blob','space-mutant-et','space-brainbot'],['space-mutant-et','space-brainbot','space-astronaut']][floor];return all.filter(m=>ids.includes(m.id));}
-export function planetaryBoss(d,all){const [,planet,,cave]=d.expedition.split('-');const id=Number(cave)===2?['space-hal','space-agi-seven','space-rosie'][Number(planet)]:Number(cave)===0?'space-brainbot':'space-astronaut';const m=all.find(m=>m.id===id);return {...m,level:m.planetBoss?m.level:16+Number(cave)*2,name:m.planetBoss?m.name:Number(cave)===0?'Brainbot Overseer':'Crazed Astronaut Captain'};}
+export function planetaryBoss(d,all){const [,planet,,cave]=d.expedition.split('-');const id=Number(cave)===2?['space-hal','space-agi-seven','space-rosie'][Number(planet)]:Number(cave)===0?'space-brainbot':'space-astronaut';const m=all.find(m=>m.id===id);return {...m,level:planetaryLevel({...d,floor:2},m)+(m.planetBoss?4:2),name:m.planetBoss?m.name:Number(cave)===0?'Brainbot Overseer':'Crazed Astronaut Captain'};}
 export function planetaryAttack(enemy){if(!enemy.speciesId?.startsWith('space-'))return null;const species=PLANET_SPECIES.find(m=>m.id===enemy.speciesId);if(!species)return null;let verb=species.attackVerb;
  if(enemy.speciesId==='space-rosie'){verb=['presses a sizzling iron against you','tries to scrub your skin off','spanks you for being naughty'][(enemy.attackIndex||0)%3];enemy.attackIndex=(enemy.attackIndex||0)+1;}
  return {verb,element:species.element,mental:species.element==='psychic'};
+}
+
+export function planetaryLevel(d,species){
+ const [,planet,,cave]=d.expedition.split('-');
+ const recommended=[14,19,24][Number(planet)]+Math.max(0,Math.min(2,d.floor))+Number(cave);
+ return recommended+Math.min(2,Math.floor(species.level/4));
 }

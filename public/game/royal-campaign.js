@@ -44,7 +44,7 @@ export function royalCampaignObjective(s) {
     case 'courier': return 'Deliver the sealed royal dispatch to Dame Isobel Crowfoot in Salt Choir, two regions east of Bellwether.';
     case 'report-delivery': return 'Return to King Malachi and report that Dame Isobel received the dispatch.';
     case 'dragonstone': return s.bag?.includes(DRAGONSTONE_ID) ? 'Bring the Dragonstone to King Malachi at Bellwether Castle.' : 'Recover the Dragonstone on level 10, the lowest level of Mount Firedrake in the Cinder Dominion (108, 68).';
-    case 'pit': return s.flags.balrogDefeated ? 'Return to King Malachi and report the Balrog’s defeat.' : 'Defeat the dark creature on level 100 of the Bottomless Pit in the Whispering Barrens.';
+    case 'pit': return s.flags.balrogDefeated ? 'Return to King Malachi and report the Balrog’s defeat.' : 'Find a boat to the remote Whispering Barrens and defeat the dark creature on level 100 of the Bottomless Pit.';
     case 'audience': return 'Choose your future at the royal audience in Bellwether Castle.';
     case 'resolved': return s.flags.royalHero ? 'Roam the world as its hero. People bow and monsters flee.' : 'Your royal story is complete.';
     default: return null;
@@ -85,7 +85,7 @@ export function reportRoyalCampaign(s, note) {
     case 'dragonstone':
       removeProof(s, DRAGONSTONE_ID);
       s.flags.royalQuest = 'pit';
-      say('The Dragonstone is real, and still warm. There is one last task. Enter the Bottomless Pit in the Whispering Barrens, defeat the dark creature on its deepest level, and return to tell me.');
+      say('The Dragonstone is real, and still warm. There is one last task. Sail to the Whispering Barrens, find the Bottomless Pit and defeat the creature on its deepest level. Return to tell me.');
       break;
     case 'pit':
       s.flags.royalQuest = 'audience';
