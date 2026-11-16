@@ -788,3 +788,9 @@ dialog[data-panel="sageJournal"] .sage-journal-entry {
   font: clamp(24px, 4vw, 42px)/1.35 Georgia, serif;
 }
 dialog[data-panel="sageJournal"] #save-checkpoint { display: none; }
+
+.druid-tree-avatar { background: url('/assets/biome-trees.webp') 0 0 / 200% 200% no-repeat; }
+.avatar-woad { position:absolute;left:46%;top:15.5%;width:8%;height:2%; }
+.avatar-woad::before,.avatar-woad::after { content:"";position:absolute;top:40%;width:35%;height:55%;background:#3477ae; }
+.avatar-woad::before { left:4%;transform:rotate(24deg); }
+.avatar-woad::after { right:4%;transform:rotate(-24deg); }

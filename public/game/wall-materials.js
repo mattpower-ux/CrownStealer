@@ -13,3 +13,25 @@ export function wallMaterialPixel(index,u,v,light){
  const a=(1-tx)*(1-ty)*light,b=tx*(1-ty)*light,c=(1-tx)*ty*light,d=tx*ty*light;
  return (255<<24)|(Math.floor(pixels[k+2]*a+pixels[kx+2]*b+pixels[ky+2]*c+pixels[kxy+2]*d)<<16)|(Math.floor(pixels[k+1]*a+pixels[kx+1]*b+pixels[ky+1]*c+pixels[kxy+1]*d)<<8)|Math.floor(pixels[k]*a+pixels[kx]*b+pixels[ky]*c+pixels[kxy]*d);
 }
+
+const roots=new Image();
+let rootPixels=null;
+roots.onload=()=>{
+ const c=document.createElement('canvas');
+ c.width=roots.naturalWidth;c.height=roots.naturalHeight;
+ const ctx=c.getContext('2d',{willReadFrequently:true});
+ ctx.drawImage(roots,0,0);
+ rootPixels=ctx.getImageData(0,0,c.width,c.height).data;
+ wallMaterialRevision++;
+};
+roots.src='/assets/druid-roots.webp';
+
+export function druidRootPixel(u,v,light,rune){
+ if(!rootPixels)return null;
+ const w=roots.naturalWidth,h=roots.naturalHeight;
+ const x=Math.floor(Math.max(0,Math.min(1,u))*(w-1)),y=Math.floor(Math.max(0,Math.min(1,v))*(h-1));
+ const k=(y*w+x)*4,dx=u-.5,dy=v-.39;
+ const mark=rune&&Math.abs(dx)<.09&&Math.abs(dy)<.11&&(Math.abs(dx)<.01||Math.abs(Math.abs(dx)-Math.abs(dy)*.85)<.009);
+ const r=mark?Math.max(105,rootPixels[k]):rootPixels[k],g=mark?Math.max(142,rootPixels[k+1]):rootPixels[k+1],b=mark?Math.max(113,rootPixels[k+2]):rootPixels[k+2];
+ return (255<<24)|(Math.floor(b*light)<<16)|(Math.floor(g*light)<<8)|Math.floor(r*light);
+}
