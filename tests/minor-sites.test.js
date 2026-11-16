@@ -1,3 +1,4 @@
+import {PEBBLE_RUN_ID} from '../public/game/peebles.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {minorSiteDefinition, minorSites} from '../public/game/minor-sites.js';
@@ -74,7 +75,7 @@ test('each land has eight caves, shrines, and cemeteries with all shrine variant
     const shrines = definitions.filter(site => site.kind === 'ruinedShrine');
     const cemeteries = definitions.filter(site => site.kind === 'cemetery');
     assert.equal(caves.length, 8);
-    assert.ok(caves.every(site => site.floors === 1 && site.guarded));
+    assert.ok(caves.every(site => site.floors === 1 && site.guarded === (site.id!==PEBBLE_RUN_ID)));
     assert.equal(shrines.length, 8);
     assert.ok(shrines.every(site => site.floors === 1));
     assert.equal(new Set(shrines.map(site => [site.guarded, site.treasure, site.trapped].join(','))).size, 8);

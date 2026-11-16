@@ -1,3 +1,4 @@
+import {peeblesTravelsWith} from './peebles.js';
 import {worldSize,scaleWorldPoint} from './world-size.js';
 import {boatOnlyArea,boatPassageShore,landscapeTile} from './wilderness-landscape.js';
 import {caveProfile} from './cave-profiles.js';
@@ -75,7 +76,7 @@ export function explorationAction(s,a,{note,encounter,clock,pointAt,random,champ
  if(a.type==='move'){
   if(!Number.isInteger(a.dx)||!Number.isInteger(a.dy)||Math.abs(a.dx)+Math.abs(a.dy)!==1)return true;
   const steps=travelSteps(s),{width,height}=worldSize(s);
-  if(!steps){note(s,'Your snowshoes drag away from snow.');return true;}
+  if(!steps){note(s,peeblesTravelsWith(s)?'You pause while Professor Peebles catches up.':'Your snowshoes drag away from snow.');return true;}
   for(let step=0;step<steps;step++){
    const x=s.x+a.dx,y=s.y+a.dy,t=areaTile(s,x,y);
    if(x<1||x>width-2||y<1||y>height-2||!dragonFlying(s)&&(t==='water'&&!waterAccess(s,x,y)||t==='mountain')){note(s,'Find a path around the barrier.');return true;}

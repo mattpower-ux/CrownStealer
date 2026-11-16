@@ -1,3 +1,4 @@
+import {peeblesTravelsWith} from './peebles.js';
 import {rareGearEffect} from './rare-gear.js';
 import {mountFor} from './mounts.js';
 const entries=[
@@ -22,7 +23,7 @@ export function travelSpeed(s){
  const footwear=footwearSpeed(s),mount=s.mode==='world'?mountFor(s):null;
  return mount?Math.max(footwear,mount.speed+rareGearEffect(s,'movementBonus')):footwear;
 }
-export function travelSteps(s){const speed=travelSpeed(s);s.flags??={};if(speed===.5){s.flags.snowshoeStep=s.flags.snowshoeStep===1?0:1;return s.flags.snowshoeStep===0?1:0;}s.flags.snowshoeStep=0;return speed;}
+export function travelSteps(s){const speed=travelSpeed(s);s.flags??={};if(peeblesTravelsWith(s)){const distance=speed/2+(s.flags.peeblesStride??0);s.flags.peeblesStride=distance%1;return Math.floor(distance);}if(speed===.5){s.flags.snowshoeStep=s.flags.snowshoeStep===1?0:1;return s.flags.snowshoeStep===0?1:0;}s.flags.snowshoeStep=0;return speed;}
 export function junkArt(item){const art={
  'insult-dagger':'<path d="M56 151 L134 32 L153 20 L145 59 L77 160Z" fill="#ccd8de"/><path d="M68 151 L145 36" stroke="#fff5d9"/><path d="M61 152 L38 190 L49 199 L77 164 M52 145 L87 167" stroke="#d6a64c" stroke-width="10"/><path d="M25 45 H94 V83 H57 L41 99 L43 83 H25Z" fill="#f3d390"/><path d="M40 64 H49 M57 64 H66 M74 64 H82"/>',
  'mirror-shield':'<path d="M25 38 Q100 52 175 38 L162 131 Q149 171 100 200 Q51 171 38 131Z" fill="#c7a45c"/><path d="M42 56 Q100 70 158 56 L146 128 Q134 161 100 183 Q66 161 54 128Z" fill="#9ed2dd"/><path d="M52 106 L96 65 M66 129 L132 65 M91 155 L150 96" stroke="#efffff" stroke-width="7"/>',

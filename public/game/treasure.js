@@ -18,6 +18,7 @@ import {sewerChest,SKELETON_KEY} from './sewer-treasure.js';
 import {SPELL_ITEMS} from './spell-items.js';
 import {GAG_ITEMS,gagDrop} from './gag-potions.js';
 import {JUNK_ITEMS} from './junk-loot.js';
+import {EARTH_DEGREE} from './peebles.js';
 import {HORN_OF_HELP} from './hero-help.js';
 import {PALADIN_ITEMS} from './paladin-oath.js';
 import {secretAlcove,secretStash} from './secret-alcoves.js';
@@ -167,6 +168,7 @@ for(let planet=0;planet<3;planet++)for(let slot=0;slot<3;slot++){
 
 Object.assign(TREASURE_ITEMS,JUNK_ITEMS);
 TREASURE_ITEMS[HORN_OF_HELP.id]=HORN_OF_HELP;
+TREASURE_ITEMS[EARTH_DEGREE.id]=EARTH_DEGREE;
 Object.assign(TREASURE_ITEMS,PALADIN_ITEMS,{[WIZARD_ROBES.id]:WIZARD_ROBES});
 TREASURE_ITEMS['dungeon-elevator']={id:'dungeon-elevator',encounterOnly:true,name:'Dungeon Elevator Scroll',kind:'consumable',shape:'scroll',rarity:'rare',unique:true,color:'#8ecfe8',value:80,description:'One use. Jump to any floor of the current dungeon, or return to its entrance on the surface.'};
 TREASURE_ITEMS['teleporter-crystal']={id:'teleporter-crystal',encounterOnly:true,name:'Teleporter Crystal',kind:'consumable',shape:'teleporter-crystal',rarity:'rare',unique:true,lowLoot:true,color:'#8af4ed',value:180,description:'One use. Insert it into an Alien Artifact to travel to a land you have already visited.'};

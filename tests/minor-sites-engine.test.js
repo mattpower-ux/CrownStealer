@@ -1,3 +1,5 @@
+import {EARTH_DEGREE,PEBBLE_RUN_ID} from '../public/game/peebles.js';
+import {travelSteps} from '../public/game/junk-loot.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createGame,act,loadGame,saveGame,minorSiteList,pointAt,dungeonMap,worldTile,DIRS} from '../public/game/engine.js';
@@ -220,4 +222,25 @@ test('the Putrid Palace remains an enterable campaign landmark among minor sites
  assert.equal(palace.mode,'dungeon');
  assert.equal(palace.dungeon.site,id);
  assert.equal(loadGame(saveGame(palace)).dungeon.site,id);
+});
+
+test('Pebble Run has one noncombat resident who can return to Earth with the hero',()=>{
+ let s=createGame();
+ const cave=minorSiteList(s).find(site=>site.id===PEBBLE_RUN_ID);
+ assert.equal(cave.name,'Pebble Run Cave');assert.equal(cave.guarded,false);
+ s.x=cave.x;s.y=cave.y;s=act(s,{type:'enter'});
+ assert.equal(s.dungeon.minorId,PEBBLE_RUN_ID);
+ s.dungeon.x=s.dungeon.y=13;
+ s=act(s,{type:'attack'});assert.equal(s.mode,'dungeon');assert.equal(s.flags.peeblesSurrender,true);
+ s=act(s,{type:'peeblesDecline'});assert.match(s.log.at(-1),/cry/);assert.equal(s.flags.earthCoordinates,undefined);
+ s=act(s,{type:'peeblesRecruit'});assert.equal(s.flags.peebles,'traveling');assert.equal(s.flags.earthCoordinates,true);
+ assert.equal(travelSteps(s)+travelSteps(s),1);
+ assert.equal(loadGame(saveGame(s)).flags.peebles,'traveling');
+ const released=act(s,{type:'peeblesRelease'});
+ assert.equal(released.flags.peebles,'waiting');assert.equal(released.flags.earthCoordinates,true);assert.equal(travelSteps(released),1);
+ s.dungeon={index:0,floor:0,ship:true,x:7,y:5,dir:0};
+ s.exploration={area:null,artifacts:[],home:{region:0,x:cave.x,y:cave.y}};
+ s.location=null;
+ s=act(s,{type:'visitEarth'});assert.equal(s.flags.peebles,'home');assert.equal(travelSteps(s),1);
+ s=act(s,{type:'visitEarth'});assert.equal(s.bag.filter(id=>id===EARTH_DEGREE.id).length,1);
 });

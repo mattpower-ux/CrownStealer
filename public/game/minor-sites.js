@@ -1,3 +1,4 @@
+import {PEBBLE_RUN_ID} from './peebles.js';
 import {worldSize} from './world-size.js';
 import {mountainTunnelEnds} from './wilderness-landscape.js';
 
@@ -28,10 +29,11 @@ export function minorSiteDefinition(id) {
   const variant = Math.floor(slot / kinds.length);
   const {kind, names} = kinds[(slot + ordinal) % kinds.length];
   const shrine = kind === 'ruinedShrine';
+  const name = names[(variant + ordinal) % names.length];
   return {
-    id, kind, name: names[(variant + ordinal) % names.length],
+    id, kind, name: name==='Pebble Run Cave'&&id!==PEBBLE_RUN_ID?'Rillstone Cave':name,
     floors: kind === 'cemetery' ? 1 + (variant + ordinal) % 3 : 1,
-    guarded: !shrine || Boolean(variant & 1),
+    guarded: id!==PEBBLE_RUN_ID&&(!shrine || Boolean(variant & 1)),
     treasure: !shrine || Boolean(variant & 2),
     trapped: shrine && Boolean(variant & 4),
     index,

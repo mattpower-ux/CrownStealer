@@ -850,3 +850,8 @@ dialog[data-panel="sageJournal"] #save-checkpoint { display: none; }
 .discovery-illustration.colony-illustration { height: min(47svh, 500px); }
 .colony-content { font-size: clamp(16px, 1.45vw, 20px); line-height: 1.5; }
 .colony-content p { margin: 10px 0; }
+
+.peebles-audience { display:grid;grid-template-columns:minmax(115px,1fr) minmax(230px,2fr);gap:16px;align-items:center;font-size:18px;line-height:1.5; }
+.peebles-audience img { width:100%;max-height:56svh;object-fit:contain; }
+.peebles-earth-orb { background:radial-gradient(circle at 35% 32%,#c8e7fb,#3285ae 27%,#499854 42%,#215181 65%,#0a2738); }
+@media(max-width:540px){.peebles-audience{display:block}.peebles-audience img{max-height:34svh}}
