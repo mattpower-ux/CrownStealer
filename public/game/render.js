@@ -1,4 +1,5 @@
-import {artRevision} from './art-revision.js';
+import {artRevision,artLoaded} from './art-revision.js';
+import {SAGE_MAZE_ID,sageRemains} from './sage-challenge.js';
 import {isMountainTunnel,tunnelRockPixel,obsidianPixel,drawMountainVault,drawShrineVault,drawTunnelDetails} from './tunnel-render.js';
 import {cemeteryTorches,cemeteryTorchInk,drawCemeteryDarkness} from './cemetery-light.js';
 import {whiteWizardCanCure} from './leper-colony.js';
@@ -927,6 +928,33 @@ function drawLadderOpenings(c,w,h,d,ladders,dx,dy,fov){
  }
 }
 
+const sageRemainsArt=Object.fromEntries(['randal','clarissa'].map(id=>{
+ const image=new Image();image.onload=artLoaded;image.src='/assets/sage-'+id+'.webp';
+ return [id,image];
+}));
+
+function drawSageRemains(c,w,h,d,dx,dy,fov,wallDepth){
+ const focal=w/(2*Math.tan(fov/2));
+ const bodies=sageRemains(d).map(body=>{
+  const rx=body.x-d.x,ry=body.y-d.y,depth=rx*dx+ry*dy,here=!rx&&!ry;
+  const x=here?w/2:w/2+(-dy*rx+dx*ry)*focal/depth;
+  return {...body,x,depth:here?.75:depth};
+ }).filter(p=>p.depth>0&&p.depth<7).sort((a,b)=>b.depth-a.depth);
+ for(const body of bodies){
+  const image=sageRemainsArt[body.id];
+  if(!image.complete||!image.naturalWidth)continue;
+  const width=Math.min(w*.42,h*.54/body.depth),height=width*image.naturalHeight/image.naturalWidth;
+  const ground=Math.min(h*.90,h*.5+h*.41/body.depth);
+  const left=Math.max(0,Math.floor(body.x-width/2)),right=Math.min(w,Math.ceil(body.x+width/2));
+  c.save();c.beginPath();
+  for(let x=left;x<right;x+=2)if(body.depth<=wallDepth[x]+.12)c.rect(x,0,2,h);
+  c.clip();
+  c.globalAlpha=Math.max(.45,1-body.depth*.07);
+  c.drawImage(image,body.x-width/2,ground-height,width,height);
+  c.restore();
+ }
+}
+
 function dungeonUncached(c,w,h,s,time){const d=s.dungeon;if(!d)return;if(d.ship){drawShip(c,w,h,s);return;}if(d.site==='elf-village'){const [dx,dy]=DIRS[d.dir];drawForest(c,w,h,s,dungeonMap(d),dx,dy);return;}const m=dungeonMap(d),ladders=dungeonLadders(d,m),cave=caveProfile(d.expedition),burrow=isKoboldBurrow(d),cemetery=isCemeteryDungeon(d),shrine=isRuinedShrine(d),tunnel=isMountainTunnel(d),haunted=d.site===PERCIVAL_CASTLE_ID,twinkling=d.site===TWINKLESTAR_TOWER_ID,wall=tunnel?{...DUNGEON_WALLS[0],floor:'#3b2b1f',ceiling:'#25180f'}:d.royal==='sewer'?SEWER_WALL:DUNGEON_WALLS[twinkling?7:haunted?1:cave?.wall??(d.site==='firedrak'?3:d.index)];const ceiling=c.createLinearGradient(0,0,0,h);ceiling.addColorStop(0,wall.ceiling);ceiling.addColorStop(.5,'#151b1b');ceiling.addColorStop(.51,d.expedition?.startsWith('planet-1')?'#c6b68e':wall.floor);ceiling.addColorStop(1,'#111816');c.fillStyle=ceiling;c.fillRect(0,0,w,h);for(let i=0;i<190;i++){const xx=(i*137.53)%w,yy=h*.52+(i*71.71)%(h*.48);c.fillStyle=d.expedition?.startsWith('planet-1')?(i%2?'#e3d1a333':'#705e3b33'):'#938f7330';c.fillRect(xx,yy,2+(i%3),1);}if(tunnel)drawMountainVault(c,w,h,d.floor);else if(shrine)drawShrineVault(c,w,h);else if(!burrow)drawDungeonCeiling(c,w,h,wall,{phase:d.floor});if(d.royal==='sewer')drawSewerChannel(c,w,h,time);const [dx,dy]=DIRS[d.dir];const angle=Math.atan2(dy,dx),fov=Math.PI/2.6,step=2;
 
  if(burrow)drawBurrowPlanes(c,w,h,d,dx,dy,fov,m);if(twinkling)drawWizardPlanes(c,w,h,d,dx,dy,fov,m);
@@ -957,11 +985,15 @@ function dungeonUncached(c,w,h,s,time){const d=s.dungeon;if(!d)return;if(d.ship)
  drawShrineScene(c,w,h,s,m,dx,dy,fov,wallDepth);
  drawDungeonChests(c,w,h,s,m,dx,dy,twinkling?drawWizardChest:cemetery?drawCemeteryCoffin:null);
 
+ if(d.site===SAGE_MAZE_ID)drawSageRemains(c,w,h,d,dx,dy,fov,wallDepth);
+
  // A clear floor map makes touch navigation usable without a separate overlay.
 
+ if(d.site!=='sage-maze'){
  const markEndpoint=d.ladderLayout!==1||!ladders.some(ladder=>ladder.direction==='down');
  const z=Math.min(7,w/65),mx=w-15*z-18,my=18;c.fillStyle='#06100de6';c.fillRect(mx-7,my-7,15*z+14,15*z+14);for(let y=0;y<15;y++)for(let x=0;x<15;x++){c.fillStyle=m[y][x]===1?(d.royal==='sewer'?SEWER_WALL.map:'#354239'):markEndpoint&&m[y][x]===2?'#c8a35f':'#101c19';c.fillRect(mx+x*z,my+y*z,z-1,z-1);}if(d.secretRoom){c.strokeStyle='#cfc396';c.lineWidth=1;c.strokeRect(mx+d.secretRoom.x*z,my+d.secretRoom.y*z,z-1,z-1);}for(const ladder of ladders){c.fillStyle=ladder.direction==='up'?'#9dd1db':'#d8ab73';c.fillRect(mx+ladder.x*z+1,my+ladder.y*z+1,z-2,z-2);}for(const chest of dungeonChests(s,m)){c.fillStyle=chest.opened?'#66523a':'#f1b84e';c.fillRect(mx+chest.x*z+1,my+chest.y*z+1,z-2,z-2);}if(d.site===ROYAL_DUNGEON_ID){for(const npc of royalDungeonFigures(s))circle(c,mx+(npc.x+.5)*z,my+(npc.y+.5)*z,z*.35,'#dba17f');if(!d.cellsOpen)for(const cell of ROYAL_DUNGEON_CELLS){c.fillStyle='#dba979';c.fillRect(mx+cell.door.x*z+1,my+cell.door.y*z+1,z-2,z-2);for(const prisoner of cell.prisoners)circle(c,mx+(prisoner.x+.5)*z,my+(prisoner.y+.5)*z,z*.31,'#9ed0d2');}}circle(c,mx+(d.x+.5)*z,my+(d.y+.5)*z,z*.4,'#f4db9c');c.strokeStyle='#f4db9c';c.beginPath();c.moveTo(mx+(d.x+.5)*z,my+(d.y+.5)*z);c.lineTo(mx+(d.x+.5+dx)*z,my+(d.y+.5+dy)*z);c.stroke();
 
+ }
  label(c,['NORTH','EAST','SOUTH','WEST'][d.dir],w/2,28,12,'#bfad85');
 
 }
