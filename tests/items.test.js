@@ -23,8 +23,16 @@ test('named legendary rewards use their own art and quest bones and teeth differ
   assert.match(itemArt(itemById('job-keepsake-amnesty-in-small-print')), /aria-label="tooth illustration"/);
 });
 function win(s=createGame('Mara')){s.mode='battle';s.enemy={name:'Wolf',hp:1,maxHp:1,attack:1,gold:15,weakness:'quick strikes'};s.returnMode='world';return act(s,{type:'attack'});}
-test('first victory gives a named weapon and a persistent discovery notice',()=>{const s=win();assert.ok(s.bag.includes('smiting'));assert.deepEqual(s.pendingLoot,['smiting']);assert.deepEqual(loadGame(saveGame(s)).pendingLoot,s.pendingLoot);assert.equal(WEAPONS.smiting.toHit,3);assert.deepEqual(WEAPONS.smiting.damage,[6,10]);});
-test('equip requires ownership and dismissing the discovery keeps the weapon',()=>{let s=win();assert.equal(act(s,{type:'equip',id:'star-lance'}).equipped,'road-sword');s=act(s,{type:'equip',id:'smiting'});assert.equal(s.equipped,'smiting');s=act(s,{type:'acknowledgeLoot'});assert.equal(s.pendingLoot.length,0);assert.ok(s.bag.includes('smiting'));});
+test('first victory gives a starter weapon and a persistent discovery notice',()=>{const s=win();assert.equal(s.pendingLoot.length,1);assert.equal(itemById(s.pendingLoot[0]).kind,'weapon');assert.notEqual(s.pendingLoot[0],'smiting');assert.deepEqual(loadGame(saveGame(s)).pendingLoot,s.pendingLoot);assert.equal(WEAPONS.smiting.toHit,3);assert.deepEqual(WEAPONS.smiting.damage,[6,10]);});
+test('equip requires ownership and dismissing the discovery keeps the weapon',()=>{let s=win();const id=s.pendingLoot[0];assert.equal(act(s,{type:'equip',id:'star-lance'}).equipped,'road-sword');s=act(s,{type:'equip',id});assert.equal(s.equipped,id);s=act(s,{type:'acknowledgeLoot'});assert.equal(s.pendingLoot.length,0);assert.ok(s.bag.includes(id));});
+test('Hearthmarch fallback weapon drops keep the Longsword of Smiting rare',()=>{
+ let drops=0;
+ for(let seed=0;seed<400;seed++){
+  const s=createGame();s.flags.victories=3;s.treasureSeed=seed;
+  if(win(s).bag.includes('smiting'))drops++;
+ }
+ assert.ok(drops>0&&drops<=10,`Found ${drops} Longswords of Smiting in 400 eligible rewards`);
+});
 test('old saves gain safe equipment defaults and forged item ids are rejected',()=>{const old=createGame('A');delete old.bag;delete old.equipped;delete old.pendingLoot;delete old.equipmentVersion;delete old.equippedArmor;assert.equal(loadGame(JSON.stringify(old)).equipped,'road-sword');const s=createGame('B');s.bag.push('fake');assert.throws(()=>loadGame(JSON.stringify(s)));});
 test('rename persists a bounded nonempty adventurer name',()=>{let s=act(createGame('A'),{type:'rename',name:'  Lady Mara  '});assert.equal(s.name,'Lady Mara');s=act(s,{type:'rename',name:'  '});assert.equal(s.name,'Lady Mara');assert.equal(loadGame(saveGame(s)).name,'Lady Mara');});
 test('equipped damage and hit bonuses affect actual strikes',()=>{const s=createGame('A');s.region=3;s.mode='battle';s.enemy={name:'Knight',hp:500,maxHp:500,attack:1,gold:1};s.bag.push('star-lance');const strong={...s,equipped:'star-lance'};assert.ok(weaponAccuracy(strong)>weaponAccuracy(s));const a=[],b=[];act(s,{type:'attack'},a);act(strong,{type:'attack'},b);assert.ok(b[0].amount>a[0].amount);let seed=0;while(((Math.imul(seed,1664525)+1013904223)>>>0)/4294967296<.9)seed++;const c=[],d=[];act({...s,rng:seed},{type:'attack'},c);act({...strong,rng:seed},{type:'attack'},d);assert.equal(c[0].kind,'miss');assert.equal(d[0].kind,'hit');});

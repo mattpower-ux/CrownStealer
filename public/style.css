@@ -307,9 +307,15 @@ dialog[data-panel="bossIntro"] img.intro-backdrop { object-fit: cover; }
 .wilderness-health-track{height:12px;margin-top:5px;background:#2b3527;border-radius:3px;overflow:hidden}
 .wilderness-health-track span{display:block;height:100%;background:#adc184;border-radius:inherit}
 .wilderness-health.is-low{border-color:#ef9678}
-.wilderness-health.is-low strong{color:#ffc1aa}
-.wilderness-health.is-low .wilderness-health-track span{background:#e98e75}
-.wilderness-health:not([hidden]) + .mode-badge{top:120px;left:12px}
+.wilderness-health.is-low .wilderness-health-label:not(.wilderness-xp-label) strong{color:#ffc1aa}
+.wilderness-health.is-low .wilderness-health-track:not(.wilderness-xp-track) span{background:#e98e75}
+.wilderness-xp-label{margin-top:8px}
+.wilderness-xp-track{height:8px;background:#3d3425}
+.wilderness-xp-track span{background:#e4bf76}
+.wilderness-health > .mode-badge{top:calc(100% + 8px);left:-1px;white-space:nowrap}
+.bridge-troll-scene{display:grid;grid-template-columns:minmax(120px,28%) 1fr;align-items:center;gap:16px}
+.bridge-troll-scene img{display:block;width:100%;max-height:240px;object-fit:contain}
+@media(max-width:480px){.bridge-troll-scene{grid-template-columns:84px 1fr;gap:10px}}
 .wilderness-hero-name,.wilderness-hero-level{font:800 16px/1.35 Arial,Helvetica,sans-serif;overflow-wrap:anywhere}
 .wilderness-hero-level{margin-bottom:6px;color:var(--gold)}
 

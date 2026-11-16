@@ -1,4 +1,5 @@
 import {drawPeebles,drawPebblePlanes,pebbleMaterialRevision,pebblePixel} from './pebble-materials.js';
+import {BRIDGE_TROLL_ART} from './bridge-trolls.js';
 import {isPebbleRun} from './peebles.js';
 import {artRevision,artLoaded} from './art-revision.js';
 import {SAGE_MAZE_ID,SAGE_PEN_ID,sageRemains} from './sage-challenge.js';
@@ -333,6 +334,9 @@ function visibleWorldPoint({x,y},{cols,rows,left,top}){
  return x>=left-2&&x<left+cols+2&&y>=top-2&&y<top+rows+2;
 }
 
+const bridgeTrollArt=new Image();
+bridgeTrollArt.src=BRIDGE_TROLL_ART;
+
 function drawWorldViewport(c,w,h,s){
  const view=worldViewport(s),{cols,rows,left,top}=view,map=outdoorMap(s),size=h/rows;
  c.drawImage(worldGround(map,view),0,0,w,h);
@@ -359,6 +363,12 @@ function drawWorldViewport(c,w,h,s){
  drawMetalTrees(c,s,size,view);
  const x=(s.x+.5)*size,y=(s.y+.5)*size,inWater=map.tileAt(s.x,s.y)==='water';
  if(inWater&&(s.flags.rowboatReady||s.flags.sailboatReady))drawRowboat(c,x,y,size);
+ const troll=s.flags.bridgeTroll;
+ if(troll&&bridgeTrollArt.complete&&bridgeTrollArt.naturalWidth){
+  const height=size*2.1,width=height*bridgeTrollArt.naturalWidth/bridgeTrollArt.naturalHeight;
+  const tx=x+(troll.x-troll.backX)*size*.9,ty=y+(troll.y-troll.backY)*size*.9;
+  c.drawImage(bridgeTrollArt,tx-width*.5,ty-height+size*.2,width,height);
+ }
  drawAdventurer(c,x,y,size*(inWater?1.25:1.9));
  c.restore();
  if(!map.area){
@@ -1090,7 +1100,7 @@ export function paintArenaOpponentPreview(canvas,opponent){
 const ghostDragon=new Image();ghostDragon.src='/assets/ghost-dragon.webp';
 
 const firedrakSprites=new Image();firedrakSprites.src='/assets/firedrak-monsters.webp';monsterAtlases['firedrak-monsters']=firedrakSprites;
-export function paintMonster(c,enemy,x,y,w,h,dungeonIndex=0){if(paintArenaPortrait(c,enemy,x,y,w,h))return true;if(paintIllustratedBoss(c,enemy,x,y,w,h))return true;if(enemy.speciesId==='leviathan-levity'&&levityBoss.complete&&levityBoss.naturalWidth){c.drawImage(levityBoss,x,y,w,h);return true;}if(enemy.speciesId==='haghilda'&&haghilda.complete&&haghilda.naturalWidth){c.drawImage(haghilda,x,y,w,h);return true;}if(enemy.speciesId==='ghost-dragon'&&ghostDragon.complete&&ghostDragon.naturalWidth){c.drawImage(ghostDragon,x,y,w,h);return true;}const species=GROVE_ENEMIES.find(m=>m.id===enemy.speciesId)||MONSTER_BY_ID[enemy.speciesId]||ENEMIES.find(m=>m.name===enemy.name);const art=enemy.speciesId?.startsWith('firedrak-')||enemy.speciesId==='drake-defiler'?{sheet:'firedrak-monsters',index:enemy.speciesId==='firedrak-imp'?0:enemy.speciesId==='firedrak-elemental'?1:2}:((enemy.arenaFighter||enemy.championTown)?enemy.art||{sheet:'dungeon-monsters',index:11}:species?.art)||{sheet:'dungeon-monsters',index:enemy.guard?11:enemy.boss?[2,2,4,4,7,6,8,10][dungeonIndex]:9};const img=monsterAtlases[art.sheet];if(!img?.complete||!img.naturalWidth)return false;const cols=art.sheet==='firedrak-monsters'?3:['monsters-wild','monsters-grove'].includes(art.sheet)?2:4,rows=art.sheet==='firedrak-monsters'?1:['monsters-wild','monsters-grove'].includes(art.sheet)?1:art.sheet==='monsters-planets'?2:3,sw=img.width/cols,sh=img.height/rows,key=art.sheet+':'+art.index;
+export function paintMonster(c,enemy,x,y,w,h,dungeonIndex=0){if(enemy.speciesId==='bridge-troll'&&bridgeTrollArt.complete&&bridgeTrollArt.naturalWidth){c.drawImage(bridgeTrollArt,x,y,w,h);return true;}if(paintArenaPortrait(c,enemy,x,y,w,h))return true;if(paintIllustratedBoss(c,enemy,x,y,w,h))return true;if(enemy.speciesId==='leviathan-levity'&&levityBoss.complete&&levityBoss.naturalWidth){c.drawImage(levityBoss,x,y,w,h);return true;}if(enemy.speciesId==='haghilda'&&haghilda.complete&&haghilda.naturalWidth){c.drawImage(haghilda,x,y,w,h);return true;}if(enemy.speciesId==='ghost-dragon'&&ghostDragon.complete&&ghostDragon.naturalWidth){c.drawImage(ghostDragon,x,y,w,h);return true;}const species=GROVE_ENEMIES.find(m=>m.id===enemy.speciesId)||MONSTER_BY_ID[enemy.speciesId]||ENEMIES.find(m=>m.name===enemy.name);const art=enemy.speciesId?.startsWith('firedrak-')||enemy.speciesId==='drake-defiler'?{sheet:'firedrak-monsters',index:enemy.speciesId==='firedrak-imp'?0:enemy.speciesId==='firedrak-elemental'?1:2}:((enemy.arenaFighter||enemy.championTown)?enemy.art||{sheet:'dungeon-monsters',index:11}:species?.art)||{sheet:'dungeon-monsters',index:enemy.guard?11:enemy.boss?[2,2,4,4,7,6,8,10][dungeonIndex]:9};const img=monsterAtlases[art.sheet];if(!img?.complete||!img.naturalWidth)return false;const cols=art.sheet==='firedrak-monsters'?3:['monsters-wild','monsters-grove'].includes(art.sheet)?2:4,rows=art.sheet==='firedrak-monsters'?1:['monsters-wild','monsters-grove'].includes(art.sheet)?1:art.sheet==='monsters-planets'?2:3,sw=img.width/cols,sh=img.height/rows,key=art.sheet+':'+art.index;
 
  if(!monsterBounds.has(art.sheet)){
 

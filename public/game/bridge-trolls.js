@@ -1,4 +1,5 @@
 import {itemById} from './items.js';
+export const BRIDGE_TROLL_ART='/assets/bridge-troll.webp';
 const gearKinds=new Set(['weapon','armor','shield','head','hands','boots','ring','necklace']);
 export function startBridgeTroll(s,key,note,previous={x:s.x,y:s.y}){
  if(s.mode!=='world'||s.flags.bridgeTrollPaid?.includes(key)||s.flags.bridgeTroll)return false;
@@ -14,6 +15,17 @@ export function maybeBridgeTroll(s,previous,tileAt,note){
  return startBridgeTroll(s,(s.exploration?.area??'r'+s.region)+':'+anchor.x+':'+anchor.y,note,previous);
 }
 export function bridgeTrollGear(s){return s.bag.filter(id=>gearKinds.has(itemById(id,s)?.kind)&&!Object.entries(s).some(([key,value])=>key.startsWith('equipped')&&value===id)&&!itemById(id,s)?.unique);}
+const crossingDirections=[
+ {name:'east',dx:1,dy:0},{name:'west',dx:-1,dy:0},
+ {name:'south',dx:0,dy:1},{name:'north',dx:0,dy:-1}
+];
+export function bridgeDirections(s,tileAt){
+ if(s.mode!=='world'||s.flags.bridgeTroll||tileAt(s.x,s.y)!=='bridge')return [];
+ return crossingDirections.filter(({dx,dy})=>{
+  const ahead=tileAt(s.x+dx,s.y+dy),behind=tileAt(s.x-dx,s.y-dy);
+  return !['water','mountain'].includes(ahead)&&(ahead==='bridge'||behind==='bridge'||!['water','mountain'].includes(behind));
+ });
+}
 export function bridgeTrollAction(s,a,note){
  const troll=s.flags.bridgeTroll;if(!troll||s.mode!=='world')return false;
  if(a.type!=='bridgeTroll')return ['move','mapStep','enter'].includes(a.type);
@@ -23,13 +35,13 @@ export function bridgeTrollAction(s,a,note){
  else if(a.choice==='gear'){if(!bridgeTrollGear(s).includes(a.id)){note(s,'Choose an unequipped piece of gear to surrender.');return true;}s.bag.splice(s.bag.indexOf(a.id),1);s.pendingLoot=s.pendingLoot.filter(id=>id!==a.id||s.bag.includes(id));}
  else if(a.choice==='sleep'||a.choice==='fight'){
   s.returnMode='world';s.mode='battle';const level=4+s.region*6,hp=90+s.region*65;
-  s.enemy={speciesId:'bridge-troll',name:'Bridge Troll',level,hp,maxHp:hp,attack:12+s.region*7,armor:3+s.region*3,gold:troll.toll,xp:55+s.region*45,kind:'brute',weakness:'quick strikes',firstContact:true,bridgeTrollKey:troll.key,bridgeApproach:{x:troll.backX,y:troll.backY,atX:troll.x,atY:troll.y,region:s.region,area:s.exploration?.area??null},art:{sheet:'monsters-grove',index:4}};
+  s.enemy={speciesId:'bridge-troll',name:'Bridge Troll',level,hp,maxHp:hp,attack:12+s.region*7,armor:3+s.region*3,gold:troll.toll,xp:55+s.region*45,kind:'brute',weakness:'quick strikes',firstContact:true,bridgeTrollKey:troll.key,bridgeApproach:{x:troll.backX,y:troll.backY,atX:troll.x,atY:troll.y,region:s.region,area:s.exploration?.area??null}};
   delete s.flags.bridgeTroll;s.flags.guarded=false;s.flags.combo=0;
   if(a.choice==='sleep'){s.hp=Math.max(1,s.hp-Math.ceil(s.maxHp*.15));note(s,'The troll offers a free bed in his cave. As you drift off he leaps from the shadows! You scramble awake, wounded, beside the bridge.');}else note(s,'The bridge troll raises his club.');return true;
  }else return true;
  s.flags.bridgeTrollPaid??=[];s.flags.bridgeTrollPaid.push(troll.key);delete s.flags.bridgeTroll;s.turns++;note(s,'The troll pockets your toll and allows you across.');return true;
 }
-export function bridgeTrollView(s,button,esc){const t=s.flags.bridgeTroll;if(!t)return '';return '<h3>The keeper of the bridge</h3><p>“'+t.toll+' gold. Or a piece of your gear. I also have a little errand—or a perfectly safe cave where you can sleep.”</p>'+(t.quest?'<p>Bring the shadow of tomorrow, bottled before yesterday. No such object exists.</p>':'')+'<div class="panel-actions">'+button('Pay '+t.toll+' gold',{type:'bridgeTroll',choice:'gold'},'primary',s.gold<t.toll)+bridgeTrollGear(s).map(id=>button('Give '+esc(itemById(id,s).name),{type:'bridgeTroll',choice:'gear',id})).join('')+button('Ask about the errand',{type:'bridgeTroll',choice:'quest'})+button('Sleep in his cave',{type:'bridgeTroll',choice:'sleep'})+button('Fight the troll',{type:'bridgeTroll',choice:'fight'})+button('Turn back',{type:'bridgeTroll',choice:'leave'})+'</div>';}
+export function bridgeTrollView(s,button,esc){const t=s.flags.bridgeTroll;if(!t)return '';return '<div class="bridge-troll-scene"><img src="'+BRIDGE_TROLL_ART+'" alt="A tusked troll holds out a hand for the toll"><div><h3>The keeper of the bridge</h3><p>“'+t.toll+' gold. Or a piece of your gear. I also have a little errand—or a perfectly safe cave where you can sleep.”</p>'+(t.quest?'<p>Bring the shadow of tomorrow, bottled before yesterday. No such object exists.</p>':'')+'</div></div><div class="panel-actions">'+button('Pay '+t.toll+' gold',{type:'bridgeTroll',choice:'gold'},'primary',s.gold<t.toll)+bridgeTrollGear(s).map(id=>button('Give '+esc(itemById(id,s).name),{type:'bridgeTroll',choice:'gear',id})).join('')+button('Ask about the errand',{type:'bridgeTroll',choice:'quest'})+button('Sleep in his cave',{type:'bridgeTroll',choice:'sleep'})+button('Fight the troll',{type:'bridgeTroll',choice:'fight'})+button('Turn back',{type:'bridgeTroll',choice:'leave'})+'</div>';}
 export function validBridgeTrollState(s){
  const validKey=key=>typeof key==='string'&&/^(?:r[0-3]|wild-(?:[0-9]|1[01])):[0-9]{1,3}:[0-9]{1,3}$/.test(key);
  const paid=s.flags.bridgeTrollPaid;

@@ -85,6 +85,7 @@ export function explorationAction(s,a,{note,encounter,clock,pointAt,random,champ
    if(area.kind!=='planet'&&bridgeStep?.(s,previous))return true;
    if(area.kind==='planet'&&x===16&&y===22){board();return true;}
    if(pointAt(s))return true;
+   if(t==='bridge')continue;
    if(championChallenge?.(s,random,note))return true;
    if(random()<wildernessChance(s,.07))encounter(s);
    if(s.mode!=='world'||s.flags.wildernessEvent||s.flags.impaledMoves||s.flags.peacefulEncounter)return true;

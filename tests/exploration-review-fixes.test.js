@@ -1,6 +1,25 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {createGame,act,minorSiteList,saveGame,loadGame,worldTile} from '../public/game/engine.js';
 import {areaTile} from '../public/game/exploration.js';
+import {bridgeDirections} from '../public/game/bridge-trolls.js';
+test('the Mothbridge toll clears both directions across the deck after a reload',()=>{
+ const tile=(x,y)=>worldTile(0,x,y);
+ const rules={noRandom:true};
+ for(const [start,bank,direction] of [[24,28,'east'],[28,24,'west']]){
+  let s={...createGame(),x:start,y:32,gold:1000};
+  s=act(s,{type:'move',dx:Math.sign(bank-start),dy:0},[],rules);
+  assert.deepEqual(bridgeDirections(s,tile),[]);
+  s=loadGame(saveGame(act(s,{type:'bridgeTroll',choice:'gold'},[],rules)));
+  for(let step=0;step<3;step++){
+   const routes=bridgeDirections(s,tile);
+   assert.deepEqual(routes.map(route=>route.name),['east','west']);
+   const {dx,dy}=routes.find(route=>route.name===direction);
+   s=act(s,{type:'move',dx,dy},[],rules);
+  }
+  assert.deepEqual([s.x,s.y,s.gold],[bank,32,500]);
+  assert.equal(s.flags.bridgeTroll,undefined);
+ }
+});
 test('adjacent cave guardian starts at melee distance',()=>{let s=createGame();const site=minorSiteList(s).find(p=>p.id==='minor-r0-0');s.x=site.x;s.y=site.y;s=act(s,{type:'enter'});Object.assign(s.dungeon,{x:13,y:11,dir:2});s=act(s,{type:'forward'});assert.equal(s.mode,'battle');assert.equal(s.enemy.combatDistance,1);});
 for(const area of [null,'wild-0'])test('speed boots stop on first bridge tile and retreat to previous tile '+area,()=>{let s=createGame();s.exploration={area,artifacts:[]};s.bag.push('boots-speed-5');s.equippedBoots='boots-speed-5';const tile=(x,y)=>area?areaTile(s,x,y):worldTile(0,x,y);let start;for(let y=10;y<90&&!start;y++)for(let x=5;x<120;x++){if([0,1,2].every(dx=>!['mountain','water','bridge'].includes(tile(x+dx,y)))&&tile(x+3,y)==='bridge'&&tile(x+4,y)==='bridge'){start={x,y};break;}}assert.ok(start);Object.assign(s,start);s=act(s,{type:'move',dx:1,dy:0},[],{noRandom:true});assert.ok(s.flags.bridgeTroll);assert.equal(s.x,start.x+3);assert.equal(s.flags.bridgeTroll.backX,start.x+2);s=loadGame(saveGame(s));s=act(s,{type:'bridgeTroll',choice:'leave'});assert.equal(s.x,start.x+2);});
 test('utility travel clears pending toll before saving',()=>{let s=createGame();s.x=82;s.y=14;s=act(s,{type:'move',dx:1,dy:0},[],{noRandom:true});for(let i=0;i<5&&!s.flags.bridgeTroll;i++)s=act(s,{type:'move',dx:1,dy:0},[],{noRandom:true});assert.ok(s.flags.bridgeTroll);s=act(s,{type:'useItem',id:'scroll-return'});assert.equal(s.flags.bridgeTroll,undefined);assert.doesNotThrow(()=>loadGame(saveGame(s)));});

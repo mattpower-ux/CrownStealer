@@ -2,7 +2,7 @@ import {rootActive,DRUID_SITE,DRUID_STAFF,DRUID_FLOORS,druidHistory,druidKeeper,
 import {sageView} from './sage-view.js';
 import {SAGE_MAZE_ID,SAGE_PEN_ID,sageRemainsAt} from './sage-challenge.js';
 import {beginCemeteryHaunting,drawCemeteryHaunting} from './cemetery-haunting.js';
-import {bridgeTrollView} from './bridge-trolls.js';
+import {bridgeDirections,bridgeTrollView} from './bridge-trolls.js';
 import {drawHearthmarchDream} from './standing-stones-view.js';
 import {canSpeakToPeebles,canVisitEarth,EARTH_COORDINATES,peeblesTravelsWith} from './peebles.js';
 import {nearbyWatcher} from './minor-residents.js';
@@ -53,7 +53,7 @@ import {gossipView} from './gossip.js';
 import {ATTRIBUTE_CAP,effectiveAttributes,effectiveLevel,levelDrainMinutesLeft,syncAttributeHealth} from './attributes.js';
 import {atlasView,paintAtlasMaps} from './atlas-view.js';
 import {attachTouchJoystick} from './touch-joystick.js';
-import {AREAS,areaFor,PLANETS,visitedLands} from './exploration.js';
+import {AREAS,areaFor,areaTile,PLANETS,visitedLands} from './exploration.js';
 import {dungeonFloors} from './dungeon-depths.js';
 import {PREVIEW_KEYS,previewCharacter,previewJump,previewEncounter,previewView,previewDestinations,previewMapState,previewMapJump} from './developer-preview.js';
 import {cityOf} from './city-rule.js';
@@ -71,7 +71,7 @@ import {selectOddJob,nextOddJob,oddJobsView} from './odd-jobs-view.js';
 import {townPosition,townPlace,townPlaces,TOWN_SIZE} from './town.js';
 import {WEAPONS,UNARMED,itemById,itemArt,merchantBuyPrice,weaponAccuracy} from './items.js';
 import {REGIONS,TOWNS,DUNGEONS,CHAPTERS,LORE,ENDINGS} from './content.js';
-import {createGame,createRoyalGame,act,pointAt,nextObjective,saveGame,loadGame,dungeonNavigation,dungeonName,dungeonMap,wildernessStepDelay} from './engine.js';
+import {createGame,createRoyalGame,act,pointAt,nextObjective,saveGame,loadGame,dungeonNavigation,dungeonName,dungeonMap,wildernessStepDelay,worldTile,xpForNextLevel} from './engine.js';
 import {undead} from './spell-items.js';
 import {render,paintMonster,paintArenaOpponentPreview,worldViewport,castleViewport,castlePointVisible,renderCastleOverview,castleGovernorPortrait,castleGuardPortrait,castleChestPortrait} from './render.js';
 import {AudioDirector} from './audio.js';
@@ -395,16 +395,25 @@ wildernessHealth.id='wilderness-health';
 wildernessHealth.className='wilderness-health';
 wildernessHealth.hidden=true;
 wildernessHealth.innerHTML=`<div class="wilderness-hero-name"></div><div class="wilderness-hero-level"></div><div class="wilderness-health-label" aria-hidden="true"><span>Health</span><strong></strong></div>
-<div class="wilderness-health-track" role="progressbar" aria-label="Wilderness health" aria-valuemin="0"><span></span></div>`;
-$('mode-badge').before(wildernessHealth);
+<div class="wilderness-health-track" role="progressbar" aria-label="Wilderness health" aria-valuemin="0"><span></span></div>
+<div class="wilderness-health-label wilderness-xp-label" aria-hidden="true"><span>XP</span><strong></strong></div>
+<div class="wilderness-health-track wilderness-xp-track" role="progressbar" aria-label="Experience toward next level" aria-valuemin="0"><span></span></div>`;
+const modeBadge=$('mode-badge');
+modeBadge.before(wildernessHealth);
 const wildernessHealthLabel=wildernessHealth.querySelector('.wilderness-health-label span');
 const wildernessHealthValue=wildernessHealth.querySelector('strong');
-const wildernessHealthTrack=wildernessHealth.querySelector('[role="progressbar"]');
+const wildernessHealthTrack=wildernessHealth.querySelector('.wilderness-health-track');
 const wildernessHealthFill=wildernessHealthTrack.firstElementChild;
+const wildernessXpValue=wildernessHealth.querySelector('.wilderness-xp-label strong');
+const wildernessXpTrack=wildernessHealth.querySelector('.wilderness-xp-track');
 
 function updateWildernessHealth(){
  wildernessHealth.hidden=state.mode!=='world'||!!combatView;
- if(wildernessHealth.hidden)return;
+ if(wildernessHealth.hidden){
+  if(modeBadge.parentElement===wildernessHealth)wildernessHealth.after(modeBadge);
+  return;
+ }
+ if(modeBadge.parentElement!==wildernessHealth)wildernessHealth.append(modeBadge);
  const maxHp=state.maxHp;
  const hp=Math.max(0,Math.min(state.hp,maxHp));
  const fraction=hp/maxHp;
@@ -418,6 +427,13 @@ function updateWildernessHealth(){
  wildernessHealthTrack.setAttribute('aria-valuemax',maxHp);
  wildernessHealthTrack.setAttribute('aria-valuetext',`${hp} of ${maxHp} hit points${low?', low health':''}`);
  wildernessHealthFill.style.width=`${fraction*100}%`;
+ const xpGoal=xpForNextLevel(state);
+ const xp=Math.max(0,Math.min(state.xp,xpGoal));
+ wildernessXpValue.textContent=`${xp} / ${xpGoal} XP`;
+ wildernessXpTrack.setAttribute('aria-valuenow',xp);
+ wildernessXpTrack.setAttribute('aria-valuemax',xpGoal);
+ wildernessXpTrack.setAttribute('aria-valuetext',`${xp} of ${xpGoal} experience points toward level ${state.level+1}`);
+ wildernessXpTrack.firstElementChild.style.width=`${xp/xpGoal*100}%`;
 }
 
 function update(){if(state.mode!=='battle')impactIndex=0;updateClockDisplay();updateWildernessHealth();if(!nearCastleHead())castleHeadVisit=null;if(castleTileVisit!==castleTileKey())castleTileVisit=null;
@@ -536,6 +552,11 @@ function update(){if(state.mode!=='battle')impactIndex=0;updateClockDisplay();up
  if(canSpeakToPeebles(state))$('actions').insertAdjacentHTML('afterbegin','<button class="primary" data-panel="peebles">Speak to Professor Peebles</button>'+(state.flags.peeblesSurrender?'':button('Attack Professor Peebles',{type:'attack'})));
  if(peeblesTravelsWith(state)&&['world','town','dungeon'].includes(state.mode))$('actions').insertAdjacentHTML('beforeend','<button data-panel="peeblesCompanion">Professor Peebles</button>');
  if(atLeperColony(state))$('actions').insertAdjacentHTML('afterbegin',button('Enter Leper Colony',{type:'enter'},'primary'));
+ const bridgeSteps=bridgeDirections(state,(x,y)=>areaFor(state)?areaTile(state,x,y):worldTile(state.region,x,y));
+ if(bridgeSteps.length){
+  $('scene-caption').textContent='Follow the bridge to the other bank.';
+  $('actions').insertAdjacentHTML('afterbegin',bridgeSteps.map(({name,dx,dy})=>button('Cross '+name,{type:'move',dx,dy},'primary')).join(''));
+ }
  if(whiteWizardCanCure(state))$('actions').insertAdjacentHTML('beforeend',button(leprosyCurePrice(state)?'Cure leprosy · 5,000 gold':'Cure leprosy · Free for apprentices',{type:'cureLeprosy'},'primary',state.gold<leprosyCurePrice(state)));
  const guard=visibleDungeonGuardian(state);
  if(guard)$('actions').insertAdjacentHTML('beforeend',button('Engage '+guard.enemy.name+' · '+guard.distance+' squares',{type:'engageGuardian'},'primary'));
