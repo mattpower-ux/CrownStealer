@@ -7,3 +7,19 @@ test('killing strike still reports impact without a phantom retaliation',()=>{co
 test('guard reports blocked damage even when regeneration masks health loss',()=>{const s=battle();s.hp=40;s.armor=100;const events=[];act(s,{type:'guard'},events);assert.equal(events.length,1);assert.equal(events[0].kind,'block');assert.equal(events[0].amount,1);assert.equal(events[0].sound,'block');});
 test('unusable tonic produces no attack feedback',()=>{const s=battle();s.food=0;for(const type of ['heal']){const events=[];act(s,{type},events);assert.deepEqual(events,[]);}});
 test('healing and lethal retaliation preserve actual amounts before recovery',()=>{const s=battle();s.hp=3;s.potions=1;s.enemy.attack=1000;const events=[];act(s,{type:'heal'},events);assert.deepEqual(events.map(e=>e.kind),['heal','hit','defeat']);assert.equal(events[0].amount,45);assert.ok(events[1].amount>48);});
+test('developer invulnerability preserves landed-hit feedback without taking damage',()=>{
+ const s=battle(),events=[];
+ const n=act(s,{type:'guard'},events,{invulnerable:true});
+ assert.equal(n.hp,s.hp);
+ assert.equal(events.length,1);
+ assert.equal(events[0].enemyImpact,true);
+ assert.equal(events[0].amount,0);
+ assert.equal(events[0].hpAfter,s.hp);
+});
+test('a frozen enemy does not play a landed-hit reaction in protected preview',()=>{
+ const s=battle(),events=[];
+ s.enemy.frozen=1;
+ const n=act(s,{type:'guard'},events,{invulnerable:true});
+ assert.equal(n.hp,s.hp);
+ assert.equal(events.some(e=>e.enemyImpact),false);
+});

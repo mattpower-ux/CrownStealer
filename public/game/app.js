@@ -118,7 +118,7 @@ function flushClock(refresh=true,allowHidden=false){const now=performance.now(),
 setInterval(()=>flushClock(),1000);
 
 let oddJobId=null;
-function start(s){cemeteryHaunt=null;hauntPosition=null;cemeteryPrompted.clear();oddJobId=null;castleHeadVisit=null;castleHeadReply=null;castleBathReply=null;castleTileVisit=null;castleGuardReply=null;arenaResult=null;guardConsultFx=null;clockLast=performance.now();displayedDungeonLevel=null;finishCombat();cancelAnimationFrame(frame);state=s;dismissedLadder=ladderTileKey(s.dungeon);$('title-screen').hidden=true;$('game').hidden=false;update();audio.unlock().then(()=>sceneMusic());frame=requestAnimationFrame(draw);if(state.flags.wizardForsakenPending)openPanel('wizardForsaken');else if(state.flags.paladinForsakenPending)openPanel('paladinForsaken');else if(state.flags.boatReveal)openPanel('boatReveal');else if(state.flags.rescuePending)openPanel('rescue');else if(state.flags.gagReveal)openPanel('gagReveal');else if(state.flags.peacefulEncounter)openPanel('peaceful');else if(state.flags.travelMerchant)openPanel('travelMerchant');else if(state.mode==='town'&&state.flags.gossipGuardTown)openPanel('gossipGuard');else if(state.flags.borderTauntPending)openPanel('borderTaunt');else if(state.flags.guardTauntPending)openPanel('guardTaunt');else if(state.flags.royalQuest==='opening')openPanel('royalIntro');else if(state.mode==='ending')openPanel('ending');else if(state.casino?.active)openPanel('casino');else showLoot();}
+function start(s){impactIndex=0;cemeteryHaunt=null;hauntPosition=null;cemeteryPrompted.clear();oddJobId=null;castleHeadVisit=null;castleHeadReply=null;castleBathReply=null;castleTileVisit=null;castleGuardReply=null;arenaResult=null;guardConsultFx=null;clockLast=performance.now();displayedDungeonLevel=null;finishCombat();cancelAnimationFrame(frame);state=s;dismissedLadder=ladderTileKey(s.dungeon);$('title-screen').hidden=true;$('game').hidden=false;update();audio.unlock().then(()=>sceneMusic());frame=requestAnimationFrame(draw);if(state.flags.wizardForsakenPending)openPanel('wizardForsaken');else if(state.flags.paladinForsakenPending)openPanel('paladinForsaken');else if(state.flags.boatReveal)openPanel('boatReveal');else if(state.flags.rescuePending)openPanel('rescue');else if(state.flags.gagReveal)openPanel('gagReveal');else if(state.flags.peacefulEncounter)openPanel('peaceful');else if(state.flags.travelMerchant)openPanel('travelMerchant');else if(state.mode==='town'&&state.flags.gossipGuardTown)openPanel('gossipGuard');else if(state.flags.borderTauntPending)openPanel('borderTaunt');else if(state.flags.guardTauntPending)openPanel('guardTaunt');else if(state.flags.royalQuest==='opening')openPanel('royalIntro');else if(state.mode==='ending')openPanel('ending');else if(state.casino?.active)openPanel('casino');else showLoot();}
 $('new-game').onclick=()=>{if(!selectedGender){toast('Choose HIM, HER, or OTHER first.');return;}if(hasSave()){openPanel('new');return;}beginNewAdventurer();};
 $('continue-game').onclick=()=>{try{start(loadGame(localStorage.getItem(SAVE)));}catch(e){toast('Cannot read save: '+e.message);}};
 $('home').onclick=()=>{if(state?.dungeon?.site===SAGE_MAZE_ID){state=act(state,{type:'sageAbort'});toast(state.log.at(-1));}audio.stopRoyalDungeonVoice();flushClock(false);clearTimeout(levelBannerTimer);$('level-banner').hidden=true;displayedDungeonLevel=null;finishCombat();persist();$('game').hidden=true;$('title-screen').hidden=false;refreshSlotPicker();audio.setScene('title');cancelAnimationFrame(frame);};
@@ -407,7 +407,7 @@ function updateWildernessHealth(){
  wildernessHealthFill.style.width=`${fraction*100}%`;
 }
 
-function update(){updateClockDisplay();updateWildernessHealth();if(!nearCastleHead())castleHeadVisit=null;if(castleTileVisit!==castleTileKey())castleTileVisit=null;
+function update(){if(state.mode!=='battle')impactIndex=0;updateClockDisplay();updateWildernessHealth();if(!nearCastleHead())castleHeadVisit=null;if(castleTileVisit!==castleTileKey())castleTileVisit=null;
  const minor=state.dungeon?.site==='minor-site'?minorSiteDefinition(state.dungeon.minorId):null;
  updateLevelBanner();
  document.querySelector('.portrait').innerHTML=faceMarkup(state);
@@ -979,7 +979,7 @@ window.CrownStealerAndroidBack=()=>{if($('panel').open){closePanel();return true
 // Save the resolved turn immediately; presentation never changes game state.
 let combatView=null,combatFx=null,combatTimers=[],combatToken=0,goldLootTimer;
 let autoAttackEnabled=false,autoAttackTimer;
-const impactIndex={him:0,her:0};
+let impactIndex=0;
 function updateAutoAttackButton(){
  const button=$('actions').querySelector('[data-action*="autoAttack"]');
  if(!button)return;
@@ -1062,9 +1062,9 @@ function playCombat(before,events,approach){
   updateCombatPanel(combatView,$('scene-caption').textContent);
   return ready.then(()=>{
    if(token!==combatToken||document.hidden)return;
-   if(event.target==='hero'&&event.amount>0&&['hit','block'].includes(event.kind)&&!event.mental){
+   if(event.enemyImpact){
     const voice=before.gender==='her'?'her':'him';
-    audio.effect('sfx-impact-'+voice+'-'+(impactIndex[voice]++%3));
+    audio.effect('sfx-impact-'+voice+'-'+(impactIndex++%3));
    }else if(event.sound)audio.effect(event.sound);
    if(event.voice)return audio.playRoyalDungeonVoice(event.voice);
   });
