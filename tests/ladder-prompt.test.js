@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {dungeonLadders,ladderPrompt} from '../public/game/dungeon-ladders.js';
-import {dungeonMap} from '../public/game/engine.js';
+import {discoveredDungeonLadders,dungeonLadders,ladderPrompt} from '../public/game/dungeon-ladders.js';
+import {act,createGame,dungeonMap,loadGame,saveGame} from '../public/game/engine.js';
 test('ladder prompts follow actual up and down ladder tiles',()=>{for(const [x,y,direction] of [[1,1,'up'],[13,13,'down']]){const d={index:0,floor:0,x,y};assert.equal(ladderPrompt({mode:'dungeon',dungeon:d},dungeonMap(d)).direction,direction);}assert.equal(ladderPrompt({mode:'dungeon',dungeon:{index:0,floor:0,x:2,y:1}},dungeonMap({index:0,floor:0})),null);});
 test('combat and final reliquaries do not offer phantom down ladders',()=>{const d={index:0,floor:9,x:13,y:13};assert.equal(ladderPrompt({mode:'dungeon',dungeon:d},dungeonMap(d)),null);assert.equal(ladderPrompt({mode:'battle',dungeon:{...d,x:1,y:1}},dungeonMap(d)),null);});
 test('royal sewer up ladder uses the escape action',()=>{const d={index:0,floor:0,x:13,y:13,royal:'sewer'};assert.equal(ladderPrompt({mode:'dungeon',dungeon:d},dungeonMap(d)).upAction,'descend');});
@@ -39,4 +39,19 @@ test('opening a secret room never moves a hallway ladder', () => {
   assert.equal(dungeonMap(d)[secretRoom.y][secretRoom.x], 1);
   const discovered = {...d, secretRoom};
   assert.deepEqual(dungeonLadders(discovered, dungeonMap(discovered)), before);
+});
+
+test('only visited ladders appear on the dungeon minimap and stay discovered after saving',()=>{
+ const s=createGame();
+ s.mode='dungeon';
+ s.dungeon={index:0,floor:0,x:1,y:1,dir:1};
+ if(dungeonMap(s.dungeon)[1][2]===1)s.dungeon.dir=2;
+ const ladders=dungeonLadders(s.dungeon,dungeonMap(s.dungeon));
+ assert.deepEqual(discoveredDungeonLadders(s,ladders).map(l=>l.direction),['up']);
+ const next=act(s,{type:'forward'},[],{noEncounters:true});
+ assert.notDeepEqual([next.dungeon.x,next.dungeon.y],[s.dungeon.x,s.dungeon.y]);
+ const restored=loadGame(saveGame(next));
+ assert.deepEqual(discoveredDungeonLadders(restored,ladders).map(l=>l.direction),['up']);
+ restored.dungeon.floor++;
+ assert.deepEqual(discoveredDungeonLadders(restored,ladders),[]);
 });

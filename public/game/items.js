@@ -94,3 +94,9 @@ export function itemArt(item){
  const head=shape==='armor'?'<path d="M68 40 L42 61 L25 105 L57 119 L66 96 L61 182 Q100 205 139 182 L134 96 L143 119 L175 105 L158 61 L132 40 Q100 69 68 40 Z" fill="url(#steel)"/><path d="M100 66 V190 M66 130 H134 M65 145 H135" stroke="#5a5c51" stroke-width="4"/>':shape==='axe'?'<path d="M94 57 Q43 44 47 104 L94 91 M106 57 Q157 44 153 104 L106 91" fill="url(#steel)"/>':shape==='hammer'?'<rect x="52" y="55" width="96" height="45" rx="7" fill="url(#steel)"/><path d="M62 64 H138 M62 90 H138" stroke="#6a5c40"/>':shape==='spear'?'<path d="M100 17 L117 65 L100 85 L83 65 Z" fill="url(#steel)"/>':shape==='relic'?'<path d="M55 75 L78 94 L100 56 L122 94 L145 75 L134 132 H66 Z" fill="url(#steel)"/><circle cx="100" cy="113" r="9" fill="#203d41"/>':'<path d="M100 20 L114 49 L108 133 H92 L86 49 Z" fill="url(#steel)"/><path d="M100 30 V130" stroke="#ffffffaa"/><path d="M69 135 Q100 121 131 135 L128 143 H72 Z" fill="#aa884e"/>';
  return `<svg class="item-art" viewBox="0 0 200 220" role="img" aria-label="${shape} illustration"><defs><linearGradient id="${gradient}"><stop stop-color="#697b85"/><stop offset=".45" stop-color="${metal}"/><stop offset=".55" stop-color="#f9efd4"/><stop offset="1" stop-color="${metal}"/></linearGradient></defs><circle cx="100" cy="106" r="83" fill="${metal}12" stroke="${metal}44"/>${ornament}<g transform="rotate(22 100 110)">${!['relic','armor'].includes(shape)?'<rect x="94" y="77" width="12" height="120" rx="4" fill="#65412e"/><path d="M94 152 L106 158 M94 165 L106 171 M94 178 L106 184" stroke="#c29a62"/><circle cx="100" cy="199" r="9" fill="#b39458"/>':''}${head}${decoration}</g></svg>`.replaceAll("url(#steel)",`url(#${gradient})`);
 }
+
+export function isMagicEquipment(item){
+ return !!item&&item.id!=='dungeon-elevator'&&!item.attributeEffect&&(
+  item.kind==='scroll'||item.kind==='wand'||item.shape==='scroll'||item.id==='horn-of-help'
+ );
+}

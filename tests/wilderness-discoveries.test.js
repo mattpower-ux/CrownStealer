@@ -29,11 +29,12 @@ test('hidden remains reveal nearby, persist when leaving, and grant their loot o
  s.x=hero.x;s.y=hero.y;s=act(s,{type:'rename',name:s.name});
  assert.ok(wildernessDiscoveries({...s,x:1,y:1}).some(p=>p.id===hero.id));
  const before=s.gold;s=act(s,{type:'searchDiscovery',id:hero.id});
- assert.equal(s.gold,before+75);assert.ok(s.bag.includes('horn-of-help'));assert.equal(s.flags.hornHelpCharges,3);
+ assert.equal(s.gold,before+75);assert.ok(s.bag.includes('horn-of-help'));assert.equal(s.flags.hornHelpCharges,3);assert.deepEqual(s.pendingLoot,['horn-of-help']);
  assert.equal(wildernessDiscoveries(s).find(p=>p.id===hero.id).searched,true);
- s=loadGame(saveGame(s));s.flags.hornHelpCharges=1;
+ s=loadGame(saveGame(s));s.flags.hornHelpCharges=1;s.pendingLoot=[];
+ s=act(s,{type:'equipMagic',id:'horn-of-help'});assert.equal(s.equippedMagic,'horn-of-help');
  const repeated=act(s,{type:'searchDiscovery',id:hero.id});
- assert.equal(repeated.gold,s.gold);assert.equal(repeated.flags.hornHelpCharges,1);assert.equal(repeated.bag.filter(id=>id==='horn-of-help').length,1);
+ assert.deepEqual(repeated.pendingLoot,[]);assert.equal(repeated.gold,s.gold);assert.equal(repeated.flags.hornHelpCharges,1);assert.equal(repeated.bag.filter(id=>id==='horn-of-help').length,1);
 });
 test('visible camps grant provisions once while distant and combat searches do nothing',()=>{
  let s=createGame();const camp=wildernessDiscoverySites(s).find(p=>p.type==='abandoned-camp');

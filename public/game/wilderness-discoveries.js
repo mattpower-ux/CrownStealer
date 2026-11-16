@@ -89,7 +89,7 @@ export function searchWildernessDiscovery(s,id,note){
  s.flags.discoverySeen??=[];if(!s.flags.discoverySeen.includes(id))s.flags.discoverySeen.push(id);
  s.flags.discoverySearched??=[];s.flags.discoverySearched.push(id);
  s.gold+=site.gold;s.meals=Math.min(999,s.meals+site.meals);
- if(site.type==='hero-remains')grantHornOfHelp(s);
+ if(site.type==='hero-remains'&&grantHornOfHelp(s))s.pendingLoot.push('horn-of-help');
  s.turns++;note(s,site.result);
 }
 

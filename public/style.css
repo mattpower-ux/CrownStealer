@@ -794,3 +794,59 @@ dialog[data-panel="sageJournal"] #save-checkpoint { display: none; }
 .avatar-woad::before,.avatar-woad::after { content:"";position:absolute;top:40%;width:35%;height:55%;background:#3477ae; }
 .avatar-woad::before { left:4%;transform:rotate(24deg); }
 .avatar-woad::after { right:4%;transform:rotate(-24deg); }
+
+/* Illustrated wilderness encounters */
+#panel:has(.discovery-illustration) {
+  width: min(1480px, calc(100vw - 24px));
+  max-width: none;
+  max-height: calc(100svh - 24px) !important;
+  padding: 14px clamp(12px, 2vw, 26px);
+}
+#panel:has(.discovery-illustration) > .dialog-heading {
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+}
+#panel:has(.discovery-illustration) #panel-body {
+  overflow: auto;
+  max-height: calc(100svh - 120px);
+}
+.discovery-illustration {
+  display: block;
+  width: 100%;
+  height: min(64svh, 720px);
+  object-fit: cover;
+  border-radius: 6px;
+}
+#discovery-art {
+  position: relative;
+  inset: auto;
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: min(280px, 30vh);
+  object-fit: contain;
+  pointer-events: none;
+}
+.discovery-content {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  column-gap: 20px;
+  font-size: clamp(16px, 1.45vw, 20px);
+  line-height: 1.5;
+}
+.discovery-content > p { flex: 1 1 300px; margin: 10px 0; }
+.discovery-content > .panel-actions { margin: 8px 0; }
+.discovery-content button { font-size: 16px; }
+#panel .discovery-content .standing-stones-inscription { margin: 10px 0; }
+@media (orientation: portrait) {
+  .discovery-illustration { height: clamp(200px, 52svh, 620px); }
+}
+@media (max-height: 500px) {
+  .discovery-illustration { height: 54svh; }
+}
+
+.discovery-illustration.colony-illustration { height: min(47svh, 500px); }
+.colony-content { font-size: clamp(16px, 1.45vw, 20px); line-height: 1.5; }
+.colony-content p { margin: 10px 0; }

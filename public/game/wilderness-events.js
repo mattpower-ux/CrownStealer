@@ -14,7 +14,7 @@ export function startWildernessEvent(s,kind,ctx){
 export function wildernessEventAction(s,a,ctx){
  if(s.mode!=='world')return false;
  const {note,random}=ctx;
- if(s.flags.impaledMoves&&['move','mapStep'].includes(a.type)){
+ if(s.flags.impaledMoves&&['move','mapStep','pullBranch'].includes(a.type)){
   s.flags.impaledMoves--;s.turns++;hurt(s,roll(random,1,10),ctx,'You struggle against the branch.');
   if(!s.flags.impaledMoves){delete s.flags.impaledMoves;if(s.hp>0)note(s,'At last, you pull yourself free.');}return true;
  }

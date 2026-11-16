@@ -63,3 +63,21 @@ export function ladderPrompt(s, map) {
   const ladder = dungeonLadders(d, map).find(l => l.x === d.x && l.y === d.y);
   return ladder ? {...ladder, upAction: d.royal === 'sewer'||ladder.tunnelExit ? 'descend' : 'leave'} : null;
 }
+
+function ladderMemoryKey(d,ladder){
+ return JSON.stringify([d.index,d.site,d.minorId,d.expedition,d.royal,d.floor,!!d.charityPit,ladder.x,ladder.y,ladder.direction]);
+}
+
+export function rememberDungeonLadder(s,map){
+ const d=s.dungeon;
+ for(const ladder of dungeonLadders(d,map)){
+  if(ladder.x!==d.x||ladder.y!==d.y)continue;
+  const known=s.flags.discoveredDungeonLadders??={};
+  known[ladderMemoryKey(d,ladder)]=true;
+ }
+}
+
+export function discoveredDungeonLadders(s,ladders){
+ const d=s.dungeon;
+ return ladders.filter(ladder=>ladder.x===d.x&&ladder.y===d.y||s.flags?.discoveredDungeonLadders?.[ladderMemoryKey(d,ladder)]===true);
+}

@@ -103,6 +103,9 @@ export class AudioDirector {
       this.titlePlayer.loop = true;
       this.titlePlayer.preload = 'auto';
       this.titlePlayer.volume = this.musicVolume;
+      this.titlePlayer.onplaying=()=>{
+        if(this.scene!=='title'||this.paused||this.destroyed)this.titlePlayer.pause();
+      };
       this.titlePlayer.onerror = () => {
         this.titleUnavailable = true;
         if (this.scene === 'title' && !this.paused && !this.destroyed) this.start();
@@ -129,7 +132,7 @@ export class AudioDirector {
   }
 
   setScene(name) {
-    if (this.destroyed || !Object.hasOwn(THEMES, name) || name === this.scene) return;
+    if(this.destroyed||typeof name!=='string'||name===this.scene||(!Object.hasOwn(THEMES,name)&&!recordedMusic(name)))return;
     this.positions.set(this.scene,this.beat||0);
     this.scene = name;
     if(name!=='title')this.titlePlayer?.pause();
@@ -147,7 +150,19 @@ export class AudioDirector {
     const recording=recordedMusic(this.scene);
     if(recording&&this.MediaAudio&&!this.backgroundUnavailable.has(recording)){
       let player=this.backgroundPlayers.get(recording);
-      if(!player){player=new this.MediaAudio(recording);player.loop=true;player.preload='none';this.backgroundPlayers.set(recording,player);player.onerror=()=>{this.backgroundUnavailable.add(recording);if(recordedMusic(this.scene)===recording&&!this.paused&&!this.destroyed)this.start();};}
+      if(!player){
+        player=new this.MediaAudio(recording);
+        player.loop=true;
+        player.preload='none';
+        this.backgroundPlayers.set(recording,player);
+        const isCurrent=()=>recordedMusic(this.scene)===recording&&!this.paused&&!this.destroyed;
+        player.onplaying=()=>{if(!isCurrent())player.pause();};
+        player.onerror=()=>{
+          player.pause();
+          this.backgroundUnavailable.add(recording);
+          if(isCurrent())this.start();
+        };
+      }
       player.volume=this.musicVolume*.5;
       if(player.paused)player.play().catch(error=>{if(error?.name==='AbortError')return;this.backgroundUnavailable.add(recording);if(recordedMusic(this.scene)===recording&&!this.paused&&!this.destroyed)this.start();});
       return;
@@ -165,7 +180,7 @@ export class AudioDirector {
 
   schedule() {
     if (this.paused || this.destroyed || this.context.state !== 'running') return;
-    const theme = THEMES[this.scene];
+    const theme=THEMES[this.scene]??(this.scene==='boss'?THEMES.battle:THEMES['dungeon:0']);
     const step = 30 / theme.bpm;
     // Drop missed notes after a delayed background timer instead of bursting them.
     if (this.nextNote < this.context.currentTime) this.nextNote = this.context.currentTime + .02;
