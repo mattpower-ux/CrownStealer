@@ -780,3 +780,11 @@ dialog[data-panel="inventory"] .inventory-item-popup{aspect-ratio:auto;min-heigh
 /* Standing-stone discovery artwork and readable inscription. */
 .standing-stones-illustration{display:block;width:100%;height:auto;max-height:40vh;object-fit:cover;border-radius:8px;border:1px solid #796943}
 #panel .standing-stones-inscription{font-size:clamp(24px,2.2vw,30px);line-height:1.6;color:#f4e8c9;margin:24px 0}
+
+dialog[data-panel="sageJournal"] { width: min(760px, calc(100% - 32px)); }
+dialog[data-panel="sageJournal"] .sage-journal-entry {
+  margin: 12px 0 24px;
+  color: #f4e1b3;
+  font: clamp(24px, 4vw, 42px)/1.35 Georgia, serif;
+}
+dialog[data-panel="sageJournal"] #save-checkpoint { display: none; }

@@ -2,6 +2,7 @@ import {TOWNS} from './content.js';
 import {townPlace,townPlaces} from './town.js';
 import {DAY_MS,worldTimeMs,advanceClock} from './world-clock.js';
 import {MONSTER_BY_ID} from './bestiary.js';
+export const SAGE_PEN_ID='sage-mapping-scroll';
 export const SAGE_SCROLL_ID='sage-intelligence-scroll';
 export const SAGE_MAZE_ID='sage-maze',SAGE_BALL_ID='sage-crystal-ball';
 export const SAGE_QUESTIONS=[
@@ -48,6 +49,13 @@ function features(d){
 export const sageRemains=d=>features(d).remains;
 export const sageRemainsAt=d=>d?.site===SAGE_MAZE_ID?sageRemains(d).find(r=>r.x===d.x&&r.y===d.y):null;
 
+function sketchSquare(s){
+ const challenge=s.flags.sageChallenge;
+ if(s.equippedMagic!==SAGE_PEN_ID||!s.bag.includes(SAGE_PEN_ID))return;
+ const {x,y}=s.dungeon,key=x+','+y,sketch=challenge.sketch??=[];
+ if(!sketch.includes(key))sketch.push(key);
+}
+
 function startRatAmbush(s,c,note){
  const rat=MONSTER_BY_ID['tithe-rat'],memberHp=14;
  c.ratsTriggered=true;
@@ -68,6 +76,7 @@ export function sageAction(s,a,note){
   if(a.type==='sageInspectRemains'){
    const body=sageRemainsAt(d);
    if(body?.id!==a.id)return true;
+   if(body.id==='clarissa'&&!s.bag.includes(SAGE_PEN_ID))s.bag.push(SAGE_PEN_ID);
    const foundScroll=body.id==='clarissa'&&!s.flags.sageScrollFound;
    if(foundScroll){
     s.flags.sageScrollFound=true;
@@ -76,10 +85,18 @@ export function sageAction(s,a,note){
    say(s,body.name+'’s journal: “'+body.journal+'”'+(foundScroll?' You take her Scroll of Intelligence.':''),note);
    return true;
   }
+  if(a.type==='sageEquipPen'){
+   if(sageRemainsAt(d)?.id==='clarissa'&&s.bag.includes(SAGE_PEN_ID)){
+    s.equippedMagic=SAGE_PEN_ID;
+    sketchSquare(s);
+    note(s,'Clarissa’s pen begins to sketch your path.');
+   }
+   return true;
+  }
   if(a.type==='turn'&&[-1,1].includes(a.delta))d.dir=(d.dir+a.delta+4)%4;
   if(['forward','back','strafe'].includes(a.type)){
    const dir=(d.dir+(a.type==='strafe'?(a.delta<0?-1:1):0)+4)%4,[dx,dy]=[[0,-1],[1,0],[0,1],[-1,0]][dir],sign=a.type==='back'?-1:1,x=d.x+dx*sign,y=d.y+dy*sign,m=sageMap(d);
-   if(m[y]?.[x]!==undefined&&m[y][x]!==1){d.x=x;d.y=y;s.turns++;if(!c.ratsTriggered&&features(d).fromExit.get(x+','+y)<=5){startRatAmbush(s,c,note);return true;}if(m[y][x]===2){s.flags.sageSolved=true;if(!s.bag.includes(SAGE_BALL_ID))s.bag.push(SAGE_BALL_ID);eject(s,note,'You find the Crystal Ball of Teleportation! The smiling Sage awaits you above.',false);}}else note(s,'Cold stone blocks your path.');
+   if(m[y]?.[x]!==undefined&&m[y][x]!==1){d.x=x;d.y=y;s.turns++;sketchSquare(s);if(!c.ratsTriggered&&features(d).fromExit.get(x+','+y)<=5){startRatAmbush(s,c,note);return true;}if(m[y][x]===2){s.flags.sageSolved=true;if(!s.bag.includes(SAGE_BALL_ID))s.bag.push(SAGE_BALL_ID);eject(s,note,'You find the Crystal Ball of Teleportation! The smiling Sage awaits you above.',false);}}else note(s,'Cold stone blocks your path.');
   }
   return true; // No maps, ladders or item-based escape.
  }
@@ -92,7 +109,7 @@ export function sageAction(s,a,note){
  if(a.type==='sageVisit'){const visits=s.flags.sageVisitedTowns||[];s.flags.sageRecognized=visits.some(id=>id!==s.location);s.flags.sageVisitedTowns=[...new Set([...visits,s.location])];return true;}
  if(a.type==='sageStartQuiz'&&!s.flags.sageSolved&&!c){s.flags.sageChallenge={stage:'quiz',town:s.location,questions:pickQuestions(),questionIndex:0,correct:0};return true;}
  if(a.type==='sageAnswer'&&c?.stage==='quiz'){const q=SAGE_QUESTIONS.find(q=>q.id===c.questions[c.questionIndex]);if(!Number.isInteger(a.answer)||a.answer<0||a.answer>=q.options.length)return true;if(a.answer===q.answer)c.correct++;c.questionIndex++;if(c.questionIndex===3){if(c.correct===3){c.stage='ready';say(s,SAGE_SECRET,note);}else eject(s,note,c.correct===2?SAGE_FAILURE:'Not even three answers! Get thee hence, and come not again for a week and a day!');}return true;}
- if(a.type==='sageEnterMaze'&&c?.stage==='ready'){c.stage='maze';c.deadline=Date.now()+300000;s.mode=s.returnMode='dungeon';s.enemy=null;s.dungeon={site:SAGE_MAZE_ID,index:0,floor:0,x:1,y:1,dir:1,sageSeed:Math.floor(Math.random()*4294967295)+1};say(s,'The trap door opens. Find the exit before five minutes pass. There is no map and no saved progress.',note);return true;}
+ if(a.type==='sageEnterMaze'&&c?.stage==='ready'){c.stage='maze';c.deadline=Date.now()+300000;s.mode=s.returnMode='dungeon';s.enemy=null;s.dungeon={site:SAGE_MAZE_ID,index:0,floor:0,x:1,y:1,dir:1,sageSeed:Math.floor(Math.random()*4294967295)+1};sketchSquare(s);say(s,'The trap door opens. Find the exit before five minutes pass. You cannot save in the maze.',note);return true;}
  if(a.type==='sageTeleport'&&s.flags.sageSolved&&s.bag.includes(SAGE_BALL_ID)){const town=sageDestinations(s).find(t=>t.id===a.town);if(town){s.region=town.region;s.location=town.id;s.x=town.x;s.y=town.y;const p=townPlaces(s).find(p=>p.id==='fortune');s.townPosition={x:p.x,y:p.y};say(s,'The crystal ball carries you to the Sage in '+town.name+'.',note);}return true;}
  return true;
 }

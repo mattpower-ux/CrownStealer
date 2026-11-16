@@ -9,7 +9,7 @@ export function sageView(s,insult,{marriage=false,teleport=false}={}){
   actions=question.options.map((option,i)=>`<button data-sage-answer="${i}">${esc(option)}</button>`).join('');
  }else if(q?.stage==='ready'){
   speech="At last, one worthy of my secret. Beneath my floors are many doors, a maze of complication. Solve the maze without a save, and you'll have the key to every nation!";
-  actions='<p>The trapdoor opens. You have five real minutes to find the exit. No map. No saving or restoring. Leaving the challenge means eight game days away.</p><button id="sage-enter-maze">Descend through the trapdoor</button>';
+  actions='<p>The trapdoor opens. You have five real minutes to find the exit. No saving or restoring. Leaving the challenge means eight game days away.</p><button id="sage-enter-maze">Descend through the trapdoor</button>';
  }else if(s.flags.sageSolved){
   actions=(s.bag.includes(SAGE_BALL_ID)?'<button id="sage-teleport">Teleport Me</button>':'')+'<button id="another-fortune">I miss the old hag. Insult me</button><button id="sage-marriage">Ask her to marry you</button>';
   if(teleport&&s.bag.includes(SAGE_BALL_ID))actions=sageDestinations(s).map(t=>`<button data-sage-town="${esc(t.id)}">${esc(t.name)}</button>`).join('');

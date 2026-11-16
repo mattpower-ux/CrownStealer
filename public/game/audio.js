@@ -19,7 +19,7 @@ export const THEMES = Object.freeze({
 });
 
 export const recordedMusic=scene=>scene==='dungeon:kobold'?null:scene==='boss'?'/assets/mob-boss.mp3':scene==='dungeon:ship'?'/assets/hollow-signal.mp3':scene==='dungeon:6'?'/assets/the-echoing-clock.mp3':scene==='dungeon:sewer'?'/assets/below-the-grates.mp3':scene==='snow'?'/assets/against-the-whiteout.mp3':scene==='desert'?'/assets/sands-beyond-the-horizon.mp3':scene==='land:0'?'/assets/countryside-wander.mp3':scene==='dungeon'||scene.startsWith('dungeon:')?'/assets/whispers-beneath-stone.mp3':null;
-export const RECORDED_EFFECTS={hit:'sfx-strike',hurt:'sfx-hurt',roulette:'sfx-roulette',cards:'sfx-cards',rescue:'sfx-rescue',dungeonEntrance:'sfx-dungeon',casinoWin:'sfx-casino-win',goldFound:'sfx-gold',townEntrance:'sfx-town',defeat:'sfx-defeat',wolfEncounter:'sfx-wolf','dragon-greep':'sfx-gleep',drakeVoice:'voice-drake','voice-rock-troll':'voice-rock-troll','voice-bailiff':'voice-bailiff','voice-haghilda':'voice-haghilda','voice-leviathan':'voice-leviathan','voice-morgana':'voice-morgana'};
+export const RECORDED_EFFECTS={...Object.fromEntries(["sfx-impact-him-0","sfx-impact-him-1","sfx-impact-him-2","sfx-impact-her-0","sfx-impact-her-1","sfx-impact-her-2"].map(name=>[name,name])),hit:'sfx-strike',hurt:'sfx-hurt',roulette:'sfx-roulette',cards:'sfx-cards',rescue:'sfx-rescue',dungeonEntrance:'sfx-dungeon',casinoWin:'sfx-casino-win',goldFound:'sfx-gold',townEntrance:'sfx-town',defeat:'sfx-defeat',wolfEncounter:'sfx-wolf','dragon-greep':'sfx-gleep',drakeVoice:'voice-drake','voice-rock-troll':'voice-rock-troll','voice-bailiff':'voice-bailiff','voice-haghilda':'voice-haghilda','voice-leviathan':'voice-leviathan','voice-morgana':'voice-morgana'};
 const hz = midi => 440 * 2 ** ((midi - 69) / 12);
 const volume = (value, fallback) => Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : fallback;
 
@@ -261,9 +261,9 @@ export class AudioDirector {
     const buffer=await pending;
     if(this.paused||this.destroyed||context!==this.context||transport!==this.transport||context.state!=='running')return;
     if(name==='wolfEncounter'&&(this.scene!=='battle'||generation!==this.encounterGeneration))return;
-    if(!buffer)return this.effect(name,true);
+    if(!buffer)return name.startsWith('sfx-impact-')?this.effect('hurt'):this.effect(name,true);
     const source=context.createBufferSource(),envelope=context.createGain();source.buffer=buffer;
-    envelope.gain.setValueAtTime(['hit','hurt'].includes(name)?1.25:.85,context.currentTime);
+    envelope.gain.setValueAtTime(['hit','hurt'].includes(name)||name.startsWith('sfx-impact-')?1.25:.85,context.currentTime);
     source.connect(envelope);envelope.connect(this.effects);const entry={source,envelope,bus:'effects'};
     this.voices.add(entry);source.onended=()=>this.disconnect(entry);source.start(context.currentTime+.005);
   }
