@@ -1,4 +1,9 @@
+export const CLIMBING_GEAR='mountain-climbing-gear';
+export const hasClimbingGear=s=>s.equipped===CLIMBING_GEAR&&s.bag.includes(CLIMBING_GEAR);
+export const climbingGearDrop=(heroLevel,npcLevel,roll)=>heroLevel>=5&&npcLevel>=5&&roll<.03?CLIMBING_GEAR:null;
+
 export const EXPLORATION_LOOT={
+ [CLIMBING_GEAR]:{id:CLIMBING_GEAR,name:'Mountain Climbing Gear',kind:'weapon',family:'tool',shape:'climbing-gear',rarity:'rare',minLevel:5,tier:1,unique:true,notForSale:true,encounterOnly:true,bottomOnly:true,toHit:-4,damage:[1,3],value:160,color:'#caab73',description:'Rope, an iron pick and pitons. Equip in your weapon slot to cross mountain tiles.'},
  'miners-cap':{id:'miners-cap',name:"Miner's Cap",kind:'head',shape:'helm',tier:1,rarity:'rare',value:180,color:'#e5b665',dungeonLight:true,description:'A steady lamp lights dark dungeons while this cap is equipped.'},
  'tusk-mountain-history':{id:'tusk-mountain-history',name:'Old Book of Tusk Mountain',kind:'book',shape:'scroll',rarity:'rare',value:240,color:'#c0a178',encounterOnly:true,description:'Before the crown, Tusk Mountain sheltered a mining kingdom. Its last army marched beneath the ridge and never returned. The Watchers still keep its abandoned stores.'},
  'armyates-scroll':{id:'armyates-scroll',name:'Armyates Chronicle Scroll',kind:'book',shape:'scroll',rarity:'rare',value:160,color:'#dfcf9e',encounterOnly:true,description:'Armyates records the sealing of the mountain road. Do not strike the eyes, and do not take what they guard. The far ladder leads through the mountains.'},

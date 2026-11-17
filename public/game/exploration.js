@@ -1,3 +1,4 @@
+import {hasClimbingGear} from './exploration-loot.js';
 import {BRIAR_AREA} from './briar-animals.js';
 import {peeblesTravelsWith} from './peebles.js';
 import {worldSize,scaleWorldPoint} from './world-size.js';
@@ -83,7 +84,7 @@ export function explorationAction(s,a,{note,encounter,clock,pointAt,random,champ
   if(!steps){note(s,peeblesTravelsWith(s)?'You pause while Professor Peebles catches up.':'Your snowshoes drag away from snow.');return true;}
   for(let step=0;step<steps;step++){
    const x=s.x+a.dx,y=s.y+a.dy,t=areaTile(s,x,y);
-   if(x<1||x>width-2||y<1||y>height-2||!dragonFlying(s)&&(t==='water'&&!waterAccess(s,x,y)||t==='mountain')){note(s,'Find a path around the barrier.');return true;}
+   if(x<1||x>width-2||y<1||y>height-2||!dragonFlying(s)&&(t==='water'&&!waterAccess(s,x,y)||t==='mountain'&&!hasClimbingGear(s))){note(s,'Find a path around the barrier.');return true;}
    const previous={mode:s.mode,region:s.region,x:s.x,y:s.y,exploration:s.exploration};
    s.x=x;s.y=y;clock(s);
    if(area.kind!=='planet'&&bridgeStep?.(s,previous))return true;
