@@ -49,7 +49,7 @@ import {minorSiteDefinition} from './minor-sites.js';
 import {innView,innkeeperFor} from './inn.js';
 import {ROULETTE_SPIN_MS} from './roulette-wheel.js';
 import {clockLabel,isNight,buffTimeLeft,worldTimeMs} from './world-clock.js';
-import {faceMarkup,facePickerMarkup,CUSTOMIZATION_JOKES} from './character-faces.js';
+import {faceMarkup,facePickerMarkup,cameoPickerMarkup,faceChangeBlocked,FACE_CHANGE_REFUSAL} from './character-faces.js';
 import {dealerVoice} from './casino.js';
 import {gossipView} from './gossip.js';
 import {ATTRIBUTE_CAP,attributeLabel,effectiveAttributes,effectiveLevel,levelDrainMinutesLeft,permanentAttributeGains,syncAttributeHealth} from './attributes.js';
@@ -84,12 +84,10 @@ if(developerMode)try{const savedRules=JSON.parse(localStorage.getItem("crownstea
 const SETTINGS='crownstealer-settings-v1';
 let activeSlot=1;try{activeSlot=selectedSlot(localStorage);}catch{}
 let {save:SAVE,checkpoint:CHECKPOINT}=developerMode?PREVIEW_KEYS:slotKeys(activeSlot);
-let selectedGender=null,selectedCameo=null,customizationTimer;
-const customizationPopup=document.createElement('section');customizationPopup.id='customization-popup';customizationPopup.hidden=true;customizationPopup.setAttribute('role','status');customizationPopup.setAttribute('aria-live','polite');customizationPopup.innerHTML='<p></p><button aria-label="Dismiss customization message">Close</button>';document.body.append(customizationPopup);customizationPopup.querySelector('button').onclick=()=>{customizationPopup.hidden=true;};
+let selectedGender=null,selectedCameo=null;
 $('hero-name').previousElementSibling.insertAdjacentHTML('beforebegin',facePickerMarkup());
 document.querySelectorAll('[name="adventurer-gender"]').forEach(input=>input.onchange=()=>{selectedGender=input.value;});
 document.querySelectorAll('[name="adventurer-cameo"]').forEach(input=>input.onchange=()=>{selectedCameo=input.value;});
-document.querySelectorAll('[data-customization-joke]').forEach(button=>button.onclick=()=>{customizationPopup.querySelector('p').textContent=CUSTOMIZATION_JOKES[Number(button.dataset.customizationJoke)].reply;customizationPopup.hidden=false;clearTimeout(customizationTimer);customizationTimer=setTimeout(()=>customizationPopup.hidden=true,4500);});
 import {WEBSTER_GREETINGS,websterAnswer} from './webster.js';
 let luteTimer;
 let inventorySelection=null,innMorning=false,gossipGuardTimer;
@@ -890,7 +888,26 @@ function openPanel(name,{winkShot=false,winkResult=null}={}){if(state?.dungeon?.
  if(name==='inventory'){
   const wasOpen=body.querySelector('.inventory-stats')?.open;
   const attributeFocus=body.contains(document.activeElement)?document.activeElement.dataset.attribute:null;
+  const faceWasOpen=body.querySelector('.inventory-face-picker')?.open;
   body.innerHTML=inventoryView(state,inventorySelection);
+  const facePicker=document.createElement('details');
+  facePicker.className='inventory-face-picker';
+  facePicker.open=!!faceWasOpen;
+  facePicker.innerHTML='<summary>Change Face</summary><div class="face-options"></div>';
+  body.querySelector('.inventory-meta').after(facePicker);
+  let faceBlocked;
+  const renderFaceOptions=()=>{const blocked=faceChangeBlocked(state);if(faceBlocked===blocked)return;faceBlocked=blocked;facePicker.querySelector('.face-options').innerHTML=blocked?'<p role="status">'+FACE_CHANGE_REFUSAL+'</p>':cameoPickerMarkup(state.cameo,'inventory-cameo');};
+  renderFaceOptions();
+  facePicker.addEventListener('toggle',()=>{if(facePicker.open)renderFaceOptions();});
+  facePicker.addEventListener('change',e=>{
+   if(e.target.name!=='inventory-cameo')return;
+   const id=e.target.value;
+   state=act(state,{type:'changeFace',id});
+   persist();
+   update();
+   openPanel('inventory');
+   body.querySelector('[name="inventory-cameo"]:checked')?.focus({preventScroll:true});
+  });
   if(state.flags.percivalOath==='accepted')body.querySelector('.inventory-meta').insertAdjacentHTML('afterend','<details class="champion-titles"><summary>Paladin · Oath of Sir Percival</summary><p>Fear immunity · TURN DEAD in combat · +2 Strength and +2 Charisma granted.</p><p>Oath: no evil weapons, poison, theft, attacks on unicorns or fey, or trade with orcs, goblins or trolls. Breaking it removes your blessings. Gambling is forbidden. Holy Sword, if owned: double damage against undead.</p></details>');
   if(state.flags.percivalOath==='fallen')body.querySelector('.inventory-meta').insertAdjacentHTML('afterend','<details class="champion-titles"><summary>Fallen Paladin · Oath broken</summary><p>Your attribute blessings, fear immunity and TURN DEAD are permanently lost.</p></details>');
   if(isWizard(state))body.querySelector('.inventory-meta').insertAdjacentHTML('afterend','<details class="champion-titles"><summary>Wizard Apprentice · '+wizardProgress(state).gainedLevels+' levels gained</summary><p>+2 Intelligence · +20% scroll and wand damage. Outside town: cloth armor only; no blades except daggers.</p><button data-panel="wizardArts">Wizard Arts and cooldowns</button></details>');
@@ -993,7 +1010,7 @@ function openPanel(name,{winkShot=false,winkResult=null}={}){if(state?.dungeon?.
   const sage=townPlaces({location:'mothbridge'}).find(place=>place.id==='fortune');
   body.insertAdjacentHTML('afterbegin','<p>The Helm of Thinkiness is stuck. Visit the Sage of Wonk in Mothbridge ('+sage.x+', '+sage.y+') to remove it.</p>');
  }
- if(name==='inventory')body.innerHTML+=cityJournal(state,esc);
+ if(name==='inventory')body.insertAdjacentHTML('beforeend',cityJournal(state,esc));
  if(name==='inn'&&cityOf(state))body.innerHTML+=cityView(state,button,esc);
  if(name==='peaceful'){
   const meeting=state.flags.peacefulEncounter;
