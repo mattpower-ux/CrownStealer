@@ -1,3 +1,4 @@
+import {MULTIVERSE_TUBE} from './snout.js';
 import {drawPeebles,drawPebblePlanes,pebbleMaterialRevision,pebblePixel} from './pebble-materials.js';
 import {BRIDGE_TROLL_ART} from './bridge-trolls.js';
 import {ROADSIDE_CRYPT} from './roadside-crypt.js';
@@ -1057,6 +1058,7 @@ function dungeonUncached(c,w,h,s,time){const d=s.dungeon;if(!d)return;if(d.ship)
   label(c,'CLARISSA’S SKETCH',x0+width/2,y0+width+12,Math.max(9,cell*1.2),'#f4db9c');
  }
  if(d.site!==SAGE_MAZE_ID){
+ drawMultiverseTube(c,w,h,d,m,dx,dy);
  const z=Math.min(7,w/65),mx=w-15*z-18,my=18;c.fillStyle='#06100de6';c.fillRect(mx-7,my-7,15*z+14,15*z+14);for(let y=0;y<15;y++)for(let x=0;x<15;x++){c.fillStyle=m[y][x]===1?(d.royal==='sewer'?SEWER_WALL.map:'#354239'):'#101c19';c.fillRect(mx+x*z,my+y*z,z-1,z-1);}if(d.secretRoom){c.strokeStyle='#cfc396';c.lineWidth=1;c.strokeRect(mx+d.secretRoom.x*z,my+d.secretRoom.y*z,z-1,z-1);}for(const ladder of discoveredDungeonLadders(s,ladders)){c.fillStyle=ladder.direction==='up'?'#9dd1db':'#d8ab73';c.fillRect(mx+ladder.x*z+1,my+ladder.y*z+1,z-2,z-2);}if(d.site===ROYAL_DUNGEON_ID){for(const npc of royalDungeonFigures(s))circle(c,mx+(npc.x+.5)*z,my+(npc.y+.5)*z,z*.35,'#dba17f');if(!d.cellsOpen)for(const cell of ROYAL_DUNGEON_CELLS){c.fillStyle='#dba979';c.fillRect(mx+cell.door.x*z+1,my+cell.door.y*z+1,z-2,z-2);for(const prisoner of cell.prisoners)circle(c,mx+(prisoner.x+.5)*z,my+(prisoner.y+.5)*z,z*.31,'#9ed0d2');}}circle(c,mx+(d.x+.5)*z,my+(d.y+.5)*z,z*.4,'#f4db9c');c.strokeStyle='#f4db9c';c.beginPath();c.moveTo(mx+(d.x+.5)*z,my+(d.y+.5)*z);c.lineTo(mx+(d.x+.5+dx)*z,my+(d.y+.5+dy)*z);c.stroke();
 
  }
@@ -1348,6 +1350,30 @@ function drawAreaSites(c,s,area,size,view){
  for(const p of areaSites(s).filter(point=>visibleWorldPoint(point,view))){const x=(p.x+.5)*size,y=(p.y+.5)*size;if(p.kind==='teleporter'){drawWildSite(c,p,x,y,size);continue;}if(p.kind.startsWith('roland')){if(p.kind==='rolandCave')drawDungeonIcon(c,{...p,kind:'expedition',region:area.region},x,y,size,false);if(p.kind==='rolandShore'||p.kind==='rolandPassage'&&s.flags.rolandExile?.boat)circle(c,x,y,size*.16,'#cfe6e9');if(p.kind!=='rolandPassage'||s.flags.rolandExile?.boat)label(c,p.name,x,y+size*.75,Math.max(11,size*.32));continue;}if(p.kind==='artifact'){path(c,[[x,y-size],[x+size*.6,y],[x,y+size*.5],[x-size*.6,y]],'#9fe9e0','#fff4b8');circle(c,x,y-size*.2,size*.2,'#fbf7bf');}else if(p.kind==='landedShip'){c.fillStyle='#7db8bb';c.beginPath();c.ellipse(x,y,size*.9,size*.3,0,0,Math.PI*2);c.fill();c.fillStyle='#b5ecec';c.beginPath();c.ellipse(x,y-size*.2,size*.4,size*.35,0,Math.PI,0);c.fill();for(const dx of [-.5,0,.5])circle(c,x+size*dx,y,size*.08,'#fff3ac');}else if(p.kind==='returnGate'){c.fillStyle='#abb59a';c.fillRect(x-size*.6,y-size*.6,size*1.2,size*.2);c.fillRect(x-size*.6,y-size*.5,size*.2,size);c.fillRect(x+size*.4,y-size*.5,size*.2,size);}else if(p.kind==='bottomlessPit'){c.save();c.beginPath();c.ellipse(x,y,size*.86,size*.57,0,0,Math.PI*2);c.fillStyle='#675449';c.fill();c.beginPath();c.ellipse(x,y+size*.03,size*.64,size*.4,0,0,Math.PI*2);c.fillStyle='#110e11';c.fill();c.strokeStyle='#cc713d';c.lineWidth=size*.08;c.stroke();c.restore();}else{drawDungeonIcon(c,{...p,region:area.region},x,y,size,!!s.flags['expedition:'+p.expedition]);}label(c,p.name,x,y+size*1.1,Math.max(10,size*.35));}
 }
 
+function drawMultiverseTube(c,w,h,d,m,dx,dy){
+ const rx=MULTIVERSE_TUBE.x-d.x,ry=MULTIVERSE_TUBE.y-d.y;
+ const depth=rx*dx+ry*dy,side=-rx*dy+ry*dx,here=!rx&&!ry;
+ if(!here&&(depth<1||depth>5||Math.abs(side/depth)>.53))return;
+ for(let step=1;step<depth*8;step++){
+  const ratio=step/(depth*8);
+  if(m[Math.floor(d.y+.5+ry*ratio)]?.[Math.floor(d.x+.5+rx*ratio)]===1)return;
+ }
+ const scale=Math.min(w*.17,h*.28)/Math.max(1,depth*.56);
+ const x=w/2+side/Math.max(1,depth)*w*.65,y=h*.56+scale*.63;
+ const glass=c.createLinearGradient(x-scale*.46,0,x+scale*.46,0);
+ glass.addColorStop(0,'#6aa0a8');glass.addColorStop(.25,'#264f62bb');glass.addColorStop(.65,'#35637088');glass.addColorStop(1,'#a7e3e8');
+ c.save();
+ c.fillStyle=glass;c.fillRect(x-scale*.46,y-scale*1.9,scale*.92,scale*1.9);
+ c.strokeStyle='#b0e7e9';c.lineWidth=Math.max(1,scale*.022);
+ c.strokeRect(x-scale*.46,y-scale*1.9,scale*.92,scale*1.9);
+ for(const base of [y-scale*1.9,y]){
+  c.beginPath();c.ellipse(x,base,scale*.54,scale*.13,0,0,Math.PI*2);
+  c.fillStyle='#466274';c.fill();c.stroke();
+ }
+ circle(c,x+scale*.36,y-scale*.48,scale*.08,'#79fa98');
+ c.restore();
+}
+
 function drawShip(c,w,h,s){
 
  const d=s.dungeon,m=dungeonMap(d),[dx,dy]=DIRS[d.dir],angle=Math.atan2(dy,dx),fov=Math.PI/2.6;
@@ -1363,7 +1389,8 @@ function drawShip(c,w,h,s){
 
  const rx=7-d.x,ry=5-d.y,depth=rx*dx+ry*dy,side=-rx*dy+ry*dx,here=rx===0&&ry===0;if(here||depth>0&&Math.abs(side/depth)<.6){const size=Math.min(w*.4,h*.45/Math.max(1,depth)*5),x=w/2+side/Math.max(1,depth)*w*.6,y=h*.63;c.fillStyle='#1d3848';c.fillRect(x-size/2,y-size*.5,size,size*.6);c.fillStyle='#86e9d0';c.fillRect(x-size*.4,y-size*.42,size*.8,size*.28);for(let i=0;i<10;i++){c.fillStyle=i%2?'#f6c776':'#95b9f1';c.fillRect(x-size*.35+i*size*.12,y-size*.05,size*.07,size*.05);}label(c,'SHIP CONTROL STATION',x,y+size*.2,Math.max(10,size*.07));}
 
- const z=Math.min(7,w/65),mx=w-15*z-18,my=18;c.fillStyle='#07121fe6';c.fillRect(mx-6,my-6,15*z+12,15*z+12);for(let y=0;y<15;y++)for(let x=0;x<15;x++){c.fillStyle=m[y][x]===1?'#2a4256':'#668492';c.fillRect(mx+x*z,my+y*z,z-1,z-1);}c.fillStyle='#69f3d5';c.fillRect(mx+7*z,my+5*z,z-1,z-1);circle(c,mx+(d.x+.5)*z,my+(d.y+.5)*z,z*.4,'#ffe1a0');label(c,'DECK MAP',mx+7*z,my+16*z,10,'#93dcd8');
+ drawMultiverseTube(c,w,h,d,m,dx,dy);
+ const z=Math.min(7,w/65),mx=w-15*z-18,my=18;c.fillStyle='#07121fe6';c.fillRect(mx-6,my-6,15*z+12,15*z+12);for(let y=0;y<15;y++)for(let x=0;x<15;x++){c.fillStyle=m[y][x]===1?'#2a4256':'#668492';c.fillRect(mx+x*z,my+y*z,z-1,z-1);}c.fillStyle='#69f3d5';c.fillRect(mx+7*z,my+5*z,z-1,z-1);c.fillStyle='#90ed9b';c.fillRect(mx+MULTIVERSE_TUBE.x*z,my+MULTIVERSE_TUBE.y*z,z-1,z-1);circle(c,mx+(d.x+.5)*z,my+(d.y+.5)*z,z*.4,'#ffe1a0');label(c,'DECK MAP',mx+7*z,my+16*z,10,'#93dcd8');
 
  label(c,'CONTROL STATION: 7, 5 · '+['NORTH','EAST','SOUTH','WEST'][d.dir],w/2,35,15);
 

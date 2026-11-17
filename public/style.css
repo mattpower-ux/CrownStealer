@@ -895,3 +895,25 @@ dialog[data-panel="sageJournal"] #save-checkpoint { display: none; }
 #reward-celebration h2 { color: #f4d794; font-size: clamp(1.65rem, 4.5vw, 3rem); line-height: 1.14; margin: 0 0 1.2rem; }
 #reward-celebration-details p { color: #fff3d0; font: 700 clamp(1.4rem, 3.5vw, 2.4rem)/1.18 Georgia, serif; margin: .5rem 0; }
 #reward-celebration form { margin-top: 1.8rem; }
+
+#panel[data-panel="snout"] { width:min(960px,calc(100% - 24px)); max-height:calc(100dvh - 24px); }
+#panel[data-panel="snout"] [data-save-checkpoint] { display:none; }
+.snout-scene { display:grid; gap:.85rem; font-size:clamp(1.1rem,2.2vw,1.45rem); line-height:1.5; }
+.snout-scene > img { display:block; width:100%; max-height:45vh; object-fit:contain; border-radius:6px; background:#0c1714; }
+.snout-scene p { margin:0; }
+.snout-scene .panel-actions { margin:0; }
+.snout-pack summary { cursor:pointer; color:var(--gold); width:max-content; }
+.snout-pack img { display:block; width:min(155px,65%); margin:.65rem 0; border:1px solid var(--line); border-radius:6px; }
+.snout-ending .snout-story { animation:snout-story-in 1.4s ease-out both; }
+.snout-story p + p { margin-top:.7rem; }
+.snout-story h3 { text-align:center; font-size:clamp(1.7rem,5vw,3.25rem); margin:.75rem 0; }
+@keyframes snout-story-in { from { transform:translateY(.7rem); } to { transform:translateY(0); } }
+@media (prefers-reduced-motion:reduce) { .snout-ending .snout-story { animation:none; } }
+.multiverse-chamber { text-align:center; }
+.multiverse-tube { position:relative; width:105px; height:178px; margin:.95rem auto 1.4rem; border:2px solid #8ab8bb; border-radius:54px / 16px; background:linear-gradient(90deg,#3a656a,#22434b70 22%,#32535b 51%,#53868c); box-shadow:0 10px 16px #050d10,inset 10px 0 0 #a1d3d51c; }
+.multiverse-tube::before,.multiverse-tube::after { content:''; position:absolute; left:-8px; right:-8px; height:18px; border:2px solid #9ab0af; border-radius:50%; background:#3d5357; }
+.multiverse-tube::before { top:-5px; }
+.multiverse-tube::after { bottom:-5px; }
+.multiverse-warning { color:#ffdc9b; font-weight:700; }
+.multiverse-chamber .panel-actions { justify-content:center; }
+#panel .reconfigure-reality { background:#96e6a0; border-color:#c9ffd2; color:#132b1c; font-weight:800; }
