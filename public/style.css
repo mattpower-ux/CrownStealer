@@ -93,6 +93,21 @@ dialog[data-panel="inn"]{width:min(1100px,94vw)}
 .pig-face{background-image:none!important;background:#ceb782}.pig-face svg{width:100%;height:100%}.avatar-pig-head{position:absolute;left:38%;top:9%;width:25%;height:25%}.tiny-avatar{transform:scale(.5);transform-origin:bottom center}.potion-reveal{text-align:center}.potion-reveal>img{width:100%;max-height:48vh;object-fit:contain;border-radius:8px}.potion-pig{width:180px;margin:auto}.potion-reveal .royal-dialogue{font-size:24px;line-height:1.5}
 
 .geared-avatar .avatar-base{position:absolute;display:block;background-image:url('/assets/adventurer-identities.webp');background-size:300% 100%;background-repeat:no-repeat}
+.cameo-atlas{background-image:url('/assets/adventurer-cameos.webp');background-size:600% 200%;background-repeat:no-repeat}
+.geared-avatar .avatar-body-only{clip-path:inset(17.8% 0 0)}
+.geared-avatar .avatar-cameo{position:absolute;left:38.9%;top:-1.5%;width:22.2%;height:22.2%}
+.start-form .cameo-picker{border:0;margin:0;padding:0;min-width:0}
+.cameo-picker legend{padding:0;margin:0 0 4px;color:#f3d69a;font-weight:700;font-size:11px;letter-spacing:.09em}
+.cameo-choices{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px;max-width:350px}
+.cameo-choices label{position:relative;display:block;cursor:pointer;padding:0!important}
+.cameo-choices input{position:absolute;inset:0;width:100%;height:100%;opacity:0;margin:0;cursor:pointer}
+.cameo-choices .cameo-atlas{display:block;aspect-ratio:1;border:1px solid #a693617f;border-radius:50%;background-color:#122a22;pointer-events:none}
+.cameo-choices input:is(:checked,:focus-visible)+span{border-color:#ffe09f;box-shadow:0 0 0 2px #dbb569}
+.adventurer-face.cameo-atlas{background-image:url('/assets/adventurer-cameos.webp');background-size:600% 200%}
+@media(orientation:landscape) and (max-height:680px){
+ .title-screen:has(.cameo-picker){overflow-y:auto}
+ .cameo-choices{grid-template-columns:repeat(6,clamp(30px,7svh,49px));gap:4px}
+}
 
 .journal-illustration{margin:18px 0 24px}.journal-illustration img{display:block;width:100%;max-height:430px;object-fit:contain;border-radius:8px}.journal-illustration figcaption{font-size:15px;color:#d8bd7c;text-align:center;margin-top:8px}
 
