@@ -12,6 +12,12 @@ const kinds = [
   {kind: 'cemetery', names: ['Old Cemetery', 'Overgrown Cemetery', 'Field Cemetery', 'Walled Cemetery', 'Tilted Headstone Cemetery', 'Quiet Cemetery', 'Hill Cemetery', 'Forgotten Cemetery']},
 ];
 
+const regionalCaves = {
+  goblin: ['Shellbank Goblin Dig','Tidecut Goblin Dig','Brinewell Goblin Dig','Saltburrow Goblin Dig','Reefside Goblin Dig','Pearlcut Goblin Dig','Driftwood Goblin Dig','Sandbar Goblin Dig'],
+  troll: ['Longshadow Troll Cave','Flintjaw Troll Cave','Starless Troll Cave','Slateback Troll Cave','Frostcrag Troll Cave','Moonrift Troll Cave','Broken Fang Troll Cave','Gloamstone Troll Cave'],
+  wyrm: ['Coaljaw Wyrm Hole','Cindercoil Wyrm Nest','Black Clinker Wyrm Hole','Lavafang Wyrm Nest','Ashmouth Wyrm Hole','Embercoil Wyrm Nest','Slagtooth Wyrm Hole','Scorchback Wyrm Nest'],
+};
+
 export function minorSiteDefinition(id) {
   const match = /^minor-(r[0-3]|w(?:[0-9]|1[01]))-(0|[1-9]|1[0-9]|2[0-4])$/.exec(id);
   if (!match) return null;
@@ -29,9 +35,14 @@ export function minorSiteDefinition(id) {
   const variant = Math.floor(slot / kinds.length);
   const {kind, names} = kinds[(slot + ordinal) % kinds.length];
   const shrine = kind === 'ruinedShrine';
-  const name = names[(variant + ordinal) % names.length];
+  const nameIndex = (variant + ordinal) % names.length;
+  const name = names[nameIndex];
+  const occupant = kind!=='koboldCave'?null:
+    area==='wild-4'?'wyrm':region===2?'goblin':region===3?'troll':region===1&&name==='Sooty Kobold Den'?'fireImp':null;
+  const caveName = occupant==='fireImp'?'Sooty Fire Imp Lair':regionalCaves[occupant]?.[nameIndex];
   return {
-    id, kind, name: name==='Pebble Run Cave'&&id!==PEBBLE_RUN_ID?'Rillstone Cave':name,
+    id, kind, name: caveName??(name==='Pebble Run Cave'&&id!==PEBBLE_RUN_ID?'Rillstone Cave':name),
+    ...(occupant?{occupant}:{}),
     floors: kind === 'cemetery' ? 1 + (variant + ordinal) % 3 : 1,
     guarded: id!==PEBBLE_RUN_ID&&(!shrine || Boolean(variant & 1)),
     treasure: !shrine || Boolean(variant & 2),

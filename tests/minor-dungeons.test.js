@@ -143,3 +143,27 @@ test('mountain tunnels connect the entrance and exit with treasure and no automa
   assert.equal(minorDungeonChests(state,loot).length,1);
   assert.equal(minorGuardian(state),null);
 });
+
+test('regional caves use local inhabitants and keep regional difficulty',()=>{
+ const findCaves=land=>Array.from({length:24},(_,n)=>minorSiteDefinition('minor-'+land+'-'+n)).filter(site=>site.kind==='koboldCave');
+ for(const [lands,label,enemy,minimum] of [
+  [['r2','w6','w7','w8'],/Goblin Dig/,/Goblin/,13],
+  [['r3','w9','w10','w11'],/Troll Cave/,/Troll/,20],
+  [['w4'],/Wyrm (Hole|Nest)/,/Wyrm/,7],
+ ]){
+  for(const land of lands)for(const site of findCaves(land)){
+   const guard=minorGuardian(visit(site.id));
+   assert.match(site.name,label);
+   assert.match(guard.name,enemy);
+   assert.ok(guard.level>=minimum);
+   if(land==='w4'){
+    assert.equal(guard.element,'fire');
+    assert.equal(guard.attackType,'ranged');
+   }
+  }
+ }
+ const sooty=findCaves('r1').find(site=>site.name.includes('Sooty'));
+ assert.match(sooty.name,/Fire Imp Lair/);
+ assert.equal(minorGuardian(visit(sooty.id)).element,'fire');
+ assert.equal(minorGuardian(visit('minor-r0-0')).name,'Kobold Cave Watcher');
+});

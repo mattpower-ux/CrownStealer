@@ -725,7 +725,9 @@ function actInner(input,action,events=[]){
  }
  if(a.type==='enter'&&s.mode==='world'&&pointAt(s)?.kind==='minorSite'){
   const site=pointAt(s);s.dungeon={site:'minor-site',minorId:site.id,index:site.index,floor:0,x:1,y:1,dir:2,ladderLayout:1,...(site.other?{tunnelExit:{...site.other}}:{})};
-  s.mode=s.returnMode='dungeon';s.location=site.id;s.dungeon.dir=openDungeonDirection(s.dungeon);note(s,'You explore '+site.name+'. '+site.floors+' level'+(site.floors===1?'':'s')+' lie within.');return s;
+  s.mode=s.returnMode='dungeon';s.location=site.id;s.dungeon.dir=openDungeonDirection(s.dungeon);note(s,site.occupant==='wyrm'
+   ?'You enter '+site.name+'. Gnawed coal and lava rock litter the floor alongside an adventurer’s scorched pack.'
+   :'You explore '+site.name+'. '+site.floors+' level'+(site.floors===1?'':'s')+' lie within.');return s;
  }
  if(explorationAction(s,a,{note,encounter,clock,pointAt,random:()=>rand(s),championChallenge:tryChampionChallenge,bridgeStep:(s,previous)=>!dragonFlying(s)&&maybeBridgeTroll(s,previous,(x,y)=>areaTile(s,x,y),note)}))return s;
  if(a.type==='attackBorderGuards'){const gate=pointAt(s);if(s.mode!=='world'||!s.flags.borderTauntPending||!gate||!['gate','branchGate'].includes(gate.kind)||s.flags['gateAccess:'+gate.id]||s.flags['gateChallengeWon:'+gate.id]||s.flags.royalHero)return s;delete s.flags.borderTauntPending;s.flags.gateAttemptWins=0;s.flags.gateAttemptId=gate.id;startGateGuard(s,gate.id);return s;}

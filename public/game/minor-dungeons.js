@@ -1,6 +1,7 @@
 import {MONSTER_BY_ID,monsterStats} from './bestiary.js';
 import {isOpenAirCemetery,minorSiteDefinition} from './minor-sites.js';
 import {secretAlcove} from './secret-alcoves.js';
+import {GROVE_ENEMIES} from './wild-sites.js';
 import {shrineForDungeon,charityPitMap} from './shrine-deities.js';
 
 const guardians={
@@ -8,6 +9,16 @@ const guardians={
   ruinedShrine:{...MONSTER_BY_ID['bell-gargoyle'],name:'Shrine Gargoyle'},
   cemetery:{...MONSTER_BY_ID['depth-0-skeleton-warrior'],name:'Cemetery Skeleton'},
 };
+const caveGuardians={
+  goblin:[{...GROVE_ENEMIES[0],name:'Goblin Digger'},GROVE_ENEMIES[1],GROVE_ENEMIES[2]],
+  troll:[{id:'cave-troll',name:'Cave Troll',kind:'brute',weakness:'guard then counter',art:{sheet:'bridge-troll',index:0}}],
+  fireImp:[{id:'firedrak-imp',name:'Fire Imp',kind:'swift',element:'fire',weakness:'quick strikes',art:{sheet:'firedrak-monsters',index:0}}],
+  wyrm:[
+    {...MONSTER_BY_ID['ember-drake'],name:'Coal-Eating Wyrm',element:'fire',attackType:'ranged'},
+    {...MONSTER_BY_ID['ember-drake'],name:'Lava-Rock Wyrm',element:'fire',attackType:'ranged'},
+  ],
+};
+const caveGuardianLevels={goblin:16,troll:26,fireImp:8,wyrm:10};
 const gearKinds=new Set(['weapon','armor','ring','necklace','shield','head','hands','boots']);
 
 // The waypoints double as room centers. A zero-sized room leaves a corridor bend.
@@ -116,12 +127,15 @@ export function minorDungeonChests(s,items) {
 export function minorGuardian(s) {
   const d=s.dungeon,site=definitionFor(d);
   if(!site?.guarded||d.floor!==site.floors-1)return null;
-  const species=shrineForDungeon(d)?.guardian||guardians[site.kind];
-  const level=[2,7,13,20][site.region]+d.floor;
+  const inhabitants=caveGuardians[site.occupant];
+  const species=inhabitants?inhabitants[site.seed%inhabitants.length]:shrineForDungeon(d)?.guardian||guardians[site.kind];
+  const level=(caveGuardianLevels[site.occupant]??[2,7,13,20][site.region])+d.floor;
   const stats=monsterStats(species,level);
   return {
     ...stats,speciesId:species.id,name:species.name,art:species.art,kind:species.kind,
     weakness:species.weakness,undead:!!species.undead,level,maxHp:stats.hp,
+    ...(inhabitants&&species.element?{element:species.element}:{}),
+    ...(inhabitants&&species.attackType?{attackType:species.attackType}:{}),
     firstContact:true,minorGuardian:site.id,
   };
 }

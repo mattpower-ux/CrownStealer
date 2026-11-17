@@ -20,6 +20,54 @@ export function charityMarblePixel(u,v,light=1){
  const tone=dark?24:edge?155:245+Math.sin(u*97+v*61)*4;
  const shine=Math.max(.76,Math.min(1,light*.4+.66));return packed(tone,tone,tone+2,shine);
 }
+export const isCinderWardCrypt=d=>d?.expedition==='wild-4-cave-1';
+export const cinderWardLavaChamber=face=>face%5===0;
+
+export function cinderWardWallPixel(face,u,v,light){
+ if(cinderWardLavaChamber(face)&&u>.13&&u<.87&&v>.18&&v<.86){
+  const inset=Math.min(u-.13,.87-u,v-.18,.86-v);
+  if(inset<.035)return packed(114,55,40,light);
+  if(v<.58+Math.sin(u*43)*.012)return packed(32,15,15,light);
+  const seams=Math.abs(Math.sin(u*39+v*16)*Math.cos(v*34-u*17));
+  const molten=seams<.13||v<.64;
+  return molten?packed(255,137+seams*120,46,1):packed(164+seams*82,42+seams*38,19,1);
+ }
+ const course=Math.floor(v*7),joint=(u*3.5+course*.5)%1,mortar=v*7%1<.055||joint<.045;
+ const grain=rockAtlas[(Math.floor(v*255)*256+Math.floor(u*255))]||75;
+ const soot=Math.max(0,Math.sin((u+face*.31)*8-v*5))**6;
+ const brightness=mortar?.38:Math.max(.38,1-soot*.62);
+ return packed(78+grain*.78,32+grain*.40,24+grain*.33,brightness*light);
+}
+
+export function drawCinderWardBrambles(c,w,h,d){
+ c.save();
+ for(let i=0;i<8;i++){
+  const n=(i*3+d.x*2+d.y*3+d.dir+d.floor)%11;
+  if(n<3)continue;
+  const x=(i+.25)*w/8,y=(n%4)*h*.025,length=h*(.037+n*.013);
+  c.lineWidth=Math.max(1.5,w*.0045);
+  c.lineCap='round';c.strokeStyle='#170d10';
+  c.beginPath();c.moveTo(x,y);c.bezierCurveTo(x+w*.035,y+length*.25,x-w*.025,y+length*.68,x+w*.01,y+length);c.stroke();
+  c.lineWidth*=.57;
+  for(let t=1;t<5;t++){
+   const yy=y+length*t/5,xx=x+Math.sin(t*1.05)*w*.013;
+   c.beginPath();c.moveTo(xx-w*.012,yy+length*.12);c.lineTo(xx,yy);c.lineTo(xx+w*.016,yy-length*.08);c.stroke();
+  }
+ }
+ c.restore();
+}
+
+export function drawCinderWardLavaGlow(c,w,h,lights,time){
+ c.save();c.globalCompositeOperation='screen';
+ for(const {x,y,size,phase} of lights||[]){
+  const cx=x*w,cy=y*h,r=size*h,pulse=.24+Math.sin(time*.003+phase)*.055;
+  const glow=c.createRadialGradient(cx,cy,0,cx,cy,r);
+  glow.addColorStop(0,'rgba(255,103,32,'+pulse+')');glow.addColorStop(1,'#ff4b0000');
+  c.fillStyle=glow;c.fillRect(cx-r,cy-r,r*2,r*2);
+ }
+ c.restore();
+}
+
 export function drawMountainVault(c,w,h,phase=0){
  const height=Math.ceil(h*.5),img=c.createImageData(w,height),pixels=new Uint32Array(img.data.buffer);
  for(let y=0;y<height;y+=2)for(let x=0;x<w;x+=2){const lateral=(x-w*.5)/w,depth=h/Math.max(3,h*.5-y),curve=Math.sqrt(Math.max(.02,1-lateral*lateral*3));const color=tunnelRockPixel(lateral*depth+phase,depth*.22+curve,.45/(1+depth*.035));for(let yy=y;yy<Math.min(height,y+2);yy++)for(let xx=x;xx<Math.min(w,x+2);xx++)pixels[yy*w+xx]=color;}

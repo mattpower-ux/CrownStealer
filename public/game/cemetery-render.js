@@ -66,7 +66,7 @@ export function drawCemeteryNightSky(c,w,h,angle,fov){
   c.fillStyle=['#96afd494','#e0e9ffc4','#f8e5c68f'][i%3];
   c.fillRect(x,y,size,size);
  }
- const moonBearing=1.27;
+ const moonBearing=.25;
  if(!inView(moonBearing))return;
  const x=skyX(moonBearing),y=h*.127,r=Math.min(w,h)*.041;
  const halo=c.createRadialGradient(x,y,r*.65,x,y,r*3.2);
