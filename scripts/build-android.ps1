@@ -7,11 +7,12 @@ param(
 $ErrorActionPreference = 'Stop'
 $projectRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $sdkRoot = Join-Path $projectRoot 'tools/android-sdk'
+if (-not (Test-Path -LiteralPath $sdkRoot)) { $sdkRoot = Join-Path (Split-Path $projectRoot) 'Questron REA/tools/android-sdk' }
 $androidRoot = Join-Path $projectRoot 'android'
 $buildRoot = Join-Path $androidRoot 'build'
 $signingRoot = Join-Path $androidRoot 'signing'
 $releaseRoot = Join-Path $projectRoot 'releases'
-$apkPath = Join-Path $releaseRoot 'BarTheGates-0.9.13.apk'
+$apkPath = Join-Path $releaseRoot 'BarTheGates-0.9.43.apk'
 $platformJar = Join-Path $sdkRoot 'platforms/android-35/android.jar'
 $buildTools = Join-Path $sdkRoot 'build-tools/android-15'
 
@@ -149,7 +150,7 @@ try {
         if ($packedAssetCount -ne $assetCount) { throw 'APK contains stale or unexpected bundled assets. Run build again.' }
     } finally { $archiveCheck.Dispose() }
     $sha256 = (Get-FileHash -LiteralPath $apkPath -Algorithm SHA256).Hash.ToLowerInvariant()
-    [System.IO.File]::WriteAllText((Join-Path $releaseRoot 'BarTheGates-0.9.13.apk.sha256'), "$sha256  BarTheGates-0.9.13.apk`n", [System.Text.Encoding]::ASCII)
+    [System.IO.File]::WriteAllText((Join-Path $releaseRoot 'BarTheGates-0.9.43.apk.sha256'), "$sha256  BarTheGates-0.9.43.apk`n", [System.Text.Encoding]::ASCII)
     Write-Host "Built $apkPath"
     Write-Host "Verified $assetCount bundled assets. SHA-256: $sha256"
 } finally {

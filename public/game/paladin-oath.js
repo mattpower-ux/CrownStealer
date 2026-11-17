@@ -1,3 +1,4 @@
+import {paladinAlignmentAllowed} from './alignment.js';
 import {effectiveLevel} from './attributes.js';
 import {undead} from './spell-items.js';
 import {AVENGER_SWORD} from './roadside-crypt.js';
@@ -19,6 +20,7 @@ export function handlePaladinOath(s,a,note,itemById){
  if(a.choice==='reject'){
   s.flags.percivalOath='rejected';s.bag.push('pearl-of-wisdom');note(s,PERCIVAL_REJECTION);return true;
  }
+ if(!paladinAlignmentAllowed(s)){note(s,'Sir Percival senses the evil in your past. Help others before returning to take the oath.');return true;}
  if(s.flags.wizardApprentice==='accepted'){s.flags.wizardApprentice='retired';delete s.flags.wizardTimers;note(s,'You retire your wizard apprenticeship honorably and take the paladin’s oath.');}
  s.flags.percivalOath='accepted';
  if(s.weaponCoating){delete s.weaponCoating;note(s,'You clean the poison from your weapon before taking the oath.');}

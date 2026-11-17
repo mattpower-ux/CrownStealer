@@ -7,7 +7,7 @@ export function startWildernessEvent(s,kind,ctx){
  const {note,random,enterCrypt}=ctx;
  if(kind==='nail')hurt(s,roll(random,5,10),ctx,'You step on a rusty nail. Piercing pain!');
  if(kind==='hole'&&hurt(s,roll(random,20,50),ctx,'The ground gives way beneath you.')){note(s,'You tumble into a crypt. Something dead guards a glittering chest.');enterCrypt(s);}
- if(kind==='branch'){s.flags.impaledMoves=10;note(s,'A tree branch impales you! Ten movements are needed to pull yourself free.');}
+ if(kind==='branch'){s.flags.impaledMoves=2;note(s,'A low thorny branch catches your clothing. Pull free twice to escape.');}
  if(kind==='hoard'){s.flags.wildernessEvent={kind};note(s,'You find a buried hoard of coins. Take it, or leave it?');}
  if(kind==='bawb'){s.flags.wildernessEvent={kind};note(s,'Bawb the Boatbuilder offers you coffee and unrolls plans for a deluxe sailboat for one. Only 700 gold—and it shrinks to fit in your inventory!');}
 }
@@ -15,7 +15,7 @@ export function wildernessEventAction(s,a,ctx){
  if(s.mode!=='world')return false;
  const {note,random}=ctx;
  if(s.flags.impaledMoves&&['move','mapStep','pullBranch'].includes(a.type)){
-  s.flags.impaledMoves--;s.turns++;hurt(s,roll(random,1,10),ctx,'You struggle against the branch.');
+  s.flags.impaledMoves=Math.min(s.flags.impaledMoves,2)-1;s.turns++;note(s,'You loosen the thorny branch.');
   if(!s.flags.impaledMoves){delete s.flags.impaledMoves;if(s.hp>0)note(s,'At last, you pull yourself free.');}return true;
  }
  const event=s.flags.wildernessEvent;

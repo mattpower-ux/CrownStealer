@@ -371,6 +371,15 @@ function drawWorldViewport(c,w,h,s){
   const tx=x+(troll.x-troll.backX)*size*.9,ty=y+(troll.y-troll.backY)*size*.9;
   c.drawImage(bridgeTrollArt,tx-width*.5,ty-height+size*.2,width,height);
  }
+ if(s.flags.impaledMoves){
+  c.save();
+  c.strokeStyle='#644127';c.lineWidth=Math.max(5,size*.12);c.lineCap='round';
+  c.beginPath();c.moveTo(x-size*.9,y+size*.3);c.lineTo(x+size*.8,y-size*.8);
+  c.moveTo(x-size*.2,y-size*.15);c.lineTo(x-size*.7,y-size*.65);c.stroke();
+  c.strokeStyle='#b49a65';c.lineWidth=2;
+  for(let i=0;i<5;i++){const tx=x-size*.65+i*size*.3,ty=y+size*.15-i*size*.19;c.beginPath();c.moveTo(tx,ty);c.lineTo(tx-size*.04,ty-size*.18);c.stroke();}
+  c.restore();
+ }
  drawAdventurer(c,x,y,size*(inWater?1.25:1.9));
  c.restore();
  if(!map.area){

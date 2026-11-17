@@ -1,3 +1,4 @@
+import {adjustAlignment} from './alignment.js';
 import {minorSiteDefinition} from './minor-sites.js';
 import {applyAttributeItem} from './attributes.js';
 
@@ -30,7 +31,7 @@ export function charityAction(s,a,{random,note,events}){
  if(a.choice==='donate'){
   if(s.gold<500){note(s,'Lady Charity asks for 500 gold. You may leave and return when you have enough.');return;}
   if(!applyAttributeItem(s,{kind:'potion',rarity:'legendary',attributeEffect:{attribute:'charisma',amount:1}})){note(s,'Your Charisma is already at its limit. Lady Charity leaves the choice open.');return;}
-  s.gold-=500;s.flags.charityChoice='donated';s.flags.charityStanding=true;s.reputation+=2;s.turns++;
+  s.gold-=500;adjustAlignment(s,15);s.flags.charityChoice='donated';s.flags.charityStanding=true;s.reputation+=2;s.turns++;
   note(s,'Lady Charity accepts 500 gold and grants +1 permanent Charisma. Mothbridge and Bellwether welcome your generosity: their merchants offer you a 5% courtesy discount.');return;
  }
  s.flags.charityChoice='refused';const damage=1+Math.floor(random()*150);s.flags.charityPitDamage=damage;
@@ -63,7 +64,7 @@ export function shrineOffering(s,a,note,events=[]){
  const amount=a.amount??10;if(!Number.isSafeInteger(amount)||amount<10){note(s,'An offering of at least 10 gold is required.');return false;}
  if(s.gold<amount){note(s,'You do not have enough gold for this offering.');return false;}
  if(!applyAttributeItem(s,{kind:'potion',rarity:'legendary',attributeEffect:{attribute:'strength',amount:1}})){note(s,'Your Strength is already at its limit.');return false;}
- s.gold-=amount;s.flags['shrineStrength:'+id]=true;s.turns++;note(s,god.name+' accepts '+amount+' gold and grants +1 permanent Strength.');return true;
+ s.gold-=amount;adjustAlignment(s,god.alignment==='good'?8:-12);s.flags['shrineStrength:'+id]=true;s.turns++;note(s,god.name+' accepts '+amount+' gold and grants +1 permanent Strength.');return true;
 }
 export function shrineLore(d){
  const god=shrineForDungeon(d);if(!god)return '';

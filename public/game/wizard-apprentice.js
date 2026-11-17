@@ -1,3 +1,4 @@
+import {wizardAlignmentAllowed} from './alignment.js';
 import {effectiveLevel} from './attributes.js';
 export const WIZARD_WAND={id:'wand-apprentice-missiles',name:'Apprentice’s Wand of Magic Missiles',kind:'wand',shape:'wand',spell:'magic-missile',spellItem:true,spellLevel:1,maxCharges:1,unlimited:true,unique:true,notForSale:true,encounterOnly:true,bottomOnly:true,tier:1,rarity:'legendary',value:0,color:'#d7efff',description:'Unlimited Magic Missiles. An apprenticeship gift; never consumes a charge.'};
 export const WIZARD_ROBES={id:'apprentice-robes',name:'Apprentice’s Cloth Robes',kind:'armor',material:'cloth',shape:'armor',protection:2,rank:1,tier:1,rarity:'common',unique:true,encounterOnly:true,bottomOnly:true,value:10,color:'#eeeeed',description:'Simple cloth robes suitable for a wizard. Blocks 2 damage.'};
@@ -18,6 +19,7 @@ export function wizardAction(s,a,note,itemById,{now=Date.now(),canTeleport=true}
  if(a.type==='acknowledgeWizardForsaken'){delete s.flags.wizardForsakenPending;return true;}
  if(a.type==='wizardApprentice'){
   if(!wizardAudienceAvailable(s)||!['accept','reject'].includes(a.choice))return true;
+  if(a.choice==='accept'&&!wizardAlignmentAllowed(s)){note(s,'The White Wizard will not train someone so far down the path of evil. Return after making amends.');return true;}
   s.flags.twinklestarWizardRescued=true;s.flags.wizardApprentice=a.choice==='accept'?'accepted':'rejected';
   if(a.choice==='reject'){note(s,'The White Wizard thanks you for his rescue and departs.');return true;}
   s.flags.wizardAcceptedLevel=effectiveLevel(s);s.flags.wizardTimers={};

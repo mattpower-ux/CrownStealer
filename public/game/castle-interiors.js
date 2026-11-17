@@ -1,3 +1,4 @@
+import {adjustAlignment} from './alignment.js';
 import {rareGearEffect} from './rare-gear.js';
 import {DUNGEONS,TOWNS} from './content.js';
 import {townPlace} from './town.js';
@@ -606,6 +607,7 @@ export function castleAction(s, action, options) {
   note(s, `Lockpick score ${score} against lock level ${lockLevel}.`);
   if (success) {
     s.flags[chest.id] = true;
+    adjustAlignment(s, -10);
     s.gold = Math.min(10_000_000, s.gold + chest.gold);
     const items = castleTreasuryLoot(s, chest);
     s.bag.push(...items);

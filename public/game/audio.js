@@ -390,6 +390,16 @@ export class AudioDirector {
       case 'townEntrance': tone(784,0,.14,.12);tone(1175,.1,.25,.10);break;
       case 'casinoWin': case 'goldFound': case 'coin': tone(988, 0, .12, .10); tone(1319, .08, .24, .09); break;
       case 'door': this.brush(now, .18, .11, 'effects', 450); tone(110, 0, .20, .12, 55); break;
+      case 'sage-transform':
+        [60,64,67,72,76,79,84].forEach((note,i)=>{tone(hz(note),i*.13,.8,.09);tone(hz(note+12),i*.13+.03,.9,.025,undefined,'sine');});
+        break;
+      case 'drink':
+        for(let i=0;i<4;i++){
+          tone(180+i%2*65,i*.16,.15,.16,75,'sine');
+          tone(430-i*35,i*.16+.025,.09,.055,160,'triangle');
+          this.brush(now+i*.16,.045,.025,'effects',480);
+        }
+        break;
       case 'magic': [64, 71, 76, 83, 88].forEach((note, i) => tone(hz(note), i * .055, .26, .09)); break;
       case 'click': tone(660, 0, .045, .06, 440); break;
       case 'defeat': [64, 60, 57, 52].forEach((note, i) => tone(hz(note), i * .18, .35, .12)); break;
