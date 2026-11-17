@@ -1,3 +1,4 @@
+import {isSplitRock} from './kerrbear.js';
 import {MONSTER_BY_ID,monsterStats} from './bestiary.js';
 import {isOpenAirCemetery,minorSiteDefinition} from './minor-sites.js';
 import {secretAlcove} from './secret-alcoves.js';
@@ -128,7 +129,7 @@ export function minorDungeonChests(s,items) {
 
 export function minorGuardian(s) {
   const d=s.dungeon,site=definitionFor(d);
-  if(!site?.guarded||d.floor!==site.floors-1)return null;
+  if(isSplitRock(d)||!site?.guarded||d.floor!==site.floors-1)return null;
   const inhabitants=caveGuardians[site.occupant];
   const species=inhabitants?inhabitants[site.seed%inhabitants.length]:shrineForDungeon(d)?.guardian||guardians[site.kind];
   const level=(caveGuardianLevels[site.occupant]??[2,7,13,20][site.region])+d.floor;

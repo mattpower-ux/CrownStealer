@@ -1,10 +1,12 @@
+import {isSplitRock} from './kerrbear.js';
+import {cavePaintingInk} from './split-rock-art.js';
 import {minorSiteDefinition} from './minor-sites.js';
 export function isKoboldBurrow(d){return d?.site==='minor-site'&&minorSiteDefinition(d.minorId)?.kind==='koboldCave';}
 const pack=(r,g,b)=>(255<<24)|(Math.max(0,Math.min(255,b))<<16)|(Math.max(0,Math.min(255,g))<<8)|Math.max(0,Math.min(255,r));
 function hash(x,y){let n=Math.imul(x,374761393)+Math.imul(y,668265263);n=Math.imul(n^(n>>>13),1274126177);return ((n^(n>>>16))>>>0)/4294967295;}
 function noise(x,y){const ix=Math.floor(x),iy=Math.floor(y),fx=x-ix,fy=y-iy,a=fx*fx*(3-2*fx),b=fy*fy*(3-2*fy);return (hash(ix,iy)*(1-a)+hash(ix+1,iy)*a)*(1-b)+(hash(ix,iy+1)*(1-a)+hash(ix+1,iy+1)*a)*b;}
 
-export function burrowPixel(surface,u,v,light=1,candle=false){
+export function burrowPixel(surface,u,v,light=1,candle=false,gray=false){
  const wall=surface==='wall',ceiling=surface==='ceiling';
  const broad=noise(u*4,v*5),clods=noise(u*21,v*25),grit=hash(Math.floor(u*190),Math.floor(v*190));
  const earth=35+broad*38+clods*40+grit*17;
@@ -12,6 +14,7 @@ export function burrowPixel(surface,u,v,light=1,candle=false){
  let shade=light*(wall?.73+.27*Math.sin(Math.PI*Math.max(0,Math.min(1,v))):ceiling?.7:1);
  if(seam<.065&&clods<.43&&broad<.58)shade*=.78;
  let r=earth*shade,g=earth*.69*shade,b=earth*.40*shade;
+ if(gray){r=earth*.86*shade;g=earth*.9*shade;b=earth*.96*shade;}
  // Tangled exposed roots and coarse grit replace masonry joints overhead.
  if(ceiling&&broad>.53&&Math.abs(Math.sin(u*18+Math.sin(v*11)*1.4))<.035){r*=.46;g*=.43;b*=.4;}
  if(surface==='floor'){
@@ -35,17 +38,18 @@ export function burrowPixel(surface,u,v,light=1,candle=false){
   if(v>.38&&v<.398&&Math.abs(x)<.003){r=30;g=20;b=12;}
   if(y>-.031&&y<.023&&Math.abs(x)<.014*(1-Math.abs(y+.004)/.034)){r=255;g=180+Math.max(0,1-Math.abs(x)/.014)*65;b=65+Math.max(0,1-Math.abs(x)/.014)*90;}
  }
+ if(gray&&wall){const ink=cavePaintingInk(u,v);if(ink){r=ink[0]*light;g=ink[1]*light;b=ink[2]*light;}}
  return pack(r|0,g|0,b|0);
 }
 
 export function drawBurrowPlanes(c,w,h,d,dx,dy,fov,map){
- const image=c.getImageData(0,0,w,h),pixels=new Uint32Array(image.data.buffer),focal=w/(2*Math.tan(fov/2));
+ const gray=isSplitRock(d),image=c.getImageData(0,0,w,h),pixels=new Uint32Array(image.data.buffer),focal=w/(2*Math.tan(fov/2));
  for(let y=0;y<h;y+=2){
   const depth=Math.min(24,h*.425/Math.max(1,Math.abs(y-h/2))),surface=y<h/2?'ceiling':'floor';
   const light=Math.max(.07,.84-depth*.075);
   for(let x=0;x<w;x+=2){
    const side=(x-w/2)*depth/focal,u=d.x+.5+dx*depth-dy*side,v=d.y+.5+dy*depth+dx*side;
-   const color=(surface==='floor'&&burrowDebrisPixel(u,v,light,map))||burrowPixel(surface,u,v,light);
+   const color=(surface==='floor'&&burrowDebrisPixel(u,v,light,map))||burrowPixel(surface,u,v,light,false,gray);
    for(let yy=y;yy<Math.min(h,y+2);yy++)for(let xx=x;xx<Math.min(w,x+2);xx++)pixels[yy*w+xx]=color;
   }
  }

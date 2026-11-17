@@ -1,3 +1,5 @@
+import {KERRBEAR_TOOTH} from './kerrbear.js';
+import {GUARDED_SLEEP} from './wilderness-camp.js';
 import {ROLAND_CAVE,ROLAND_ITEMS} from './roadside-crypt.js';
 import {DRUID_SITE,DRUID_ITEMS,druidChests} from './druid-grove.js';
 import {EXPLORATION_LOOT} from './exploration-loot.js';
@@ -32,6 +34,8 @@ export const RARITIES=['common','rare','epic','legendary'];
 export const rarityFor=roll=>roll<.60?'common':roll<.80?'rare':roll<.95?'epic':'legendary';
 const colors=['#b6baa5','#77bbec','#c69aef','#efcb70'];
 export const TREASURE_ITEMS={
+ [KERRBEAR_TOOTH.id]:KERRBEAR_TOOTH,
+ [GUARDED_SLEEP.id]:GUARDED_SLEEP,
  ...DRUID_ITEMS,
  torch:{id:'torch',kind:'supply',shape:'torch',name:'Torch',rarity:'common',value:2,color:'#f2bc63',description:'Lights one unlit dungeon torch. Consumed when lit.'},
  ...EXPLORATION_LOOT,

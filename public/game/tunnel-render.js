@@ -12,6 +12,8 @@ function noise(x,y,scale){const ix=Math.floor(x/scale),iy=Math.floor(y/scale),fx
 for(let y=0;y<256;y++)for(let x=0;x<256;x++){const broad=noise(x,y,48),chip=noise(x,y,12),fine=noise(x,y,3);const ridge=Math.abs(noise(x+27,y+19,21)-.5);rockAtlas[y*256+x]=42+broad*55+chip*35+fine*17+grain(x,y)*10-(ridge<.022?24:0);}
 export function tunnelRockPixel(u,v,light){if(rockPixels){const x=((Math.floor(u*190)%512)+512)%512,y=((Math.floor(v*511)%512)+512)%512,i=(y*512+x)*4;return packed(rockPixels[i],rockPixels[i+1],rockPixels[i+2],light*.8);}const x=((Math.floor(u*91)%256)+256)%256,y=((Math.floor(v*255)%256)+256)%256;const tone=rockAtlas[y*256+x];return packed(tone+19,tone*.69+5,tone*.47+2,light);}
 export function obsidianPixel(u,v,light){const fracture=Math.abs(Math.sin(u*9+v*5+Math.sin(v*8)*.8)),shine=Math.max(0,Math.sin(u*5-v*3))**18;const tone=25+Math.sin(u*31+v*19)*4+shine*46;return packed(tone+4,tone+3,tone+13,light*(fracture<.024?.6:1));}
+export const isMossyShrine=d=>d?.site==='minor-site'&&minorSiteDefinition(d.minorId)?.name==='Mossy Shrine';
+export function mossyShrinePixel(u,v,light=1){const growth=noise(u*256,v*256,47)*.65+noise(u*256,v*256,13)*.35,grit=grain(Math.floor(u*370),Math.floor(v*370));if(growth>.42){const lush=28+growth*51+grit*18;return packed(lush*.54,lush,lush*.35,Math.max(.18,light));}const stone=47+noise(u*256,v*256,18)*43;return packed(stone*.87,stone,stone*.83,light);}
 export const isCharityMarble=d=>d?.site==='minor-site'&&d.minorId===CHARITY_SHRINE_ID&&!d.charityPit;
 export function charityMarblePixel(u,v,light=1){
  const warp=Math.sin(u*13+v*9)*.32+Math.sin(v*24-u*7)*.12;
@@ -74,9 +76,9 @@ export function drawMountainVault(c,w,h,phase=0){
  c.putImageData(img,0,0);
 
 }
-export function drawShrineVault(c,w,h,{marble=false}={}){
+export function drawShrineVault(c,w,h,{marble=false,moss=false}={}){
  const height=Math.ceil(h*.5),img=c.createImageData(w,height),pixels=new Uint32Array(img.data.buffer);
- for(let y=0;y<height;y+=2)for(let x=0;x<w;x+=2){const depth=h/Math.max(4,h*.5-y),tone=rockAtlas[(Math.floor(depth*7)%256)*256+(Math.floor((x/w)*255)%256)]*.6,color=marble?charityMarblePixel(x/w*2,depth*.12,.95/(1+depth*.01)):packed(tone,tone*.97,tone*1.07,.55/(1+depth*.03));for(let yy=y;yy<Math.min(height,y+2);yy++)for(let xx=x;xx<Math.min(w,x+2);xx++)pixels[yy*w+xx]=color;}c.putImageData(img,0,0);
+ for(let y=0;y<height;y+=2)for(let x=0;x<w;x+=2){const depth=h/Math.max(4,h*.5-y),tone=rockAtlas[(Math.floor(depth*7)%256)*256+(Math.floor((x/w)*255)%256)]*.6,color=moss?mossyShrinePixel(x/w*2,depth*.12,.7/(1+depth*.01)):marble?charityMarblePixel(x/w*2,depth*.12,.95/(1+depth*.01)):packed(tone,tone*.97,tone*1.07,.55/(1+depth*.03));for(let yy=y;yy<Math.min(height,y+2);yy++)for(let xx=x;xx<Math.min(w,x+2);xx++)pixels[yy*w+xx]=color;}c.putImageData(img,0,0);
  c.save();c.beginPath();c.rect(0,0,w,h*.5);c.clip();
  for(const [i,t]of [1.5,1.1,.79,.57,.40,.28,.19,.12,.075].entries()){const span=w*.57*t,y=h*.5-h*.025*t,apex=y-h*.65*t;c.beginPath();c.moveTo(w*.5-span,y);c.quadraticCurveTo(w*.5,apex,w*.5+span,y);c.strokeStyle=marble?(i%2?'#ffffffdd':'#e5e7e9cc'):i%2?'#65616c88':'#45434f88';c.lineWidth=Math.max(2,t*17);c.stroke();c.strokeStyle=marble?'#a9adb044':'#111017';c.lineWidth=Math.max(1,t*2);c.stroke();for(let j=-4;j<=4;j++){const u=j/5,x=w*.5+span*u,yy=y-h*.325*t*(1-u*u);c.beginPath();c.moveTo(x,yy-t*7);c.lineTo(x+t*3,yy+t*7);c.strokeStyle=marble?'#9b9fa444':'#17151e';c.stroke();}}
  c.restore();

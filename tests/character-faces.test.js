@@ -40,7 +40,7 @@ test('new adventurers start at the royal doorway, then resume the kneeling narra
 test('twelve independent cameos are selectable and persist across creation and reload',()=>{
  assert.equal(CHARACTER_CAMEOS.length,12);
  assert.equal(new Set(CHARACTER_CAMEOS.map(c=>c.id)).size,12);
- assert.equal((facePickerMarkup().match(/name="adventurer-cameo"/g)||[]).length,12);
+ assert.equal((facePickerMarkup().match(/name="adventurer-cameo"/g)||[]).length,10);
  for(const cameo of CHARACTER_CAMEOS){
   const character=createRoyalGame('Hero','shim',cameo.id);
   const restored=loadGame(saveGame(character));

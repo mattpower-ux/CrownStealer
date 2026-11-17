@@ -789,9 +789,11 @@ dialog[data-panel="inventory"] .inventory-item-popup{aspect-ratio:auto;min-heigh
 #panel[data-panel="developer"] #panel-body{overflow:visible}#panel[data-panel="developer"] .atlas-panorama{max-height:calc(96svh - 270px);min-height:220px;overflow:auto}.preview-map-sheet canvas{width:100%}
 
 /* Travel HUD: independent rows prevent actions from covering navigation text. */
-#travel-controls{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto;align-items:end;gap:10px 18px;inset:auto 16px 12px!important;padding:12px!important;background:#071b17ed!important;border-top:1px solid #d5b47766!important;border-radius:10px}
+#travel-controls{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto;align-items:end;gap:10px 18px;inset:auto 16px 12px!important;padding:12px!important;background:transparent!important;border:0!important;border-radius:0;box-shadow:none!important;backdrop-filter:none!important;pointer-events:none}
 #travel-controls[hidden]{display:none!important}
-#travel-controls .travel-status{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;font-size:16px;padding-bottom:8px;border-bottom:1px solid #d5b47744}
+#travel-controls button,#travel-controls .movement{pointer-events:auto}
+#travel-controls .travel-status:empty{display:none}
+#travel-controls .travel-status{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;font-size:16px;padding-bottom:0;border-bottom:0;text-shadow:0 1px 3px #000,0 0 5px #000}
 .travel-status strong{color:#ffe5a0;margin-right:16px}.travel-status button{min-height:36px;min-width:44px;padding:6px 12px}
 #travel-controls .actions{max-width:none;margin:0;justify-content:flex-start;gap:8px;align-self:center}
 #travel-controls .actions button{font-size:16px;min-height:48px;padding:10px 14px}
@@ -925,3 +927,9 @@ dialog[data-panel="sageJournal"] #save-checkpoint { display: none; }
 
 #potion-notice{position:fixed;inset:0;margin:auto;width:min(680px,86vw);height:fit-content;box-sizing:border-box;padding:32px;border:2px solid #efd080;border-radius:12px;background:#10291df5;color:#ffebbd;box-shadow:0 14px 60px #000b;text-align:center;font:700 clamp(26px,4vw,44px)/1.3 Georgia;z-index:120}
 .alignment-label{margin-top:9px}.alignment-track{position:relative;height:10px;margin-top:5px;background:linear-gradient(90deg,#9b465e,#776e64,#b1d49c);border-radius:4px}.alignment-track span{position:absolute;top:-3px;width:4px;height:16px;background:#fff3be;transform:translateX(-50%);box-shadow:0 0 3px #000}
+
+.look-picker{margin:12px 0 18px;border:1px solid #aa955c;padding:12px;background:#0a2019}.look-picker summary{cursor:pointer;font:bold 20px Georgia;color:#f0d28b;min-height:36px}.look-picker p{font-size:16px;color:#d5d9bf}.look-choices{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}.look-choices label{position:relative;cursor:pointer;background:#17382b;border:2px solid transparent;padding:5px;text-align:center;border-radius:5px}.look-choices label:has(input:checked){border-color:#ffe49a;background:#4a4c2e}.look-choices label:focus-within{outline:2px solid #ffe49a}.look-choices input{position:absolute;top:8px;left:8px;width:18px;height:18px;accent-color:#dfc77c}.look-choices img{display:block;width:100%;aspect-ratio:1;object-fit:contain}.look-choices span{display:block;font:14px/1.3 Georgia;color:#f5e4b5}.geared-avatar>.avatar-look-base{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none}
+@media(max-width:600px){.look-choices{grid-template-columns:repeat(2,minmax(0,1fr))}.look-choices img{max-height:220px}}
+
+/* Open the look chooser at a useful full-body scale, above the title screen. */
+.look-picker[open]{position:fixed;inset:5vh 5vw;z-index:1000;width:auto;max-width:1200px;margin:0 auto;padding:20px;overflow:auto;box-sizing:border-box;box-shadow:0 0 0 100vmax #020b08dc}.look-picker[open] .look-choices img{height:clamp(150px,27vh,260px)!important;max-height:none!important;aspect-ratio:auto}.look-picker[open] .look-choices span{letter-spacing:normal!important;text-transform:none!important;font-size:16px}.look-picker[open] .look-choices label{letter-spacing:normal!important;text-transform:none!important}
