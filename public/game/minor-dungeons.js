@@ -1,5 +1,6 @@
 import {MONSTER_BY_ID,monsterStats} from './bestiary.js';
-import {minorSiteDefinition} from './minor-sites.js';
+import {isOpenAirCemetery,minorSiteDefinition} from './minor-sites.js';
+import {secretAlcove} from './secret-alcoves.js';
 import {shrineForDungeon,charityPitMap} from './shrine-deities.js';
 
 const guardians={
@@ -23,7 +24,7 @@ function definitionFor(d) {
   return site&&Number.isInteger(d.floor)&&d.floor>=0&&d.floor<site.floors?site:null;
 }
 
-export function minorDungeonMap(d) {
+export function minorDungeonMap(d,{courtyard=true}={}) {
   if(d.charityPit)return charityPitMap();
   const map=Array.from({length:15},()=>Array(15).fill(1));
   const site=definitionFor(d);
@@ -67,6 +68,13 @@ export function minorDungeonMap(d) {
   }
   map[1][1]=3;
   map[13][13]=2;
+  if(courtyard&&isOpenAirCemetery(d)){
+    const secret=secretAlcove(d,map,{originalLayout:true});
+    for(let y=1;y<=13;y++)for(let x=1;x<=13;x++){
+      // Preserve the old secret door and its surrounding masonry.
+      if(map[y][x]===1&&(!secret||Math.abs(x-secret.x)+Math.abs(y-secret.y)>1))map[y][x]=0;
+    }
+  }
   return map;
 }
 

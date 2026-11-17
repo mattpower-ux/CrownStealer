@@ -1,12 +1,14 @@
-import {minorSiteDefinition} from './minor-sites.js';
+import {isOpenAirCemetery,minorSiteDefinition} from './minor-sites.js';
+import {minorDungeonMap} from './minor-dungeons.js';
 import {effectiveAttributes} from './attributes.js';
 import {TREASURE_ITEMS} from './treasure.js';
 import {seeHiddenBonus} from './see-hidden.js';
 
-export function secretAlcove(d,map){
+export function secretAlcove(d,map,{originalLayout=false}={}){
  const kobold=d.site==='minor-site'&&['koboldCave','cemetery'].includes(minorSiteDefinition(d.minorId)?.kind);
  if(d.royal||d.ship||d.expedition||d.site&&!kobold||!kobold&&(d.floor+1)%5!==0)return null;
  if(d.secretRoom)return d.secretRoom;
+ if(!originalLayout&&isOpenAirCemetery(d))map=minorDungeonMap(d,{courtyard:false});
  const cells=[];
  // Preserve the original even-grid choice for existing main-dungeon saves.
  for(let y=kobold?1:2;y<14-(kobold?0:1);y+=kobold?1:2)for(let x=kobold?1:2;x<14-(kobold?0:1);x+=kobold?1:2){

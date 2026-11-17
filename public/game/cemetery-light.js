@@ -1,11 +1,12 @@
 import {isCemeteryDungeon} from './cemetery-render.js';
+import {isOpenAirCemetery} from './minor-sites.js';
 import {dungeonLadders} from './dungeon-ladders.js';
 
 const directions=[[0,-1],[1,0],[0,1],[-1,0]];
 const floorKey=d=>`${d.minorId||'dungeon-'+d.index}:${d.floor||0}`;
 export const hasMiningLight=s=>s.equippedHead==='miners-cap'&&s.bag?.includes('miners-cap');
 export function cemeteryTorches(d,map){
- if(!isCemeteryDungeon(d))return [];
+ if(!isCemeteryDungeon(d)||isOpenAirCemetery(d))return [];
  const queue=[{x:1,y:1}],seen=new Set(['1:1']),fixtures=[],ladders=dungeonLadders(d,map);
  for(let i=0;i<queue.length;i++){
   const p=queue[i],wall=directions.find(([dx,dy])=>map[p.y+dy]?.[p.x+dx]===1&&!ladders.some(l=>l.wallX===p.x+dx&&l.wallY===p.y+dy));
@@ -30,6 +31,7 @@ export function lightNearestCemeteryTorch(s,map){
 }
 export function cemeteryLightAt(s,map,x,y,fixtures=cemeteryTorches(s.dungeon,map)){
  if(!isCemeteryDungeon(s.dungeon)||s.mode==='battle')return 1;
+ if(isOpenAirCemetery(s.dungeon))return .55;
  const sources=hasMiningLight(s)?[{x:s.dungeon.x,y:s.dungeon.y,cap:true}]:fixtures.filter(t=>s.flags?.cemeteryTorches?.includes(t.id));
  let light=0;
  for(const source of sources){const distance=Math.hypot(x-source.x-.5,y-source.y-.5),radius=source.cap?4.5:4;if(distance<radius&&clearRay(map,source.x+.5,source.y+.5,x,y))light=Math.max(light,Math.min(1,(1-distance/radius)*1.25));}
@@ -46,7 +48,7 @@ export function cemeteryTorchInk(torch,lit,u,v,time){
  return null;
 }
 export function drawCemeteryDarkness(c,w,h,s,map,time=0){
- if(!isCemeteryDungeon(s.dungeon)||s.mode==='battle')return;
+ if(!isCemeteryDungeon(s.dungeon)||isOpenAirCemetery(s.dungeon)||s.mode==='battle')return;
  const key=JSON.stringify([s.dungeon,s.flags?.cemeteryTorches,hasMiningLight(s),w,h]);
  if(darknessCache?.key!==key){
   const mask=document.createElement('canvas');mask.width=Math.min(180,Math.ceil(w));mask.height=Math.max(1,Math.round(mask.width*h/w));

@@ -1,4 +1,4 @@
-import {minorSiteDefinition} from './minor-sites.js';
+import {isOpenAirCemetery,minorSiteDefinition} from './minor-sites.js';
 import {dungeonFloors} from './dungeon-depths.js';
 
 const directions = [[0, -1], [1, 0], [0, 1], [-1, 0]];
@@ -40,8 +40,9 @@ export function dungeonLadders(d, map) {
   const hasDown = d.floor < dungeonFloors(d) - 1;
   const hallways = d.ladderLayout === 1 && !d.royal && d.site !== 'elf-village' ? hallwayTiles(tileAt) : [];
   const up = d.floor > 0 ? hallways[Math.round((hallways.length - 1) * .25)] ?? entrance : entrance;
+  const openAir = isOpenAirCemetery(d);
   const lower = hallways[Math.round((hallways.length - 1) * .75)];
-  const down = lower && lower !== up ? lower : endpoint;
+  const down = openAir ? {x:11,y:13} : lower && lower !== up ? lower : endpoint;
   const points = d.royal === 'cell' ? [{x: 3, y: 3, direction: 'down'}]
     : d.royal === 'sewer' ? [{...endpoint, direction: 'up'}]
     : [{...up, direction: 'up'}, ...(hasDown ? [{...down, direction: 'down'}] : [])];
@@ -53,6 +54,7 @@ export function dungeonLadders(d, map) {
       wallX: point.x + dx,
       wallY: point.y + dy,
       opening: point.direction === 'up' ? 'ceiling' : 'floor',
+      ...(openAir&&point.direction==='up'?{gate:true}:{}),
     };
   });
 }

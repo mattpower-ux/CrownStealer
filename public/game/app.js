@@ -145,9 +145,9 @@ let dismissedLadder=null;
 $('ladder-stay').onclick=()=>{dismissedLadder=ladderTileKey(state.dungeon);ladderPopup.hidden=true;};
 function showLadderPrompt(){if(state?.dungeon?.site===SAGE_MAZE_ID){ladderPopup.hidden=true;return;}const position=ladderTileKey(state?.dungeon);if(dismissedLadder!==position)dismissedLadder=null;const onChest=state?.mode==='dungeon'&&dungeonChests(state,dungeonMap(state.dungeon)).some(c=>c.x===state.dungeon.x&&c.y===state.dungeon.y);const ladder=state?.mode==='dungeon'&&state.dungeon.site!==ROYAL_DUNGEON_ID&&!onChest&&dismissedLadder!==position&&!activePanel&&!combatView?ladderPrompt(state,dungeonMap(state.dungeon)):null;ladderPopup.hidden=!ladder;if(!ladder)return;const sewer=state.dungeon.royal==='sewer',hiddenExit=state.dungeon.royal==='cell'&&!state.flags.royalTrapFound;
  $('ladder-down').textContent=hiddenExit?'Search cell for hidden exit':'Go Down';
- $('ladder-question').textContent=sewer?'Galen’s Cell':'You Found a Ladder';
- $('ladder-direction').textContent=hiddenExit?'The story-prison trapdoor is concealed. Search the cell to uncover the sewer escape.':sewer?(state.flags.galenFreed?'The wizard points to the loose stones.':'An old wizard waits behind the bars.'):ladder.direction==='down'?'This ladder leads through the floor.':'This ladder leads through the ceiling.';
- $('ladder-up').textContent=sewer?(state.flags.galenFreed?'Push loose stones':'Free Galen'):'Ascend/Leave';$('ladder-down').disabled=ladder.direction!=='down';$('ladder-up').disabled=ladder.direction!=='up';}
+ $('ladder-question').textContent=ladder.gate?'Iron Gate':sewer?'Galen’s Cell':'You Found a Ladder';
+ $('ladder-direction').textContent=ladder.gate?'The gate leads back to the wilderness.':hiddenExit?'The story-prison trapdoor is concealed. Search the cell to uncover the sewer escape.':sewer?(state.flags.galenFreed?'The wizard points to the loose stones.':'An old wizard waits behind the bars.'):ladder.direction==='down'?'This ladder leads through the floor.':'This ladder leads through the ceiling.';
+ $('ladder-up').textContent=ladder.gate?'Leave through the gate':sewer?(state.flags.galenFreed?'Push loose stones':'Free Galen'):'Ascend/Leave';$('ladder-down').hidden=!!ladder.gate;$('ladder-down').disabled=ladder.direction!=='down';$('ladder-up').disabled=ladder.direction!=='up';}
 $('ladder-down').onclick=()=>{ladderPopup.hidden=true;dispatch({type:state?.dungeon?.royal==='cell'&&!state.flags.royalTrapFound?'royalSearch':'descend'});};
 $('ladder-up').onclick=()=>{const ladder=ladderPrompt(state,dungeonMap(state.dungeon));ladderPopup.hidden=true;if(ladder?.direction==='up')dispatch({type:ladder.upAction});};
 
@@ -535,7 +535,7 @@ function update(){if(state.mode!=='battle')impactIndex=0;updateClockDisplay();up
   const atTunnelExit=minor.kind==='tunnel'&&d.x===13&&d.y===13;
   const stairs=atTunnelExit?button('Exit tunnel',{type:'descend'},'primary')
    :ladder?.direction==='down'?button('Descend',{type:'descend'},'primary')
-   :ladder?.direction==='up'?button(d.floor?'Ascend':'Leave '+esc(minor.name),{type:'leave'},'primary'):'';
+   :ladder?.direction==='up'?button(ladder.gate?'Leave through the gate':d.floor?'Ascend':'Leave '+esc(minor.name),{type:'leave'},'primary'):'';
   $('actions').innerHTML=stairs+'<button data-panel="potions">Drink potion</button>';
  }
  else if(state.mode==='dungeon'){

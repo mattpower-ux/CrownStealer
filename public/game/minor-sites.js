@@ -43,6 +43,10 @@ export function minorSiteDefinition(id) {
   };
 }
 
+export function isOpenAirCemetery(d) {
+  return d?.site==='minor-site'&&d.floor===0&&minorSiteDefinition(d.minorId)?.name==='Walled Cemetery';
+}
+
 function groundNear(start, width, height, tileAt) {
   const visited = new Uint8Array(width * height);
   const queue = [];
