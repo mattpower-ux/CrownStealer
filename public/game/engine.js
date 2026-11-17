@@ -15,6 +15,7 @@ import {wildernessDiscoveries,revealNearbyDiscoveries,searchWildernessDiscovery,
 import {validateChampionState,finishChampionChallenge} from './champion-titles.js';
 import {merchantFor,canBuyMerchantSupply,canMerchantBuy,isMerchantResaleItem} from './merchant-catalog.js';
 import {stockForMerchant} from './merchant-inventory.js';
+import {BRIAR_AREA,BATTLE_BEAR_HP,briarAnimalMeeting,enterBriarBattle,acceptBriarHelp,androsStrike,androsHurt} from './briar-animals.js';
 import {strikeHeroGhost} from './hero-help.js';
 import {isPaladin,handlePaladinOath,paladinOathBlocks,revokeBrokenOath,turnDead,paladinWeaponMultiplier,validPaladinState} from './paladin-oath.js';
 import {POISON_ITEMS,poisonDamage,spendPoisonRound,validWeaponCoating} from './weapon-poisons.js';
@@ -190,11 +191,20 @@ function minorGuardianAt(s){
 
 export function nextObjective(s){const campaign=royalCampaignObjective(s);if(campaign)return campaign;if(s.flags.dragonCaptured)return 'Rescue your dragon from Drake the Defiler on level 10 of Firedrak Mountain in the Cinder Dominion (108, 68).';if(s.dungeon?.ship)return 'Find the control station at (7, 5) to select one of three alien planets. To return home, find a planetary teleportation scroll or P-Hopper.';if(areaFor(s)?.kind==='planet')return 'Explore this planet’s three alien dungeons. '+['Hal 2000','AGI Seven','Rosie the Riveter'][Number(s.exploration.area.split('-')[1])]+' awaits in the deepest chamber of the Echo Laboratory.';if(areaFor(s))return 'Explore the caves and monuments. Alien disk pieces: '+(s.exploration.artifacts?.length||0)+'/10. Return through the southern gate.';const royal=royalObjective(s);if(royal)return royal;const d=DUNGEONS.find(d=>!s.relics.includes(d.id));return d?.id==='tithe-vault'?'Recover the Hearth Seal from Haghilda on level 4 of the abandoned elven village.':d?.id==='widows-bell'?'Recover the Witness Bell on level 10 of the Widow’s Bell. Beware the level-12 Rock Troll.':d?`Recover ${d.relic} from ${d.name}.`:'Return to the royal court and decide the fate of the crown.';}
 function guardsFear(s){return (s.flags.guardVictories||0)>=3;}
+function briarQuietStep(s){
+ if(s.previewRules?.noRandom||s.flags.royalHero||s.spellEffects?.invisibleMoves>0||s.buffs?.invisibility>0||wizardInvisible(s)||dragonFlying(s))return;
+ const roll=random(hash('briar:'+s.rng+':'+s.turns+':'+s.x+':'+s.y));
+ if(roll()>=.075)return;
+ const animal=briarAnimalMeeting(s,roll(),roll());
+ if(animal.peaceful){s.flags.peacefulEncounter=animal;note(s,animal.name+' approaches peacefully.');}
+ else enterBriarBattle(s,animal,false,note);
+}
 function encounter(s,boss=false,guard=false,challenged=false){
  if(guard&&!challenged&&guardsFear(s)){note(s,'The guards recognize you and reluctantly back away, terrified. None dares start another fight.');return;}
  delete s.flags.clockStopped;
  if(s.previewRules?.noRandom&&!boss&&!guard)return;
  if(!boss&&!guard&&(s.spellEffects?.invisibleMoves>0||s.buffs?.invisibility>0||wizardInvisible(s))){note(s,'You pass unseen through the shadows.');return;}
+
  if(!boss&&!guard&&s.mode==='world'&&areaFor(s)?.kind!=='planet'&&!dragonFlying(s)&&(areaFor(s)?areaTile(s,s.x,s.y):worldTile(s.region,s.x,s.y))!=='water'&&rand(s)<WILDERNESS_EVENT_CHANCE/.08){startWildernessEvent(s,WILDERNESS_EVENTS[Math.floor(rand(s)*WILDERNESS_EVENTS.length)],wildernessContext(s));return;}
  if(s.mode==='dungeon'&&faceEncounterPassage(s.dungeon))note(s,'You turn toward the open passage as a creature blocks your way.');
  let enemy=s.dungeon?.site===TWINKLESTAR_TOWER_ID&&!guard?twinklestarEnemy(s,{boss,roll:rand(s)}):s.dungeon?.site===PERCIVAL_CASTLE_ID&&!guard?percivalEnemy(s,{boss,roll:rand(s)}):buildEncounter(s,rand(s),boss,guard);if(guard)enemy.guardChallenge=challenged;
@@ -296,7 +306,7 @@ function enemyStrike(s,defending,events,multiplier,attack){
  const elemental=['fire','frost','poison'].includes(element)?benefits.elementalResistance:0;
  const magical=mental||['caster','spectral'].includes(s.enemy.kind)||s.enemy.attackType==='magic'||['magic','psychic'].includes(element)?benefits.magicResistance:0;
  const resistance=Math.min(.75,wards.filter(i=>i.resistance===element).reduce((n,i)=>n+i.resistPercent/100,0)+elemental+magical);
- const shield=wards.filter(i=>i.kind!=='armor').reduce((n,i)=>n+(i.protection||0),0),evasion=Math.min(.4,wards.reduce((n,i)=>n+(i.evasion||0),benefits.evasion))+(s.enemy.confused&&s.enemy.attackType!=='ranged'&&s.enemy.kind!=='caster'?.3:0);if(!mental&&evasion&&rand(s)<evasion){events.push({kind:'miss',target:'hero',amount:0,sound:'miss'});note(s,s.enemy.confused?'The confused enemy swings wide and misses.':'You evade the blow.');return;}const attackers=s.enemy.memberHp?Math.max(1,Math.ceil(s.enemy.hp/s.enemy.memberHp)):1;const damage=Math.max(1,Math.floor((attack?.power??s.enemy.attack)*(attack?.multiplier??1)*(1+.55*(attackers-1))*(.7+rand(s)*.7)*(s.enemy.speciesId==='haghilda'&&s.enemy.peppered?.5:1)*(1-resistance)-(mental||s.enemy.druidSwarm?0:armorProtection(s)*1.3+shield)))*multiplier;const ward=TREASURE_ITEMS[s.equippedShield],blocked=!mental&&ward?.block?ward.block[0]+Math.floor(rand(s)*(ward.block[1]-ward.block[0]+1)):0,taken=Math.max(0,(defending?Math.ceil(damage/3):damage)-blocked-(s.enemy.insulted?2:0));const wardBlock=s.spellEffects?.wardTurns>0?10:0;if(wardBlock)s.spellEffects.wardTurns--;const oak=s.equippedShield===DRUID_SHIELD;const finalTaken=oak&&element==='fire'?0:Math.max(0,taken-wardBlock-(oak&&(magical||mental||s.enemy.druidSwarm)?5:0));s.hp-=finalTaken;note(s,`${s.enemy.name}${alienAttack?' '+alienAttack.verb:s.enemy.speciesId==='haghilda'?' blasts suffocating toxic snot':' strikes'} for ${finalTaken}.${wardBlock?' Protective Ward absorbs '+Math.min(wardBlock,taken)+'.':''}${blocked?' Frostburn blocks '+Math.min(blocked,defending?Math.ceil(damage/3):damage)+'.':''}`);if(finalTaken>0)vampireBite(s);events.push({kind:defending?'block':'hit',target:'hero',hpAfter:Math.max(0,s.hp),amount:finalTaken,enemyImpact:finalTaken>0&&!mental,sound:attack?.sound||(defending?'block':'hurt'),...(mental?{mental:true}:{}),...(attack?{message:attack.message||s.log.at(-1),...(attack.voice?{voice:attack.voice}:{})}:{})});
+ const shield=wards.filter(i=>i.kind!=='armor').reduce((n,i)=>n+(i.protection||0),0),evasion=Math.min(.4,wards.reduce((n,i)=>n+(i.evasion||0),benefits.evasion))+(s.enemy.confused&&s.enemy.attackType!=='ranged'&&s.enemy.kind!=='caster'?.3:0);if(!mental&&evasion&&rand(s)<evasion){events.push({kind:'miss',target:'hero',amount:0,sound:'miss'});note(s,s.enemy.confused?'The confused enemy swings wide and misses.':'You evade the blow.');return;}const attackers=s.enemy.memberHp?Math.max(1,Math.ceil(s.enemy.hp/s.enemy.memberHp)):1;const damage=Math.max(1,Math.floor((attack?.power??s.enemy.attack)*(attack?.multiplier??1)*(1+.55*(attackers-1))*(.7+rand(s)*.7)*(s.enemy.speciesId==='haghilda'&&s.enemy.peppered?.5:1)*(1-resistance)-(mental||s.enemy.druidSwarm?0:armorProtection(s)*1.3+shield)))*multiplier;const ward=TREASURE_ITEMS[s.equippedShield],blocked=!mental&&ward?.block?ward.block[0]+Math.floor(rand(s)*(ward.block[1]-ward.block[0]+1)):0,taken=Math.max(0,(defending?Math.ceil(damage/3):damage)-blocked-(s.enemy.insulted?2:0));const wardBlock=s.spellEffects?.wardTurns>0?10:0;if(wardBlock)s.spellEffects.wardTurns--;const oak=s.equippedShield===DRUID_SHIELD;const finalTaken=oak&&element==='fire'?0:Math.max(0,taken-wardBlock-(oak&&(magical||mental||s.enemy.druidSwarm)?5:0));s.hp-=finalTaken;note(s,`${s.enemy.name}${alienAttack?' '+alienAttack.verb:s.enemy.speciesId==='haghilda'?' blasts suffocating toxic snot':' strikes'} for ${finalTaken}.${wardBlock?' Protective Ward absorbs '+Math.min(wardBlock,taken)+'.':''}${blocked?' Frostburn blocks '+Math.min(blocked,defending?Math.ceil(damage/3):damage)+'.':''}`);if(finalTaken>0)vampireBite(s);androsHurt(s,finalTaken,note);events.push({kind:defending?'block':'hit',target:'hero',hpAfter:Math.max(0,s.hp),amount:finalTaken,enemyImpact:finalTaken>0&&!mental,sound:attack?.sound||(defending?'block':'hurt'),...(mental?{mental:true}:{}),...(attack?{message:attack.message||s.log.at(-1),...(attack.voice?{voice:attack.voice}:{})}:{})});
  if(!mental&&ward?.retaliation){
   const ice=ward.retaliation[0]+Math.floor(rand(s)*(ward.retaliation[1]-ward.retaliation[0]+1))+benefits.magicDamage;
   const damage=rollAttackDamage(s,ice,()=>rand(s),note);
@@ -364,7 +374,7 @@ export function visibleDungeonGuardian(s){
 
 export const xpForNextLevel=s=>s.level*50;
 const STARTER_WEAPONS=['sword','mace','spear','axe'].flatMap(family=>['common-'+family+'-1','common-'+family+'-1-v1']);
-function victory(s,events=[]){delete s.weaponCoating;s.spellEffects.stunnedTurns=0;const e=s.enemy;if(finishDruidEnemy(s,note)){
+function victory(s,events=[]){delete s.weaponCoating;s.spellEffects.stunnedTurns=0;const e=s.enemy;if(e.androsWild)s.flags.andros=0;if(finishDruidEnemy(s,note)){
  s.xp+=e.xp;
  s.flags.victories++;
  while(s.xp>=xpForNextLevel(s)){s.xp-=xpForNextLevel(s);s.level++;s.maxHp+=14;s.hp=Math.min(s.maxHp,s.hp+30);note(s,'Level '+s.level+'.');}
@@ -673,7 +683,12 @@ function actInner(input,action,events=[]){
  if(branch&&!dragonFlying(s)&&(a.type==='enter'||a.type==='move'&&(a.dx<0&&branch.direction==='west'||a.dy<0&&branch.direction==='north'||a.dy>0&&branch.direction==='south'))&&!hasRegionRelics(s,s.region)){s.flags.borderTauntPending=true;s.flags.borderVoice=Math.floor(rand(s)*3);note(s,'Two relics, you wandering turnip! The guards lock the gate and laugh.');return s;}
  if(s.flags.peacefulEncounter&&s.mode==='world'){
   const offer=s.flags.peacefulEncounter;
-  if(a.type==='peacefulAccept'){
+  if(offer.peaceful&&s.exploration?.area===BRIAR_AREA){
+   if(['peacefulAccept','peacefulLeave','peacefulProvoke','move'].includes(a.type))delete s.flags.peacefulEncounter;
+   if(a.type==='peacefulProvoke')enterBriarBattle(s,offer,true,note);
+   if(a.type==='peacefulAccept')acceptBriarHelp(s,offer,note);
+   if(a.type.startsWith('peaceful'))return s;
+  }else if(a.type==='peacefulAccept'){
    if(offer.offer==='gold')s.gold+=offer.amount;
    else if(offer.offer==='trade'&&s.meals>0){s.meals--;s.bag.push('starter-healing');}
    else if(offer.offer==='sell'&&s.gold>=offer.amount){s.gold-=offer.amount;s.bag.push('starter-healing');}
@@ -745,7 +760,7 @@ function actInner(input,action,events=[]){
    ?'You enter '+site.name+'. Gnawed coal and lava rock litter the floor alongside an adventurer’s scorched pack.'
    :'You explore '+site.name+'. '+site.floors+' level'+(site.floors===1?'':'s')+' lie within.');return s;
  }
- if(explorationAction(s,a,{note,encounter,clock,pointAt,random:()=>rand(s),championChallenge:tryChampionChallenge,bridgeStep:(s,previous)=>!dragonFlying(s)&&maybeBridgeTroll(s,previous,(x,y)=>areaTile(s,x,y),note)}))return s;
+ if(explorationAction(s,a,{note,encounter,clock,pointAt,briarQuietStep,random:()=>rand(s),championChallenge:tryChampionChallenge,bridgeStep:(s,previous)=>!dragonFlying(s)&&maybeBridgeTroll(s,previous,(x,y)=>areaTile(s,x,y),note)}))return s;
  if(a.type==='attackBorderGuards'){const gate=pointAt(s);if(s.mode!=='world'||!s.flags.borderTauntPending||!gate||!['gate','branchGate'].includes(gate.kind)||s.flags['gateAccess:'+gate.id]||s.flags['gateChallengeWon:'+gate.id]||s.flags.royalHero)return s;delete s.flags.borderTauntPending;s.flags.gateAttemptWins=0;s.flags.gateAttemptId=gate.id;startGateGuard(s,gate.id);return s;}
  if(a.type==='acknowledgeBorder'){delete s.flags.borderTauntPending;return s;}
  if(s.flags.royalQuest==='opening'){
@@ -867,7 +882,7 @@ function actInner(input,action,events=[]){
     s.flags.guarded=false;s.flags.combo=0;
     events.push({kind:'miss',target:'enemy',amount:0,sound:'miss'});
     note(s,'Your weapon misses.');
-    strikeHeroGhost(s,events,note);
+    strikeHeroGhost(s,events,note);androsStrike(s,events,note);
     if(s.enemy.hp<=0){events.push({kind:'victory',target:'enemy',amount:0,sound:'victory'});victory(s,events);return s;}
     enemyTurn(s,false,events);return s;
    }
@@ -885,7 +900,7 @@ function actInner(input,action,events=[]){
    if(gear.lifeSteal){s.hp=Math.min(s.maxHp,s.hp+gear.lifeSteal);note(s,'Your weapon drains '+gear.lifeSteal+' health from the enemy.');}
    events.push({kind:'hit',target:'enemy',...attackDamage,sound:'hit'});
    note(s,`Your weapon deals ${amount} damage.${effective?' You exploit its weakness.':''}${protection?' Its armor absorbs '+Math.min(protection,raw-1)+' damage.':''}`);
-   strikeHeroGhost(s,events,note);
+   strikeHeroGhost(s,events,note);androsStrike(s,events,note);
    if(s.enemy.hp<=0){
     events.push({kind:'victory',target:'enemy',amount:0,sound:'victory'});victory(s,events);
    }else{
@@ -1129,6 +1144,7 @@ export function loadGame(json){
  if(!Array.isArray(s.wanted)||s.wanted.length!==4||s.wanted.some(n=>!Number.isInteger(n)||n<0||n>10000)||!Number.isFinite(s.reputation)||!s.flags||typeof s.flags!=='object'||!Number.isInteger(s.flags.victories)||s.flags.victories<0)throw Error('Invalid reputation data.');
  for(const [key,value]of Object.entries(s.flags))if((key.startsWith('merchantStock:')||key.startsWith('merchantHealing:'))&&(!Number.isInteger(value)||value<0||value>3))throw Error('Invalid merchant stock.');
  if(s.flags.secretChecks!==undefined&&(!Array.isArray(s.flags.secretChecks)||s.flags.secretChecks.length>2000||new Set(s.flags.secretChecks).size!==s.flags.secretChecks.length||s.flags.secretChecks.some(key=>typeof key!=='string'||!secretDungeonForKey(key))))throw Error('Invalid secret detection history.');
+ if(s.flags.andros!==undefined&&(!Number.isInteger(s.flags.andros)||s.flags.andros<0||s.flags.andros>BATTLE_BEAR_HP))throw Error('Invalid Andros health.');
  if(!validShrineState(s))throw Error('Invalid shrine state.');
  if(!validBridgeTrollState(s))throw Error('Invalid bridge troll.');
  if(!validMinorResidents(s))throw Error('Invalid dungeon residents.');

@@ -4,6 +4,7 @@ import {SAGE_MAZE_ID,SAGE_PEN_ID,sageRemainsAt} from './sage-challenge.js';
 import {beginCemeteryHaunting,drawCemeteryHaunting} from './cemetery-haunting.js';
 import {bridgeDirections,bridgeTrollView} from './bridge-trolls.js';
 import {drawHearthmarchDream} from './standing-stones-view.js';
+import {briarMeetingView,BATTLE_BEAR_HP} from './briar-animals.js';
 import {atMultiverseTube,snoutState,snoutView} from './snout.js';
 import {canSpeakToPeebles,canVisitEarth,EARTH_COORDINATES,peeblesTravelsWith} from './peebles.js';
 import {nearbyWatcher} from './minor-residents.js';
@@ -607,6 +608,7 @@ function update(){if(state.mode!=='battle')impactIndex=0;updateClockDisplay();up
 
  showLadderPrompt();
  if(state.mode==='world'&&state.flags.impaledMoves)$('actions').insertAdjacentHTML('afterbegin',button('Trapped by a branch · Pull free ('+state.flags.impaledMoves+' left)',{type:'pullBranch'},'primary'));
+ if(state.dungeon?.site===BOTTOMLESS_PIT.id&&state.mode==='dungeon'&&state.flags.andros>0)$('actions').insertAdjacentHTML('beforeend','<span>Andros · Level 40 · '+state.flags.andros+' / '+BATTLE_BEAR_HP+' HP</span>');
  if(atMultiverseTube(state))$('actions').insertAdjacentHTML('afterbegin','<button class="primary" data-panel="multiverseTube">MULTIVERSE TELEPORTER</button>');
  if(canSpeakToPeebles(state))$('actions').insertAdjacentHTML('afterbegin','<button class="primary" data-panel="peebles">Speak to Professor Peebles</button>'+(state.flags.peeblesSurrender?'':button('Attack Professor Peebles',{type:'attack'})));
  if(peeblesTravelsWith(state)&&['world','town','dungeon'].includes(state.mode))$('actions').insertAdjacentHTML('beforeend','<button data-panel="peeblesCompanion">Professor Peebles</button>');
@@ -994,10 +996,11 @@ function openPanel(name,{winkShot=false,winkResult=null}={}){if(state?.dungeon?.
  if(name==='inventory')body.innerHTML+=cityJournal(state,esc);
  if(name==='inn'&&cityOf(state))body.innerHTML+=cityView(state,button,esc);
  if(name==='peaceful'){
-  const {name:creature,offer,amount}=state.flags.peacefulEncounter;
+  const meeting=state.flags.peacefulEncounter;
+  const {name:creature,offer,amount}=meeting;
   const line=offer==='gold'?'“Take '+amount+' gold and let me be.”':offer==='trade'?'“A healing potion for a meal?”':'“A healing potion for '+amount+' gold?”';
   const canAccept=offer==='gold'||(offer==='trade'?state.meals>0:state.gold>=amount);
-  body.innerHTML='<h3>'+esc(creature)+'</h3><p>'+esc(line)+'</p>'+(canAccept?button('Accept',{type:'peacefulAccept'},'primary'):'')+button('Walk away',{type:'peacefulLeave'});
+  body.innerHTML=meeting.peaceful?briarMeetingView(meeting,button,esc):'<h3>'+esc(creature)+'</h3><p>'+esc(line)+'</p>'+(canAccept?button('Accept',{type:'peacefulAccept'},'primary'):'')+button('Walk away',{type:'peacefulLeave'});
  }
  if(name==='dungeonElevator'){
   const d=state.dungeon,available=state.mode==='dungeon'&&d&&!d.ship&&!d.royal;

@@ -10,6 +10,8 @@ const guardians={
   cemetery:{...MONSTER_BY_ID['depth-0-skeleton-warrior'],name:'Cemetery Skeleton'},
 };
 const caveGuardians={
+  thegn:[{id:'lizard-thegn',name:'Lizard Thegn Hunter',kind:'swift',weakness:'guard then counter',attackType:'ranged'},
+    {id:'lizard-thegn',name:'Lizard Thegn Wagonguard',kind:'armored',weakness:'guard then counter'}],
   goblin:[{...GROVE_ENEMIES[0],name:'Goblin Digger'},GROVE_ENEMIES[1],GROVE_ENEMIES[2]],
   troll:[{id:'cave-troll',name:'Cave Troll',kind:'brute',weakness:'guard then counter',art:{sheet:'bridge-troll',index:0}}],
   fireImp:[{id:'firedrak-imp',name:'Fire Imp',kind:'swift',element:'fire',weakness:'quick strikes',art:{sheet:'firedrak-monsters',index:0}}],
@@ -18,7 +20,7 @@ const caveGuardians={
     {...MONSTER_BY_ID['ember-drake'],name:'Lava-Rock Wyrm',element:'fire',attackType:'ranged'},
   ],
 };
-const caveGuardianLevels={goblin:16,troll:26,fireImp:8,wyrm:10};
+const caveGuardianLevels={thegn:7,goblin:16,troll:26,fireImp:8,wyrm:10};
 const gearKinds=new Set(['weapon','armor','ring','necklace','shield','head','hands','boots']);
 
 // The waypoints double as room centers. A zero-sized room leaves a corridor bend.

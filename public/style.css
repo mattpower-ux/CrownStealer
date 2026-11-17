@@ -917,3 +917,4 @@ dialog[data-panel="sageJournal"] #save-checkpoint { display: none; }
 .multiverse-warning { color:#ffdc9b; font-weight:700; }
 .multiverse-chamber .panel-actions { justify-content:center; }
 #panel .reconfigure-reality { background:#96e6a0; border-color:#c9ffd2; color:#132b1c; font-weight:800; }
+.andros-portrait { display:block; width:min(100%,380px); max-height:33vh; object-fit:contain; margin:0 auto .75rem; }

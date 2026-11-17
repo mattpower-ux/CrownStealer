@@ -13,6 +13,7 @@ const kinds = [
 ];
 
 const regionalCaves = {
+  thegn: ['Briarroot Warren','Cartstone Cave','Broken Yoke Warren','Foxbarrow Cave','Coldroot Warren','Huntsman’s Hollow','Tangleback Cave','Lizard Thegn Hold'],
   goblin: ['Shellbank Goblin Dig','Tidecut Goblin Dig','Brinewell Goblin Dig','Saltburrow Goblin Dig','Reefside Goblin Dig','Pearlcut Goblin Dig','Driftwood Goblin Dig','Sandbar Goblin Dig'],
   troll: ['Longshadow Troll Cave','Flintjaw Troll Cave','Starless Troll Cave','Slateback Troll Cave','Frostcrag Troll Cave','Moonrift Troll Cave','Broken Fang Troll Cave','Gloamstone Troll Cave'],
   wyrm: ['Coaljaw Wyrm Hole','Cindercoil Wyrm Nest','Black Clinker Wyrm Hole','Lavafang Wyrm Nest','Ashmouth Wyrm Hole','Embercoil Wyrm Nest','Slagtooth Wyrm Hole','Scorchback Wyrm Nest'],
@@ -38,7 +39,7 @@ export function minorSiteDefinition(id) {
   const nameIndex = (variant + ordinal) % names.length;
   const name = names[nameIndex];
   const occupant = kind!=='koboldCave'?null:
-    area==='wild-4'?'wyrm':region===2?'goblin':region===3?'troll':region===1&&name==='Sooty Kobold Den'?'fireImp':null;
+    area==='wild-0'?'thegn':area==='wild-4'?'wyrm':region===2?'goblin':region===3?'troll':region===1&&name==='Sooty Kobold Den'?'fireImp':null;
   const caveName = occupant==='fireImp'?'Sooty Fire Imp Lair':regionalCaves[occupant]?.[nameIndex];
   return {
     id, kind, name: caveName??(name==='Pebble Run Cave'&&id!==PEBBLE_RUN_ID?'Rillstone Cave':name),
