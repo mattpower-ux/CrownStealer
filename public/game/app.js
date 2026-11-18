@@ -24,6 +24,7 @@ import {drawShrinePortrait} from './shrine-render.js';
 import {shrinePanelMarkup,shrineResultMarkup} from './shrine-view.js';
 import {isCemeteryDungeon} from './cemetery-render.js';
 import {secretRoomKey,seeHiddenChance} from './secret-alcoves.js';
+import {secretSearchMapMarkup} from './secret-search-view.js';
 import {TWINKLESTAR_TOWER_ID,twinklestarGuardian} from './twinklestar-tower.js';
 import {wizardAudienceAvailable,isWizard,wizardProgress} from './wizard-apprentice.js';
 import {drawWhiteWizard} from './wizard-render.js';
@@ -861,8 +862,8 @@ function openPanel(name,{winkShot=false,winkResult=null}={}){if(state?.dungeon?.
  if(name==='beans'){body.innerHTML='<p>'+esc(BEANS_MESSAGE)+'</p><p>Three rounds. Undead and constructs are unaffected; fleeing creatures award no victory loot or experience.</p><button type="button" class="primary" data-close-percival>Catch your breath</button>';}
  else if(name==='searchSecrets'){
   if(state.mode!=='dungeon'||secretRoomKey(state.dungeon)===null){closePanel();return;}
-  const d=state.dungeon,revealed=!!d.secretRoom,key=secretRoomKey(d);
-  body.innerHTML='<p>Examine the walls beside you for concealed doors and hidden alcoves.</p><p><strong>'+Math.round(seeHiddenChance(state)*100)+'% See Hidden chance</strong> when a secret is beside you. Intelligence and equipped See Hidden items improve this chance.</p><p>Each search costs <strong>1 turn and 5 game minutes</strong>, even when nothing is found. Move along the walls to search a different spot.</p>'+(revealed?'<p role="status">A secret opening is revealed at ('+d.secretRoom.x+', '+d.secretRoom.y+'). Look for its outlined floor-map marker. Hidden stashes may be trapped.</p>':'<p>You may also notice a hidden door as you pass it.</p>')+(lastSecretSearch?.key===key?'<p role="status">'+esc(lastSecretSearch.text)+'</p>':'')+'<div class="panel-actions">'+(revealed?'':button('Search nearby walls',{type:'searchSecrets'},'primary'))+'<button type="button" data-close-percival>Return to exploring</button></div>';
+  const d=state.dungeon,key=secretRoomKey(d);
+  body.innerHTML=secretSearchMapMarkup(state,dungeonMap(d),{chance:seeHiddenChance(state),message:lastSecretSearch?.key===key?lastSecretSearch.text:''});
  }
  else if(name==='wizardAudience'){
   if(!wizardAudienceAvailable(state)){closePanel();return;}
