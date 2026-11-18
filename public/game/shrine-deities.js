@@ -1,8 +1,9 @@
 import {adjustAlignment} from './alignment.js';
-import {minorSiteDefinition} from './minor-sites.js';
+import {minorSiteDefinition,OOZUL_SHRINE_IDS} from './minor-sites.js';
 import {applyAttributeItem} from './attributes.js';
 
 export const CHARITY_SHRINE_ID='minor-r0-1';
+export const PERCIVAL_SHRINE_ID='minor-r1-12';
 const gods=[
  {id:'copperclaw',name:'Copperclaw, God of Kobolds',form:'kobold',alignment:'good',runes:'Share the little you carry. A small kindness fills a great cavern.',loot:['common-lesser-healing','small-emerald']},
  {id:'sseth',name:'Sseth, the Lizard God',form:'lizard',alignment:'good',runes:'Blood warms the cold stone. The scaled faithful guard their offerings.',loot:['weapon-poison-1','small-sapphire'],guardian:{id:'shrine-lizard',name:'Lizard Shrine Zealot',kind:'swift',weakness:'steady pressure',art:{sheet:'monsters-tide',index:3}}},
@@ -16,8 +17,8 @@ export function shrineForDungeon(d){
  const chosen=gods[Math.floor(slot/3)%gods.length];
  // Oozul's cult begins in the Cinder Dominion. Former Hearthmarch blob altars
  // belong to the Stonefather, keeping this evil bargain out of the first land.
- const regional=site.region===0&&chosen.id==='oozul'?gods.find(god=>god.id==='stonefather'):chosen;
- const profile=site.id===CHARITY_SHRINE_ID?{id:'lady-charity',name:'Lady Charity',form:'goddess',alignment:'good',charity:true,runes:'Give five hundred gold, and generosity shall be written upon your face.'}:regional;
+ const regional=chosen.id==='oozul'&&!OOZUL_SHRINE_IDS.has(site.id)?gods.find(god=>god.id==='stonefather'):chosen;
+ const profile=site.id===CHARITY_SHRINE_ID?{id:'lady-charity',name:'Lady Charity',form:'goddess',alignment:'good',charity:true,runes:'Give five hundred gold, and generosity shall be written upon your face.'}:site.id===PERCIVAL_SHRINE_ID?{id:'percival-way',name:'Percival, Lord of the Way',form:'giant',alignment:'good',truthTrial:true,runes:'Law admits no convenient answer. Speak only what is true.'}:regional;
  return {...profile,charity:!!profile.charity,x:7,y:8,offerX:7,offerY:9};
 }
 export function charityAudienceAvailable(s){return s.mode==='dungeon'&&s.dungeon?.minorId===CHARITY_SHRINE_ID&&s.dungeon.floor===0&&!s.dungeon.charityPit&&!s.flags.charityChoice&&shrineAudienceAvailable(s);}
@@ -46,6 +47,8 @@ export function charityAction(s,a,{random,note,events}){
 }
 export function charityTownDiscount(s){return s.flags?.charityStanding&&['mothbridge','bellwether'].includes(s.location)?.95:1;}
 export function validShrineState(s){
+ const trial=s.flags.percivalTrial;
+ if(trial!==undefined&&trial!=='passed'&&trial!=='failed'&&(!trial||typeof trial!=='object'||!Number.isInteger(trial.step)||trial.step<1||trial.step>=PERCIVAL_TRIAL_QUESTIONS.length))return false;
  for(const [key,value] of Object.entries(s.flags))if(key.startsWith('shrineStrength:')&&(!shrineForDungeon({site:'minor-site',minorId:key.slice(15)})||value!==true))return false;
  if(s.flags.charityChoice!==undefined&&!['donated','refused'].includes(s.flags.charityChoice))return false;
  if(s.flags.charityStanding!==undefined&&(typeof s.flags.charityStanding!=='boolean'||s.flags.charityStanding&&s.flags.charityChoice!=='donated'))return false;
@@ -54,9 +57,34 @@ export function validShrineState(s){
  return true;
 }
 export function shrineAudienceAvailable(s){const god=shrineForDungeon(s.dungeon);return !!god&&s.mode==='dungeon'&&!s.dungeon.charityPit&&Math.abs(s.dungeon.x-god.x)+Math.abs(s.dungeon.y-god.y)<=2;}
+export const PERCIVAL_TRIAL_QUESTIONS=[
+ {text:'Have you ever cheated at gambling?',answer:'yes'},
+ {text:'Would you kill an evil dragon on sight?',answer:'yes'},
+ {text:'Are you the most powerful being in this kingdom?',answer:'no'},
+];
+export function percivalTrialQuestion(s){
+ if(shrineForDungeon(s.dungeon)?.id!=='percival-way'||['passed','failed'].includes(s.flags.percivalTrial))return null;
+ return PERCIVAL_TRIAL_QUESTIONS[s.flags.percivalTrial?.step||0]||null;
+}
+export function percivalTrialAction(s,a,note){
+ if(a.type!=='percivalTrial'||!shrineAudienceAvailable(s))return false;
+ const question=percivalTrialQuestion(s);if(!question||!['yes','no'].includes(a.answer))return true;
+ if(a.answer!==question.answer){
+  s.flags.percivalTrial='failed';adjustAlignment(s,-10);
+  if(s.flags.percivalOath==='accepted'){s.flags.percivalOath='fallen';s.flags.paladinForsakenPending={reason:'You failed Percival’s test of absolute truth.'};}
+  if(!s.bag.includes('lump-of-coal')){s.bag.push('lump-of-coal');s.pendingLoot.push('lump-of-coal');}
+  note(s,'Percival finds falsehood in your answer. Your alignment darkens, your Paladin standing is forfeit, and he awards you a lump of coal.');return true;
+ }
+ const step=(s.flags.percivalTrial?.step||0)+1;
+ if(step<PERCIVAL_TRIAL_QUESTIONS.length){s.flags.percivalTrial={step};note(s,'Percival accepts the answer and asks another question.');return true;}
+ s.flags.percivalTrial='passed';adjustAlignment(s,8);
+ if(!s.bag.includes('helm-of-handsomness')){s.bag.push('helm-of-handsomness');s.pendingLoot.push('helm-of-handsomness');}
+ note(s,'Percival judges every answer true and grants the Helm of Handsomness: +7 Charisma while worn.');return true;
+}
 export function shrineOffering(s,a,note,events=[]){
  const god=shrineForDungeon(s.dungeon);if(!shrineAudienceAvailable(s))return false;
  if(god.id==='sseth')return false;
+ if(god.id==='percival-way')return false;
  if(god.charity){
   if(s.flags.charityChoice!=='donated'||(a.amount??10)!==10||s.gold<10)return false;
   s.gold-=10;s.hp=s.maxHp;s.wildernessHealProgress=0;s.turns++;

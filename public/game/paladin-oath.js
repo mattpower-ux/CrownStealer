@@ -9,6 +9,8 @@ export const PALADIN_GAMBLING_THOUGHT='Gambling is evil. I should arrest all the
 export const PALADIN_ITEMS={
  'holy-sword':{id:'holy-sword',name:'Holy Sword',kind:'weapon',family:'sword',shape:'sword',rarity:'legendary',tier:2,damage:[18,26],toHit:4,value:1000,color:'#fff0ae',description:'A consecrated sword. In a paladin’s hands, it deals double weapon damage against undead.'},
  'pearl-of-wisdom':{id:'pearl-of-wisdom',name:'Pearl of Wisdom',kind:'gem',shape:'pearl',rarity:'common',unique:true,bottomOnly:true,encounterOnly:true,value:1,color:'#e8e4cf',description:"Don't Be That Guy."},
+ 'helm-of-handsomness':{id:'helm-of-handsomness',name:'Helm of Handsomness',kind:'head',shape:'helm',rarity:'legendary',unique:true,value:1800,color:'#f0d58a',attributeBonuses:{charisma:7},description:'Percival’s gleaming helm. While worn, +7 Charisma, lower merchant prices, and more friendly wilderness meetings.'},
+ 'lump-of-coal':{id:'lump-of-coal',name:'Lump of Coal',kind:'junk',shape:'rock',rarity:'common',unique:true,value:0,color:'#292929',description:'Percival’s reward for an answer that was less than absolutely truthful.'},
 };
 export const isPaladin=s=>s.flags?.percivalOath==='accepted';
 export const percivalAudienceAvailable=s=>s?.mode==='dungeon'&&s.dungeon?.site==='percivals-lament'&&s.dungeon.floor===2&&s.dungeon.x===13&&s.dungeon.y===13&&s.flags.percivalLicheDefeated&&!s.flags.percivalOath;

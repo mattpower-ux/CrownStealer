@@ -48,6 +48,7 @@ export function atlasRegions(state) {
 export const ATLAS_WIDTH=1500;
 export const ATLAS_HEIGHT=820;
 export const PREVIEW_ATLAS_HEIGHT=1080;
+export function clampAtlasZoom(value){return Math.max(.75,Math.min(3,Number(value)||1));}
 
 // Position the maps around their playable border connections. The wider
 // channels across eastern waters and around the Barrens stay open sea.
@@ -119,7 +120,7 @@ function drawRoute(c,route){
 
 export function atlasView(state){
  const names=chartLands(state).map(land=>escape(land.name+': '+land.sites.map(site=>site.name).join(', ')));
- return `<div class="atlas-chart-heading"><span>${state.flags.previewFullMap?'THE WHOLE WORLD · CLICK TO EXPLORE':'THE KNOWN WORLD'}</span><small>Drag or scroll to explore the map</small></div>
+ return `<div class="atlas-chart-heading"><span>${state.flags.previewFullMap?'THE WHOLE WORLD · CLICK TO EXPLORE':'THE KNOWN WORLD'}</span><small>Drag or scroll to explore the map</small><div class="atlas-zoom-controls" role="group" aria-label="Map zoom"><button type="button" data-atlas-zoom="out" aria-label="Zoom out">−</button><output data-atlas-zoom-level>100%</output><button type="button" data-atlas-zoom="in" aria-label="Zoom in">+</button><button type="button" data-atlas-zoom="fit">Fit</button></div></div>
  <div class="atlas-panorama" tabindex="0" role="region" aria-label="Scrollable world map">
  <canvas data-atlas-world width="${ATLAS_WIDTH}" height="${state.flags.previewFullMap?PREVIEW_ATLAS_HEIGHT:ATLAS_HEIGHT}" role="img" aria-label="World map: ${names.join(', ')}. Your position is marked with a white star."></canvas></div>
  <p class="atlas-chart-legend"><span><i class="atlas-town"></i>Settlement</span><span><i class="atlas-dungeon"></i>Dungeon</span><span class="atlas-player-key">✦ You are here</span></p>`;
@@ -187,6 +188,11 @@ export function paintAtlasMaps(container,state){
  }
  const pan=canvas.closest?.('.atlas-panorama')||canvas.parentElement;
  if(pan){
+  const sheet=canvas.closest?.('.preview-map-sheet'),baseWidth=Math.max(pan.clientWidth||0,state.flags.previewFullMap?ATLAS_WIDTH:1100),level=container.querySelector('[data-atlas-zoom-level]');let zoom=1;
+  const applyZoom=(next,preserve=true)=>{const oldWidth=canvas.getBoundingClientRect?.().width||baseWidth,centerX=pan.scrollLeft+pan.clientWidth/2,centerY=pan.scrollTop+pan.clientHeight/2;zoom=clampAtlasZoom(next);const width=baseWidth*zoom;canvas.style.width=width+'px';if(sheet)sheet.style.width=width+'px';if(level)level.value=level.textContent=Math.round(zoom*100)+'%';if(preserve&&oldWidth){const ratio=width/oldWidth;pan.scrollLeft=centerX*ratio-pan.clientWidth/2;pan.scrollTop=centerY*ratio-pan.clientHeight/2;}};
+  container.querySelectorAll('[data-atlas-zoom]').forEach(control=>control.onclick=()=>{const action=control.dataset.atlasZoom;applyZoom(action==='fit'?Math.max(.75,pan.clientWidth/baseWidth):zoom+(action==='in'?.25:-.25));});
+  pan.onwheel=event=>{if(!event.ctrlKey&&!event.metaKey)return;event.preventDefault();applyZoom(zoom+(event.deltaY<0?.25:-.25));};
+  applyZoom(1,false);
   if(here&&typeof requestAnimationFrame==='function')requestAnimationFrame(()=>{
    const {x,y}=atlasPoint(here,state),scale=canvas.clientWidth/ATLAS_WIDTH;
    pan.scrollLeft=Math.max(0,x*scale-pan.clientWidth/2);

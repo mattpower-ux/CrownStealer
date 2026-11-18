@@ -336,6 +336,7 @@ export class AudioDirector {
   }
 
   effect(name,fallback=false) {
+    if(name==='step'&&this.skipNextGenericStep){this.skipNextGenericStep=false;return;}
     if (!this.context || this.paused || this.destroyed || !this.effectsVolume || this.context.state !== 'running') return;
     if(!fallback&&RECORDED_EFFECTS[name]&&this.fetch&&this.context.decodeAudioData)return this.playRecordedEffect(name);
     const now = this.context.currentTime + .005;
@@ -368,6 +369,9 @@ export class AudioDirector {
       case 'whinny': tone(420,0,.22,.10,1100,'sawtooth');for(let i=0;i<9;i++)tone(1000-i*60,.2+i*.085,.10,.085,650-i*35,'triangle');this.brush(now+.85,.18,.035,'effects',900);break;
       case 'campfire': for(let i=0;i<90;i++)this.brush(now+i*.05,.045+(i%4)*.012,.014+(i%7)*.004,'effects',700+(i%9)*350);break;
       case 'step': this.brush(now, .055, .07, 'effects', 700); break;
+      case 'wildernessStep': this.brush(now,.072,.055,'effects',420);tone(82,0,.075,.055,48,'triangle');break;
+      case 'cobblestoneStep': this.brush(now,.034,.105,'effects',1850);tone(310,0,.045,.07,150,'triangle');tone(690,.018,.035,.035,280,'square');break;
+      case 'chestDiscovery': [72,76,79,84].forEach((note,i)=>tone(hz(note),i*.055,.15,.075));this.brush(now+.16,.04,.06,'effects',2500);break;
       case 'thwack': this.brush(now,.035,.20,'effects',1250);tone(125,0,.16,.28,48,'triangle');tone(390,.018,.07,.09,120,'square');break;
       case 'castleFootstep': tone(540, 0, .035, .12, 300);this.brush(now, .018, .045, 'effects', 1750);break;
       case 'hit':

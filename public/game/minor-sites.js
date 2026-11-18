@@ -5,6 +5,7 @@ import {mountainTunnelEnds} from './wilderness-landscape.js';
 const columns = 6;
 const rows = 4;
 const siteCount = columns * rows;
+export const OOZUL_SHRINE_IDS=new Set(['minor-r1-9','minor-r2-11','minor-r3-10']);
 const directions = [[0, -1], [1, 0], [0, 1], [-1, 0]];
 const kinds = [
   {kind: 'koboldCave', names: ['Kobold Cave', 'Split Rock Cave', 'Kobold Burrow', 'Sooty Kobold Den', 'Bent Stair Cave', 'Pebble Run Cave', 'Twin Mouth Cave', 'Kobold Hideout']},
@@ -45,7 +46,7 @@ export function minorSiteDefinition(id) {
     id, kind, name: caveName??(name==='Pebble Run Cave'&&id!==PEBBLE_RUN_ID?'Rillstone Cave':name),
     ...(occupant?{occupant}:{}),
     floors: kind === 'cemetery' ? 1 + (variant + ordinal) % 3 : 1,
-    guarded: id!==PEBBLE_RUN_ID&&(!shrine || Boolean(variant & 1)&&Math.floor(slot/3)%4!==1&&!(region===0&&Math.floor(slot/3)%4===3)),
+    guarded: id!==PEBBLE_RUN_ID&&(!shrine || OOZUL_SHRINE_IDS.has(id)),
     treasure: !shrine || Boolean(variant & 2),
     trapped: shrine && Boolean(variant & 4),
     index,

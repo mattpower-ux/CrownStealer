@@ -4,6 +4,8 @@ import {createGame,act,saveGame,loadGame,minorSiteList,dungeonMap} from '../publ
 import {minorSiteDefinition} from '../public/game/minor-sites.js';
 import {minorGuardian,minorDungeonChests} from '../public/game/minor-dungeons.js';
 import {TREASURE_ITEMS} from '../public/game/treasure.js';
+import {itemById} from '../public/game/items.js';
+import {effectiveAttributes} from '../public/game/attributes.js';
 import {merchantBuyPrice} from '../public/game/items.js';
 import {shrineForDungeon,charityAudienceAvailable} from '../public/game/shrine-deities.js';
 function charity(){let s=createGame();const p=minorSiteList(s).find(p=>p.id==='minor-r0-1');s.x=p.x;s.y=p.y;s=act(s,{type:'enter'});s.dungeon.x=7;s.dungeon.y=9;s.gold=800;return s;}
@@ -19,6 +21,29 @@ test('shrines have wide central rooms and deities change guardians and treasure'
  assert.equal(minorGuardian(state(4)),null);assert.equal(minorGuardian(state(10)),null);assert.equal(minorGuardian(state(7)),null);
  assert.ok(minorDungeonChests(state(7),TREASURE_ITEMS)[0].items.includes('common-lesser-healing'));
  assert.ok(minorDungeonChests(state(10),TREASURE_ITEMS)[0].items.includes('common-lesser-healing'));
+});
+test('only three Oozul shrines remain and all are beyond Hearthmarch',()=>{
+ const ids=[];for(const land of ['r0','r1','r2','r3',...Array.from({length:12},(_,i)=>'w'+i)])for(let slot=0;slot<24;slot++){
+  const site=minorSiteDefinition('minor-'+land+'-'+slot);if(site.kind==='ruinedShrine'&&shrineForDungeon({site:'minor-site',minorId:site.id,index:site.index,floor:0}).id==='oozul')ids.push(site.id);
+ }
+ assert.deepEqual(ids.sort(),['minor-r1-9','minor-r2-11','minor-r3-10']);
+});
+test('Percival tests absolute truth and awards the Helm of Handsomness',()=>{
+ let s=createGame();s.mode='dungeon';s.dungeon={site:'minor-site',minorId:'minor-r1-12',index:2,floor:0,x:7,y:8,dir:0};
+ for(const answer of ['yes','yes','no'])s=act(s,{type:'percivalTrial',answer});
+ assert.equal(s.flags.percivalTrial,'passed');
+ assert.ok(s.bag.includes('helm-of-handsomness'));
+ assert.ok(s.pendingLoot.includes('helm-of-handsomness'));
+ s.equippedHead='helm-of-handsomness';
+ assert.equal(effectiveAttributes(s,itemById).charisma,17);
+});
+test('a false answer fails Percival, darkens alignment, gives coal and strips Paladin status',()=>{
+ let s=createGame();s.mode='dungeon';s.dungeon={site:'minor-site',minorId:'minor-r1-12',index:2,floor:0,x:7,y:8,dir:0};s.flags.percivalOath='accepted';
+ s=act(s,{type:'percivalTrial',answer:'no'});
+ assert.equal(s.flags.percivalTrial,'failed');
+ assert.equal(s.flags.percivalOath,'fallen');
+ assert.ok(s.alignment<0);
+ assert.ok(s.bag.includes('lump-of-coal'));
 });
 test('Lady Charity donation is explicit, costs500 once and permanently improves charisma and town standing',()=>{
  let s=charity();assert.ok(charityAudienceAvailable(s));const charisma=s.attributes.charisma;

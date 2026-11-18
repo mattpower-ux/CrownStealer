@@ -4,6 +4,17 @@ import {act,createGame,dungeonMap,loadGame,saveGame} from '../public/game/engine
 test('ladder prompts follow actual up and down ladder tiles',()=>{const base={index:0,floor:0},map=dungeonMap(base);for(const ladder of dungeonLadders(base,map)){const d={...base,x:ladder.x,y:ladder.y};assert.equal(ladderPrompt({mode:'dungeon',dungeon:d},map).direction,ladder.direction);}assert.equal(ladderPrompt({mode:'dungeon',dungeon:{...base,x:2,y:1}},map),null);});
 test('combat and final reliquaries do not offer phantom down ladders',()=>{const d={index:0,floor:9,x:13,y:13};assert.equal(ladderPrompt({mode:'dungeon',dungeon:d},dungeonMap(d)),null);assert.equal(ladderPrompt({mode:'battle',dungeon:{...d,x:1,y:1}},dungeonMap(d)),null);});
 test('royal sewer up ladder uses the escape action',()=>{const d={index:0,floor:0,x:13,y:13,royal:'sewer'};assert.equal(ladderPrompt({mode:'dungeon',dungeon:d},dungeonMap(d)).upAction,'descend');});
+test('fleeing a Parliament encounter returns to a working ceiling ladder',()=>{
+ let s=createGame();s.region=3;s.mode='battle';s.returnMode='dungeon';s.hp=s.maxHp=10000;
+ s.dungeon={index:7,floor:1,x:3,y:3,dir:0,ladderLayout:1};
+ s.enemy={name:'Ash Delegate',speciesId:'ash-delegate',level:1,hp:10,maxHp:10,attack:0,armor:0,gold:0,xp:0,combatDistance:1};
+ s=act(s,{type:'flee'});
+ assert.equal(s.mode,'dungeon');
+ const ladder=ladderPrompt(s,dungeonMap(s.dungeon));
+ assert.equal(ladder?.direction,'up');assert.equal(ladder?.upAction,'leave');
+ s=act(s,{type:ladder.upAction});
+ assert.equal(s.mode,'dungeon');assert.equal(s.dungeon.floor,0);
+});
 
 test('new dungeon ladders occupy distinct mid-hallway tiles with floor and ceiling openings', () => {
   const d = {index: 2, floor: 3, ladderLayout: 1};

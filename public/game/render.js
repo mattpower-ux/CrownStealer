@@ -26,6 +26,7 @@ import {drawPercivalCastle,percivalWallInk,drawPercivalMist} from './percival-re
 import {wildernessDiscoveries} from './wilderness-discoveries.js';
 import {drawDiscoveryArt,drawHeroGhost} from './discovery-render.js';
 import {caveProfile} from './cave-profiles.js';
+import {drawTrollCaveDetails,drawTrollCaveVault,isTrollCave} from './troll-cave-render.js';
 import {drawDungeonCeiling,shrineWallInk} from './dungeon-ceilings.js';
 import {drawSolidLadders} from './ladder-render.js';
 import {isKoboldBurrow,isRuinedShrine,burrowPixel,drawBurrowPlanes,drawBurrowDarkness,drawDungeonFlicker,drawSecretDoor,drawBurrowDebris} from './burrow-render.js';
@@ -62,7 +63,7 @@ import {drawFishBones,drawRowboat} from './nautical.js';
 
 import {drawCemeteryStones,drawDungeonIcon,drawLandmark} from './dungeon-icons.js';
 
-import {regionTrails,drawTrailCurve} from './trails.js';
+import {minorApproachTrails,regionTrails,drawTrailCurve} from './trails.js';
 
 import {areaFor,areaSites,areaTile,branchGates,teleporterSite} from './exploration.js';
 import {WORLD_WIDTH,worldSize} from './world-size.js';
@@ -309,7 +310,7 @@ export function worldViewport(s){
  return {cols,rows,left:clamp(s.x-Math.floor(cols/2),0,width-cols),top:clamp(s.y-Math.floor(rows/2),0,height-rows)};
 }
 
-function worldGround(map,view){
+function worldGround(map,view,s){
  const {cols,rows,left,top}=view,key=`${map.id}:${left}:${top}`;
  if(viewportGround?.key===key)return viewportGround.canvas;
  const canvas=viewportGround?.canvas??document.createElement('canvas'),unit=32;
@@ -318,7 +319,7 @@ function worldGround(map,view){
  const c=canvas.getContext('2d'),right=left+cols,bottom=top+rows;
  c.translate(-left*unit,-top*unit);
  for(let y=top;y<bottom;y++)for(let x=left;x<right;x++)groundTile(c,map,x,y,x*unit,y*unit,unit);
- if(!map.area)drawTrails(c,map.region,unit,view);
+ if(!map.area)drawTrails(c,map.region,unit,view,s);
  if(richTerrain.complete&&richTerrain.naturalWidth){
   const cell=richTerrain.width/4;
   for(let y=Math.max(1,top-1);y<Math.min(map.height-1,bottom+2);y++){
@@ -345,7 +346,7 @@ bridgeTrollArt.src=BRIDGE_TROLL_ART;
 
 function drawWorldViewport(c,w,h,s){
  const view=worldViewport(s),{cols,rows,left,top}=view,map=outdoorMap(s),size=h/rows;
- c.drawImage(worldGround(map,view),0,0,w,h);
+ c.drawImage(worldGround(map,view,s),0,0,w,h);
  c.save();
  c.scale(w/(size*cols),1);
  c.translate(-left*size,-top*size);
@@ -1019,6 +1020,8 @@ function drawSageRemains(c,w,h,d,dx,dy,fov,wallDepth){
 
 function dungeonUncached(c,w,h,s,time){const d=s.dungeon;if(!d)return;if(d.ship){drawShip(c,w,h,s);return;}if(d.site==='elf-village'){const [dx,dy]=DIRS[d.dir];drawForest(c,w,h,s,dungeonMap(d),dx,dy);return;}const m=dungeonMap(d),ladders=dungeonLadders(d,m),cave=caveProfile(d.expedition),cinderCrypt=isCinderWardCrypt(d),pebble=isPebbleRun(d),burrow=!pebble&&isKoboldBurrow(d),cemetery=isCemeteryDungeon(d),openAir=isOpenAirCemetery(d),shrine=isRuinedShrine(d),charityMarble=isCharityMarble(d),mossyShrine=isMossyShrine(d),tunnel=isMountainTunnel(d),haunted=d.site===PERCIVAL_CASTLE_ID,twinkling=d.site===TWINKLESTAR_TOWER_ID,druid=d.site===DRUID_SITE,wall=cinderCrypt?{...DUNGEON_WALLS[3],tint:[32,0,-8],ceiling:'#241916',floor:'#3d271f'}:charityMarble?{...DUNGEON_WALLS[0],floor:'#babdc1',ceiling:'#fcfcff'}:tunnel?{...DUNGEON_WALLS[0],floor:'#3b2b1f',ceiling:'#25180f'}:d.royal==='sewer'?SEWER_WALL:DUNGEON_WALLS[twinkling?7:haunted?1:cave?.wall??(d.site==='firedrak'?3:d.index)];const ceiling=c.createLinearGradient(0,0,0,h);ceiling.addColorStop(0,wall.ceiling);ceiling.addColorStop(.5,charityMarble?'#ccd0d4':'#151b1b');ceiling.addColorStop(.51,openAir?'#424c48':d.expedition?.startsWith('planet-1')?'#c6b68e':wall.floor);ceiling.addColorStop(1,charityMarble?'#92979c':'#111816');c.fillStyle=ceiling;c.fillRect(0,0,w,h);for(let i=0;i<190;i++){const xx=(i*137.53)%w,yy=h*.52+(i*71.71)%(h*.48);c.fillStyle=charityMarble?(i%3?'#ffffffcc':'#f0f3ff99'):d.expedition?.startsWith('planet-1')?(i%2?'#e3d1a333':'#705e3b33'):'#938f7330';c.fillRect(xx,yy,2+(i%3),1);}if(tunnel)drawMountainVault(c,w,h,d.floor);else if(shrine)drawShrineVault(c,w,h,{marble:charityMarble,moss:mossyShrine});else if(!burrow&&!pebble&&!openAir)drawDungeonCeiling(c,w,h,wall,{phase:d.floor});if(d.royal==='sewer')drawSewerChannel(c,w,h,time);const splitRock=isSplitRock(d);const [dx,dy]=DIRS[d.dir];const angle=Math.atan2(dy,dx),fov=Math.PI/2.6,step=2;
 
+ const troll=isTrollCave(d);
+ if(troll)drawTrollCaveVault(c,w,h,d.floor);
  if(cinderCrypt)drawCinderWardBrambles(c,w,h,d);
  if(openAir)drawCemeteryNightSky(c,w,h,angle,fov);
  if(pebble)drawPebblePlanes(c,w,h,d,dx,dy,fov);
@@ -1043,6 +1046,7 @@ function dungeonUncached(c,w,h,s,time){const d=s.dungeon;if(!d)return;if(d.ship)
  if(tunnel)drawTunnelDetails(c,w,h,s,m,dx,dy,fov,wallDepth);
  if(cemetery)drawCemeteryRemains(c,w,h,d,m,dx,dy,fov,wallDepth);
  if(burrow)drawBurrowDebris(c,w,h,d,m,dx,dy,fov,wallDepth);
+ if(troll)drawTrollCaveDetails(c,w,h,d,dx,dy,fov,wallDepth,time);
  drawSecretDoor(c,w,h,d,m,dx,dy,fov,wallDepth);
  drawSolidLadders(c,w,h,d,visibleLadders,dx,dy,fov,wallDepth);
  if(haunted)drawPercivalMist(c,w,h);
@@ -1425,7 +1429,7 @@ function drawShip(c,w,h,s){
 
 
 
-function drawTrails(c,region,size,view){
+function drawTrails(c,region,size,view,s){
 
  c.save();c.lineJoin='round';c.lineCap='round';
 
@@ -1436,6 +1440,18 @@ function drawTrails(c,region,size,view){
   c.strokeStyle='#e7d4a4';c.lineWidth=Math.max(1,size*.045);c.setLineDash([size*.07,size*.29]);drawTrailCurve(c,points,size);c.setLineDash([]);
 
  }c.restore();
+
+ c.save();c.lineJoin='round';c.lineCap='round';
+ for(const {style,points}of minorApproachTrails(region,minorSiteList(s))){if(!points.some(point=>visibleWorldPoint(point,view)))continue;
+  if(style==='footpath'){
+   c.strokeStyle='#765f3da8';c.lineWidth=Math.max(1.5,size*.12);c.setLineDash([size*.24,size*.16]);drawTrailCurve(c,points,size);
+   c.strokeStyle='#c6ad7790';c.lineWidth=Math.max(1,size*.045);c.setLineDash([size*.11,size*.29]);drawTrailCurve(c,points,size);
+  }else{
+   c.strokeStyle='#665e4fa8';c.lineWidth=Math.max(2,size*.2);c.setLineDash([size*.72,size*.16,size*.25,size*.22]);drawTrailCurve(c,points,size);
+   c.strokeStyle='#b0a28399';c.lineWidth=Math.max(1,size*.09);c.setLineDash([size*.45,size*.43]);drawTrailCurve(c,points,size);
+  }
+ }
+ c.setLineDash([]);c.restore();
 
 }
 

@@ -14,7 +14,7 @@ import {lightNearestCemeteryTorch} from './cemetery-light.js';
 import {colonyAction,COLONY_GREETING,prepareLeprosy} from './leper-colony.js';
 import {isDungeonCombat,battlefieldDistance,isBow,weaponReach,initializeDungeonCombat,validDungeonCombatState,deferDungeonEnemyTurn,resolveDungeonCombatAction} from './dungeon-ranged.js';
 import {handleBeansAction,beansBlocksEnemy,tickBeansRound,validBeansState} from './bucket-beans.js';
-import {charityAction,validShrineState,shrineOffering} from './shrine-deities.js';
+import {charityAction,percivalTrialAction,validShrineState,shrineOffering} from './shrine-deities.js';
 import {isCemeteryDungeon} from './cemetery-render.js';
 import {wizardAction,wizardInvisible,validWizardState,revokeWizard} from './wizard-apprentice.js';
 import {TWINKLESTAR_TOWER_ID,twinklestarTowerSite,twinklestarTowerMap,twinklestarEnemy,twinklestarGuardian,validTwinklestarTower} from './twinklestar-tower.js';
@@ -227,7 +227,7 @@ function encounter(s,boss=false,guard=false,challenged=false){
   const bonus=name==='Legendary Kraken'?12:name==='Leviathan'?5:2;
   const speciesId={'Legendary Kraken':'juvenile-leviathan',Leviathan:'juvenile-leviathan','Giant Squid':'memory-eel','Crazed Crab':'boiler-crab','Sea Monster':'pressure-nautilus'}[name];
   enemy={...enemy,name,speciesId,level:enemy.level+bonus,hp:enemy.hp+bonus*12,maxHp:enemy.maxHp+bonus*12,attack:enemy.attack+bonus*2,armor:enemy.armor+bonus,gold:enemy.gold+bonus,xp:enemy.xp+bonus*5};
- }else if(field&&!s.flags.royalHero&&s.turns>10&&chance<.12){
+ }else if(field&&!s.flags.royalHero&&s.turns>10&&chance<.12+attributeBenefits(s,itemById).merchantDiscount){
   s.flags.peacefulEncounter={name:enemy.name,speciesId:enemy.speciesId,offer:chance<.04?'gold':chance<.08?'trade':'sell',amount:Math.max(2,enemy.level)};
   note(s,enemy.name+' approaches with an offer.');
   return;
@@ -736,6 +736,7 @@ if(a.type==='acknowledgeDragon'){delete s.flags.dragonGreeting;delete s.flags.dr
   if(a.type.startsWith('peaceful'))return s;
  }
  if(a.type==='attackWatcher'){startMinorResident(s,'attack',note);return s;}
+ if(a.type==='percivalTrial'){percivalTrialAction(s,a,note);return s;}
  if(a.type==='shrineOffering'){shrineOffering(s,a,note,events);return s;}
  if(a.type==='shrineCharity'){if(charityAction(s,a,{random:()=>rand(s),note,events})==='defeated')recover(s,events);return s;}
  if(a.type==='leave'&&s.mode==='dungeon'&&s.dungeon?.charityPit){if(s.dungeon.x===1&&s.dungeon.y===1){delete s.dungeon.charityPit;s.dungeon.x=7;s.dungeon.y=9;s.dungeon.dir=2;note(s,'You climb out of the pit. The other cheapskates wish you better luck.');}else note(s,'Reach the ladder at (1, 1) to climb out of the pit.');return s;}

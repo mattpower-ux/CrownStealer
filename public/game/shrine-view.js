@@ -1,4 +1,4 @@
-import {shrineForDungeon,charityAudienceAvailable,shrineAudienceAvailable,shrineLore} from './shrine-deities.js';
+import {shrineForDungeon,charityAudienceAvailable,percivalTrialQuestion,shrineAudienceAvailable,shrineLore} from './shrine-deities.js';
 export function shrinePanelMarkup(s,button,esc){
  const god=shrineForDungeon(s.dungeon);if(!god)return '';
  const demand=god.id==='oozul'?'OOZUL, the DARK LORD OF ALL SEEING, DEMANDS TRIBUTE!':god.name.toUpperCase()+' AWAITS YOUR OFFERING!';
@@ -10,6 +10,11 @@ export function shrinePanelMarkup(s,button,esc){
  if(god.id==='sseth'){
  const offered=s.flags['ssethTribute:'+s.dungeon.minorId]||[];
  return art+'<p class="shrine-demand" style="text-align:center;font-size:clamp(28px,3vw,44px)">SSETH THE LIZARD GOD ASKS FOR TRIBUTE TO ENRICH THE HARVEST.</p>'+ (s.flags.silverAcornGranted?'<p style="text-align:center">Sseth has bestowed the Silver Acorn.</p>':'<div class="panel-actions">'+button(offered.includes('gold')?'Gold offered':'Offer 10 Gold',{type:'ssethTribute',offering:'gold'},'primary',offered.includes('gold')||s.gold<10)+button(offered.includes('torch')?'Torch offered':'Offer a Torch',{type:'ssethTribute',offering:'torch'},'',offered.includes('torch')||!s.bag.includes('torch'))+button(offered.includes('food')?'Food offered':'Offer Food',{type:'ssethTribute',offering:'food'},'',offered.includes('food')||s.meals<1)+'</div>')+'<button data-close-percival>Return to the shrine</button>';
+ }
+ if(god.id==='percival-way'){
+  const result=s.flags.percivalTrial,question=percivalTrialQuestion(s);
+  const trial=result==='passed'?'<p class="shrine-demand">TRUTH RECOGNIZES TRUTH.</p><p>Percival has granted the Helm of Handsomness.</p>':result==='failed'?'<p class="shrine-demand">FALSEHOOD HAS WEIGHT.</p><p>A lump of coal rests on the altar.</p>':'<p class="shrine-demand">PERCIVAL, LORD OF THE WAY, DEMANDS THE ABSOLUTE TRUTH.</p><blockquote>“'+esc(question.text)+'”</blockquote><div class="panel-actions">'+button('YES',{type:'percivalTrial',answer:'yes'},'primary')+button('NO',{type:'percivalTrial',answer:'no'})+'</div>';
+  return art+trial+'<button type="button" data-close-percival>Return to the shrine</button>';
  }
  if(god.charity&&charityAudienceAvailable(s))return art+offering+'<p class="shrine-demand">“A generous heart opens every door. Will you give <strong>500 gold</strong> to charity?”</p><p>Give once to receive <strong>+1 permanent Charisma</strong> and better standing in <strong>Mothbridge and Bellwether</strong>.</p><p>Refusal opens a twenty-foot pit beneath you, dealing <strong>up to 150 damage</strong>. Other cheapskates wait below; a ladder leads out.</p><p>You carry <strong>'+Number(s.gold).toLocaleString()+' gold</strong>.</p>'+(s.gold<500?'<p role="status">You need '+(500-s.gold)+' more gold to make this offering. You may leave and return.</p>':'')+'<div class="panel-actions">'+button('Give 500 gold',{type:'shrineCharity',choice:'donate'},'primary',s.gold<500)+button('Refuse the offering',{type:'shrineCharity',choice:'refuse'})+'<button type="button" data-close-percival>Decide later</button></div>';
  return art+offering+'<button type="button" data-close-percival>Return to the shrine</button>';
