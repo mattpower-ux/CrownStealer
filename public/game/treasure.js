@@ -1,3 +1,4 @@
+import {SILVER_ACORN} from './silver-acorn.js';
 import {KERRBEAR_TOOTH} from './kerrbear.js';
 import {GUARDED_SLEEP} from './wilderness-camp.js';
 import {ROLAND_CAVE,ROLAND_ITEMS} from './roadside-crypt.js';
@@ -34,6 +35,7 @@ export const RARITIES=['common','rare','epic','legendary'];
 export const rarityFor=roll=>roll<.60?'common':roll<.80?'rare':roll<.95?'epic':'legendary';
 const colors=['#b6baa5','#77bbec','#c69aef','#efcb70'];
 export const TREASURE_ITEMS={
+ [SILVER_ACORN.id]:SILVER_ACORN,
  [KERRBEAR_TOOTH.id]:KERRBEAR_TOOTH,
  [GUARDED_SLEEP.id]:GUARDED_SLEEP,
  ...DRUID_ITEMS,

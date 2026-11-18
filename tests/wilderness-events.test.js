@@ -10,10 +10,10 @@ test('a survivable fall enters a crypt and a lethal one recovers instead',()=>{
  const s=createGame();startWildernessEvent(s,'hole',context());assert.equal(s.hp,60);assert.equal(s.dungeon.site,'roadside-crypt');
  const weak=createGame();weak.hp=1;startWildernessEvent(weak,'hole',context(.999));assert.equal(weak.flags.rescuePending,true);assert.equal(weak.dungeon,null);
 });
-test('branch holds position for two pulls without repeated damage',()=>{
+test('branch holds position for two pulls and visibly damages each struggle',()=>{
  const s=createGame();s.hp=s.maxHp=200;startWildernessEvent(s,'branch',context());const pos=[s.x,s.y];
  for(let i=0;i<2;i++)assert.equal(wildernessEventAction(s,{type:'move',dx:1,dy:0},context()),true);
- assert.deepEqual([s.x,s.y],pos);assert.equal(s.hp,200);assert.equal(s.flags.impaledMoves,undefined);assert.equal(wildernessEventAction(s,{type:'move',dx:1,dy:0},context()),false);
+ assert.deepEqual([s.x,s.y],pos);assert.equal(s.hp,198);assert.equal(s.flags.impaledMoves,undefined);assert.equal(s.log.filter(line=>/Thwack!/.test(line)).length,2);assert.equal(wildernessEventAction(s,{type:'move',dx:1,dy:0},context()),false);
 });
 test('buried hoard can be left or taken once; genuine gold is 50 to 100',()=>{
  const s=createGame();startWildernessEvent(s,'hoard',context());const gold=s.gold;

@@ -1,3 +1,4 @@
+import {isMossyGlobeShrine} from './red-globe.js';
 import {isOpenAirCemetery,minorSiteDefinition} from './minor-sites.js';
 import {minorDungeonMap} from './minor-dungeons.js';
 import {effectiveAttributes} from './attributes.js';
@@ -5,6 +6,7 @@ import {TREASURE_ITEMS} from './treasure.js';
 import {seeHiddenBonus} from './see-hidden.js';
 
 export function secretAlcove(d,map,{originalLayout=false}={}){
+ if(isMossyGlobeShrine(d))return d.secretRoom||{x:2,y:8};
  const kobold=d.site==='minor-site'&&['koboldCave','cemetery'].includes(minorSiteDefinition(d.minorId)?.kind);
  if(d.royal||d.ship||d.expedition||d.site&&!kobold||!kobold&&(d.floor+1)%5!==0)return null;
  if(d.secretRoom)return d.secretRoom;
@@ -18,8 +20,9 @@ export function secretAlcove(d,map,{originalLayout=false}={}){
  }
  return cells.length?cells[((d.index||0)*11+d.floor*7)%cells.length]:null;
 }
-export function secretMap(d,map){if(!d.secretRoom)return map;const copy=map.map(row=>[...row]);copy[d.secretRoom.y][d.secretRoom.x]=0;return copy;}
+export function secretMap(d,map){if(!d.secretRoom)return map;const copy=map.map(row=>[...row]);copy[d.secretRoom.y][d.secretRoom.x]=0;if(isMossyGlobeShrine(d))for(let y=6;y<=10;y++)copy[y][1]=0;return copy;}
 export function secretRoomKey(d){
+ if(isMossyGlobeShrine(d))return 'minor:'+d.minorId+':'+d.floor;
  if(d.royal||d.ship||d.expedition||d.site&&d.site!=='minor-site'||d.site==='minor-site'&&!['koboldCave','cemetery'].includes(minorSiteDefinition(d.minorId)?.kind))return null;
  return (d.site==='minor-site'?'minor:'+d.minorId:d.index)+':'+d.floor;
 }
@@ -28,7 +31,7 @@ export function secretDungeonForKey(key){
  if(normal)return {index:Number(normal[1]),floor:Number(normal[2])};
  const minor=/^minor:(minor-(?:r[0-3]|w(?:[0-9]|1[01]))-\d+):([0-2])$/.exec(key);
  const site=minor&&minorSiteDefinition(minor[1]);
- return ['koboldCave','cemetery'].includes(site?.kind)&&Number(minor[2])<site.floors?{site:'minor-site',minorId:site.id,index:site.index,floor:Number(minor[2])}:null;
+ return (['koboldCave','cemetery'].includes(site?.kind)||isMossyGlobeShrine({site:'minor-site',minorId:site?.id}))&&Number(minor[2])<site.floors?{site:'minor-site',minorId:site.id,index:site.index,floor:Number(minor[2])}:null;
 }
 // Read equipped attribute bonuses only when calculating a check. Importing the
 // full items module here makes its eager weapon registry run before treasure
@@ -45,6 +48,7 @@ export function revealSecretRoom(s,room){
 export function secretStash(s){
  const d=s.dungeon;
  if(!d?.secretRoom||d.site!=='minor-site')return [];
+ if(isMossyGlobeShrine(d)){const id=secretRoomKey(d)+':globe-chest';return [{x:1,y:7,id,item:'small-ruby',items:['small-ruby'],gold:50,rarity:'rare',trap:false,opened:!!s.openedChests?.includes(id)}];}
  const site=minorSiteDefinition(d.minorId);if(!['koboldCave','cemetery'].includes(site?.kind))return [];
  if(site.kind==='cemetery'){const id=secretRoomKey(d)+':secret',items=['rare-ring-'+Math.min(3,site.region+1),'small-diamond'];return [{...d.secretRoom,id,item:items[0],items,rarity:'rare',gold:120+site.region*50,trap:false,sarcophagus:true,opened:!!s.openedChests?.includes(id)}];}
  const id=secretRoomKey(d)+':secret',items=['common-lesser-healing',['small-emerald','small-pearl','small-sapphire'][site.seed%3]];

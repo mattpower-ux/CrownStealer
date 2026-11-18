@@ -23,7 +23,7 @@ export const characterCameo=id=>CHARACTER_CAMEOS.find(cameo=>cameo.id===id)||cha
 export const cameoPosition=({column,row})=>column*20+'% '+row*100+'%';
 export const FACE_CHANGE_REFUSAL="Good instinct, but you're stuck with that mug!";
 const alienVisage=s=>Number.isInteger(s.flags?.visage)&&s.flags.visage>=0&&s.flags.visage<4;
-export const faceChangeBlocked=s=>gagActive(s,'pigFace')||gagActive(s,'tiny')||buffTimeLeft(s,'hairy')>0||rootActive(s)||alienVisage(s)||!!s.flags?.snoutStage;
+export const faceChangeBlocked=s=>s.flags?.redGlobeCurse||gagActive(s,'pigFace')||gagActive(s,'tiny')||buffTimeLeft(s,'hairy')>0||rootActive(s)||alienVisage(s)||!!s.flags?.snoutStage;
 export const characterFace=s=>CHARACTER_FACES.find(f=>f.id===s?.gender)||CHARACTER_FACES[0];
 export function faceMarkup(s){if(gagActive(s,'pigFace'))return '<div class="adventurer-face pig-face" role="img" aria-label="Your adventurer now has a pig face">'+pigFaceSvg+'</div>';if(alienVisage(s))return `<div class="adventurer-face" role="img" aria-label="Transformed adventurer" style="background-image:url('/assets/alien-visages.webp');background-size:400% 100%;background-position:${s.flags.visage*100/3}% center"></div>`;const f=characterFace(s),cameo=characterCameo(s?.cameo);
  if(cameo?.fullBody)return `<div class="adventurer-face" role="img" aria-label="${cameo.label} portrait" style="background-image:url('${cameo.url}');background-size:500% auto;background-position:50% 0"></div>`;

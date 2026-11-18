@@ -10,14 +10,15 @@ function charity(){let s=createGame();const p=minorSiteList(s).find(p=>p.id==='m
 test('shrines have wide central rooms and deities change guardians and treasure',()=>{
  const forms=new Set();
  for(const slot of [1,4,7,10,13]){const d={site:'minor-site',minorId:'minor-r0-'+slot,index:0,floor:0},profile=shrineForDungeon(d),map=dungeonMap(d);forms.add(profile.form);for(let y=4;y<=11;y++)for(let x=3;x<=11;x++)assert.notEqual(map[y][x],1);}
- assert.deepEqual([...forms].sort(),['blob','giant','goddess','kobold','lizard']);
+ assert.deepEqual([...forms].sort(),['giant','goddess','kobold','lizard']);
+ assert.equal(shrineForDungeon({site:'minor-site',minorId:'minor-r1-9',index:2,floor:0}).id,'oozul');
  const legacy=[0,2,2,2,2,2,2,2014,2014,2046,2012,2012,13312,15360,0],expanded=dungeonMap({site:'minor-site',minorId:'minor-r0-1',index:0,floor:0});
  for(let y=0;y<15;y++)for(let x=0;x<15;x++)if(legacy[y]&(1<<x))assert.notEqual(expanded[y][x],1);
  for(const land of ['r0','r1','r2','r3',...Array.from({length:12},(_,i)=>'w'+i)])for(let slot=0;slot<24;slot++){const site=minorSiteDefinition('minor-'+land+'-'+slot);if(site.kind!=='ruinedShrine')continue;const profile=shrineForDungeon({site:'minor-site',minorId:site.id,index:site.index,floor:0});assert.equal(site.guarded,profile.alignment==='evil');}
  const state=slot=>({...createGame(),dungeon:{site:'minor-site',minorId:'minor-r0-'+slot,index:0,floor:0}});
- assert.match(minorGuardian(state(4)).name,/Lizard/);assert.match(minorGuardian(state(10)).name,/Blob/);assert.equal(minorGuardian(state(7)),null);
+ assert.equal(minorGuardian(state(4)),null);assert.equal(minorGuardian(state(10)),null);assert.equal(minorGuardian(state(7)),null);
  assert.ok(minorDungeonChests(state(7),TREASURE_ITEMS)[0].items.includes('common-lesser-healing'));
- assert.ok(minorDungeonChests(state(10),TREASURE_ITEMS)[0].items.includes('weapon-poison-1'));
+ assert.ok(minorDungeonChests(state(10),TREASURE_ITEMS)[0].items.includes('common-lesser-healing'));
 });
 test('Lady Charity donation is explicit, costs500 once and permanently improves charisma and town standing',()=>{
  let s=charity();assert.ok(charityAudienceAvailable(s));const charisma=s.attributes.charisma;

@@ -366,7 +366,9 @@ export class AudioDirector {
       case 'roulette': for(let i=0;i<42;i++)this.brush(now+Math.pow(i/41,1.5)*2.9,.025,.035,'effects',3200);break;
       case 'vomit': for(let i=0;i<7;i++)tone(140+i%2*60,i*.08,.13,.10,45,'sawtooth');this.brush(now+.1,.5,.035,'effects',500);break;
       case 'whinny': tone(420,0,.22,.10,1100,'sawtooth');for(let i=0;i<9;i++)tone(1000-i*60,.2+i*.085,.10,.085,650-i*35,'triangle');this.brush(now+.85,.18,.035,'effects',900);break;
+      case 'campfire': for(let i=0;i<90;i++)this.brush(now+i*.05,.045+(i%4)*.012,.014+(i%7)*.004,'effects',700+(i%9)*350);break;
       case 'step': this.brush(now, .055, .07, 'effects', 700); break;
+      case 'thwack': this.brush(now,.035,.20,'effects',1250);tone(125,0,.16,.28,48,'triangle');tone(390,.018,.07,.09,120,'square');break;
       case 'castleFootstep': tone(540, 0, .035, .12, 300);this.brush(now, .018, .045, 'effects', 1750);break;
       case 'hit':
         // A stronger impact and cha-ching, with quieter inharmonic partials for a steel ring.

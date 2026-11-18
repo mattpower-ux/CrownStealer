@@ -68,7 +68,7 @@ test('all sixteen terrestrial maps have stable, reachable minor sites spread acr
   assert.equal(allIds.size, 400);
 });
 
-test('each land has eight caves, shrines, and cemeteries with all shrine variants', () => {
+test('each land has eight caves, shrines, and cemeteries; harvest shrines stay peaceful', () => {
   for (const land of ['r0', 'r3', 'w0', 'w11']) {
     const definitions = Array.from({length: 24}, (_, i) => minorSiteDefinition('minor-' + land + '-' + i));
     const caves = definitions.filter(site => site.kind === 'koboldCave');
@@ -78,7 +78,8 @@ test('each land has eight caves, shrines, and cemeteries with all shrine variant
     assert.ok(caves.every(site => site.floors === 1 && site.guarded === (site.id!==PEBBLE_RUN_ID)));
     assert.equal(shrines.length, 8);
     assert.ok(shrines.every(site => site.floors === 1));
-    assert.equal(new Set(shrines.map(site => [site.guarded, site.treasure, site.trapped].join(','))).size, 8);
+    assert.equal(new Set(shrines.map(site => [site.guarded, site.treasure, site.trapped].join(','))).size, definitions[0].region===0?4:6);
+    assert.equal(shrines.filter(site => !site.guarded && !site.treasure && !site.trapped).length, 2);
     assert.equal(cemeteries.length, 8);
     assert.deepEqual(new Set(cemeteries.map(site => site.floors)), new Set([1, 2, 3]));
     assert.equal(new Set(definitions.map(site => site.seed)).size, 24);

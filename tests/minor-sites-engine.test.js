@@ -36,12 +36,11 @@ test('unguarded shrine treasure persists and cannot be opened twice',()=>{
  s=act(s,{type:'openChest'});const gold=s.gold;assert.ok(s.openedChests.includes(chest.id));
  s=act(loadGame(saveGame(s)),{type:'openChest'});assert.equal(s.gold,gold);assert.equal(s.relics.length,0);
 });
-test('guarded empty shrines have a real guardian but no invented treasure or relic',()=>{
- let {s,site}=enterSite(p=>p.minorKind==='ruinedShrine'&&p.guarded&&!p.treasure&&!p.trapped);
+test('Sseth shrines are peaceful and do not invent treasure or relics',()=>{
+ let {s,site}=enterSite(p=>p.minorKind==='ruinedShrine'&&!p.guarded&&!p.treasure&&!p.trapped&&p.id==='minor-r0-4');
  assert.deepEqual(dungeonChests(s,dungeonMap(s.dungeon)),[]);s.dungeon.x=12;s.dungeon.y=13;s.dungeon.dir=1;
- s=act(s,{type:'forward'});assert.equal(s.mode,'battle');assert.equal(s.enemy.minorGuardian,site.id);
- s=loadGame(saveGame(s));s.enemy.combatDistance=1;s.enemy.hp=1;s.rng=187441;s=act(s,{type:'attack'});
- assert.equal(s.flags['minorCleared:'+site.id],true);assert.equal(s.relics.length,0);
+ s=act(s,{type:'forward'});assert.equal(s.mode,'dungeon');assert.equal(s.enemy,null);
+ assert.equal(s.flags['minorCleared:'+site.id],undefined);assert.equal(s.relics.length,0);
 });
 test('cemetery floors use normal ladders and retain their site identity',()=>{
  let {s,site}=enterSite(p=>p.minorKind==='cemetery'&&p.floors===3);

@@ -93,7 +93,7 @@ export function effectiveAttributes(state, itemById) {
     const temporary = isActive(buff, now) ? buff.amount : 0;
     // The permanent oath blessing is separate from allocated scores and is never
     // consumed by respecs, timed effects, or the ordinary training cap.
-    const total=Math.min(ATTRIBUTE_CAP, baseScore(state, name) + worn + temporary) + classBlessing(state,name);
+    const total=Math.min(ATTRIBUTE_CAP, baseScore(state, name) + worn + temporary) + classBlessing(state,name)+(name==='strength'&&state.flags?.redGlobeCurse?10:0);
     return [name,name==='charisma'?Math.max(1,total-leprosyCharismaLoss(state)):total];
   }));
 }

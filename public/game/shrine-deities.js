@@ -5,7 +5,7 @@ import {applyAttributeItem} from './attributes.js';
 export const CHARITY_SHRINE_ID='minor-r0-1';
 const gods=[
  {id:'copperclaw',name:'Copperclaw, God of Kobolds',form:'kobold',alignment:'good',runes:'Share the little you carry. A small kindness fills a great cavern.',loot:['common-lesser-healing','small-emerald']},
- {id:'sseth',name:'Sseth, the Lizard God',form:'lizard',alignment:'evil',runes:'Blood warms the cold stone. The scaled faithful guard their offerings.',loot:['weapon-poison-1','small-sapphire'],guardian:{id:'shrine-lizard',name:'Lizard Shrine Zealot',kind:'swift',weakness:'steady pressure',art:{sheet:'monsters-tide',index:3}}},
+ {id:'sseth',name:'Sseth, the Lizard God',form:'lizard',alignment:'good',runes:'Blood warms the cold stone. The scaled faithful guard their offerings.',loot:['weapon-poison-1','small-sapphire'],guardian:{id:'shrine-lizard',name:'Lizard Shrine Zealot',kind:'swift',weakness:'steady pressure',art:{sheet:'monsters-tide',index:3}}},
  {id:'stonefather',name:'The Stonefather, God of Giants',form:'giant',alignment:'good',runes:'Shelter the small beneath your shadow. Strength is a kindness freely given.',loot:['common-lesser-healing','small-pearl']},
  {id:'oozul',name:'Oozul, the Evil Blob God',form:'blob',alignment:'evil',runes:'ALL SHALL DISSOLVE. LEAVE YOUR OFFERINGS AND YOUR BONES.',loot:['weapon-poison-1','small-emerald'],guardian:{id:'bilge-slime',name:'Evil Blob Shrine Spawn',kind:'spectral',weakness:'fire',art:{sheet:'monsters-tide',index:8}}},
 ];
@@ -13,7 +13,11 @@ export function shrineForDungeon(d){
  if(d?.site!=='minor-site')return null;
  const site=minorSiteDefinition(d.minorId);if(site?.kind!=='ruinedShrine')return null;
  const slot=Number(site.id.split('-').at(-1));
- const profile=site.id===CHARITY_SHRINE_ID?{id:'lady-charity',name:'Lady Charity',form:'goddess',alignment:'good',charity:true,runes:'Give five hundred gold, and generosity shall be written upon your face.'}:gods[Math.floor(slot/3)%gods.length];
+ const chosen=gods[Math.floor(slot/3)%gods.length];
+ // Oozul's cult begins in the Cinder Dominion. Former Hearthmarch blob altars
+ // belong to the Stonefather, keeping this evil bargain out of the first land.
+ const regional=site.region===0&&chosen.id==='oozul'?gods.find(god=>god.id==='stonefather'):chosen;
+ const profile=site.id===CHARITY_SHRINE_ID?{id:'lady-charity',name:'Lady Charity',form:'goddess',alignment:'good',charity:true,runes:'Give five hundred gold, and generosity shall be written upon your face.'}:regional;
  return {...profile,charity:!!profile.charity,x:7,y:8,offerX:7,offerY:9};
 }
 export function charityAudienceAvailable(s){return s.mode==='dungeon'&&s.dungeon?.minorId===CHARITY_SHRINE_ID&&s.dungeon.floor===0&&!s.dungeon.charityPit&&!s.flags.charityChoice&&shrineAudienceAvailable(s);}
@@ -52,6 +56,7 @@ export function validShrineState(s){
 export function shrineAudienceAvailable(s){const god=shrineForDungeon(s.dungeon);return !!god&&s.mode==='dungeon'&&!s.dungeon.charityPit&&Math.abs(s.dungeon.x-god.x)+Math.abs(s.dungeon.y-god.y)<=2;}
 export function shrineOffering(s,a,note,events=[]){
  const god=shrineForDungeon(s.dungeon);if(!shrineAudienceAvailable(s))return false;
+ if(god.id==='sseth')return false;
  if(god.charity){
   if(s.flags.charityChoice!=='donated'||(a.amount??10)!==10||s.gold<10)return false;
   s.gold-=10;s.hp=s.maxHp;s.wildernessHealProgress=0;s.turns++;

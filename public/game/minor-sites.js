@@ -45,7 +45,7 @@ export function minorSiteDefinition(id) {
     id, kind, name: caveName??(name==='Pebble Run Cave'&&id!==PEBBLE_RUN_ID?'Rillstone Cave':name),
     ...(occupant?{occupant}:{}),
     floors: kind === 'cemetery' ? 1 + (variant + ordinal) % 3 : 1,
-    guarded: id!==PEBBLE_RUN_ID&&(!shrine || Boolean(variant & 1)),
+    guarded: id!==PEBBLE_RUN_ID&&(!shrine || Boolean(variant & 1)&&Math.floor(slot/3)%4!==1&&!(region===0&&Math.floor(slot/3)%4===3)),
     treasure: !shrine || Boolean(variant & 2),
     trapped: shrine && Boolean(variant & 4),
     index,
@@ -138,6 +138,11 @@ export function minorSites(s, {tileAt, landmarks = []}) {
     }
   }
   const sites = picks.flatMap((point, i) => point ? [{...minorSiteDefinition('minor-' + land + '-' + i), x: point.x, y: point.y}] : []);
+  if(land==='r0'){
+    const shrine=sites.find(p=>p.id==='minor-r0-4');
+    const remote=ground.filter(p=>p.x>=92&&p.x<=109&&p.y>=68&&p.y<=80&&landmarks.every(q=>Math.abs(q.x-p.x)+Math.abs(q.y-p.y)>5)&&sites.every(q=>q===shrine||Math.abs(q.x-p.x)+Math.abs(q.y-p.y)>(q.kind==='ruinedShrine'?16:5))).sort((a,b)=>Math.abs(a.x-102)+Math.abs(a.y-74)-Math.abs(b.x-102)-Math.abs(b.y-74))[0];
+    if(shrine&&remote){shrine.x=remote.x;shrine.y=remote.y;}
+  }
   const tunnel = minorSiteDefinition('minor-' + land + '-' + siteCount);
   return sites.concat(entrances.map((point, i) => ({...tunnel, ...point, other: entrances[1 - i]})));
 }

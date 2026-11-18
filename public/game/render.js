@@ -1,3 +1,5 @@
+import {silverTree} from './silver-acorn.js';
+import {drawRedGlobe} from './red-globe-render.js';
 import {isSplitRock,nearKerrbear} from './kerrbear.js';
 import {MULTIVERSE_TUBE} from './snout.js';
 import {drawPeebles,drawPebblePlanes,pebbleMaterialRevision,pebblePixel} from './pebble-materials.js';
@@ -346,6 +348,8 @@ function drawWorldViewport(c,w,h,s){
  c.save();
  c.scale(w/(size*cols),1);
  c.translate(-left*size,-top*size);
+ if(!map.area&&s.region===0){c.save();for(let y=68;y<=81;y++)for(let x=92;x<=110;x++){c.fillStyle=(y%4===0)?'#80643b':'#a49a50';c.fillRect(x*size,y*size,size,size);c.strokeStyle='#c7b66d';c.lineWidth=1;c.beginPath();c.moveTo(x*size,y*size+size*.25);c.lineTo((x+1)*size,y*size+size*.25);c.stroke();}c.restore();}
+ const tree=silverTree(s);if(tree&&visibleWorldPoint(tree,view)){const x=(tree.x+.5)*size,y=(tree.y+.5)*size;c.fillStyle='#6f5140';c.fillRect(x-size*.1,y-size*.2,size*.2,size*.7);for(const [ox,oy]of [[0,-.65],[-.3,-.35],[.3,-.35]])circle(c,x+ox*size,y+oy*size,size*.4,'#bdcdc1');label(c,tree.name,x,y+size*.9,Math.max(10,size*.3));}
  if(map.area)drawAreaSites(c,s,map.area,size,view);
  else drawLandSites(c,s,size,view);
  drawMinorSites(c,s,size,view);
@@ -372,6 +376,7 @@ function drawWorldViewport(c,w,h,s){
   const tx=x+(troll.x-troll.backX)*size*.9,ty=y+(troll.y-troll.backY)*size*.9;
   c.drawImage(bridgeTrollArt,tx-width*.5,ty-height+size*.2,width,height);
  }
+ drawAdventurer(c,x,y,size*(inWater?1.25:1.9));
  if(s.flags.impaledMoves){
   c.save();
   c.strokeStyle='#644127';c.lineWidth=Math.max(5,size*.12);c.lineCap='round';
@@ -381,7 +386,6 @@ function drawWorldViewport(c,w,h,s){
   for(let i=0;i<5;i++){const tx=x-size*.65+i*size*.3,ty=y+size*.15-i*size*.19;c.beginPath();c.moveTo(tx,ty);c.lineTo(tx-size*.04,ty-size*.18);c.stroke();}
   c.restore();
  }
- drawAdventurer(c,x,y,size*(inWater?1.25:1.9));
  c.restore();
  if(!map.area){
   label(c,'N',w-33,35,15,'#d1b57c');c.strokeStyle='#d1b57c';c.beginPath();c.moveTo(w-33,42);c.lineTo(w-33,66);c.stroke();path(c,[[w-33,39],[w-38,49],[w-28,49]],'#d1b57c');
@@ -439,12 +443,12 @@ function drawMinorSites(c,s,size,view){
     path(c,[[-.51,.29],[-.34,.14],[-.32,.28]],moss);
     break;
    case 'ruinedShrine':
-    path(c,[[-.54,.27],[-.42,.11],[.39,.1],[.51,.25],[.34,.37],[-.48,.36]],stone);
-    path(c,[[-.45,.23],[-.34,.11],[.31,.1],[.42,.21]],edge);
-    path(c,[[-.4,.17],[-.38,-.3],[-.23,-.31],[-.21,.18]],stone,edge);
-    path(c,[[-.41,-.28],[-.4,-.39],[-.18,-.39],[-.18,-.29]],edge);
-    path(c,[[.13,.2],[.16,-.07],[.34,-.11],[.34,.2]],stone,edge);
-    path(c,[[.11,.31],[.22,.23],[.48,.24],[.41,.32]],moss);
+    path(c,[[-.54,.31],[-.43,.18],[.43,.18],[.54,.31],[.4,.4],[-.42,.4]],stone,edge);
+    path(c,[[-.43,.18],[0,-.42],[.43,.18]],edge,stone);
+    c.fillStyle='#151b18';c.beginPath();c.moveTo(-.18,.23);c.lineTo(-.18,-.05);c.arc(0,-.05,.18,Math.PI,0);c.lineTo(.18,.23);c.closePath();c.fill();
+    for(const x of [-.32,.32]){c.fillStyle=stone;c.fillRect(x-.065,-.03,.13,.30);c.fillStyle=edge;c.fillRect(x-.09,-.08,.18,.06);c.fillRect(x-.09,.25,.18,.055);}
+    c.strokeStyle='#f0cf78';c.lineWidth=.045;c.beginPath();c.arc(0,.04,.095,0,Math.PI*2);c.moveTo(0,-.055);c.lineTo(0,.135);c.moveTo(-.075,.04);c.lineTo(.075,.04);c.stroke();
+    path(c,[[-.5,.31],[-.34,.24],[-.2,.36]],moss);
     break;
    case 'cemetery':
     path(c,[[-.5,.28],[-.27,.06],[.35,.06],[.5,.25],[.29,.4],[-.37,.4]],moss);
@@ -1069,6 +1073,7 @@ function dungeonUncached(c,w,h,s,time){const d=s.dungeon;if(!d)return;if(d.ship)
   label(c,'CLARISSA’S SKETCH',x0+width/2,y0+width+12,Math.max(9,cell*1.2),'#f4db9c');
  }
  if(d.site!==SAGE_MAZE_ID){
+ drawRedGlobe(c,w,h,d,m,dx,dy);
  drawMultiverseTube(c,w,h,d,m,dx,dy);
  const z=Math.min(7,w/65),mx=w-15*z-18,my=18;c.fillStyle='#06100de6';c.fillRect(mx-7,my-7,15*z+14,15*z+14);for(let y=0;y<15;y++)for(let x=0;x<15;x++){c.fillStyle=m[y][x]===1?(d.royal==='sewer'?SEWER_WALL.map:'#354239'):'#101c19';c.fillRect(mx+x*z,my+y*z,z-1,z-1);}if(d.secretRoom){c.strokeStyle='#cfc396';c.lineWidth=1;c.strokeRect(mx+d.secretRoom.x*z,my+d.secretRoom.y*z,z-1,z-1);}for(const ladder of discoveredDungeonLadders(s,ladders)){c.fillStyle=ladder.direction==='up'?'#9dd1db':'#d8ab73';c.fillRect(mx+ladder.x*z+1,my+ladder.y*z+1,z-2,z-2);}if(d.site===ROYAL_DUNGEON_ID){for(const npc of royalDungeonFigures(s))circle(c,mx+(npc.x+.5)*z,my+(npc.y+.5)*z,z*.35,'#dba17f');if(!d.cellsOpen)for(const cell of ROYAL_DUNGEON_CELLS){c.fillStyle='#dba979';c.fillRect(mx+cell.door.x*z+1,my+cell.door.y*z+1,z-2,z-2);for(const prisoner of cell.prisoners)circle(c,mx+(prisoner.x+.5)*z,my+(prisoner.y+.5)*z,z*.31,'#9ed0d2');}}circle(c,mx+(d.x+.5)*z,my+(d.y+.5)*z,z*.4,'#f4db9c');c.strokeStyle='#f4db9c';c.beginPath();c.moveTo(mx+(d.x+.5)*z,my+(d.y+.5)*z);c.lineTo(mx+(d.x+.5+dx)*z,my+(d.y+.5+dy)*z);c.stroke();
 
@@ -1350,6 +1355,7 @@ function drawWildSite(c,site,x,y,size){
   label(c,site.name,x,y+size*1.1,Math.max(10,size*.4));
   return;
  }
+ if(site.kind==='purity'){path(c,[[x-size,y+size*.4],[x,y-size*1.5],[x+size,y+size*.4]],'#dce9eb','#fff');label(c,site.name,x,y+size*.9,Math.max(10,size*.3));return;}
  if(site.kind==='teleporter'){
   c.save();c.translate(x,y);c.scale(size,size);c.lineWidth=.035;
   path(c,[[-.52,.48],[.4,.48],[.62,.26],[-.3,.26]],'#244858','#a7eef0');
@@ -1369,6 +1375,7 @@ function drawAreaSites(c,s,area,size,view){
 }
 
 function drawMultiverseTube(c,w,h,d,m,dx,dy){
+ if(!d.ship)return;
  const rx=MULTIVERSE_TUBE.x-d.x,ry=MULTIVERSE_TUBE.y-d.y;
  const depth=rx*dx+ry*dy,side=-rx*dy+ry*dx,here=!rx&&!ry;
  if(!here&&(depth<1||depth>5||Math.abs(side/depth)>.53))return;
@@ -1407,6 +1414,7 @@ function drawShip(c,w,h,s){
 
  const rx=7-d.x,ry=5-d.y,depth=rx*dx+ry*dy,side=-rx*dy+ry*dx,here=rx===0&&ry===0;if(here||depth>0&&Math.abs(side/depth)<.6){const size=Math.min(w*.4,h*.45/Math.max(1,depth)*5),x=w/2+side/Math.max(1,depth)*w*.6,y=h*.63;c.fillStyle='#1d3848';c.fillRect(x-size/2,y-size*.5,size,size*.6);c.fillStyle='#86e9d0';c.fillRect(x-size*.4,y-size*.42,size*.8,size*.28);for(let i=0;i<10;i++){c.fillStyle=i%2?'#f6c776':'#95b9f1';c.fillRect(x-size*.35+i*size*.12,y-size*.05,size*.07,size*.05);}label(c,'SHIP CONTROL STATION',x,y+size*.2,Math.max(10,size*.07));}
 
+ drawRedGlobe(c,w,h,d,m,dx,dy);
  drawMultiverseTube(c,w,h,d,m,dx,dy);
  const z=Math.min(7,w/65),mx=w-15*z-18,my=18;c.fillStyle='#07121fe6';c.fillRect(mx-6,my-6,15*z+12,15*z+12);for(let y=0;y<15;y++)for(let x=0;x<15;x++){c.fillStyle=m[y][x]===1?'#2a4256':'#668492';c.fillRect(mx+x*z,my+y*z,z-1,z-1);}c.fillStyle='#69f3d5';c.fillRect(mx+7*z,my+5*z,z-1,z-1);c.fillStyle='#90ed9b';c.fillRect(mx+MULTIVERSE_TUBE.x*z,my+MULTIVERSE_TUBE.y*z,z-1,z-1);circle(c,mx+(d.x+.5)*z,my+(d.y+.5)*z,z*.4,'#ffe1a0');label(c,'DECK MAP',mx+7*z,my+16*z,10,'#93dcd8');
 

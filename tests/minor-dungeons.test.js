@@ -123,7 +123,7 @@ test('guarded minor sites have themed non-boss encounters independent of treasur
   assert.equal(minorGuardian(visit('minor-r0-1')),null);
   assert.equal(minorGuardian(visit('minor-r0-7')),null);
   assert.equal(minorGuardian(visit('minor-r0-5',0)),null);
-  for(const [id,name] of [['minor-r0-0',/kobold/i],['minor-r0-4',/shrine/i],['minor-r0-2',/skeleton/i]]){
+  for(const [id,name] of [['minor-r0-0',/kobold/i],['minor-r1-9',/shrine/i],['minor-r0-2',/skeleton/i]]){
     const guardian=minorGuardian(visit(id));
     assert.equal(guardian.minorGuardian,id);
     assert.match(guardian.name,name);

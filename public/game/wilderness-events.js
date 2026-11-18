@@ -15,7 +15,9 @@ export function wildernessEventAction(s,a,ctx){
  if(s.mode!=='world')return false;
  const {note,random}=ctx;
  if(s.flags.impaledMoves&&['move','mapStep','pullBranch'].includes(a.type)){
-  s.flags.impaledMoves=Math.min(s.flags.impaledMoves,2)-1;s.turns++;note(s,'You loosen the thorny branch.');
+  s.flags.impaledMoves=Math.min(s.flags.impaledMoves,2)-1;s.turns++;
+  if(!hurt(s,1,ctx,'Thwack! The thorny branch rakes you.'))return true;
+  note(s,'You loosen the thorny branch.');
   if(!s.flags.impaledMoves){delete s.flags.impaledMoves;if(s.hp>0)note(s,'At last, you pull yourself free.');}return true;
  }
  const event=s.flags.wildernessEvent;

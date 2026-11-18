@@ -68,6 +68,7 @@ export function revokeBrokenOath(before,s,a,events,note,itemById){
  const traded=s.gold!==before.gold||s.meals!==before.meals||s.bag.length!==before.bag.length;
  if(traded&&((a.type==='peacefulAccept'&&['trade','sell'].includes(trader?.offer))||['buyItem','buy','buyCureAll'].includes(a.type))&&
    /\b(?:orc|orcs|goblin|goblins|troll|trolls)\b/i.test([trader?.speciesId,trader?.name,trader?.race,trader?.kind].filter(Boolean).join(' ')))reason='You bargained with an orc, goblin, or troll.';
+ if(s.flags.redGlobeCurse&&!before.flags.redGlobeCurse)reason='You accepted the red globe’s evil bargain.';
  if(!reason)return false;
  s.flags.percivalOath='fallen';s.flags.paladinForsakenPending={reason};note(s,PALADIN_FORSAKEN);return true;
 }
