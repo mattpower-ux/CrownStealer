@@ -16,7 +16,8 @@ try{
  await page.locator('#wilderness-health').waitFor({state:'visible'});
  assert.equal(await page.locator('.wilderness-hero-name').textContent(),'Mara the Bold');
  assert.equal(await page.locator('.wilderness-hero-level').textContent(),'Level 1');
- assert.equal(await page.locator('.wilderness-hero-name').evaluate(el=>getComputedStyle(el).fontSize),await page.locator('#actions button').first().evaluate(el=>getComputedStyle(el).fontSize));
+ assert.equal(await page.locator('.wilderness-hero-name').evaluate(el=>getComputedStyle(el).fontSize),'10px');
+ assert.ok(await page.locator('#wilderness-health').evaluate(el=>el.getBoundingClientRect().width<=190));
  assert.ok((await page.locator('#wilderness-health').boundingBox()).width>=244);
  await page.locator('.travel-tools [data-save-checkpoint]').click();
  await page.locator('#saved-notice').waitFor({state:'visible'});

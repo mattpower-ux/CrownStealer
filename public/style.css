@@ -315,21 +315,21 @@ dialog[data-panel="bossIntro"] img.intro-backdrop { object-fit: cover; }
 @media(prefers-reduced-motion:reduce){.studio-credit{animation:none}.studio-splash{transition:none}}
 
 .wilderness-health{
-  position:absolute;top:12px;left:12px;pointer-events:none;
-  width:clamp(244px,34vw,328px);max-width:calc(100% - 24px);box-sizing:border-box;padding:10px 12px;
+  position:absolute;top:8px;left:8px;pointer-events:none;
+  width:clamp(164px,20vw,190px);max-width:calc(100% - 16px);box-sizing:border-box;padding:5px 7px;
   color:#ece0bd;background:#071912ed;border:1px solid #cdb67966;border-radius:4px;
 }
-.wilderness-health-label{display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-size:12px;line-height:1.15}
+.wilderness-health-label{display:flex;justify-content:space-between;gap:5px;align-items:baseline;font-size:9px;line-height:1.05}
 .wilderness-health-label strong{font-variant-numeric:tabular-nums;white-space:nowrap}
-.wilderness-health-track{height:12px;margin-top:5px;background:#2b3527;border-radius:3px;overflow:hidden}
+.wilderness-health-track{height:6px;margin-top:3px;background:#2b3527;border-radius:3px;overflow:hidden}
 .wilderness-health-track span{display:block;height:100%;background:#adc184;border-radius:inherit}
 .wilderness-health.is-low{border-color:#ef9678}
 .wilderness-health.is-low .wilderness-health-label:not(.wilderness-xp-label) strong{color:#ffc1aa}
 .wilderness-health.is-low .wilderness-health-track:not(.wilderness-xp-track) span{background:#e98e75}
-.wilderness-xp-label{margin-top:8px}
-.wilderness-xp-track{height:8px;background:#3d3425}
+.wilderness-xp-label{margin-top:4px}
+.wilderness-xp-track{height:5px;background:#3d3425}
 .wilderness-xp-track span{background:#e4bf76}
-.wilderness-health > .mode-badge{top:calc(100% + 8px);left:-1px;white-space:nowrap}
+.wilderness-health > .mode-badge{top:calc(100% + 5px);left:-1px;white-space:nowrap}
 .bridge-troll-scene{display:grid;grid-template-columns:minmax(120px,28%) 1fr;align-items:center;gap:16px}
 .bridge-troll-scene img{display:block;width:100%;max-height:240px;object-fit:contain}
 @media(max-width:480px){.bridge-troll-scene{grid-template-columns:84px 1fr;gap:10px}}
@@ -338,8 +338,8 @@ dialog[data-panel="bossIntro"] img.intro-backdrop { object-fit: cover; }
 .roland-audience img{display:block;width:100%;max-height:50svh;object-fit:contain}
 .roland-audience p{font-size:clamp(17px,2.4vw,24px);line-height:1.45}
 @media(max-width:480px){.roland-audience{gap:10px}}
-.wilderness-hero-name,.wilderness-hero-level{font:800 16px/1.35 Arial,Helvetica,sans-serif;overflow-wrap:anywhere}
-.wilderness-hero-level{margin-bottom:6px;color:var(--gold)}
+.wilderness-hero-name,.wilderness-hero-level{display:inline;font:800 10px/1.1 Arial,Helvetica,sans-serif;overflow-wrap:anywhere}
+.wilderness-hero-name::after{content:' · '}.wilderness-hero-level{color:var(--gold)}.wilderness-hero-level::after{content:'';display:block;height:3px}
 
 /* Tiddlywinks uses a felt board, brass cup and three individually colored discs. */
 .winks-game{
@@ -928,7 +928,7 @@ dialog[data-panel="sageJournal"] #save-checkpoint { display: none; }
 .inventory-face-picker .face-options{padding:8px 0 12px}
 
 #potion-notice{position:fixed;inset:0;margin:auto;width:min(680px,86vw);height:fit-content;box-sizing:border-box;padding:32px;border:2px solid #efd080;border-radius:12px;background:#10291df5;color:#ffebbd;box-shadow:0 14px 60px #000b;text-align:center;font:700 clamp(26px,4vw,44px)/1.3 Georgia;z-index:120}
-.alignment-label{margin-top:9px}.alignment-track{position:relative;height:10px;margin-top:5px;background:linear-gradient(90deg,#b1d49c,#776e64,#9b465e);border-radius:4px}.alignment-track span{position:absolute;top:-3px;width:4px;height:16px;background:#fff3be;transform:translateX(-50%);box-shadow:0 0 3px #000}
+.alignment-label{margin-top:4px}.alignment-track{position:relative;height:5px;margin-top:3px;background:linear-gradient(90deg,#b1d49c,#776e64,#9b465e);border-radius:4px}.alignment-track span{position:absolute;top:-2px;width:3px;height:9px;background:#fff3be;transform:translateX(-50%);box-shadow:0 0 2px #000}
 
 .look-picker{margin:12px 0 18px;border:1px solid #aa955c;padding:12px;background:#0a2019}.look-picker summary{cursor:pointer;font:bold 20px Georgia;color:#f0d28b;min-height:36px}.look-picker p{font-size:16px;color:#d5d9bf}.look-choices{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}.look-choices label{position:relative;cursor:pointer;background:#17382b;border:2px solid transparent;padding:5px;text-align:center;border-radius:5px;overflow:hidden}.look-choices label:has(input:checked){border-color:#ffe49a;background:#4a4c2e}.look-choices label:focus-within{outline:2px solid #ffe49a}.look-choices input{position:absolute;z-index:2;top:8px;left:8px;width:18px;height:18px;accent-color:#dfc77c}.look-portrait{display:block;height:clamp(150px,24vh,230px);overflow:hidden}.look-choices .look-body{display:block;width:100%;height:100%;object-fit:cover;object-position:center 13%}.look-choices .look-name{display:block;padding:7px 2px 2px;font:16px/1.3 Georgia;color:#f5e4b5}.geared-avatar>.avatar-look-base{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none}
 @media(max-width:600px){.look-choices{grid-template-columns:repeat(2,minmax(0,1fr))}.look-choices img{max-height:220px}}
@@ -945,7 +945,7 @@ dialog[data-panel="sageJournal"] #save-checkpoint { display: none; }
 
 .story-full-art{display:block;width:100%;max-height:60vh;object-fit:contain}.snare-result{font-size:24px;line-height:1.4}
 
-.alignment-endpoints{display:flex;justify-content:space-between;font-size:12px;margin-top:3px;color:#e6dec0}
+.alignment-endpoints{display:flex;justify-content:space-between;font-size:7px;margin-top:1px;color:#e6dec0}
 
 #panel[data-panel="shipyard"]{width:96vw;max-width:1600px;padding:16px}
 .shipyard-scene{margin:0;position:relative}.shipyard-scene img{display:block;width:100%;height:min(68vh,900px);object-fit:cover;object-position:center}
