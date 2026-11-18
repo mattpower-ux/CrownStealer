@@ -18,7 +18,9 @@ test('climbing gear grants mountain travel only while equipped in the weapon slo
   Object.assign(s,ledge);
   s.bag.push(CLIMBING_GEAR);
   const move={type:'move',dx:1,dy:0},options={noRandom:true};
-  assert.equal(act(s,move,[],options).x,s.x);
+  const blocked=act(s,move,[],options);
+  assert.equal(blocked.x,s.x);
+  assert.equal(blocked.log.at(-1),'Tough terrain. Try riding a goat, unless you have a rope and hooks?');
   const equipped=loadGame(saveGame(act(s,{type:'equip',id:CLIMBING_GEAR})));
   assert.equal(equipped.equipped,CLIMBING_GEAR);
   assert.equal(act(equipped,move,[],options).x,s.x+1);

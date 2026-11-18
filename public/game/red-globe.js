@@ -1,6 +1,6 @@
-import {minorSiteDefinition} from './minor-sites.js';
 export const PURITY_MOUNTAIN={id:'white-mountain-purity',kind:'purity',name:'White Mountain of Purity',region:3,x:64,y:8};
-export const isMossyGlobeShrine=d=>d?.site==='minor-site'&&minorSiteDefinition(d.minorId)?.name==='Mossy Shrine';
+export const RED_GLOBE_SHRINE_ID='minor-r0-10';
+export const isMossyGlobeShrine=d=>d?.site==='minor-site'&&d.minorId===RED_GLOBE_SHRINE_ID;
 export const nearRedGlobe=s=>s.mode==='dungeon'&&isMossyGlobeShrine(s.dungeon)&&s.dungeon.secretRoom&&Math.abs(s.dungeon.x-1)+Math.abs(s.dungeon.y-8)<=1;
 export const cursedByGlobe=s=>s.flags?.redGlobeCurse===true;
 export function redGlobeAction(s,a,note){

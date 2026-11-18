@@ -114,6 +114,10 @@ public final class MainActivity extends Activity {
     }
 
     private final class SaveBridge {
+        @JavascriptInterface public void exitGame() {
+            runOnUiThread(() -> finish());
+        }
+
         @JavascriptInterface public void exportSave(String json) {
             if (json == null || json.getBytes(StandardCharsets.UTF_8).length > MAX_SAVE_BYTES) {
                 runOnUiThread(() -> toast("Save export is too large."));

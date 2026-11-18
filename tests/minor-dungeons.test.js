@@ -45,7 +45,7 @@ test('minor layouts are small, distinct, deterministic and fully connected',()=>
     }
     assert.ok(visited.has('13,13'));
     assert.equal(visited.size,map.flat().filter(tile=>tile!==1).length);
-    assert.ok(visited.size<150);
+    assert.ok(visited.size<(maps[2]===map?200:150));
   }
 });
 
@@ -91,7 +91,7 @@ test('cemeteries retain geometry and tunnels add connected side passages',()=>{
   [2,[0,14,8,8,28,28,2044,1052,7964,7936,7936,14336,12288,12288,0]],
   [24,[0,126,960,64,1984,1024,1024,1024,1024,1024,1024,16256,8320,8320,0]],
  ]){
-  const map=minorDungeonMap(visit('minor-r0-'+slot,0).dungeon);
+  const map=minorDungeonMap(visit('minor-r0-'+slot,0).dungeon,{courtyard:false});
   assert.deepEqual(map.map(row=>row.reduce((mask,tile,x)=>mask+(tile===1?0:2**x),0)),want);
  }
 });

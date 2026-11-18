@@ -46,6 +46,7 @@ import {boostGateVoice} from './audio.js';
 import {spellsView,SPELLS,spellUsable} from './spell-items.js';
 import {GAG_ITEMS,GAG_KEYS,gagActive,pigFaceSvg,HELIUM_REFUSAL} from './gag-potions.js';
 import {ladderPrompt} from './dungeon-ladders.js';
+import {isWidowsBell} from './widows-bell.js';
 import {BALROG_ID,BALROG_WHIP,BOTTOMLESS_PIT,ROYAL_BALROG_TRIAL,pitBottomAction} from './bottomless-pit.js';
 import {PUTRID_PALACE,WANG_ID,WANG_TRIAL_DIALOGUE} from './royal-trials.js';
 import {castleLayout,castleChestAt,castleFineFor,castleRulerAt,castleGuards,castleLockpickOdds,castleInteractionAt,castleInteractionsAt,castleInteractionActions} from './castle-interiors.js';
@@ -139,6 +140,7 @@ function start(s){impactIndex=0;cemeteryHaunt=null;hauntPosition=null;cemeteryPr
 $('new-game').onclick=()=>{if(!selectedGender){toast('Choose HIM, HER, or OTHER first.');return;}if(!selectedCameo){toast('Choose your look first.');return;}if(hasSave()){openPanel('new');return;}beginNewAdventurer();};
 $('continue-game').onclick=()=>{try{start(loadGame(localStorage.getItem(SAVE)));}catch(e){toast('Cannot read save: '+e.message);}};
 $('home').onclick=()=>{if(state?.dungeon?.site===SAGE_MAZE_ID){state=act(state,{type:'sageAbort'});toast(state.log.at(-1));}audio.stopRoyalDungeonVoice();flushClock(false);clearTimeout(levelBannerTimer);$('level-banner').hidden=true;displayedDungeonLevel=null;finishCombat();persist();$('game').hidden=true;$('title-screen').hidden=false;refreshSlotPicker();audio.setScene('title');cancelAnimationFrame(frame);};
+$('exit-game').onclick=()=>{flushClock(false);stopIntroVoice();finishCombat();if(state)persist();if(window.Android?.exitGame){window.Android.exitGame();return;}$('home').click();};
 $('title-music').onclick=()=>{audio.setScene('title');audio.unlock();};
 $('title-settings').onclick=()=>openPanel('settings');
 function sceneMusic(){
@@ -159,10 +161,11 @@ function ladderTileKey(d){return d?JSON.stringify([ladderFloorKey(d),d.x,d.y]):n
 let dismissedLadder=null;
 $('ladder-stay').onclick=()=>{dismissedLadder=ladderTileKey(state.dungeon);ladderPopup.hidden=true;};
 function showLadderPrompt(){if(state?.dungeon?.site===SAGE_MAZE_ID){ladderPopup.hidden=true;return;}const position=ladderTileKey(state?.dungeon);if(dismissedLadder!==position)dismissedLadder=null;const onChest=state?.mode==='dungeon'&&dungeonChests(state,dungeonMap(state.dungeon)).some(c=>c.x===state.dungeon.x&&c.y===state.dungeon.y);const ladder=state?.mode==='dungeon'&&state.dungeon.site!==ROYAL_DUNGEON_ID&&!onChest&&dismissedLadder!==position&&!activePanel&&!combatView?ladderPrompt(state,dungeonMap(state.dungeon)):null;ladderPopup.hidden=!ladder;if(!ladder)return;const sewer=state.dungeon.royal==='sewer',hiddenExit=state.dungeon.royal==='cell'&&!state.flags.royalTrapFound;
- $('ladder-down').textContent=hiddenExit?'Search cell for hidden exit':'Go Down';
- $('ladder-question').textContent=ladder.gate?'Iron Gate':sewer?'Galen’s Cell':'You Found a Ladder';
- $('ladder-direction').textContent=ladder.gate?'The gate leads back to the wilderness.':hiddenExit?'The story-prison trapdoor is concealed. Search the cell to uncover the sewer escape.':sewer?(state.flags.galenFreed?'The wizard points to the loose stones.':'An old wizard waits behind the bars.'):ladder.direction==='down'?'This ladder leads through the floor.':'This ladder leads through the ceiling.';
- $('ladder-up').textContent=ladder.gate?'Leave through the gate':sewer?(state.flags.galenFreed?'Push loose stones':'Free Galen'):'Ascend/Leave';$('ladder-down').hidden=!!ladder.gate;$('ladder-down').disabled=ladder.direction!=='down';$('ladder-up').disabled=ladder.direction!=='up';}
+ const tower=isWidowsBell(state.dungeon);
+ $('ladder-down').textContent=hiddenExit?'Search cell for hidden exit':tower?'Climb Up':'Go Down';
+ $('ladder-question').textContent=ladder.gate?'Iron Gate':sewer?'Galen’s Cell':tower?'Tower Stairs':'You Found a Ladder';
+ $('ladder-direction').textContent=ladder.gate?'The gate leads back to the wilderness.':hiddenExit?'The story-prison trapdoor is concealed. Search the cell to uncover the sewer escape.':sewer?(state.flags.galenFreed?'The wizard points to the loose stones.':'An old wizard waits behind the bars.'):tower?(ladder.towerDirection==='up'?'Stone stairs climb toward the next level.':ladder.towerDirection==='down'?'Stone stairs descend toward the entrance.':'The tower door leads back to the wilderness.'):ladder.direction==='down'?'This ladder leads through the floor.':'This ladder leads through the ceiling.';
+ $('ladder-up').textContent=ladder.gate?'Leave through the gate':sewer?(state.flags.galenFreed?'Push loose stones':'Free Galen'):tower?(ladder.towerDirection==='exit'?'Leave Widow’s Bell':'Climb Down'):'Ascend/Leave';$('ladder-down').hidden=!!ladder.gate;$('ladder-down').disabled=ladder.direction!=='down';$('ladder-up').disabled=ladder.direction!=='up';}
 $('ladder-down').onclick=()=>{ladderPopup.hidden=true;dispatch({type:state?.dungeon?.royal==='cell'&&!state.flags.royalTrapFound?'royalSearch':'descend'});};
 $('ladder-up').onclick=()=>{const ladder=ladderPrompt(state,dungeonMap(state.dungeon));ladderPopup.hidden=true;if(ladder?.direction==='up')dispatch({type:ladder.upAction});};
 
@@ -197,6 +200,8 @@ function beginCamp(){
 }
 
 function dispatch(a,automatic=false){if(campSequence)return;if(a.type==='setCamp'&&!a.resolved){beginCamp();return;}if(a.type!=='idleEncounter')lastTravelActivity=performance.now();if(a.type==='snoutReconfigure'&&atMultiverseTube(state)&&!hasCheckpoint()){try{localStorage.setItem(CHECKPOINT,saveGame(state));}catch{toast('Cannot preserve a checkpoint. Free up device storage before reconfiguring reality.');return;}}if(a.type==='autoAttack'){toggleAutoAttack();return;}if(!state||combatView||shipInFlight)return;if(!automatic&&autoAttackEnabled)stopAutoAttack();if(a.type==='inspectCastle'){inspectCastle(a.id);return;}if(a.type==='mapTurn'){state.flags.mapFacing=((state.flags.mapFacing||0)+a.delta+4)%4;persist();toast('Facing '+['north','east','south','west'][state.flags.mapFacing]);return;}if(a.type==='mapStep'){const dir=state.castle?0:state.flags.mapFacing||0;let dx=a.dx,dy=a.dy;for(let i=0;i<dir;i++)[dx,dy]=[-dy,dx];a={type:'move',dx,dy};}if(a.type==='navigatePlanet'&&!completingFlight&&state.mode==='dungeon'&&state.dungeon?.ship&&Math.abs(state.dungeon.x-7)+Math.abs(state.dungeon.y-5)<=7&&Number.isInteger(a.planet)&&a.planet>=0&&a.planet<3){completingFlight=true;launchPlanetFlight(a);return;}completingFlight=false;flushClock(false);entryPrompt.hidden=true;ladderPopup.hidden=true;if(state.mode==='world'&&a.type==='enter'&&pointAt(state)?.kind==='wildernessDiscovery'){openPanel('discovery');return;}if(a.type==='enter'&&atLeperColony(state)){state=act(state,a);persist();update();openPanel('leperColony');return;}if(state.mode==='world'&&a.type==='enter'&&pointAt(state)?.kind==='silverTree'){a={type:'askSilverTree'};}if(state.mode==='world'&&a.type==='enter'&&pointAt(state)?.kind==='purity'){openPanel('purity');return;}if(state.mode==='world'&&a.type==='enter'&&pointAt(state)?.kind==='shipyard'){openPanel('shipyard');return;}if(state.mode==='world'&&a.type==='enter'&&pointAt(state)?.kind==='teleporter'){openPanel('crystalTravel');return;}if(state.mode==='town'&&a.type==='enter'){interactTown();return;}const before=state,events=[];state=act(state,a,events,developerMode?previewRules:{});if(state.log.at(-1)!==before.log.at(-1)&&(state.flags.impaledMoves||before.flags.impaledMoves))toast(state.log.at(-1));
+if(state.flags.dragonAteMount&&!before.flags.dragonAteMount){persist();update();openPanel('dragonMeal');return;}
+if(a.type==='acknowledgeDragonMeal'&&activePanel==='dragonMeal'){persist();update();closePanel();return;}
 if(a.type==='pullBranch'&&state.hp<before.hp)audio.unlock().then(()=>audio.effect('thwack'));
 const potionItem=a.type==='useItem'?itemById(a.id,before):null;
 if(potionItem?.kind==='potion'||a.type==='heal'){
@@ -587,10 +592,15 @@ function update(){if(state.mode!=='battle')impactIndex=0;updateClockDisplay();up
  else if(state.mode==='dungeon'){
   const d=state.dungeon,bottom=d.floor===dungeonFloors(d)-1;
   const pitAction=pitBottomAction(state);
-  const label=pitAction==='pitElevator'?'Ride the surface elevator':d.site===BOTTOMLESS_PIT.id&&bottom?'Face the Balrog':d.site===PUTRID_PALACE.id&&bottom?'Challenge Wang':bottom?'Open reliquary':'Descend';
-  $('actions').innerHTML=button(label,{type:pitAction==='pitElevator'?'pitElevator':'descend'},'primary')+button('Ascend / leave',{type:'leave'})+'<button data-panel="potions">Drink potion</button>';
+  const tower=isWidowsBell(d);
+  const label=pitAction==='pitElevator'?'Ride the surface elevator':d.site===BOTTOMLESS_PIT.id&&bottom?'Face the Balrog':d.site===PUTRID_PALACE.id&&bottom?'Challenge Wang':bottom?'Open reliquary':tower?'Climb Up':'Descend';
+  $('actions').innerHTML=button(label,{type:pitAction==='pitElevator'?'pitElevator':'descend'},'primary')+button(tower?(d.floor?'Climb Down':'Leave Widow’s Bell'):'Ascend / leave',{type:'leave'})+'<button data-panel="potions">Drink potion</button>';
  }
  else $('actions').innerHTML=(state.mode==='world'&&['minorSite','shipyard','wildernessDiscovery','percivalCastle','twinklestarTower'].includes(p?.kind)?button((p.kind==='wildernessDiscovery'?'Examine ':'Enter ')+esc(p.name),{type:'enter'},'primary'):'')+'<button data-panel="potions">Drink potion</button>';
+ if(state.mode==='world'&&state.equipped==='fishing-pole'){
+  const tileAt=(x,y)=>areaFor(state)?areaTile(state,x,y):worldTile(state.region,x,y);
+  if([[1,0],[-1,0],[0,1],[0,-1]].some(([dx,dy])=>tileAt(state.x+dx,state.y+dy)==='water'))$('actions').insertAdjacentHTML('beforeend',button('Cast fishing line',{type:'fish'},'primary'));
+ }
  const atShipConsole=!atMultiverseTube(state)&&state.mode==='dungeon'&&state.dungeon?.ship&&Math.abs(state.dungeon.x-7)+Math.abs(state.dungeon.y-5)<=7;
  $('planet-console').hidden=!atShipConsole;
  $('planet-console').innerHTML=atShipConsole?'<p class="eyebrow">SHIP CONTROL STATION</p><h3>Select a planet to land</h3><div class="planet-choices">'+PLANETS.map((name,planet)=>button('<span class="planet-orb planet-'+planet+'" aria-hidden="true"></span><strong>'+esc(name.split(',')[0])+'</strong><span>'+esc(name.split(', ')[1])+'</span>',{type:'navigatePlanet',planet},'planet-choice')).join('')+(state.flags.earthCoordinates?button('<span class="planet-orb peebles-earth-orb" aria-hidden="true"></span><strong>Earth</strong><span>Professor Peebles’s coordinates</span>',{type:'visitEarth'},'planet-choice'):'')+'</div>':'';
@@ -1046,6 +1056,10 @@ function openPanel(name,{winkShot=false,winkResult=null}={}){if(state?.dungeon?.
   body.querySelector('#face-boss').onclick=()=>closePanel();
  }
  if(name==='dragonGreeting'){body.innerHTML='<div class="dragon-greeting"><span class="dragon-run-in" aria-hidden="true"></span><img src="/assets/dragon-greeting.webp" alt="Your dragon bounds up and licks your face with dreadful breath"><div><h3>GLEEEEEP!</h3><p>Your new dragon runs up, licks your face, and shares its horrifying breath.</p>'+button('Saddle up',{type:'acknowledgeDragon'},'primary')+'</div></div>';audio.unlock().then(()=>audio.effect('dragon-greep'));}
+ if(name==='dragonMeal'){
+  $('panel-title').textContent='A Very Happy Dragon';
+  body.innerHTML='<div class="dragon-greeting dragon-meal"><img src="/assets/dragon-ate-mount.png" alt="A delighted dragon licking his lips beside an empty stable"><div><p class="royal-dialogue">Your dragon looks extremely happy. He just ate your new mount. Please buy more!</p>'+button('Continue',{type:'acknowledgeDragonMeal'},'primary')+'</div></div>';
+ }
  if(name==='dragonDefense')body.innerHTML=dragonDefenseView(state,button);
  if(name==='dragonNotice'&&state.flags.dragonDeparted&&state.flags.dragonNotice?.startsWith('Gleep found')){
   body.innerHTML='<div class="dragon-greeting"><img src="/assets/dragon-farewell.webp" alt="Gleep embraces his true love and gives you a farewell lick"><p>'+esc(state.flags.dragonNotice)+'</p>'+button('Farewell, Gleep',{type:'acknowledgeDragon'},'primary')+'</div>';
@@ -1088,7 +1102,9 @@ function openPanel(name,{winkShot=false,winkResult=null}={}){if(state?.dungeon?.
   const {name:creature,offer,amount}=meeting;
   const line=offer==='gold'?'“Take '+amount+' gold and let me be.”':offer==='trade'?'“A healing potion for a meal?”':'“A healing potion for '+amount+' gold?”';
   const canAccept=offer==='gold'||(offer==='trade'?state.meals>0:state.gold>=amount);
-  body.innerHTML=meeting.peaceful?briarMeetingView(meeting,button,esc):'<h3>'+esc(creature)+'</h3><p>'+esc(line)+'</p>'+(canAccept?button('Accept',{type:'peacefulAccept'},'primary'):'')+button('Walk away',{type:'peacefulLeave'});
+  body.innerHTML=meeting.peaceful?briarMeetingView(meeting,button,esc):'<canvas class="roadside-offer-creature" width="640" height="340" role="img" aria-label="'+esc(creature)+' making a roadside offer"></canvas><h3>'+esc(creature)+'</h3><p>'+esc(line)+'</p>'+(canAccept?button('Accept',{type:'peacefulAccept'},'primary'):'')+button('Walk away',{type:'peacefulLeave'});
+  const portrait=body.querySelector('.roadside-offer-creature');
+  if(portrait){const draw=()=>paintMonster(portrait.getContext('2d'),meeting,72,0,496,330,state.region);draw();setTimeout(draw,250);}
  }
  if(name==='dungeonElevator'){
   const d=state.dungeon,available=state.mode==='dungeon'&&d&&!d.ship&&!d.royal;
@@ -1216,6 +1232,7 @@ function closePanel(){if(campSequence||state?.flags.koboldSnare)return;if(active
 let introducedBoss;
 const cemeteryPrompted=new Set();
 function showLoot(){
+ if(state?.flags.dragonAteMount&&!activePanel&&!combatView&&!document.hidden&&!$('game').hidden){openPanel('dragonMeal');return;}
  if(state?.flags.arenaRetreatNotice&&!activePanel&&!combatView&&!document.hidden&&!$('game').hidden){openPanel('arenaRetreat');return;}
  if(state?.mode==='dungeon'&&!cemeteryHaunt&&!activePanel&&!combatView&&!document.hidden&&!$('game').hidden){const map=dungeonMap(state.dungeon),torch=nearestUnlitTorch(state,map);if(torch&&!state.flags.autoTorches&&!cemeteryPrompted.has(torch.id)&&cemeteryLightAt(state,map,state.dungeon.x+.5,state.dungeon.y+.5)<.18){cemeteryPrompted.add(torch.id);openPanel('cemeteryTorch');return;}}
  if(state?.flags.wizardForsakenPending&&activePanel!=='wizardForsaken'&&!combatView&&!document.hidden&&!$('game').hidden){openPanel('wizardForsaken');return;}

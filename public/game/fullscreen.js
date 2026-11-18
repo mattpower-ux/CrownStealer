@@ -5,3 +5,5 @@ button.addEventListener('click',async()=>{try{if(document.fullscreenElement)awai
 document.querySelector('.game-header nav').prepend(button);document.addEventListener('fullscreenchange',refresh);refresh();
 
 const info=document.createElement('button');info.id='info-toggle';info.type='button';info.textContent='Info';info.setAttribute('aria-expanded','false');info.setAttribute('aria-controls','adventure-info');const sidebar=document.querySelector('.sidebar');sidebar.id='adventure-info';info.addEventListener('click',()=>{const open=document.body.classList.toggle('info-open');info.setAttribute('aria-expanded',String(open));info.textContent=open?'Close info':'Info';});document.querySelector('.game-header nav').prepend(info);
+
+const exit=document.createElement('button');exit.id='exit-game';exit.type='button';exit.textContent='EXIT';exit.title='Save and exit game';document.querySelector('.game-header nav').append(exit);

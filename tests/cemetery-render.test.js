@@ -18,14 +18,16 @@ test('broken cemetery remains are deterministic decorative objects and do not al
  assert.ok(debris.some(p=>p.kind==='sarcophagus'));assert.ok(debris.some(p=>p.kind==='headstone'));assert.deepEqual(cemeteryRemains(d,map),debris);assert.equal(JSON.stringify(map),before);
 });
 
-test('Walled Cemetery opens onto a moonlit yard and keeps access to underground levels',()=>{
+test('every cemetery surface opens onto a moonlit yard and stairs descend to enclosed crypts',()=>{
  const s=createGame();
  s.mode='dungeon';
- s.dungeon={site:'minor-site',minorId:'minor-w0-22',index:0,floor:0,x:1,y:1,dir:1,ladderLayout:1};
+ s.dungeon={site:'minor-site',minorId:'minor-r0-5',index:0,floor:0,x:1,y:1,dir:1,ladderLayout:1};
  const d=s.dungeon,map=dungeonMap(d);
  assert.equal(isOpenAirCemetery(d),true);
  assert.equal(isOpenAirCemetery({...d,floor:1}),false);
- assert.equal(isOpenAirCemetery({...d,minorId:'minor-r0-8'}),false);
+ assert.equal(isOpenAirCemetery({...d,minorId:'minor-r0-0'}),false);
+ assert.equal(isOpenAirCemetery({index:0,floor:0}),true);
+ assert.equal(isOpenAirCemetery({index:0,floor:1}),false);
  assert.ok(map[0].every(tile=>tile===1));
  assert.ok(map.every(row=>row[0]===1&&row.at(-1)===1));
  assert.equal(map[6][6],0);

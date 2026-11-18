@@ -14,8 +14,8 @@ test('every cemetery floor contains burial treasure, including quiet cemeteries'
  }
  }
 });
-test('combat illuminates a cemetery without lighting its permanent torches',()=>{
- const s=createGame();s.dungeon={index:0,floor:0,x:1,y:1,dir:1};s.mode='dungeon';const map=dungeonMap(s.dungeon);
+test('combat illuminates an underground cemetery crypt without lighting its permanent torches',()=>{
+ const s=createGame();s.dungeon={index:0,floor:1,x:1,y:1,dir:1};s.mode='dungeon';const map=dungeonMap(s.dungeon);
  assert.equal(cemeteryLightAt(s,map,1.5,1.5),0);s.mode='battle';assert.equal(cemeteryLightAt(s,map,1.5,1.5),1);drawCemeteryDarkness(null,100,100,s,map);s.mode='dungeon';assert.equal(cemeteryLightAt(s,map,1.5,1.5),0);
 });
 test('explicit engagement works even when automatic preview encounters are disabled',()=>{

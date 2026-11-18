@@ -22,6 +22,8 @@ test('main lands and branches support payoff, trade and sale encounters', () => 
       const s = act(traveler(area, rng), east);
       const meeting = s.flags.peacefulEncounter;
       assert.equal(meeting?.offer, offer);
+      assert.equal(typeof meeting?.speciesId, 'string');
+      assert.ok(meeting.speciesId.length > 0);
       assert.equal(s.enemy, null);
       const accepted = act(loadGame(saveGame(s)), {type: 'peacefulAccept'});
       assert.equal(accepted.flags.peacefulEncounter, undefined);

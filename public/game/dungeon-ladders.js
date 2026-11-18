@@ -1,5 +1,6 @@
 import {isOpenAirCemetery,minorSiteDefinition} from './minor-sites.js';
 import {dungeonFloors} from './dungeon-depths.js';
+import {isWidowsBell} from './widows-bell.js';
 
 const directions = [[0, -1], [1, 0], [0, 1], [-1, 0]];
 const entrance = {x: 1, y: 1};
@@ -49,11 +50,13 @@ export function dungeonLadders(d, map) {
   if(d.site==='minor-site'&&minorSiteDefinition(d.minorId)?.kind==='tunnel')points.push({...endpoint,direction:'up',tunnelExit:true});
   return points.map(point => {
     const [dx, dy] = directions.find(([x, y]) => tileAt(point.x + x, point.y + y) === 1) ?? directions[0];
+    const towerDirection=isWidowsBell(d)?point.direction==='down'?'up':d.floor?'down':'exit':null;
     return {
       ...point,
       wallX: point.x + dx,
       wallY: point.y + dy,
       opening: point.direction === 'up' ? 'ceiling' : 'floor',
+      ...(towerDirection?{towerDirection,opening:towerDirection==='up'?'ceiling':'floor'}:{}),
       ...(openAir&&point.direction==='up'?{gate:true}:{}),
     };
   });

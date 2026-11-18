@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createGame,act,dungeonMap,saveGame,loadGame,minorSiteList} from '../public/game/engine.js';
 import {cemeteryTorches,nearestUnlitTorch,cemeteryLightAt,hasMiningLight} from '../public/game/cemetery-light.js';
-const setup=()=>{const s=createGame(),site=minorSiteList(s).find(p=>p.minorKind==='cemetery');Object.assign(s,{x:site.x,y:site.y});return act(s,{type:'enter'});};
+const setup=()=>{const s=createGame(),site=minorSiteList(s).find(p=>p.minorKind==='cemetery'&&p.floors>1);Object.assign(s,{x:site.x,y:site.y});const entered=act(s,{type:'enter'});entered.dungeon.floor=1;return entered;};
 test('cemeteries begin black and lighting reaches only the nearest torch, saved per fixture',()=>{
  let s=setup();const map=dungeonMap(s.dungeon),torches=cemeteryTorches(s.dungeon,map);
  assert.ok(torches.length>2);assert.equal(cemeteryLightAt(s,map,1.5,1.5),0);

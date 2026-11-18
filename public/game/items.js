@@ -75,6 +75,7 @@ export function itemArt(item){
  if(!item)return '';
  if(item.id==='torch')return '<svg class="item-art" viewBox="0 0 200 220" role="img" aria-label="Torch"><path d="M87 105 L113 105 L108 210 L92 210 Z" fill="#78502b"/><path d="M100 18 Q145 70 119 103 Q100 124 81 102 Q55 76 100 18 Z" fill="#f2a63b"/><path d="M100 57 Q117 85 100 100 Q83 85 100 57 Z" fill="#fff0a0"/></svg>';
  if(item.id==='horn-of-help')return '<svg class="item-art" viewBox="0 0 200 220" role="img" aria-label="Horn of Help illustration"><path d="M37 44c3 68 22 111 76 132l40-45C91 124 62 93 52 40Z" fill="#b69a65" stroke="#e7d39c" stroke-width="5"/><ellipse cx="136" cy="154" rx="18" ry="31" transform="rotate(39 136 154)" fill="#254543" stroke="#e7d39c" stroke-width="7"/><path d="m44 56 15-5m-6 47 25-12m-4 48 31-22" stroke="#66543c" stroke-width="8"/><path d="M144 81q23-20 8-40m17 57q27-23 17-52" fill="none" stroke="#b9eee4" stroke-width="5"/></svg>';
+ if(item.id==='horn-ship-summoning')return '<svg class="item-art" viewBox="0 0 200 220" role="img" aria-label="Runed narwhal Horn of Ship Summoning"><path d="M29 28c13 88 42 139 105 166l39-44C101 127 65 86 48 22Z" fill="#eee7cf" stroke="#c8b98b" stroke-width="6"/><ellipse cx="151" cy="170" rx="19" ry="32" transform="rotate(41 151 170)" fill="#254b52" stroke="#f3d995" stroke-width="8"/><g fill="none" stroke="#5d8f98" stroke-width="4" stroke-linecap="round"><path d="m47 54 18-9-8 21 20-8m-8 30 21-11-5 23 21-10m-2 33 20-9-3 22 20-8"/><path d="M42 38q18 5 12 19m17 20q20 3 15 20m18 18q21 2 17 20"/></g><path d="M36 28 50 18" stroke="#f9f4df" stroke-width="7" stroke-linecap="round"/></svg>';
  const baseId=String(item.id||'').split('~')[0].replace(/-v[1-4]$/,'');
  const ornament=item.rarity==='legendary'?legendaryOrnament:'';
  const color=item.color||'#d7c493';
@@ -100,6 +101,6 @@ export function itemArt(item){
 
 export function isMagicEquipment(item){
  return !!item&&item.id!=='dungeon-elevator'&&!item.attributeEffect&&(
-  item.kind==='scroll'||item.kind==='wand'||item.shape==='scroll'||item.id==='horn-of-help'
+  item.kind==='scroll'||item.kind==='wand'||item.shape==='scroll'||['horn-of-help','horn-ship-summoning'].includes(item.id)
  );
 }

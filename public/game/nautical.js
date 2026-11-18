@@ -6,6 +6,7 @@ export const NAUTICAL_ITEMS={
  'trident-despair':{kind:'weapon',family:'spear',shape:'trident',name:'Trident of Despair',rarity:'legendary',value:1400,damage:[20,32],toHit:5,element:'frost',elementDamage:6,freezeChance:.18,description:'Adds 6 frost damage. An 18% chance to freeze the victim’s next attack.'},
  'water-breathing-potion':{kind:'potion',shape:'potion',name:'Water Breathing Potion',rarity:'common',value:180,effect:'waterBreathing',duration:24,description:'Breathe beneath the water and swim across inland lagoons for 2 game hours. If it expires in water, you return safely to shore.'},
  'boat-amulet':{bottomOnly:true,notForSale:true,kind:'necklace',shape:'boat',name:'Boat Amulet',rarity:'epic',value:850,description:'Use from your inventory outdoors to summon a full-size rowboat. Reusable; no charges. Cross lakes and coastal water, then disembark on land. Locked gates and map boundaries still apply.'}
+ ,'horn-ship-summoning':{notForSale:true,kind:'special',shape:'horn',name:'Horn of Ship Summoning',rarity:'legendary',value:2400,description:'An intricately runed horn carved from narwhal ivory. Equip it as magic and blow it beside water to call a ship you own. Unlimited uses.'}
 };
 for(const [id,i]of Object.entries(NAUTICAL_ITEMS))Object.assign(i,{id,unique:true,nautical:true,tier:3,color:'#b8d9d1'});
 export function nauticalLoot(rarity,roll){const pool=Object.values(NAUTICAL_ITEMS).filter(i=>!i.bottomOnly&&i.rarity===rarity);if(!pool.length)return 'conservatory-cutlass';return pool[Math.min(pool.length-1,Math.floor(roll*pool.length))].id;}

@@ -12,7 +12,7 @@ $androidRoot = Join-Path $projectRoot 'android'
 $buildRoot = Join-Path $androidRoot 'build'
 $signingRoot = Join-Path $androidRoot 'signing'
 $releaseRoot = Join-Path $projectRoot 'releases'
-$apkPath = Join-Path $releaseRoot 'BarTheGates-0.9.44.apk'
+$apkPath = Join-Path $releaseRoot 'BarTheGates-0.9.45.apk'
 $platformJar = Join-Path $sdkRoot 'platforms/android-35/android.jar'
 $buildTools = Join-Path $sdkRoot 'build-tools/android-15'
 
@@ -150,7 +150,7 @@ try {
         if ($packedAssetCount -ne $assetCount) { throw 'APK contains stale or unexpected bundled assets. Run build again.' }
     } finally { $archiveCheck.Dispose() }
     $sha256 = (Get-FileHash -LiteralPath $apkPath -Algorithm SHA256).Hash.ToLowerInvariant()
-    [System.IO.File]::WriteAllText((Join-Path $releaseRoot 'BarTheGates-0.9.44.apk.sha256'), "$sha256  BarTheGates-0.9.44.apk`n", [System.Text.Encoding]::ASCII)
+    [System.IO.File]::WriteAllText((Join-Path $releaseRoot 'BarTheGates-0.9.45.apk.sha256'), "$sha256  BarTheGates-0.9.45.apk`n", [System.Text.Encoding]::ASCII)
     Write-Host "Built $apkPath"
     Write-Host "Verified $assetCount bundled assets. SHA-256: $sha256"
 } finally {

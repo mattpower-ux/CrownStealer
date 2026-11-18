@@ -11,13 +11,15 @@ const entries=[
  ['nose-picking-tool','Nose Picking Tool','junk','nose-tool',3,'A precision instrument with an unfortunate speciality.',{}],
  ['broken-compass','Broken Compass','junk','compass',4,'Points confidently in several wrong directions.',{}],
  ['old-boot','Old Boot','junk','old-boot',2,'One boot. Its partner has wisely moved on.',{}],
- ['fishing-pole','Fishing Pole','junk','fishing-pole',10,'For catching fish, or explaining why you have been standing still all afternoon.',{}],
+ ['fishing-pole','Fishing Pole','weapon','fishing-pole',10,'Equip this pole, stand beside water, and cast for fish or the occasional drowned treasure.',{damage:[0,1],toHit:-4}],
+ ['fresh-fish','Fresh Fish','consumable','food',4,'Eat it to double wilderness recovery for three game hours.',{unique:false,gadget:true}],
  ['snowshoes','Snowshoes','boots','snowshoes',18,'Move two squares on snowy wilderness terrain. Everywhere else, each square takes two movement commands.',{}],
  ['scroll-find-secrets','Scroll of Find Secret Doors','consumable','scroll',25,'Reveals and opens a hidden potion alcove on every fifth standard dungeon level. Kept if no secret is present.',{}],
  ['scroll-vomit','Scroll of Vomit','consumable','scroll',10,'One use: vomit violently, lose 20 health, and cure poison. Do not read over an open treasure chest.',{}]
 ];
-export const JUNK_ITEMS=Object.fromEntries(entries.map(([id,name,kind,shape,value,description,extra])=>[id,{id,name,kind,shape,value,description,...extra,rarity:'common',tier:1,unique:true,lowLoot:true,color:id==='straw-hat'?'#d5b667':'#b4aa87'}]));
-export function lowLevelLoot(level,roll,pick){return level>=1&&level<=5&&roll<.2?entries[Math.min(entries.length-1,Math.max(0,Math.floor(pick*entries.length)))][0]:null;}
+export const JUNK_ITEMS=Object.fromEntries(entries.map(([id,name,kind,shape,value,description,extra])=>[id,{id,name,kind,shape,value,description,...extra,rarity:'common',tier:1,unique:extra.unique??true,lowLoot:id!=='fresh-fish',color:id==='straw-hat'?'#d5b667':id==='fresh-fish'?'#91b9a8':'#b4aa87'}]));
+const lowLootEntries=entries.filter(([id])=>id!=='fresh-fish');
+export function lowLevelLoot(level,roll,pick){return level>=1&&level<=5&&roll<.2?lowLootEntries[Math.min(lowLootEntries.length-1,Math.max(0,Math.floor(pick*lowLootEntries.length)))][0]:null;}
 export function footwearSpeed(s){if(s.equippedBoots==='snowshoes')return s.mode==='world'&&s.region===3?2:.5;return s.mode==='world'&&s.equippedBoots==='boots-slime-skating'?2:1+rareGearEffect(s,'movementBonus');}
 export function travelSpeed(s){
  const footwear=footwearSpeed(s),mount=s.mode==='world'?mountFor(s):null;

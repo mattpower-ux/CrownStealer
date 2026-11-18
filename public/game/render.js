@@ -84,6 +84,7 @@ import {drawDungeonChests} from './chest-render.js';
 
 
 import {dungeonLadders,discoveredDungeonLadders} from './dungeon-ladders.js';
+import {isWidowsBell,widowsBellArrowSlitInk,drawWidowsBellTop} from './widows-bell.js';
 
 import {silhouetteComponents} from './sprite-bounds.js';
 

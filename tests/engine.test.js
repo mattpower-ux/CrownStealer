@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createGame,act,saveGame,loadGame,makeDungeon,worldTile} from '../public/game/engine.js';
+import {createGame,act,saveGame,loadGame,makeDungeon,worldTile,dungeonMap} from '../public/game/engine.js';
+import {dungeonLadders} from '../public/game/dungeon-ladders.js';
 import {DUNGEONS,TOWNS} from '../public/game/content.js';
 import {atTownPlace} from './town-fixture.js';
 test('new game movement is immutable and does not consume meals',()=>{const s=createGame('Mara');const n=act(s,{type:'move',dx:1,dy:0});assert.equal(s.turns,0);assert.equal(n.turns,1);assert.equal(n.meals,s.meals);assert.equal(n.x,s.x+1);});
@@ -19,7 +20,7 @@ test('all dungeon entrances and floor arrivals face a walkable corridor',()=>{
   const point=DUNGEONS[index];let s={...createGame('A'),region:point.region,x:point.x,y:point.y};
   if(index===5)s.flags.rowboatReady=true;
   s=act(s,{type:'enter'});
-  if(floor){s.dungeon={index,floor:floor-1,x:13,y:13,dir:0};s=act(s,{type:'descend'});}
+  if(floor){s.dungeon={index,floor:floor-1,x:1,y:1,dir:0};const down=dungeonLadders(s.dungeon,dungeonMap(s.dungeon)).find(l=>l.direction==='down');Object.assign(s.dungeon,{x:down.x,y:down.y});s=act(s,{type:'descend'});}
   const [dx,dy]=dirs[s.dungeon.dir];assert.notEqual(makeDungeon(index,floor)[1+dy]?.[1+dx],1,`dungeon ${index} floor ${floor}`);
   const n=act(s,{type:'forward'});assert.ok(n.dungeon.x!==1||n.dungeon.y!==1);
  }

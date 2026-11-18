@@ -176,7 +176,7 @@ test('a roaming hero’s ordinarily peaceful encounters flee without offers, rew
   const field = {...createGame(), x: 64, y: 48, turns: 40, rng: 1975};
   const move = {type: 'move', dx: 1, dy: 0};
   const ordinary = act(field, move);
-  assert.deepEqual(ordinary.flags.peacefulEncounter, {name: 'Tithe Rat', offer: 'trade', amount: 2});
+  assert.deepEqual(ordinary.flags.peacefulEncounter, {name: 'Tithe Rat', speciesId: 'tithe-rat', offer: 'trade', amount: 2});
   const hero = {...field, flags: {...field.flags, royalStoryVersion: 2, royalQuest: 'resolved', royalEnding: 'hero',
     royalHero: true, balrogDefeated: true}};
   const result = act(hero, move);
