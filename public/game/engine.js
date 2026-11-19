@@ -3,6 +3,7 @@ import {triggerKoboldSnare,koboldSnareAction,validKoboldSnare} from './kobold-sn
 import {silverAcornAction,silverTree,validSilverAcorn} from './silver-acorn.js';
 import {redGlobeAction,fulfillRedGlobe,validRedGlobe,cursedByGlobe} from './red-globe.js';
 import {prepareEvilRoute,validateEvilRoute} from './evil-route.js';
+import {evilCreatureDisposition,evilFearStopsTurn} from './evil-disposition.js';
 import {characterLook} from './character-looks.js';
 import {kerrbearAction,kerrbearStrike} from './kerrbear.js';
 import {GUARDED_SLEEP,campAmbushChance,idleEncounterChance,canCamp} from './wilderness-camp.js';
@@ -238,6 +239,7 @@ function encounter(s,boss=false,guard=false,challenged=false){
   const count=chance>=.91&&s.level>=8?3:2;
   enemy={...enemy,groupSize:count,memberHp:enemy.maxHp,hp:enemy.maxHp*count,maxHp:enemy.maxHp*count,gold:enemy.gold*count,xp:enemy.xp*count};
  }
+ if(evilCreatureDisposition(s,enemy,{storyHostile:boss||guard||enemy.storyHostile})==='neutral'){s.flags.lastSpecies=enemy.speciesId;note(s,enemy.name+' recognizes the darkness in you and stands aside.');return;}
  s.returnMode=s.mode;s.flags.guarded=false;s.flags.combo=0;s.enemy=enemy;s.flags.lastSpecies=enemy.speciesId;s.mode='battle';note(s,`${s.enemy.groupSize?s.enemy.groupSize+' × '+s.enemy.name:s.enemy.name} (level ${s.enemy.level}) bars your way. Armor: ${s.enemy.armor}. Weakness: ${s.enemy.weakness}. ${guard?(s.enemy.level===35?'Level 35 palace guard: weaker than the royal guard, but still dangerous.':'Level 50 royal brute with enchanted weapons: retreat unless well prepared.'):boss?'There will be no quiet passage.':'Fight, defend, use magic, or retreat.'}`);
 }
 function startCastleGuard(s,forced=false) {
@@ -259,7 +261,7 @@ function vampireBite(s){
   note(s,`${e.name} drains one level. It returns after 30 game minutes without another drain.`);
  }
 }
-function enemyTurn(s,defending=false,events=[],multiplier=1,keepCoating=false){if(!s.enemy)return;if(deferDungeonEnemyTurn(s,defending,events,multiplier,keepCoating))return;if(beansBlocksEnemy(s)){note(s,'The gas drives the living enemy back.');return;}if(!keepCoating&&spendPoisonRound(s))note(s,'Your weapon poison wears off.');if(s.enemy.surprised){delete s.enemy.surprised;note(s,s.enemy.name+' is caught off guard and misses its turn.');return;}if(dragonSupport(s,events)&&s.enemy.hp<=0){events.push({kind:'victory',target:'enemy',amount:0,sound:'victory'});victory(s,events);return;}if(s.flags.clockStopped>0){s.flags.clockStopped--;note(s,'The clock holds your enemy outside time.');return;}if(s.previewRules?.invulnerable){
+function enemyTurn(s,defending=false,events=[],multiplier=1,keepCoating=false){if(!s.enemy)return;if(deferDungeonEnemyTurn(s,defending,events,multiplier,keepCoating))return;if(evilFearStopsTurn(s,s.enemy,()=>rand(s))){const message=s.enemy.name+' recoils from your infernal presence and loses the round.';note(s,message);events.push({kind:'fear',target:'enemy',amount:0,sound:'miss',message});return;}if(beansBlocksEnemy(s)){note(s,'The gas drives the living enemy back.');return;}if(!keepCoating&&spendPoisonRound(s))note(s,'Your weapon poison wears off.');if(s.enemy.surprised){delete s.enemy.surprised;note(s,s.enemy.name+' is caught off guard and misses its turn.');return;}if(dragonSupport(s,events)&&s.enemy.hp<=0){events.push({kind:'victory',target:'enemy',amount:0,sound:'victory'});victory(s,events);return;}if(s.flags.clockStopped>0){s.flags.clockStopped--;note(s,'The clock holds your enemy outside time.');return;}if(s.previewRules?.invulnerable){
  const protectedTurn=structuredClone(s),feedback=[];
  protectedTurn.hp=protectedTurn.maxHp=Number.MAX_SAFE_INTEGER;
  resolveEnemyAttack(protectedTurn,defending,feedback,multiplier);
