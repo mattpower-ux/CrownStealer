@@ -4,7 +4,7 @@ import {createGame,act,dungeonMap,saveGame,loadGame} from '../public/game/engine
 import {dungeonLadders,ladderPrompt} from '../public/game/dungeon-ladders.js';
 import {cemeteryLightAt,nearestUnlitTorch} from '../public/game/cemetery-light.js';
 import {dungeonChests} from '../public/game/treasure.js';
-import {isCemeteryDungeon,isOpenAirCemetery,cemeteryRemains,cemeteryFacadeKind,cemeteryFacadeInk} from '../public/game/cemetery-render.js';
+import {isCemeteryDungeon,isOpenAirCemetery,cemeteryRemains,cemeteryFacadeKind,cemeteryFacadeInk,cemeteryPropProfile,cemeteryStonePalette} from '../public/game/cemetery-render.js';
 test('coffins replace cemetery loot only, including main vault and minor cemeteries',()=>{
  assert.equal(isCemeteryDungeon({index:0}),true);assert.equal(isCemeteryDungeon({site:'minor-site',minorId:'minor-r0-2',index:0}),true);
  for(const d of [{index:1},{site:'minor-site',minorId:'minor-r0-0',index:0},{site:'twinklestar-tower',index:6},{index:0,royal:'sewer'},{index:0,expedition:'wild-0-cave-0'}])assert.equal(isCemeteryDungeon(d),false);
@@ -47,6 +47,20 @@ test('surface cemeteries form a dense varied necropolis instead of a sparse yard
  for(const kind of ['mausoleum','vault','obelisk','headstone','sarcophagus'])assert.ok(structures.some(item=>item.kind===kind),kind);
  const faces=new Set(Array.from({length:20},(_,i)=>cemeteryFacadeKind(i,i*3,true)));
  assert.ok(faces.size>=4);
- assert.equal(cemeteryFacadeInk('vault-door',.57,.72),'#172027');
+ const door=cemeteryFacadeInk('vault-door',.57,.72),rgb=door.match(/[0-9a-f]{2}/gi).map(value=>parseInt(value,16));
+ assert.ok(rgb.reduce((sum,value)=>sum+value,0)<90,'vault entrance stays nearly black');
  assert.match(cemeteryFacadeInk('memorial-niche',.5,.42),/^#/);
+});
+
+test('cemetery props are dimensional gothic stone and contain only human remains',()=>{
+ const d={index:0,floor:0,x:1,y:1,dir:0},structures=cemeteryRemains(d,dungeonMap(d));
+ for(const kind of ['skull','femur','ribcage'])assert.ok(structures.some(item=>item.kind===kind),kind);
+ assert.ok(structures.every(item=>!item.kind.toLowerCase().includes('fish')));
+ for(const kind of ['headstone','obelisk','mausoleum']){
+  const profile=cemeteryPropProfile(kind,3);
+  assert.equal(profile.gothic,true);
+  assert.ok(profile.depth>.08,kind);
+  assert.ok(profile.facets>=3,kind);
+ }
+ assert.deepEqual(cemeteryStonePalette(),{face:'#30363a',side:'#171c20',edge:'#596168',moss:'#27372d'});
 });

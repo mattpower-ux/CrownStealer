@@ -4,32 +4,38 @@ export {isOpenAirCemetery};
 export const isCemeteryDungeon=d=>!!d&&(d.site==='minor-site'?minorSiteDefinition(d.minorId)?.kind==='cemetery':!d.site&&!d.royal&&!d.ship&&!d.expedition&&d.index===0);
 const CEMETERY_FACADES=['vault-door','memorial-niche','sealed-crypt','buttressed-vault','family-chapel'];
 export const cemeteryFacadeKind=(x,y,vertical=false)=>CEMETERY_FACADES[Math.abs(x*17+y*29+(vertical?7:0))%CEMETERY_FACADES.length];
+export const cemeteryStonePalette=()=>({face:'#30363a',side:'#171c20',edge:'#596168',moss:'#27372d'});
+export function cemeteryPropProfile(kind,seed=0){
+ const dimensional=new Set(['headstone','obelisk','mausoleum','vault','crypt']);
+ return {gothic:dimensional.has(kind),depth:dimensional.has(kind)?.12+(Math.abs(seed)%3)*.025:0,facets:dimensional.has(kind)?3+Math.abs(seed)%3:1};
+}
 export function cemeteryFacadeInk(kind,u,v){
  const joint=v<.035||v>.965||u<.025||u>.975||Math.abs((u*5+(Math.floor(v*7)%2)*.5)%1)<.025||Math.abs((v*7)%1)<.025;
- if(joint)return '#485158';
+ if(joint)return '#171c20';
  if(kind==='vault-door'){
   const arch=Math.abs(u-.5)<.28&&v>.22&&v<.94&&(v>.43||((u-.5)/.28)**2+((v-.43)/.22)**2<1);
-  if(arch)return u%0.105<.025||Math.abs(v-.66)<.025?'#68747b':'#172027';
+  if(arch)return u%0.105<.025||Math.abs(v-.66)<.025?'#4a5358':'#090d10';
  }
  if(kind==='memorial-niche'){
   const niche=Math.abs(u-.5)<.24&&v>.25&&v<.78;
-  if(niche)return Math.abs(u-.5)<.045&&v>.40?'#b8aa85':'#263139';
-  if(v>.80&&v<.88)return '#777c79';
+  if(niche)return Math.abs(u-.5)<.045&&v>.40?'#786b52':'#11171a';
+  if(v>.80&&v<.88)return '#40484a';
  }
  if(kind==='sealed-crypt'){
-  if(u>.14&&u<.86&&v>.28&&v<.82)return (u*8)%1<.08||(v*5)%1<.07?'#555d61':'#81878a';
-  if(v>.20&&v<.28)return '#a1a39d';
+  if(u>.14&&u<.86&&v>.28&&v<.82)return (u*8)%1<.08||(v*5)%1<.07?'#20262a':'#353c40';
+  if(v>.20&&v<.28)return '#4b5356';
  }
  if(kind==='buttressed-vault'){
-  if(u<.14||u>.86)return v>.12?'#70787a':'#93989a';
-  if(Math.abs(u-.5)<.22&&v>.36)return '#202a2e';
+  if(u<.14||u>.86)return v>.12?'#242a2d':'#454d50';
+  if(Math.abs(u-.5)<.22&&v>.36)return '#090d0f';
  }
  if(kind==='family-chapel'){
-  if(v<.18+Math.abs(u-.5)*.48)return '#555e64';
-  if(Math.abs(u-.5)<.19&&v>.42)return '#1c252b';
-  if(v>.30&&v<.38)return '#9b967f';
+  if(v<.18+Math.abs(u-.5)*.48)return '#1a2024';
+  if(Math.abs(u-.5)<.19&&v>.42)return '#070b0d';
+  if(v>.30&&v<.38)return '#4f4b40';
  }
- return null;
+ const soot=Math.sin(u*81+v*47)>.72,lichen=Math.sin(u*37-v*59)<-.83;
+ return soot?'#171b1e':lichen?'#27372d':'#30363a';
 }
 function poly(c,points,color,stroke){c.beginPath();points.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.closePath();c.fillStyle=color;c.fill();if(stroke){c.strokeStyle=stroke;c.stroke();}}
 function stroke(c,points,color,width=.015){c.beginPath();points.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.strokeStyle=color;c.lineWidth=width;c.stroke();}
@@ -58,36 +64,63 @@ export function cemeteryRemains(d,map){
   {x:7,y:10,kind:'obelisk'},{x:11,y:11,kind:'vault'},{x:4,y:11,kind:'mausoleum'},
   {x:6,y:4,kind:'headstone'},{x:7,y:4,kind:'headstone'},
   {x:5,y:8,kind:'sarcophagus'},{x:9,y:9,kind:'sarcophagus'},{x:6,y:11,kind:'headstone'},{x:9,y:5,kind:'headstone'},
+  {x:5.35,y:5.2,kind:'skull',seed:1},{x:8.25,y:7.1,kind:'femur',seed:2},{x:10.4,y:10.1,kind:'ribcage',seed:3},
  ]:[];
  for(let y=1;y<map.length-1;y++)for(let x=1;x<map[y].length-1;x++){
   if(map[y][x]!==0||x===1&&y===1||x===13&&y===13)continue;
   const seed=(x*31+y*47+(d.floor||0)*17+(d.index||0)*7)%19;
   if(seed>(isOpenAirCemetery(d)?7:2))continue;
   const wall=[[0,-1],[1,0],[0,1],[-1,0]].find(([dx,dy])=>map[y+dy]?.[x+dx]===1);if(!wall)continue;
-  remains.push({x:x+wall[0]*.30,y:y+wall[1]*.30,kind:seed===0?'sarcophagus':isOpenAirCemetery(d)&&seed===3?'obelisk':isOpenAirCemetery(d)&&seed===4?'vault':'headstone',seed});
+  const kind=seed===0?'sarcophagus':isOpenAirCemetery(d)&&seed===3?'obelisk':isOpenAirCemetery(d)&&seed===4?'vault':isOpenAirCemetery(d)&&seed===5?'skull':isOpenAirCemetery(d)&&seed===6?'femur':isOpenAirCemetery(d)&&seed===7?'ribcage':'headstone';
+  remains.push({x:x+wall[0]*.30,y:y+wall[1]*.30,kind,seed});
  }
  return remains;
 }
 function drawCemeteryCrypt(c,size,variant='crypt'){
  c.save();c.scale(size,size);c.lineWidth=.022;
- poly(c,[[-.63,-.04],[.60,-.04],[.56,-.15],[-.57,-.15]],'#65717d','#303940');
- poly(c,[[-.56,-.15],[.32,-.15],[.32,-1.12],[-.56,-1.12]],variant==='mausoleum'?'#b1aea4':variant==='vault'?'#777f82':'#89969e','#57646e');
- poly(c,[[.32,-.15],[.60,-.36],[.60,-1.26],[.32,-1.12]],'#515d68','#364352');
- poly(c,[[-.65,-1.12],[-.13,-1.54],[.40,-1.12]],'#a0adb4','#56636e');
- poly(c,[[-.13,-1.54],[.15,-1.73],[.70,-1.29],[.40,-1.12]],'#647280','#475663');
+ poly(c,[[-.68,-.04],[.62,-.04],[.57,-.17],[-.60,-.17]],'#252c30','#111619');
+ poly(c,[[-.60,-.17],[.32,-.17],[.32,-1.18],[-.60,-1.18]],variant==='mausoleum'?'#30373a':variant==='vault'?'#282f32':'#343b3e','#151a1d');
+ poly(c,[[.32,-.17],[.62,-.39],[.62,-1.31],[.32,-1.18]],'#171d20','#0b0f11');
+ poly(c,[[-.70,-1.18],[-.15,-1.66],[.43,-1.18]],'#3d4447','#181e21');
+ poly(c,[[-.15,-1.66],[.13,-1.82],[.73,-1.33],[.43,-1.18]],'#1d2428','#0e1316');
  c.beginPath();c.moveTo(-.39,-.17);c.lineTo(-.39,-.67);
  c.quadraticCurveTo(-.39,-.98,-.12,-1.03);c.quadraticCurveTo(.14,-.98,.14,-.67);
- c.lineTo(.14,-.17);c.closePath();c.fillStyle='#1d2a36';c.fill();c.strokeStyle='#a6afb0';c.stroke();
- for(const x of [-.32,-.22,-.12,-.02,.08])stroke(c,[[x,-.77],[x,-.18]],'#596675',.026);
- stroke(c,[[-.38,-.44],[.13,-.44]],'#707d88',.038);
+ c.lineTo(.14,-.17);c.closePath();c.fillStyle='#05090b';c.fill();c.strokeStyle='#535d62';c.stroke();
+ for(const x of [-.32,-.22,-.12,-.02,.08])stroke(c,[[x,-.77],[x,-.18]],'#333c41',.026);
+ stroke(c,[[-.38,-.44],[.13,-.44]],'#444e53',.038);
+ for(const x of [-.53,.26]){poly(c,[[x,-1.13],[x+.07,-1.34],[x+.14,-1.13]],'#596166','#161c1f');stroke(c,[[x+.07,-1.34],[x+.07,-1.49]],'#434c50',.024);}
  c.restore();
 }
 function drawCemeteryObelisk(c,size){
  c.save();c.scale(size,size);c.lineWidth=.018;
- poly(c,[[-.22,-.08],[.22,-.08],[.16,-.24],[-.16,-.24]],'#777b75','#343c3d');
- poly(c,[[-.12,-.24],[.12,-.24],[.09,-1.02],[-.09,-1.02]],'#90938b','#4d5656');
- poly(c,[[-.09,-1.02],[0,-1.34],[.09,-1.02]],'#a9aaa0','#596060');
- stroke(c,[[0,-.91],[0,-.55]],'#c4b991',.026);stroke(c,[[-.09,-.76],[.09,-.76]],'#c4b991',.026);c.restore();
+ poly(c,[[-.22,-.08],[.22,-.08],[.16,-.24],[-.16,-.24]],'#252c2f','#101518');
+ poly(c,[[-.12,-.24],[.12,-.24],[.09,-1.02],[-.09,-1.02]],'#343b3e','#171c20');
+ poly(c,[[.12,-.24],[.19,-.31],[.15,-1.06],[.09,-1.02]],'#171d20','#0b0f11');
+ poly(c,[[-.09,-1.02],[0,-1.34],[.09,-1.02]],'#444c50','#1b2225');
+ stroke(c,[[0,-.91],[0,-.55]],'#7c7157',.026);stroke(c,[[-.09,-.76],[.09,-.76]],'#7c7157',.026);c.restore();
+}
+function drawGothicHeadstone(c,size,seed=0){
+ c.save();c.scale(size,size);const offset=.12,face=[[-.34,-.04],[-.34,-.65],[-.27,-.92],[0,-1.18],[.27,-.92],[.34,-.65],[.34,-.04]];
+ poly(c,face.map(([x,y])=>[x+offset,y-.08]),'#151a1d','#080c0e');
+ const stone=c.createLinearGradient(-.34,-1.1,.34,0);stone.addColorStop(0,'#4c5458');stone.addColorStop(.48,'#30363a');stone.addColorStop(1,'#202629');poly(c,face,stone,'#646d72');
+ poly(c,[[-.34,-.65],[0,-1.18],[.04,-.62]],'#3a4145');poly(c,[[.04,-.62],[0,-1.18],[.34,-.65]],'#272d31');
+ c.fillStyle='#111619';c.beginPath();c.ellipse(-.08,-.78,.055,.065,0,0,Math.PI*2);c.ellipse(.08,-.78,.055,.065,0,0,Math.PI*2);c.fill();
+ poly(c,[[-.04,-.69],[0,-.74],[.04,-.69],[0,-.66]],'#14191c');for(const x of [-.075,-.025,.025,.075])stroke(c,[[x,-.64],[x,-.57]],'#151a1d',.014);
+ stroke(c,[[-.21,-.43],[.19,-.43]],'#71715f',.019);stroke(c,[[-.17,-.35],[.15,-.35]],'#55584f',.014);
+ stroke(c,[[-.23,-.90],[-.14,-.83],[-.20,-.70]],'#171d20',.018);if(seed%2)stroke(c,[[.21,-.56],[.12,-.48],[.18,-.35]],'#151b1e',.016);c.restore();
+}
+function drawHumanRemains(c,size,kind,seed=0){
+ c.save();c.scale(size,size);c.lineCap='round';c.strokeStyle='#b1a88c';c.fillStyle='#a99f82';
+ if(kind==='skull'){
+  c.beginPath();c.ellipse(0,-.18,.18,.15,-.1,0,Math.PI*2);c.fill();poly(c,[[-.12,-.12],[.12,-.12],[.09,.01],[-.08,.02]],'#91886f');
+  c.fillStyle='#262722';for(const x of [-.07,.07]){c.beginPath();c.ellipse(x,-.20,.045,.052,0,0,Math.PI*2);c.fill();}poly(c,[[-.025,-.12],[0,-.16],[.025,-.12]],'#292a24');
+  for(const x of [-.055,-.018,.018,.055])stroke(c,[[x,-.08],[x,-.01]],'#5f5b4e',.012);
+ }else if(kind==='femur'){
+  c.rotate((seed%5-2)*.18);c.lineWidth=.09;stroke(c,[[-.27,-.12],[.27,-.02]],'#b1a88c',.09);for(const [x,y] of [[-.29,-.13],[.30,-.01]]){c.beginPath();c.arc(x,y,.075,0,Math.PI*2);c.fill();}
+ }else{
+  c.lineWidth=.035;stroke(c,[[0,-.34],[0,.02]],'#978f77',.042);for(let i=0;i<5;i++){const y=-.29+i*.065;c.beginPath();c.moveTo(0,y);c.quadraticCurveTo(-.25,y-.08,-.29,y+.05);c.moveTo(0,y);c.quadraticCurveTo(.25,y-.08,.29,y+.05);c.stroke();}
+  poly(c,[[-.20,.02],[0,.10],[.20,.02],[.12,.14],[-.12,.14]],'#928a72');
+ }c.restore();
 }
 
 export function drawCemeteryNightSky(c,w,h,angle,fov){
@@ -129,15 +162,13 @@ export function cemeteryGateInk(u,v){
 
 export function drawCemeteryRemains(c,w,h,d,map,dx,dy,fov,wallDepth){
  const focal=w/(2*Math.tan(fov/2)),objects=cemeteryRemains(d,map).map(p=>{const rx=p.x-d.x,ry=p.y-d.y,depth=rx*dx+ry*dy;return {...p,depth,x:w*.5+(-dy*rx+dx*ry)*focal/depth,y:h*.5+h*.425/depth,size:h*.30/depth};}).filter(p=>p.depth>.5&&p.depth<8&&p.x+p.size>0&&p.x-p.size<w).sort((a,b)=>b.depth-a.depth);
+ if(isOpenAirCemetery(d)){const fog=c.createLinearGradient(0,h*.55,0,h);fog.addColorStop(0,'#9fb2bd00');fog.addColorStop(.62,'#82949d16');fog.addColorStop(1,'#53636b2a');c.fillStyle=fog;c.fillRect(0,h*.55,w,h*.45);}
  for(const p of objects){c.save();c.beginPath();for(let x=Math.max(0,Math.floor(p.x-p.size));x<Math.min(w,p.x+p.size);x+=2)if(p.depth<=wallDepth[x]+.1)c.rect(x,0,2,h);c.clip();c.translate(p.x,p.y);c.globalAlpha=Math.max(.42,1-p.depth*.06);
  c.fillStyle='#050909aa';c.beginPath();c.ellipse(0,0,p.size*.65,p.size*.13,0,0,Math.PI*2);c.fill();
  if(['crypt','mausoleum','vault'].includes(p.kind))drawCemeteryCrypt(c,p.size,p.kind);
  else if(p.kind==='obelisk')drawCemeteryObelisk(c,p.size);
- else if(p.kind==='sarcophagus')drawCemeteryCoffin(c,p.size,true,{stone:true});else{c.scale(p.size,p.size);c.lineWidth=.018;
-  poly(c,[[-.48,-.08],[-.35,-.34],[-.16,-.40],[.04,-.36],[.14,-.16],[.01,-.02]],'#666f63','#989b85');
-  poly(c,[[.03,-.02],[.16,-.18],[.31,-.18],[.43,-.04],[.29,.04]],'#596355','#909580');
-  stroke(c,[[-.29,-.27],[-.04,-.24]],'#353f35',.022);stroke(c,[[-.31,-.21],[-.08,-.19]],'#354034',.015);
-  stroke(c,[[-.16,-.40],[-.20,-.29],[-.12,-.18],[-.18,-.05]],'#2b342d',.016);
-  for(let i=0;i<3;i++)poly(c,[[.1+i*.1,.06],[.14+i*.1,-.01],[.20+i*.1,.06]],'#7a8270');
- }c.restore();}
+ else if(p.kind==='sarcophagus')drawCemeteryCoffin(c,p.size,true,{stone:true});
+ else if(['skull','femur','ribcage'].includes(p.kind))drawHumanRemains(c,p.size*.72,p.kind,p.seed);
+ else drawGothicHeadstone(c,p.size,p.seed);
+ c.restore();}
 }
