@@ -304,6 +304,26 @@ test('beating the personal guards leaves the royal campaign and robbery fine int
   assert.equal(castles.castleFineFor(result, 'bellwether'), 2000);
 });
 
+test('an empowered conqueror takes Bellwether only after defeating the surrendered garrison and twelve throne guards', () => {
+  const s = throneGuardFight();
+  s.flags.redGlobeSworn = true;
+  s.flags.redGlobeCurse = true;
+  s.evilRoute = {version: 1, phase: 'conquering'};
+  s.enemy.hp = 1;
+  s.level = 100;
+  s.rng = 187441;
+  const result = loadGame(saveGame(act(s, {type: 'attack'})));
+  assert.equal(result.mode, 'town');
+  assert.equal(result.location, 'bellwether');
+  assert.equal(result.flags.kingFled, true);
+  assert.equal(result.flags.kingUsurped, true);
+  assert.equal(result.flags.married, true);
+  assert.equal(result.flags.evilMarriage, true);
+  assert.equal(result.flags.castleRoyalGuardsDefeated, true);
+  assert.equal(result.evilRoute.phase, 'percivalChoice');
+  assert.match(result.log.at(-1), /stolen throne|Percival/i);
+});
+
 function governorGuest() {
   const {location, region, x, y, townPosition} = guest('mothbridge');
   return {...createGame(), mode: 'town', location, region, x, y, townPosition, gold: 5000};

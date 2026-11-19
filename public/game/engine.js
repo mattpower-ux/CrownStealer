@@ -4,6 +4,7 @@ import {silverAcornAction,silverTree,validSilverAcorn} from './silver-acorn.js';
 import {redGlobeAction,fulfillRedGlobe,validRedGlobe,cursedByGlobe} from './red-globe.js';
 import {prepareEvilRoute,validateEvilRoute} from './evil-route.js';
 import {evilCreatureDisposition,evilFearStopsTurn} from './evil-disposition.js';
+import {beginEvilTakeover} from './evil-takeover.js';
 import {characterLook} from './character-looks.js';
 import {kerrbearAction,kerrbearStrike} from './kerrbear.js';
 import {GUARDED_SLEEP,campAmbushChance,idleEncounterChance,canCamp} from './wilderness-camp.js';
@@ -387,7 +388,7 @@ export function visibleDungeonGuardian(s){
 
 export const xpForNextLevel=s=>s.level*50;
 const STARTER_WEAPONS=['sword','mace','spear','axe'].flatMap(family=>['common-'+family+'-1','common-'+family+'-1-v1']);
-function victory(s,events=[]){delete s.weaponCoating;s.spellEffects.stunnedTurns=0;const e=s.enemy;if(e.kerrbear)s.flags.kerrbearDefeated=true;if(e.androsWild)s.flags.andros=0;if(finishDruidEnemy(s,note)){
+function victory(s,events=[]){delete s.weaponCoating;s.spellEffects.stunnedTurns=0;const e=s.enemy;if(beginEvilTakeover(s,e,note))return;if(e.kerrbear)s.flags.kerrbearDefeated=true;if(e.androsWild)s.flags.andros=0;if(finishDruidEnemy(s,note)){
  s.xp+=e.xp;
  s.flags.victories++;
  while(s.xp>=xpForNextLevel(s)){s.xp-=xpForNextLevel(s);s.level++;s.maxHp+=14;s.hp=Math.min(s.maxHp,s.hp+30);note(s,'Level '+s.level+'.');}
