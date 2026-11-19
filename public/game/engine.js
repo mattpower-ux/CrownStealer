@@ -2,6 +2,7 @@ import {shipyardProfile} from './shipyard-view.js';
 import {triggerKoboldSnare,koboldSnareAction,validKoboldSnare} from './kobold-snare.js';
 import {silverAcornAction,silverTree,validSilverAcorn} from './silver-acorn.js';
 import {redGlobeAction,fulfillRedGlobe,validRedGlobe,cursedByGlobe} from './red-globe.js';
+import {prepareEvilRoute,validateEvilRoute} from './evil-route.js';
 import {characterLook} from './character-looks.js';
 import {kerrbearAction,kerrbearStrike} from './kerrbear.js';
 import {GUARDED_SLEEP,campAmbushChance,idleEncounterChance,canCamp} from './wilderness-camp.js';
@@ -551,6 +552,7 @@ export function act(input,action,events=[],previewRules={}){
  return s;
 }
 function actInner(input,action,events=[]){
+ input=prepareEvilRoute(structuredClone(input));
  const s=structuredClone(input);migrateRangedGear(s);prepareWands(s);prepareAttributes(s);prepareClock(s);prepareLeprosy(s);finishGuardConsultation(s,note,events);const a={...(action||{})};if(koboldSnareAction(s,a,note,()=>rand(s),events,itemById)){if(s.hp<=0){delete s.flags.koboldSnare;recover(s,events);}return s;}if(silverAcornAction(s,a,note)||redGlobeAction(s,a,note)||rolandAction(s,a,note,percivalCastleSite)||peeblesAction(s,a,note)||kerrbearAction(s,a,note))return s;if(a.id===AVENGER_SWORD&&['equip','switchCombatWeapon'].includes(a.type)&&!isPaladin(s)){note(s,'Only a sworn Paladin can wield the Sword of the Avenger.');return s;}if(isDungeonCombat(s)&&a.type==='attack'&&battlefieldDistance(s)>weaponReach(itemById(s.equipped,s))){note(s,'The enemy is out of melee reach. Use a bow or wand, or close the distance.');return s;}if(isDungeonCombat(s)&&['equipMagic','unequipMagic'].includes(a.type)){note(s,'Changing combat weapons takes one round. Use Switch weapon.');return s;}const wizardResult=wizardAction(s,a,note,itemById,{canTeleport:a.type!=='wizardTeleport'||TOWNS.some(t=>t.region===s.region&&t.id!=='bellwether'&&!s.flags['palaceBan:'+t.id]&&!castleFineFor(s,t.id)&&!cityOf(s,t.id)?.destroyed)});if(wizardResult==='teleport'){s.bag.push('scroll-return');a.type='useItem';a.id='scroll-return';}else if(wizardResult)return s;if(handlePaladinOath(s,a,note,itemById)||paladinOathBlocks(s,a,note,itemById))return s;if(a.type==='acknowledgeArenaRetreat'){delete s.flags.arenaRetreatNotice;return s;}if(arenaAction(s,a,note,itemById))return s;if(a.type==='lightCemeteryTorch'){const torch=s.dungeon?lightNearestCemeteryTorch(s,dungeonMap(s.dungeon)):null;if(torch)note(s,s.bag.filter(id=>id==='torch').length+' Torches Left');else if(!s.bag.includes('torch'))note(s,'0 Torches Left. Find more torches or purchase them from a merchant.');return s;}if(a.type==='equipMagic'){const item=itemById(a.id,s);if(isMagicEquipment(item)&&s.bag.includes(a.id)&&!(item.kind==='scroll'&&effectiveLevel(s)<item.minLevel)){s.equippedMagic=a.id;note(s,'Magic equipped: '+item.name+'.');}else note(s,'Choose a usable magic item from your bag.');return s;}if(a.type==='unequipMagic'){s.equippedMagic=null;return s;}if(a.type==='useMagic'){if(!s.equippedMagic||!s.bag.includes(s.equippedMagic)){s.equippedMagic=null;note(s,'Equip a magic item in your inventory first.');return s;}a.type='useItem';a.id=s.equippedMagic;}if(a.type==='useItem'&&a.id===GUARDED_SLEEP.id){if(!canCamp(s)||!s.bag.includes(a.id)){note(s,'Read Guarded Sleep while traveling in the wilderness.');return s;}if(s.flags.guardedSleep){note(s,'Your next camp is already guarded.');return s;}s.bag.splice(s.bag.indexOf(a.id),1);if(s.equippedMagic===a.id)s.equippedMagic=null;s.flags.guardedSleep=true;note(s,'A quiet ward will guard your next night’s sleep.');return s;}
 if(a.type==='setCamp'){if(!canCamp(s))return s;const ambush=!s.previewRules?.noEncounters&&rand(s)<campAmbushChance(s);delete s.flags.guardedSleep;s.turns++;advanceClock(s,8*HOUR_MS/48);if(ambush){s.enemy=nightEnemy(s,buildEncounter(s,rand(s)));s.returnMode='world';s.mode='battle';s.flags.guarded=false;s.flags.combo=0;note(s,'Ambushed while sleeping! You regain no health.');}else{s.hp=s.maxHp;s.wildernessHealProgress=0;note(s,'You sleep through the night and wake fully healed.');}return s;}
 if(a.type==='fish'){
@@ -1166,6 +1168,7 @@ function migrateWildernessTerrain(s){
 }
 export function loadGame(json){
  let s=JSON.parse(json);if(!s||s.version!==1||typeof s.name!=='string'||s.name.length>24)throw Error('This is not a valid Bar the Gates save.');
+ prepareEvilRoute(s);
  if(!validSageState(s))throw Error('Invalid Sage challenge.');s=sageSave(s);
  migrateRoyalCampaign(s);
  if(!s.torchSupplyVersion&&Array.isArray(s.bag)){s.bag.push(...Array(20).fill('torch'));s.torchSupplyVersion=1;}
@@ -1200,6 +1203,7 @@ export function loadGame(json){
  if(s.flags.andros!==undefined&&(!Number.isInteger(s.flags.andros)||s.flags.andros<0||s.flags.andros>BATTLE_BEAR_HP))throw Error('Invalid Andros health.');
  if(!validKoboldSnare(s))throw Error('Invalid kobold snare state.');
  if(!validSilverAcorn(s))throw Error('Invalid silver acorn state.');
+ if(!validateEvilRoute(s))throw Error('Invalid evil route state.');
  if(!validRedGlobe(s))throw Error('Invalid red globe curse.');
  if(!validShrineState(s))throw Error('Invalid shrine state.');
  if(!validBridgeTrollState(s))throw Error('Invalid bridge troll.');
