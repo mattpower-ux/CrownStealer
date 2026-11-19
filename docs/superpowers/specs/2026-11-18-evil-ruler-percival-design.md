@@ -144,7 +144,9 @@ The implementation source is `C:\Users\mattp\Downloads\Rebuild_the_Dawn_2026-11-
 
 ### Player Wins
 
-The sky darkens, the people cower, and the player looks upward and laughs: “My reign of terror has just begun!” The route enters `darkVictory`, records a permanent final ending, and offers the same new-game/ending controls as other terminal endings. Percival cannot respawn and the outcome cannot be converted into an exile continuation.
+The sky darkens, the people cower, and the player looks upward and laughs: “My reign of terror has just begun!” The supplied “Sky of Ruin” track begins and continues through this ending. After the final narration, the screen becomes fully black and displays only `It is finished` in centered white letters while the music continues. When the track reaches its natural end, the game returns automatically to the title/save-slot screen. The completed save is retained and marked with the `darkVictory` ending; returning to the title does not erase or overwrite it.
+
+The implementation source is `C:\Users\mattp\Downloads\Sky_of_Ruin_2026-11-19T020753.mp3` (15.047 seconds, 378,053 bytes). Implementation creates an optimized web copy and leaves the supplied original untouched. This presentation belongs only to the optional evil-player victory ending. Other game endings retain their existing music, controls, and continuation behavior. Percival cannot respawn, and the dark-victory outcome cannot be converted into an exile continuation.
 
 ## UI and Accessibility
 
@@ -153,6 +155,7 @@ The sky darkens, the people cower, and the player looks upward and laughs: “My
 - The throne choice buttons are keyboard and touch accessible and cannot be triggered accidentally by combat hotkeys.
 - Dialogue, impact, fear, regeneration, and ending messages appear as text as well as sound.
 - The transformation layers must scale with all selectable character looks without skewing the underlying portrait or sprite.
+- The `It is finished` screen is a semantic ending status, remains readable when audio is muted, and returns to the title immediately through an explicit Continue control if the browser prevents reliable media-ended delivery. Automatic return remains the normal path.
 
 ## Testing
 
@@ -177,6 +180,7 @@ Use red-green TDD for each behavior. Required automated coverage includes:
 - browser tests for transformation visuals, throne illustration, dialogue, both choices, combat messages, sound sequencing, responsive layout, and reload recovery.
 - audio tests confirming “Blade of Light” begins after the ceiling crash, does not restart when combat begins, loops during the confrontation, respects music volume/mute controls, and stops on every outcome;
 - audio tests confirming “Rebuild the Dawn” crossfades only after Percival defeats the player, continues through the defeat epilogue and exile transition, respects music volume/mute controls, and does not play for voluntary retreat or dark victory.
+- audio and browser tests confirming “Sky of Ruin” plays only for `darkVictory`, continues over the black `It is finished` screen, returns to the title when the track ends, respects music volume/mute controls, and preserves the completed save.
 
 ## Delivery
 
