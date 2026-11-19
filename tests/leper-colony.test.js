@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {createGame,act,pointAt,saveGame,loadGame} from '../public/game/engine.js';
 import {WILD_SITES} from '../public/game/wild-sites.js';
 import {effectiveAttributes} from '../public/game/attributes.js';
+import {percivalLeprosyConstitutionLoss} from '../public/game/percival-reckoning.js';
 import {DAY_MS} from '../public/game/world-clock.js';
 function colony(){const s=createGame();Object.assign(s,{x:28,y:28,hp:1,gold:20});return s;}
 test('one Leper Colony near Mothbridge is enterable without becoming a dungeon',()=>{const sites=WILD_SITES.filter(p=>p.id==='leper-colony');assert.equal(sites.length,1);const s=colony();assert.equal(pointAt(s)?.id,'leper-colony');const next=act(s,{type:'enter'});assert.equal(next.mode,'world');assert.match(next.log.at(-1),/priest/i);});
@@ -38,4 +39,11 @@ test('legacy infection starts a saved clock and game time advances the weekly lo
  let s=colony();s.flags.leprosy=true;s=loadGame(saveGame(s));assert.equal(s.flags.leprosySince,s.worldTimeMs);
  s.worldTimeMs+=7*DAY_MS-48000;s=act(s,{type:'clockTick',elapsedMs:1000});assert.equal(effectiveAttributes(s).charisma,9);
  for(const value of [-1,Infinity,s.worldTimeMs+1]){s.flags.leprosySince=value;assert.throws(()=>loadGame(saveGame(s)),/leprosy onset/);}
+});
+test('Percival defeat leprosy drains Constitution weekly to one and the White Wizard restores it',()=>{
+ let s=colony();s.attributes.constitution=4;s.flags.leprosy=true;s.flags.leprosyKind='percival';s.flags.leprosySince=s.worldTimeMs;
+ s.worldTimeMs+=3*7*DAY_MS;assert.equal(percivalLeprosyConstitutionLoss(s),3);assert.equal(effectiveAttributes(s).constitution,1);
+ s.worldTimeMs+=20*7*DAY_MS;assert.equal(effectiveAttributes(s).constitution,1);
+ s.mode='dungeon';s.dungeon={site:'twinklestar-tower',index:6,floor:8,x:13,y:13,dir:0};s.flags.twinklestarGuardianDefeated=true;s.gold=5000;
+ s=act(s,{type:'cureLeprosy'});assert.equal(s.flags.leprosyKind,undefined);assert.equal(effectiveAttributes(s).constitution,4);
 });

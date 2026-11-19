@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {clampAtlasZoom,atlasView} from '../public/game/atlas-view.js';
+import {ATLAS_RENDER_SCALE,clampAtlasZoom,atlasView} from '../public/game/atlas-view.js';
 
 test('world atlas exposes bounded zoom controls',()=>{
  assert.equal(clampAtlasZoom(.1),.75);
@@ -10,4 +10,5 @@ test('world atlas exposes bounded zoom controls',()=>{
  assert.match(html,/data-atlas-zoom="out"/);
  assert.match(html,/data-atlas-zoom="in"/);
  assert.match(html,/data-atlas-zoom="fit"/);
+ assert.equal(ATLAS_RENDER_SCALE,3,'the backing canvas should retain detail at the maximum zoom');
 });

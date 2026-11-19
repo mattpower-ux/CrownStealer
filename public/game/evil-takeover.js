@@ -1,6 +1,15 @@
 import {evilEmpowered} from './evil-route.js';
 
 export function beginEvilTakeover(state, defeated, note) {
+  if (defeated?.percivalReckoning) {
+    state.enemy = null;
+    state.evilRoute = {version: 1, phase: 'darkVictory'};
+    state.mode = state.returnMode = 'ending';
+    state.ending = 'dark-victory';
+    state.flags.percivalDarkVictory = true;
+    note(state, 'The sky darkens. The people cower. “My reign of terror has just begun!”');
+    return true;
+  }
   if (!evilEmpowered(state) || state.location !== 'bellwether'
     || !state.flags?.['garrison:0'] || defeated?.castleRoyalDefense !== 'king'
     || defeated.groupSize !== 12) return false;

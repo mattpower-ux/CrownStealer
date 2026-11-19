@@ -11,6 +11,10 @@ import {enterRoadsideCrypt} from '../public/game/roadside-crypt.js';
 import {PUTRID_PALACE} from '../public/game/royal-trials.js';
 
 function enterSite(predicate,branch=false){let s=createGame();if(branch)s.exploration={area:'wild-0',artifacts:[],home:{region:0,x:64,y:4}};const site=minorSiteList(s).find(predicate);assert.ok(site);Object.assign(s,{x:site.x,y:site.y});assert.equal(pointAt(s).kind,'minorSite');s=act(s,{type:'enter'});return {s,site};}
+test('entering a kobold lair immediately announces its wet-dog smell',()=>{
+ const {s}=enterSite(site=>site.minorKind==='koboldCave'&&!site.occupant);
+ assert.equal(s.log.at(-1),'It smells like wet dog in here.');
+});
 test('unmarked sites enter, save and return to the same spot in main and branch wilderness',()=>{
  for(const branch of [false,true]){
   let {s,site}=enterSite(p=>p.minorKind==='koboldCave',branch);

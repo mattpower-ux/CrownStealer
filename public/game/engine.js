@@ -3,6 +3,7 @@ import {triggerKoboldSnare,koboldSnareAction,validKoboldSnare} from './kobold-sn
 import {silverAcornAction,silverTree,validSilverAcorn} from './silver-acorn.js';
 import {redGlobeAction,fulfillRedGlobe,validRedGlobe,cursedByGlobe} from './red-globe.js';
 import {prepareEvilRoute,validateEvilRoute} from './evil-route.js';
+import {exileEvilRuler,resolvePercivalRound,startPercivalFight} from './percival-reckoning.js';
 import {evilCreatureDisposition,evilFearStopsTurn} from './evil-disposition.js';
 import {beginEvilTakeover} from './evil-takeover.js';
 import {characterLook} from './character-looks.js';
@@ -72,6 +73,7 @@ import {WILD_SITES,gameDay,forestMap,mountainTile} from './wild-sites.js';
 import {TREASURE_ITEMS,dungeonChests,dungeonMonsterLoot,gearKey,equipmentKeys,equippedAccessories,gearPower,hash,random} from './treasure.js';
 import {ROYAL_INTRO,ROYAL_ENDINGS,royalObjective,royalCell,hasRoyalAdmission} from './royal-story.js';
 import {buildEncounter} from './encounters.js';
+import {demonWeaponMultiplier,truthArrowStrike,truthBurnDamage} from './whispering-barrens.js';
 import {casinoAction,validCasino} from './casino.js';
 import {townWalkable,townPosition,townPlace,townExitAt} from './town.js';
 import {isPebbleRun,PEBBLE_RUN_ID,peeblesAction,peeblesTravelsWith} from './peebles.js';
@@ -262,7 +264,7 @@ function vampireBite(s){
   note(s,`${e.name} drains one level. It returns after 30 game minutes without another drain.`);
  }
 }
-function enemyTurn(s,defending=false,events=[],multiplier=1,keepCoating=false){if(!s.enemy)return;if(deferDungeonEnemyTurn(s,defending,events,multiplier,keepCoating))return;if(evilFearStopsTurn(s,s.enemy,()=>rand(s))){const message=s.enemy.name+' recoils from your infernal presence and loses the round.';note(s,message);events.push({kind:'fear',target:'enemy',amount:0,sound:'miss',message});return;}if(beansBlocksEnemy(s)){note(s,'The gas drives the living enemy back.');return;}if(!keepCoating&&spendPoisonRound(s))note(s,'Your weapon poison wears off.');if(s.enemy.surprised){delete s.enemy.surprised;note(s,s.enemy.name+' is caught off guard and misses its turn.');return;}if(dragonSupport(s,events)&&s.enemy.hp<=0){events.push({kind:'victory',target:'enemy',amount:0,sound:'victory'});victory(s,events);return;}if(s.flags.clockStopped>0){s.flags.clockStopped--;note(s,'The clock holds your enemy outside time.');return;}if(s.previewRules?.invulnerable){
+function enemyTurn(s,defending=false,events=[],multiplier=1,keepCoating=false){if(!s.enemy)return;if(s.enemy.truthBurn){const burn=truthBurnDamage(()=>rand(s));s.enemy.hp-=burn;note(s,'Truth-fire burns '+s.enemy.name+' for '+burn+' damage.');events.push({kind:'magic',target:'enemy',amount:burn,sound:'fire-whoosh'});if(s.enemy.hp<=0){events.push({kind:'victory',target:'enemy',amount:0,sound:'victory'});victory(s,events);return;}}if(deferDungeonEnemyTurn(s,defending,events,multiplier,keepCoating))return;if(evilFearStopsTurn(s,s.enemy,()=>rand(s))){const message=s.enemy.name+' recoils from your infernal presence and loses the round.';note(s,message);events.push({kind:'fear',target:'enemy',amount:0,sound:'miss',message});return;}if(beansBlocksEnemy(s)){note(s,'The gas drives the living enemy back.');return;}if(!keepCoating&&spendPoisonRound(s))note(s,'Your weapon poison wears off.');if(s.enemy.surprised){delete s.enemy.surprised;note(s,s.enemy.name+' is caught off guard and misses its turn.');return;}if(dragonSupport(s,events)&&s.enemy.hp<=0){events.push({kind:'victory',target:'enemy',amount:0,sound:'victory'});victory(s,events);return;}if(s.flags.clockStopped>0){s.flags.clockStopped--;note(s,'The clock holds your enemy outside time.');return;}if(s.previewRules?.invulnerable){
  const protectedTurn=structuredClone(s),feedback=[];
  protectedTurn.hp=protectedTurn.maxHp=Number.MAX_SAFE_INTEGER;
  resolveEnemyAttack(protectedTurn,defending,feedback,multiplier);
@@ -428,6 +430,18 @@ function victory(s,events=[]){delete s.weaponCoating;s.spellEffects.stunnedTurns
  if(!s.flags.wangDefeated){s.flags.wangDefeated=true;s.bag.push('wang-sceptre');s.pendingLoot.unshift('wang-sceptre');note(s,'You recover Wang’s sceptre.');}
  }else if(e.boss&&s.dungeon?.expedition){s.flags['expedition:'+s.dungeon.expedition]=true;const id=bossRelic[e.speciesId]||'alien-'+s.dungeon.expedition.split('-')[1]+'-'+s.dungeon.expedition.split('-').at(-1);if(planet){const gems=Object.values(TREASURE_ITEMS).filter(i=>i.kind==='gem');if(gems.length){const gem=gems[Math.floor(rand(s)*gems.length)].id;s.bag.push(gem);s.pendingLoot.push(gem);}}if(s.dungeon.expedition.startsWith('planet-')&&TREASURE_ITEMS[id]){s.bag.push(id);s.pendingLoot.push(id);}}else if(e.boss&&e.speciesId!=='drake-defiler')s.flags['boss:'+s.dungeon.index]=true;if(e.guard){if(e.gateGuard){s.flags.gateAttemptWins=(s.flags.gateAttemptWins||0)+1;note(s,'Border guards defeated: '+s.flags.gateAttemptWins+'/3.');if(s.flags.gateAttemptWins===3){s.flags['gateChallengeWon:'+e.gateGuard]=true;delete s.flags.gateAttemptWins;delete s.flags.gateAttemptId;note(s,'All three guards yield. The border still requires both relics from this land.');}}else if(e.gossipGuard){note(s,'The square falls silent. This bully will collect no more gossip fees.');}else if(e.tributeTown){const city=cityOf(s,e.tributeTown);if(city){city.guards++;if(city.guards>=2){note(s,'Both tax guards are defeated, but the King’s fire threat remains. Send 1,000 gold through Giacomo before the deadline to guarantee the town’s safety.');}else note(s,'One tax guard remains. Return to Town Hall to challenge him.');}}else if(s.location==='bellwether'){s.flags.royalGuardWins=(s.flags.royalGuardWins||0)+1;note(s,'Royal guards defeated: '+s.flags.royalGuardWins+'/20.');if(s.flags.royalGuardWins>=20){s.flags['townGarrison:bellwether']=true;s.flags['garrison:0']=true;note(s,'The royal garrison surrenders.');advanceRoyalAudience(s);}}else if(s.location){const key='palaceWins:'+s.location;s.flags[key]=(s.flags[key]||0)+1;note(s,'Palace guards defeated: '+s.flags[key]+'/5.');if(s.flags[key]>=5){s.flags['townGarrison:'+s.location]=true;note(s,'The governor’s palace is yours. Demand the city key from the mayor.');}}s.wanted[s.region]=Math.max(0,s.wanted[s.region]-1);s.reputation-=3;}note(s,`${e.name} is defeated. You find ${e.gold} gold.`);s.mode=s.returnMode;s.enemy=null;while(s.xp>=xpForNextLevel(s)){s.xp-=xpForNextLevel(s);s.level++;s.maxHp+=14;s.hp=Math.min(s.maxHp,s.hp+30);note(s,`Level ${s.level}. Rumors of your competence are becoming difficult to deny.`);}if(e.gateGuard&&s.flags.gateAttemptId===e.gateGuard)startGateGuard(s,e.gateGuard);if(e.castleRobbery)castleGuardResponse(s,{startGuard:startCastleGuard,events});else if(e.guard&&!e.tributeTown&&!e.gossipGuard&&!e.gateGuard&&s.location&&s.location!=='bellwether'&&!s.flags['townGarrison:'+s.location]&&(e.guardChallenge||!guardsFear(s))){encounter(s,false,true,!!e.guardChallenge);s.enemy.name='Palace Guard '+((s.flags['palaceWins:'+s.location]||0)+1)+' of 5';}}
 export function act(input,action,events=[],previewRules={}){
+ if(action?.type==='percivalFight'){
+  const s=structuredClone(input);startPercivalFight(s,note);return s;
+ }
+ if(action?.type==='percivalRun'){
+  const s=structuredClone(input);exileEvilRuler(s,'run',note);return s;
+ }
+ if(action?.type==='acknowledgePercivalDefeat'){
+  const s=structuredClone(input);delete s.flags.percivalDefeatEpilogue;return s;
+ }
+ if(input.enemy?.percivalReckoning&&['attack','guard','useItem','useMagic','advanceCombat','retreat'].includes(action?.type)){
+  input=structuredClone(input);resolvePercivalRound(input,events,note);
+ }
  if(action?.type==='changeFace'){
   if(faceChangeBlocked(input)){const s=structuredClone(input);note(s,FACE_CHANGE_REFUSAL);return s;}
   return characterCameo(action.id)?{...input,cameo:action.id}:input;
@@ -801,7 +815,9 @@ if(a.type==='acknowledgeDragon'){delete s.flags.dragonGreeting;delete s.flags.dr
   const site=pointAt(s);s.dungeon={site:'minor-site',minorId:site.id,index:site.index,floor:0,x:1,y:1,dir:2,ladderLayout:1,...(site.other?{tunnelExit:{...site.other}}:{})};
   s.mode=s.returnMode='dungeon';s.location=site.id;s.dungeon.dir=openDungeonDirection(s.dungeon);note(s,site.occupant==='wyrm'
    ?'You enter '+site.name+'. Gnawed coal and lava rock litter the floor alongside an adventurer’s scorched pack.'
-   :'You explore '+site.name+'. '+site.floors+' level'+(site.floors===1?'':'s')+' lie within.');return s;
+   :'You explore '+site.name+'. '+site.floors+' level'+(site.floors===1?'':'s')+' lie within.');
+  if(site.minorKind==='koboldCave'&&!site.occupant)note(s,'It smells like wet dog in here.');
+  return s;
  }
  if(explorationAction(s,a,{note,encounter,clock,pointAt,briarQuietStep,random:()=>rand(s),championChallenge:tryChampionChallenge,bridgeStep:(s,previous)=>!dragonFlying(s)&&maybeBridgeTroll(s,previous,(x,y)=>areaTile(s,x,y),note)}))return s;
  if(a.type==='attackBorderGuards'){const gate=pointAt(s);if(s.mode!=='world'||!s.flags.borderTauntPending||!gate||!['gate','branchGate'].includes(gate.kind)||s.flags['gateAccess:'+gate.id]||s.flags['gateChallengeWon:'+gate.id]||s.flags.royalHero)return s;delete s.flags.borderTauntPending;s.flags.gateAttemptWins=0;s.flags.gateAttemptId=gate.id;startGateGuard(s,gate.id);return s;}
@@ -817,14 +833,44 @@ if(a.type==='acknowledgeDragon'){delete s.flags.dragonGreeting;delete s.flags.dr
   return s;
  }
  if(a.type==='rummageChest'&&s.mode==='dungeon'){const chest=dungeonChests(s,dungeonMap(s.dungeon)).find(c=>c.x===s.dungeon.x&&c.y===s.dungeon.y&&c.opened);if(!chest||s.dungeon.site==='minor-site'&&!minorSiteDefinition(s.dungeon.minorId)?.treasure||s.openedChests.indexOf(chest.id)>=(s.flags.chestVisitStart??s.openedChests.length)||s.flags['missedCoins:'+chest.id])return s;const coins=1+Math.floor(rand(s)*2);s.flags['missedCoins:'+chest.id]=true;s.gold+=coins;note(s,'Someone was here before you. They missed a few coins.');return s;}
- if(a.type==='openChest'&&s.mode==='dungeon'){const chest=dungeonChests(s,dungeonMap(s.dungeon)).find(c=>c.x===s.dungeon.x&&c.y===s.dungeon.y&&!c.opened);if(!chest){note(s,'Stand on an unopened '+(isCemeteryDungeon(s.dungeon)?'coffin':'chest')+' to search it.');return s;}if(!s.previewRules?.noEncounters&&(sewerGuardian(s)||roadsideGuardian(s)||minorGuardianAt(s)||startMinorResident(s,'theft',note)))return s;s.openedChests??=[];s.openedChests.push(chest.id);if(chest.trap){
-  const chance=Math.min(.95,effectiveAttributes(s,itemById).dexterity/100+rareGearEffect(s,'disarmBonus'));
-  if(rand(s)<chance)note(s,'You find and disarm a hidden trap before opening the chest.');
-  else{const damage=5+s.region*5+Math.floor(rand(s)*11);s.hp=Math.max(0,s.hp-damage);note(s,'A hidden trap springs! You take '+damage+' damage.');if(!s.hp){recover(s,events);return s;}}
- }const loot=[...(chest.items||[chest.item].filter(Boolean))];if(hash(chest.id+':torches')%3===0)loot.push('torch','torch','torch');s.bag.push(...loot);s.pendingLoot.push(...loot);s.gold+=chest.gold;if(chest.id===DRAGONSTONE_CHEST_ID)note(s,'You recover the Dragonstone from the lowest level of Mount Firedrake.');else note(s,`${isCemeteryDungeon(s.dungeon)?'Coffin':'Chest'} opened: ${[...loot.map(id=>itemById(id).name),chest.gold+' gold'].join(' and ')}.`);return s;}
+ const openDungeonChest=chest=>{
+  if(!chest||chest.opened)return false;
+  if(!s.previewRules?.noEncounters&&(sewerGuardian(s)||roadsideGuardian(s)||minorGuardianAt(s)||startMinorResident(s,'theft',note)))return true;
+  s.openedChests??=[];s.openedChests.push(chest.id);delete s.flags.pendingChestLock;
+  if(chest.trap){
+   const chance=Math.min(.95,effectiveAttributes(s,itemById).dexterity/100+rareGearEffect(s,'disarmBonus'));
+   if(rand(s)<chance)note(s,'You find and disarm a hidden trap before opening the chest.');
+   else{const damage=5+s.region*5+Math.floor(rand(s)*11);s.hp=Math.max(0,s.hp-damage);note(s,'A hidden trap springs! You take '+damage+' damage.');if(!s.hp){recover(s,events);return true;}}
+  }
+  const loot=[...(chest.items||[chest.item].filter(Boolean))];if(hash(chest.id+':torches')%3===0)loot.push('torch','torch','torch');s.bag.push(...loot);s.pendingLoot.push(...loot);if(loot.includes('arrows-of-truth')&&s.flags.truthArrows===undefined)s.flags.truthArrows=12;s.gold+=chest.gold;if(chest.id===DRAGONSTONE_CHEST_ID)note(s,'You recover the Dragonstone from the lowest level of Mount Firedrake.');else note(s,`${isCemeteryDungeon(s.dungeon)?'Coffin':'Chest'} opened: ${[...loot.map(id=>itemById(id).name),chest.gold+' gold'].join(' and ')}.`);return true;
+ };
+ const chestInView=id=>{
+  const map=dungeonMap(s.dungeon),chest=dungeonChests(s,map).find(c=>c.id===id&&!c.opened);if(!chest)return null;
+  const [dx,dy]=DIRS[s.dungeon.dir],rx=chest.x-s.dungeon.x,ry=chest.y-s.dungeon.y,depth=rx*dx+ry*dy,side=-rx*dy+ry*dx;
+  if(rx===0&&ry===0)return chest;
+  if(depth<=0||depth>12||Math.abs(side/depth)>.65)return null;
+  const distance=Math.hypot(rx,ry);for(let t=.1;t<distance;t+=.12)if(map[Math.floor(s.dungeon.y+.5+ry*t/distance)]?.[Math.floor(s.dungeon.x+.5+rx*t/distance)]===1)return null;
+  return chest;
+ };
+ if(a.type==='inspectChest'&&s.mode==='dungeon'){
+  const chest=chestInView(a.id);if(!chest)return s;
+  if(chest.locked&&!s.flags['chestUnlocked:'+chest.id]){s.flags.pendingChestLock=chest.id;note(s,'The chest is locked. PICK LOCK?');return s;}
+  openDungeonChest(chest);return s;
+ }
+ if(a.type==='pickChestLock'&&s.mode==='dungeon'){
+  const id=s.flags.pendingChestLock;if(!id||a.id&&a.id!==id)return s;const chest=chestInView(id);if(!chest){delete s.flags.pendingChestLock;return s;}
+  const chance=Math.min(.9,.25+effectiveAttributes(s,itemById).dexterity/150+rareGearEffect(s,'disarmBonus'));
+  if(rand(s)<chance){s.flags['chestUnlocked:'+id]=true;note(s,'The lock clicks open.');openDungeonChest(chest);return s;}
+  const damage=2+s.region*2+Math.floor((s.dungeon.floor||0)/3)+Math.floor(rand(s)*5);s.hp=Math.max(0,s.hp-damage);
+  if(rand(s)<.5){delete s.flags.pendingChestLock;note(s,'A lock trap springs! You take '+damage+' damage. The chest remains locked.');}
+  else{s.openedChests??=[];s.openedChests.push(id);s.flags['chestDestroyed:'+id]=true;delete s.flags.pendingChestLock;note(s,'The chest explodes! You take '+damage+' damage, and everything inside is destroyed.');}
+  if(!s.hp)recover(s,events);return s;
+ }
+ if(a.type==='cancelChestLock'){delete s.flags.pendingChestLock;return s;}
+ if(a.type==='openChest'&&s.mode==='dungeon'){const chest=dungeonChests(s,dungeonMap(s.dungeon)).find(c=>c.x===s.dungeon.x&&c.y===s.dungeon.y&&!c.opened);if(!chest){note(s,'Stand on an unopened '+(isCemeteryDungeon(s.dungeon)?'coffin':'chest')+' to search it.');return s;}openDungeonChest(chest);return s;}
  if(a.type==='eat'){if(s.meals<1||s.mode==='ending')return s;s.meals--;s.buffs??={};s.buffs.meal=6;setTimedBuff(s,'meal',30);note(s,'A hearty meal grants +4 damage for 30 game minutes. Eating again refreshes the effect.');if(s.mode==='battle')enemyTurn(s,false,events);return s;}
  if(a.type==='pepper'){if(s.mode!=='battle'||s.enemy.speciesId!=='haghilda'||s.enemy.peppered||!s.bag.includes('holy-pepper-grenade'))return s;s.bag.splice(s.bag.indexOf('holy-pepper-grenade'),1);s.pendingLoot=s.pendingLoot.filter(id=>id!=='holy-pepper-grenade');s.enemy.peppered=true;s.enemy.firstContact=false;note(s,'The Holy Pepper Grenade bursts! Haghilda sneezes violently. Her toxic snot damage is reduced by 50% for this battle.');events.push({kind:'magic',target:'enemy',amount:0,sound:'magic'});enemyTurn(s,false,events);return s;}
- if(a.type==='useItem'&&['scroll-vomit','scroll-find-secrets'].includes(a.id)){const i=s.bag.indexOf(a.id);if(i<0||s.mode==='ending'||s.flags.royalQuest==='opening')return s;if(a.id==='scroll-find-secrets'){if(s.mode!=='dungeon'){note(s,'Read this scroll while exploring a dungeon.');return s;}const room=secretAlcove(s.dungeon,dungeonMap(s.dungeon));if(!room||s.dungeon.secretRoom){note(s,'No undiscovered secret doors on this level. You keep the scroll.');return s;}revealSecretRoom(s,room);note(s,'A secret door swings open! A hidden potion alcove is revealed at ('+room.x+', '+room.y+').');}else{s.hp=Math.max(0,s.hp-20);s.flags.poisoned=false;s.buffs.poison=0;events.push({kind:'hit',target:'hero',amount:20,hpAfter:s.hp,sound:'vomit'});note(s,'You vomit spectacularly. You lose 20 health, but the poison is purged.');}s.bag.splice(i,1);s.pendingLoot=s.pendingLoot.filter(id=>id!==a.id||s.bag.includes(id));if(s.hp<=0)recover(s,events);else if(s.mode==='battle')enemyTurn(s,false,events);return s;}
+  if(a.type==='useItem'&&['scroll-vomit','scroll-find-secrets'].includes(a.id)){const i=s.bag.indexOf(a.id);if(i<0||s.mode==='ending'||s.flags.royalQuest==='opening')return s;if(a.id==='scroll-find-secrets'){if(s.mode!=='dungeon'){note(s,'Read this scroll while exploring a dungeon.');return s;}const room=secretAlcove(s.dungeon,dungeonMap(s.dungeon),{state:s});if(!room||s.dungeon.secretRoom){note(s,'No undiscovered secret doors on this level. You keep the scroll.');return s;}revealSecretRoom(s,room);note(s,'A secret door swings open! A hidden potion alcove is revealed at ('+room.x+', '+room.y+').');}else{s.hp=Math.max(0,s.hp-20);s.flags.poisoned=false;s.buffs.poison=0;events.push({kind:'hit',target:'hero',amount:20,hpAfter:s.hp,sound:'vomit'});note(s,'You vomit spectacularly. You lose 20 health, but the poison is purged.');}s.bag.splice(i,1);s.pendingLoot=s.pendingLoot.filter(id=>id!==a.id||s.bag.includes(id));if(s.hp<=0)recover(s,events);else if(s.mode==='battle')enemyTurn(s,false,events);return s;}
  if(a.type==='useItem'&&a.id==='scroll-return'){if(s.exploration?.area?.startsWith('planet-')||s.dungeon?.ship){note(s,'This scroll cannot cross space. Find a planetary teleporter or P-Hopper.');return s;}const i=s.bag.indexOf(a.id);if(i<0||s.mode==='ending'||s.flags.royalQuest==='opening')return s;const town=TOWNS.filter(t=>t.region===s.region&&t.id!=='bellwether'&&!s.flags['palaceBan:'+t.id]&&!castleFineFor(s,t.id)&&!cityOf(s,t.id)?.destroyed).sort((a,b)=>Math.hypot(a.x-s.x,a.y-s.y)-Math.hypot(b.x-s.x,b.y-s.y))[0];if(!town)return s;s.bag.splice(i,1);s.pendingLoot=s.pendingLoot.filter(id=>id!==a.id||s.bag.includes(id));if(['imprisoned','sewers'].includes(s.flags.royalQuest))s.flags.royalQuest=isRoyalCampaign(s)?'commission':'escaped';if(s.exploration)s.exploration.area=null;s.mode='town';s.returnMode='town';s.enemy=null;s.dungeon=null;s.location=town.id;s.x=town.x;s.y=town.y;delete s.castle;s.townPosition={x:6,y:11};delete s.casino;delete s.flags.guardTauntPending;delete s.flags.borderTauntPending;s.turns++;note(s,'The Scroll of Return carries you safely to '+town.name+'.');return s;}
  if(a.type==='useItem'&&a.id==='horn-ship-summoning'&&s.bag.includes(a.id)){
   if(s.mode!=='world'){note(s,'Blow the horn outdoors at the ocean shore.');return s;}
@@ -942,7 +988,7 @@ if(a.type==='acknowledgeDragon'){delete s.flags.dragonGreeting;delete s.flags.dr
    const base=roll+(s.equipped?s.weapon*4:0)+effectiveLevel(s)*2+benefits.meleeDamage+(s.buffs?.strength>0?s.buffs.strengthPower||0:0)+gearPower(s);
    const raw=Math.floor((base+(s.buffs?.meal>0?4:0))*(gagActive(s,'tiny')?.5:1)*(effective?1.4:1)*(advantage?1.25:1));
    const protection=s.enemy.luteNumb>0?0:Math.floor(s.enemy.armor||0)+arenaDefenseBonus(s.enemy);
-   const multiplier=s.equipped==='holy-avenger'&&undead(s.enemy)?3:paladinWeaponMultiplier(s,s.enemy);
+   const multiplier=(s.equipped==='holy-avenger'&&undead(s.enemy)?3:paladinWeaponMultiplier(s,s.enemy))*demonWeaponMultiplier(gear,s.enemy);
    const baseDamage=multiplier*(Math.max(1,raw-protection)+weaponMagicDamage(gear,benefits.magicDamage))+poisonDamage(s);
    if(gear.freezeChance&&rand(s)<gear.freezeChance){s.enemy.frozen=1;note(s,'Frost freezes the enemy in place!');}
    s.flags.guarded=false;s.flags.combo=(s.flags.combo||0)+1;
@@ -950,7 +996,8 @@ if(a.type==='acknowledgeDragon'){delete s.flags.dragonGreeting;delete s.flags.dr
    const {amount}=attackDamage;
    s.enemy.hp-=amount;
    if(gear.lifeSteal){s.hp=Math.min(s.maxHp,s.hp+gear.lifeSteal);note(s,'Your weapon drains '+gear.lifeSteal+' health from the enemy.');}
-   events.push({kind:'hit',target:'enemy',...attackDamage,sound:'hit'});
+   const truthArrow=truthArrowStrike(s,gear);events.push({kind:'hit',target:'enemy',...attackDamage,sound:'hit',...(isBow(gear)?{projectile:'arrow'}:{}),...(truthArrow?{truthFire:true}:{})});
+   if(truthArrow)note(s,'An Arrow of Truth lodges in the infernal creature. '+s.flags.truthArrows+' remain; sacred fire will burn it each round.');
    note(s,`Your weapon deals ${amount} damage.${effective?' You exploit its weakness.':''}${protection?' Its armor absorbs '+Math.min(protection,raw-1)+' damage.':''}`);
    strikeHeroGhost(s,events,note);androsStrike(s,events,note);kerrbearStrike(s,events,note);
    if(s.enemy.hp<=0){

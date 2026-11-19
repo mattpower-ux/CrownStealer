@@ -2,10 +2,17 @@ import {effectiveAttributes} from './attributes.js';
 import {SPELLS} from './spell-items.js';
 import {beansBlocksEnemy,tickBeansRound} from './bucket-beans.js';
 import {spendPoisonRound} from './weapon-poisons.js';
+import {isCombatWeapon,itemById} from './items.js';
 export const isDungeonCombat=s=>s?.mode==='battle'&&s.returnMode==='dungeon'&&!!s.dungeon&&!!s.enemy;
 export const battlefieldDistance=s=>isDungeonCombat(s)?s.enemy.combatDistance??1:1;
 export const isBow=item=>item?.kind==='weapon'&&['bow','crossbow'].includes(item.family||item.shape);
 export const weaponReach=item=>isBow(item)?4:item?.kind==='weapon'&&(item.family==='spear'||item.shape==='spear')?2:1;
+const weaponPower=item=>(item?.damage?.[1]||0)*10+(item?.damage?.[0]||0)+(item?.elementDamage||0)*10+(item?.stormDamage||0)*10+(item?.toHit||0);
+export function bestAutoAttackWeapon(s,range){
+ const candidates=[...new Set(s?.bag||[])].map(id=>({id,item:itemById(id,s)})).filter(({item})=>isCombatWeapon(item)&&(range==='ranged'?isBow(item):!isBow(item)));
+ candidates.sort((a,b)=>weaponPower(b.item)-weaponPower(a.item)||a.item.name.localeCompare(b.item.name));
+ return candidates[0]?.id??null;
+}
 export const enemyCanShoot=e=>!!e&&(e.ranged===true||['ranged','magic','mental'].includes(e.attackType)||e.kind==='caster'||e.royalDungeonNpc==='royal-heckler');
 export const dexterityModifier=dex=>Math.floor((dex-10)/2);
 export function initializeDungeonCombat(s,random){

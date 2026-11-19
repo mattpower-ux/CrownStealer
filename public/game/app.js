@@ -18,7 +18,7 @@ import {nearbyWatcher} from './minor-residents.js';
 import {nearestUnlitTorch,cemeteryLightAt} from './cemetery-light.js';
 import {atLeperColony,whiteWizardCanCure,leprosyCurePrice,leprosyCharismaLoss,COLONY_GREETING,LEPROSY_RUMOR} from './leper-colony.js';
 import {visibleDungeonGuardian} from './engine.js';
-import {battlefieldDistance,isBow,weaponReach} from './dungeon-ranged.js';
+import {battlefieldDistance,bestAutoAttackWeapon,isBow,weaponReach} from './dungeon-ranged.js';
 import {BEANS_MESSAGE,beansEnemyReaction} from './bucket-beans.js';
 import {shrineForDungeon} from './shrine-deities.js';
 import {drawShrinePortrait} from './shrine-render.js';
@@ -158,6 +158,9 @@ function showEntryPrompt(){if(state.castle)return;const p=state.mode==='town'?to
 document.getElementById('entry-yea').onclick=()=>{entryPrompt.hidden=true;dispatch({type:'enter'});};
 document.getElementById('entry-nay').onclick=()=>{entryPrompt.hidden=true;audio.unlock().then(()=>audio.effect('whinny'));};
 const ladderPopup=document.createElement('section');ladderPopup.id='ladder-prompt';ladderPopup.hidden=true;ladderPopup.setAttribute('role','dialog');ladderPopup.setAttribute('aria-labelledby','ladder-question');ladderPopup.innerHTML='<h2 id="ladder-question">You Found a Ladder</h2><p id="ladder-direction"></p><div><button id="ladder-down" class="primary">Go Down</button><button id="ladder-up">Ascend/Leave</button><button id="ladder-stay">Keep exploring</button></div>';document.body.append(ladderPopup);
+const chestLockPopup=document.createElement('section');chestLockPopup.id='chest-lock-prompt';chestLockPopup.hidden=true;chestLockPopup.setAttribute('role','dialog');chestLockPopup.setAttribute('aria-labelledby','chest-lock-question');chestLockPopup.innerHTML='<h2 id="chest-lock-question">PICK LOCK?</h2><p>The chest is locked. A failed attempt may spring a trap or destroy everything inside.</p><div><button id="pick-chest-lock" class="primary">PICK LOCK</button><button id="leave-chest-lock">LEAVE IT</button></div>';document.body.append(chestLockPopup);
+$('pick-chest-lock').onclick=()=>dispatch({type:'pickChestLock',id:state?.flags.pendingChestLock});
+$('leave-chest-lock').onclick=()=>dispatch({type:'cancelChestLock'});
 function ladderFloorKey(d){return d?JSON.stringify([d.index,d.site,d.minorId,d.expedition,d.royal,d.ship,d.floor]):null;}
 function ladderTileKey(d){return d?JSON.stringify([ladderFloorKey(d),d.x,d.y]):null;}
 let dismissedLadder=null;
@@ -168,6 +171,11 @@ function showLadderPrompt(){if(state?.dungeon?.site===SAGE_MAZE_ID){ladderPopup.
  $('ladder-question').textContent=ladder.gate?'Iron Gate':sewer?'Galen’s Cell':tower?'Tower Stairs':'You Found a Ladder';
  $('ladder-direction').textContent=ladder.gate?'The gate leads back to the wilderness.':hiddenExit?'The story-prison trapdoor is concealed. Search the cell to uncover the sewer escape.':sewer?(state.flags.galenFreed?'The wizard points to the loose stones.':'An old wizard waits behind the bars.'):tower?(ladder.towerDirection==='up'?'Stone stairs climb toward the next level.':ladder.towerDirection==='down'?'Stone stairs descend toward the entrance.':'The tower door leads back to the wilderness.'):ladder.direction==='down'?'This ladder leads through the floor.':'This ladder leads through the ceiling.';
  $('ladder-up').textContent=ladder.gate?'Leave through the gate':sewer?(state.flags.galenFreed?'Push loose stones':'Free Galen'):tower?(ladder.towerDirection==='exit'?'Leave Widow’s Bell':'Climb Down'):'Ascend/Leave';$('ladder-down').hidden=!!ladder.gate;$('ladder-down').disabled=ladder.direction!=='down';$('ladder-up').disabled=ladder.direction!=='up';}
+function showChestLockPrompt(){
+ const visible=!!state?.flags.pendingChestLock&&state.mode==='dungeon'&&!activePanel&&!combatView;
+ chestLockPopup.hidden=!visible;
+ if(visible)ladderPopup.hidden=true;
+}
 $('ladder-down').onclick=()=>{ladderPopup.hidden=true;dispatch({type:state?.dungeon?.royal==='cell'&&!state.flags.royalTrapFound?'royalSearch':'descend'});};
 $('ladder-up').onclick=()=>{const ladder=ladderPrompt(state,dungeonMap(state.dungeon));ladderPopup.hidden=true;if(ladder?.direction==='up')dispatch({type:ladder.upAction});};
 
@@ -202,6 +210,7 @@ function beginCamp(){
 }
 
 function dispatch(a,automatic=false){if(campSequence)return;if(a.type==='setCamp'&&!a.resolved){beginCamp();return;}if(a.type!=='idleEncounter')lastTravelActivity=performance.now();if(a.type==='snoutReconfigure'&&atMultiverseTube(state)&&!hasCheckpoint()){try{localStorage.setItem(CHECKPOINT,saveGame(state));}catch{toast('Cannot preserve a checkpoint. Free up device storage before reconfiguring reality.');return;}}if(a.type==='autoAttack'){toggleAutoAttack();return;}if(!state||combatView||shipInFlight)return;if(!automatic&&autoAttackEnabled)stopAutoAttack();if(a.type==='inspectCastle'){inspectCastle(a.id);return;}if(a.type==='mapTurn'){state.flags.mapFacing=((state.flags.mapFacing||0)+a.delta+4)%4;persist();toast('Facing '+['north','east','south','west'][state.flags.mapFacing]);return;}if(a.type==='mapStep'){const dir=state.castle?0:state.flags.mapFacing||0;let dx=a.dx,dy=a.dy;for(let i=0;i<dir;i++)[dx,dy]=[-dy,dx];a={type:'move',dx,dy};}if(a.type==='navigatePlanet'&&!completingFlight&&state.mode==='dungeon'&&state.dungeon?.ship&&Math.abs(state.dungeon.x-7)+Math.abs(state.dungeon.y-5)<=7&&Number.isInteger(a.planet)&&a.planet>=0&&a.planet<3){completingFlight=true;launchPlanetFlight(a);return;}completingFlight=false;flushClock(false);entryPrompt.hidden=true;ladderPopup.hidden=true;if(state.mode==='world'&&a.type==='enter'&&pointAt(state)?.kind==='wildernessDiscovery'){openPanel('discovery');return;}if(a.type==='enter'&&atLeperColony(state)){state=act(state,a);persist();update();openPanel('leperColony');return;}if(state.mode==='world'&&a.type==='enter'&&pointAt(state)?.kind==='silverTree'){a={type:'askSilverTree'};}if(state.mode==='world'&&a.type==='enter'&&pointAt(state)?.kind==='purity'){openPanel('purity');return;}if(state.mode==='world'&&a.type==='enter'&&pointAt(state)?.kind==='shipyard'){openPanel('shipyard');return;}if(state.mode==='world'&&a.type==='enter'&&pointAt(state)?.kind==='teleporter'){openPanel('crystalTravel');return;}if(state.mode==='town'&&a.type==='enter'){interactTown();return;}const before=state,events=[];state=act(state,a,events,developerMode?previewRules:{});if(state.log.at(-1)!==before.log.at(-1)&&(state.flags.impaledMoves||before.flags.impaledMoves))toast(state.log.at(-1));
+if(['percivalFight','percivalRun'].includes(a.type)&&activePanel==='percivalReckoning')closePanel();
 if(state.flags.dragonAteMount&&!before.flags.dragonAteMount){persist();update();openPanel('dragonMeal');return;}
 if(a.type==='acknowledgeDragonMeal'&&activePanel==='dragonMeal'){persist();update();closePanel();return;}
 if(a.type==='pullBranch'&&state.hp<before.hp)audio.unlock().then(()=>audio.effect('thwack'));
@@ -562,7 +571,7 @@ function update(){if(state.mode!=='battle')impactIndex=0;updateClockDisplay();up
  }
  else if(state.mode==='town'&&state.arena)$('actions').innerHTML='<button class="primary" data-panel="arena">Arena bouts</button>';
  else if(state.mode==='town')$('actions').innerHTML=(state.casino?.active?button('Resume casino game',{type:'enter'},'primary'):castleEntryAction())+button('Leave town',{type:'leave'});
- else if(state.mode==='dungeon'&&state.dungeon.site==='elf-village')$('actions').innerHTML=button(state.dungeon.floor===3?'Enter Haghilda’s lair':'Enter tree door / climb up',{type:'descend'},'primary')+button(state.dungeon.floor?'Climb down':'Leave forest',{type:'leave'})+(state.dungeon.floor===2&&state.dungeon.x===7&&state.dungeon.y===7?button('Search fallen elf',{type:'searchElf'}):'')+'<button data-panel="potions">Drink potion</button>';
+ else if(state.mode==='dungeon'&&state.dungeon.site==='elf-village')$('actions').innerHTML=button(state.dungeon.floor===3?'Enter Haghilda’s lair':'Enter tree door / climb up',{type:'descend'},'primary')+(state.dungeon.floor?button('Climb down',{type:'leave'}):'')+(state.dungeon.floor===2&&state.dungeon.x===7&&state.dungeon.y===7?button('Search fallen elf',{type:'searchElf'}):'')+'<button data-panel="potions">Drink potion</button>';
  else if(state.mode==='dungeon'&&state.dungeon.site===ROYAL_DUNGEON_ID){
   const point=royalDungeonAt(state);
   let controls='';
@@ -650,7 +659,7 @@ function update(){if(state.mode!=='battle')impactIndex=0;updateClockDisplay();up
   else if(!state.flags['palaceBan:'+p.id])$('actions').insertAdjacentHTML('afterbegin',button('Enter '+esc(p.name),{type:'enter'},'primary'));
  }
  if(state.mode==='world'&&p?.kind==='town'&&cityOf(state,p.id)?.destroyed)$('actions').innerHTML=button('Rebuild '+esc(p.name)+' · 500 gold',{type:'cityRebuild'},'primary');
- if(state.mode==='dungeon'){const chest=dungeonChests(state,dungeonMap(state.dungeon)).find(c=>c.x===state.dungeon.x&&c.y===state.dungeon.y);if(chest){const revisit=chest.opened&&(!minor||minor.treasure)&&state.openedChests.indexOf(chest.id)<(state.flags.chestVisitStart??state.openedChests.length)&&!state.flags['missedCoins:'+chest.id];$('scene-caption').textContent=chest.opened?(revisit?'Someone was here before you. They missed a few coins.':'You already opened this '+(isCemeteryDungeon(state.dungeon)?'coffin.':'chest.')):chest.trap?'A hidden stash lies at your feet. Its trap may hurt you when opened.':isCemeteryDungeon(state.dungeon)?'A sealed coffin lies at your feet. Search it for burial offerings.':'A treasure chest lies at your feet. Open it to claim the contents.';$('actions').insertAdjacentHTML('afterbegin',chest.opened?(revisit?button('Search for missed coins',{type:'rummageChest'},'primary'):''):button(isCemeteryDungeon(state.dungeon)?'Open coffin':'Open chest',{type:'openChest'},'primary'));}}
+ if(state.mode==='dungeon'){const chest=dungeonChests(state,dungeonMap(state.dungeon)).find(c=>c.x===state.dungeon.x&&c.y===state.dungeon.y);if(chest){const revisit=chest.opened&&(!minor||minor.treasure)&&state.openedChests.indexOf(chest.id)<(state.flags.chestVisitStart??state.openedChests.length)&&!state.flags['missedCoins:'+chest.id];$('scene-caption').textContent=chest.opened?(revisit?'Someone was here before you. They missed a few coins.':'You already opened this '+(isCemeteryDungeon(state.dungeon)?'coffin.':'chest.')):'Click the '+(isCemeteryDungeon(state.dungeon)?'coffin':'chest')+' to examine it.';if(chest.opened&&revisit)$('actions').insertAdjacentHTML('afterbegin',button('Search for missed coins',{type:'rummageChest'},'primary'));}}
  if(state.mode==='battle'&&state.equipped==='holy-avenger'&&(state.enemy.boss||undead(state.enemy)))$('scene-caption').textContent+=' Your Holy Avenger glows.';
  if(state.mode==='dungeon'&&nearbyWatcher(state))$('actions').insertAdjacentHTML('beforeend','<span class="fine">Watching eyes follow you. They seem peaceful.</span>'+button('Attack the Watcher',{type:'attackWatcher'}));
  if(state.mode==='dungeon'&&!state.dungeon.charityPit){const god=shrineForDungeon(state.dungeon);if(god&&Math.abs(state.dungeon.x-(god.x??7))+Math.abs(state.dungeon.y-(god.y??8))<=2)$('actions').insertAdjacentHTML('beforeend','<button data-panel="shrine">Approach '+esc(god.name)+'</button>');}
@@ -667,7 +676,7 @@ function update(){if(state.mode!=='battle')impactIndex=0;updateClockDisplay();up
  if(state.location==='bellwether')$('context').innerHTML+=`<p>Royal guards defeated: ${Math.min(20,state.flags.royalGuardWins||0)} / 20</p>`;
 
 
- showLadderPrompt();
+ showLadderPrompt();showChestLockPrompt();
  if(state.mode!=='battle'&&state.flags.royalQuest!=='opening'&&state.bag.some(id=>{const item=itemById(id,state);return item?.spellItem||item?.kind==='wand'||item?.shape==='scroll';}))$('actions').insertAdjacentHTML('beforeend','<button data-panel="spells">Scrolls &amp; Wands</button>');
  if(state.mode==='world'&&state.flags.impaledMoves)$('actions').insertAdjacentHTML('afterbegin',button('Trapped by a branch · Pull free ('+state.flags.impaledMoves+' left)',{type:'pullBranch'},'primary'));
  if(state.dungeon?.site===BOTTOMLESS_PIT.id&&state.mode==='dungeon'&&state.flags.andros>0)$('actions').insertAdjacentHTML('beforeend','<span>Andros · Level 40 · '+state.flags.andros+' / '+BATTLE_BEAR_HP+' HP</span>');
@@ -696,8 +705,7 @@ function update(){if(state.mode!=='battle')impactIndex=0;updateClockDisplay();up
   const d=state.dungeon,corner=(x,y)=>d.x===x&&d.y===y;
   $('mode-badge').textContent='FLOOR '+(d.floor+1)+' OF '+DRUID_FLOORS;
   $('actions').innerHTML=(corner(1,1)?button(d.floor?'Ascend':'Leave the grove',{type:'leave'}):'')+(corner(13,13)&&d.floor<DRUID_FLOORS-1?button(druidHistory(state,d.circleId).cleared?.includes(d.floor)?'Descend':'Face the elemental',{type:'descend'},'primary'):'')+
-   (druidKeeperAt(state)?'<button class="primary" data-panel="druidKeeper">Speak to '+esc(druidKeeper(d.circleId))+'</button>':'')+
-   (dungeonChests(state,dungeonMap(d)).some(c=>!c.opened&&corner(c.x,c.y))?button('Open chest',{type:'openChest'},'primary'):'')+'<button data-panel="potions">Drink potion</button>';
+   (druidKeeperAt(state)?'<button class="primary" data-panel="druidKeeper">Speak to '+esc(druidKeeper(d.circleId))+'</button>':'')+'<button data-panel="potions">Drink potion</button>';
  }
  if(state.mode==='battle'&&state.equipped===DRUID_STAFF)$('actions').insertAdjacentHTML('beforeend',button('Tame animal',{type:'druidTame'}));
  if(state.mode==='dungeon'&&state.dungeon.site===SAGE_MAZE_ID){
@@ -732,6 +740,12 @@ function draw(t){
  frame=requestAnimationFrame(draw);
 }
 document.addEventListener('click',e=>{if(e.target.closest('[data-switch-combat]')){dispatch({type:'switchCombatWeapon',id:$('combat-switch-weapon')?.value});return;}const b=e.target.closest('button');if(!b)return;if(b.dataset.action){try{dispatch(JSON.parse(b.dataset.action));}catch(err){toast(err.message);}}if(b.dataset.panel)openPanel(b.dataset.panel);if(b.hasAttribute('data-ending-title')){if(activePanel)closePanel();$('home').click();}});
+$('scene').addEventListener('click',event=>{
+ if(state?.mode!=='dungeon'||activePanel||combatView)return;
+ const canvas=$('scene'),rect=canvas.getBoundingClientRect(),x=event.clientX-rect.left,y=event.clientY-rect.top;
+ const target=(canvas.chestTargets||[]).filter(hit=>Math.hypot(hit.x-x,hit.y-y)<=hit.radius).sort((a,b)=>Math.hypot(a.x-x,a.y-y)-Math.hypot(b.x-x,b.y-y))[0];
+ if(target){event.preventDefault();dispatch({type:'inspectChest',id:target.id});}
+});
 let arrowTap=null;
 function cancelArrowTap(){if(arrowTap)clearTimeout(arrowTap.timer);arrowTap=null;}
 window.addEventListener('blur',cancelArrowTap);
@@ -804,6 +818,19 @@ function openPanel(name,{winkShot=false,winkResult=null}={}){if(state?.dungeon?.
   ?'A rope bites into your ankle. You have one chance to disarm the snare before it hoists you into the darkness.'
   :'The hungover kobolds have finally fallen asleep beneath you. Choose how you will try to escape.';
  body.innerHTML='<img class="story-full-art" src="/assets/kobold-snare.webp" alt="An adventurer hangs from a snare as kobolds jeer"><p class="snare-result">'+snareText+'</p><div class="panel-actions">'+(state.flags.koboldSnare==='disarm'?button('Disarm the snare',{type:'disarmKoboldSnare'},'primary'):button('Steal the sleeping kobold’s dagger · Dexterity',{type:'escapeKoboldSnare',method:'dagger'})+button('Chew through the ropes · Constitution',{type:'escapeKoboldSnare',method:'teeth'})+button('Ask for a bathroom break · Charisma',{type:'escapeKoboldSnare',method:'bathroom'}))+'</div>';
+ }
+ if(name==='percivalReckoning'){
+  $('panel-title').textContent='The Lawgiver of Light';
+  body.innerHTML='<p class="eyebrow">THE STOLEN THRONE</p><h3>Percival crashes through the vaulted ceiling.</h3><p>The nine-foot knight rises in glowing armor, the Avenging Greatsword of Law in his hands.</p><blockquote>“'+esc(state.name)+', your time is up. You have defiled this place and defiled the hard-working people of these lands. Now you will answer to the Lawgiver of Light. I, Percival, Lord of Paladins, call you forth!”</blockquote><div class="panel-actions">'+button('Fight him?',{type:'percivalFight'},'primary')+button('Run Away!',{type:'percivalRun'})+'</div>';
+ }
+ if(name==='percivalDefeat'){
+  $('panel-title').textContent='Rebuild the Dawn';
+  body.innerHTML='<p>Percival breaks your reign. Your inventory, gold, titles, throne, marriage, and evil powers are gone—but your level, experience, and earned attributes remain.</p><p>You wake in the wilderness afflicted with leprosy. Your Constitution will gradually decline until you find the cure.</p><div class="panel-actions">'+button('Continue the character',{type:'acknowledgePercivalDefeat'},'primary')+'</div>';
+ }
+ if(name==='ending'&&state.flags.percivalDarkVictory){
+  $('panel-title').textContent='';
+  body.innerHTML='<section class="percival-final-screen"><p>The sky darkens. The people cower.</p><blockquote>“My reign of terror has just begun!”</blockquote><h2>It is finished</h2><button type="button" data-ending-title>Return to title</button></section>';
+  setTimeout(()=>{sceneMusic();const player=audio.backgroundPlayers?.get('/assets/percival-victory.mp3');if(player){player.loop=false;player.onended=()=>$('home').click();}},50);
  }
  if(name==='campfire'){
  $('panel-title').textContent='Campfire';body.innerHTML='<img class="campfire-art" src="/assets/camping-fire.webp" alt="Your leather boots rest beside a crackling campfire beneath dark trees"><p class="campfire-caption">The fire crackles. You settle down for the night…</p>';
@@ -1197,7 +1224,7 @@ function openPanel(name,{winkShot=false,winkResult=null}={}){if(state?.dungeon?.
   const rescueGalen=state.flags.royalStoryVersion!==2&&hasRoyalAdmission(state,state.location)&&!state.flags.galenFreed?button('Return to Galen’s cell',{type:'royalSewerReturn'}):'';
   body.insertAdjacentHTML('afterbegin',royalAudienceControls()+rescueGalen+(faction!==undefined?'<p>Town faction '+faction+'</p>':''));
  }
- if(name==='ending')body.innerHTML=`<div class="ending">${esc(newRoyalEnding()?ROYAL_CAMPAIGN_ENDINGS[state.ending]:ROYAL_ENDINGS[state.ending]||ENDINGS[state.ending])}</div><p>${state.quests.length} local stories resolved. ${state.flags.victories} battles won.</p><div class="panel-actions">${endingExit()}</div>`;
+ if(name==='ending'&&!state.flags.percivalDarkVictory)body.innerHTML=`<div class="ending">${esc(newRoyalEnding()?ROYAL_CAMPAIGN_ENDINGS[state.ending]:ROYAL_ENDINGS[state.ending]||ENDINGS[state.ending])}</div><p>${state.quests.length} local stories resolved. ${state.flags.victories} battles won.</p><div class="panel-actions">${endingExit()}</div>`;
  if(name==='royalEpilogue'){
   body.innerHTML='<div class="ending">'+esc(ROYAL_CAMPAIGN_ENDINGS.hero)+'</div><div class="panel-actions"><button class="primary" id="continue-royal-hero">Continue roaming</button></div>';
   $('continue-royal-hero').onclick=closePanel;
@@ -1243,6 +1270,8 @@ function closePanel(){if(campSequence||state?.flags.koboldSnare)return;if(active
 let introducedBoss;
 const cemeteryPrompted=new Set();
 function showLoot(){
+ if(state?.evilRoute?.phase==='percivalChoice'&&!activePanel&&!combatView&&!document.hidden&&!$('game').hidden){openPanel('percivalReckoning');return;}
+ if(state?.flags.percivalDefeatEpilogue&&!activePanel&&!combatView&&!document.hidden&&!$('game').hidden){openPanel('percivalDefeat');return;}
  if(state?.flags.dragonAteMount&&!activePanel&&!combatView&&!document.hidden&&!$('game').hidden){openPanel('dragonMeal');return;}
  if(state?.flags.arenaRetreatNotice&&!activePanel&&!combatView&&!document.hidden&&!$('game').hidden){openPanel('arenaRetreat');return;}
  if(state?.mode==='dungeon'&&!cemeteryHaunt&&!activePanel&&!combatView&&!document.hidden&&!$('game').hidden){const map=dungeonMap(state.dungeon),torch=nearestUnlitTorch(state,map);if(torch&&!state.flags.autoTorches&&!cemeteryPrompted.has(torch.id)&&cemeteryLightAt(state,map,state.dungeon.x+.5,state.dungeon.y+.5)<.18){cemeteryPrompted.add(torch.id);openPanel('cemeteryTorch');return;}}
@@ -1276,7 +1305,7 @@ window.CrownStealerAndroidBack=()=>{if($('panel').open){closePanel();return true
 
 // Save the resolved turn immediately; presentation never changes game state.
 let combatView=null,combatFx=null,combatTimers=[],combatToken=0,goldLootTimer;
-let autoAttackEnabled=false,autoAttackTimer;
+let autoAttackEnabled=false,autoAttackTimer,autoAttackMeleeId=null;
 let impactIndex=0;
 function updateAutoAttackButton(){
  const button=$('actions').querySelector('[data-action*="autoAttack"]');
@@ -1288,21 +1317,32 @@ function updateAutoAttackButton(){
  button.disabled=!!combatView&&!autoAttackEnabled;
 }
 function stopAutoAttack(){
- clearTimeout(autoAttackTimer);autoAttackEnabled=false;updateAutoAttackButton();
+ clearTimeout(autoAttackTimer);autoAttackEnabled=false;autoAttackMeleeId=null;updateAutoAttackButton();
 }
-function autoAttackCanReach(){
- return state?.mode==='battle'&&!!state.enemy&&state.enemy.speciesId!=='space-hal'&&battlefieldDistance(state)<=weaponReach(itemById(state.equipped,state));
+function autoAttackAction(){
+ if(state?.mode!=='battle'||!state.enemy||state.enemy.speciesId==='space-hal')return null;
+ const distance=battlefieldDistance(state),equipped=itemById(state.equipped,state);
+ if(distance<=1&&isBow(equipped)){
+  const melee=autoAttackMeleeId&&state.bag.includes(autoAttackMeleeId)?autoAttackMeleeId:bestAutoAttackWeapon(state,'melee');
+  return melee?{type:'switchCombatWeapon',id:melee}:null;
+ }
+ if(distance>weaponReach(equipped)){
+  const ranged=bestAutoAttackWeapon(state,'ranged');
+  return ranged?{type:'switchCombatWeapon',id:ranged}:null;
+ }
+ return {type:'attack'};
 }
 function queueAutoAttack(){
  clearTimeout(autoAttackTimer);
  if(!autoAttackEnabled)return;
- if(!autoAttackCanReach()||activePanel||document.hidden||$('game').hidden){stopAutoAttack();return;}
+ if(!autoAttackAction()||activePanel||document.hidden||$('game').hidden){stopAutoAttack();return;}
  autoAttackTimer=setTimeout(()=>{
   if(!autoAttackEnabled)return;
-  if(!autoAttackCanReach()||activePanel||document.hidden||$('game').hidden){stopAutoAttack();return;}
+  const action=autoAttackAction();
+  if(!action||activePanel||document.hidden||$('game').hidden){stopAutoAttack();return;}
   if(combatView)return;
   const before=state;
-  dispatch({type:'attack'},true);
+  dispatch(action,true);
   if(!combatView){
    if(state.mode!=='battle'||state.turns===before.turns&&state.enemy?.hp===before.enemy?.hp&&state.hp===before.hp)stopAutoAttack();
    else queueAutoAttack();
@@ -1311,8 +1351,9 @@ function queueAutoAttack(){
 }
 function toggleAutoAttack(){
  if(autoAttackEnabled){stopAutoAttack();return;}
- if(!autoAttackCanReach()){toast('Move into weapon range before starting Auto-Attack.');return;}
  if(combatView||activePanel)return;
+ const equipped=itemById(state?.equipped,state);if(equipped&&!isBow(equipped))autoAttackMeleeId=state.equipped;
+ if(!autoAttackAction()){autoAttackMeleeId=null;toast('No suitable weapon can reach this enemy.');return;}
  autoAttackEnabled=true;updateAutoAttackButton();queueAutoAttack();
 }
 window.addEventListener('pagehide',stopAutoAttack);

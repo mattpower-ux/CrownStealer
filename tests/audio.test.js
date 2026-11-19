@@ -2,6 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 const audio = await import('../public/game/audio.js').catch(() => ({}));
+test('combat misses use the uploaded swish recording',()=>{
+ assert.equal(audio.RECORDED_EFFECTS.miss,'sfx-miss');
+});
 const {musicScene} = await import('../public/game/location-music.js');
 
 test('ruined shrines alone use the supplied Shrine of Dead Gods soundtrack',()=>{

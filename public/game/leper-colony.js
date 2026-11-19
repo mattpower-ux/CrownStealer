@@ -9,7 +9,7 @@ export function colonyAction(s,a,{random,note,events=[]}){
   if(whiteWizardCanCure(s)){
    const price=leprosyCurePrice(s);
    if(s.gold<price){note(s,'The White Wizard asks 5,000 gold to cure leprosy. Bring enough gold, or become his apprentice.');return true;}
-   s.gold-=price;delete s.flags.leprosy;delete s.flags.leprosySince;
+   s.gold-=price;delete s.flags.leprosy;delete s.flags.leprosySince;delete s.flags.leprosyKind;
    note(s,'The White Wizard lays a gentle hand upon you and permanently cures your leprosy. Your lost charisma returns.'+(price?' The cure costs 5,000 gold.':' As his apprentice, you pay nothing.'));
   }
   return true;

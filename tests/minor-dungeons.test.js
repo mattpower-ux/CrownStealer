@@ -96,6 +96,25 @@ test('cemeteries retain geometry and tunnels add connected side passages',()=>{
  }
 });
 
+test('open-air cemeteries use wall-height vault blocks to form connected lanes',()=>{
+ for(let slot=0;slot<24;slot++){
+  const id='minor-r0-'+slot,site=minorSiteDefinition(id);
+  if(site.kind!=='cemetery')continue;
+  const map=minorDungeonMap(visit(id,0).dungeon);
+  let interiorWalls=0;
+  for(let y=1;y<14;y++)for(let x=1;x<14;x++)if(map[y][x]===1)interiorWalls++;
+  assert.ok(interiorWalls>=35,id+' needs substantial vault geometry');
+  const queue=[[1,1]],seen=new Set(['1,1']);
+  for(const [x,y] of queue)for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+   const nx=x+dx,ny=y+dy,key=nx+','+ny;
+   if(map[ny]?.[nx]===1||seen.has(key))continue;
+   seen.add(key);queue.push([nx,ny]);
+  }
+  assert.ok(seen.has('13,13'),id+' exit must remain reachable');
+  assert.equal(seen.size,map.flat().filter(tile=>tile!==1).length,id+' lanes must remain connected');
+ }
+});
+
 test('minor treasure and trap-only chests have one stable identity on the last floor',()=>{
   assert.equal(minorDungeonChests(visit('minor-r0-5',0),loot).length,1);
   for(const id of ['minor-r0-1','minor-r0-4'])assert.deepEqual(minorDungeonChests(visit(id),loot),[]);

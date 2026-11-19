@@ -2,15 +2,15 @@ import {drawDungeonChests} from './chest-render.js';
 import {dungeonChests} from './treasure.js';
 export const treeFort=new Image();treeFort.src='/assets/elf-tree-fort.webp';
 export function drawForest(c,w,h,s,map,dx,dy){
- c.imageSmoothingEnabled=false;const d=s.dungeon,open=d.floor===3&&d.x>=5&&d.x<=9&&d.y>=5&&d.y<=9;
+ c.imageSmoothingEnabled=true;c.imageSmoothingQuality='high';const d=s.dungeon,open=d.floor===3&&d.x>=5&&d.x<=9&&d.y>=5&&d.y<=9;
  const ceiling=c.createLinearGradient(0,0,0,h*.5);ceiling.addColorStop(0,open?'#86b7b0':'#171b11');ceiling.addColorStop(1,open?'#d0d7a2':'#423c26');c.fillStyle=ceiling;c.fillRect(0,0,w,h*.5);
  const floor=c.createLinearGradient(0,h*.5,0,h);floor.addColorStop(0,'#665c3c');floor.addColorStop(1,'#28291c');c.fillStyle=floor;c.fillRect(0,h*.5,w,h*.5);
  // Woven overhead roots remain enclosed until the central upper chamber.
- if(!open){c.save();c.globalAlpha=.45;c.imageSmoothingEnabled=false;c.drawImage(rootTexture(d.floor),0,0,w,h*.5);const shade=c.createLinearGradient(0,0,0,h*.5);shade.addColorStop(0,'#08130c66');shade.addColorStop(1,'#08130cee');c.fillStyle=shade;c.fillRect(0,0,w,h*.5);c.restore();}
+ if(!open){c.save();c.globalAlpha=.45;c.drawImage(rootTexture(d.floor),0,0,w,h*.5);const shade=c.createLinearGradient(0,0,0,h*.5);shade.addColorStop(0,'#08130c66');shade.addColorStop(1,'#08130cee');c.fillStyle=shade;c.fillRect(0,0,w,h*.5);c.restore();}
  if(open){for(let i=0;i<45;i++){const x=i*w/44,y=18+Math.sin(i*2.3)*22;c.fillStyle=['#36532d','#57733a','#77954b'][i%3];c.beginPath();c.ellipse(x,y,w*.035,h*.045,Math.sin(i),0,7);c.fill();}}
  const texture=rootTexture(d.floor),angle=Math.atan2(dy,dx),fov=Math.PI/3;
- for(let col=0;col<w;col+=3){const a=angle+Math.atan((col/w-.5)*2*Math.tan(fov/2)),vx=Math.cos(a),vy=Math.sin(a);let distance=.02,x,y;while(distance<22){x=d.x+.5+vx*distance;y=d.y+.5+vy*distance;if(map[Math.floor(y)]?.[Math.floor(x)]!==0&&map[Math.floor(y)]?.[Math.floor(x)]!==3)break;distance+=.025;}const depth=distance*Math.cos(a-angle),height=h*.85/depth,top=(h-height)/2,fx=x-Math.floor(x),fy=y-Math.floor(y),vertical=fx<.04||fx>.96,u=vertical?fy:fx;
- c.drawImage(texture,Math.floor(u*(texture.width-1)),0,1,texture.height,col,top,4,height);c.fillStyle=`rgba(4,12,5,${Math.min(.87,distance/15+(vertical?.12:0))})`;c.fillRect(col,top,4,height);
+ for(let col=0;col<w;col+=2){const a=angle+Math.atan((col/w-.5)*2*Math.tan(fov/2)),vx=Math.cos(a),vy=Math.sin(a);let distance=.02,x,y;while(distance<22){x=d.x+.5+vx*distance;y=d.y+.5+vy*distance;if(map[Math.floor(y)]?.[Math.floor(x)]!==0&&map[Math.floor(y)]?.[Math.floor(x)]!==3)break;distance+=.025;}const depth=distance*Math.cos(a-angle),height=h*.85/depth,top=(h-height)/2,fx=x-Math.floor(x),fy=y-Math.floor(y),vertical=fx<.04||fx>.96,u=vertical?fy:fx,sourceX=Math.min(texture.width-3,Math.floor(u*(texture.width-3)));
+ c.drawImage(texture,sourceX,0,3,texture.height,col,top,2.25,height);c.fillStyle=`rgba(4,12,5,${Math.min(.87,distance/15+(vertical?.12:0))})`;c.fillRect(col,top,2.25,height);
  }
  if(s.mode!=='battle')drawForestLandmarks(c,w,h,s,map,dx,dy);
  drawDungeonChests(c,w,h,s,map,dx,dy);
@@ -30,15 +30,15 @@ function drawForestLandmarks(c,w,h,s,map,dx,dy){
 }
 
 const rootTextures=new Map();
-function rootTexture(level){
+export function rootTexture(level){
  if(rootTextures.has(level))return rootTextures.get(level);
- const canvas=document.createElement('canvas');canvas.width=canvas.height=64;const c=canvas.getContext('2d');c.fillStyle='#253023';c.fillRect(0,0,64,64);
- // Low-resolution, six-color pixel roots: crooked tapered branches, never a weave.
+ const canvas=document.createElement('canvas');canvas.width=canvas.height=256;const c=canvas.getContext('2d');c.scale(4,4);
+ const ground=c.createLinearGradient(0,0,64,64);ground.addColorStop(0,'#1b281c');ground.addColorStop(.5,'#2f3825');ground.addColorStop(1,'#172218');c.fillStyle=ground;c.fillRect(0,0,64,64);
+ // Layered, antialiased roots retain bark grain when projected across the corridor.
  const paths=[[[2,-5],[8,12],[4,25],[16,38],[12,65]],[[38,-3],[29,15],[36,29],[27,45],[35,68]],[[67,9],[48,17],[44,32],[53,46],[49,65]],[[-4,50],[11,45],[21,28],[38,22],[49,3]]];
- for(const points of paths){for(const [width,color,offset] of [[8,'#171e16',1],[5,'#665439',0],[2,'#92734b',-1]]){c.strokeStyle=color;c.lineWidth=width;c.lineJoin='bevel';c.beginPath();points.forEach(([x,y],i)=>i?c.lineTo(x+offset,y):c.moveTo(x+offset,y));c.stroke();}c.strokeStyle='#665439';c.lineWidth=2;for(let i=1;i<points.length-1;i++){const [x,y]=points[i];c.beginPath();c.moveTo(x,y);c.lineTo(x+(i%2?10:-9),y+5);c.lineTo(x+(i%2?14:-12),y+13);c.stroke();}}
- c.fillStyle='#52633a';for(const [x,y]of [[7,18],[44,7],[26,47],[53,54],[18,6],[4,57]]){c.fillRect(x,y,5,2);c.fillRect(x+2,y-2,4,3);}
- // Quantize antialiased edges to the six-color palette.
- const pixels=c.getImageData(0,0,64,64),palette=[[37,48,35],[23,30,22],[102,84,57],[146,115,75],[82,99,58]];for(let i=0;i<pixels.data.length;i+=4){let best=palette[0],distance=Infinity;for(const rgb of palette){const d=rgb.reduce((sum,n,k)=>sum+(n-pixels.data[i+k])**2,0);if(d<distance){distance=d;best=rgb;}}pixels.data.set([...best,255],i);}c.putImageData(pixels,0,0);
+ for(const points of paths){for(const [width,color,offset] of [[10,'#101811',1.3],[7,'#4b3b28',.8],[5,'#72583a',0],[2,'#a88658',-.8]]){c.strokeStyle=color;c.lineWidth=width;c.lineCap='round';c.lineJoin='round';c.beginPath();points.forEach(([x,y],i)=>i?c.lineTo(x+offset,y):c.moveTo(x+offset,y));c.stroke();}c.strokeStyle='#493823';c.lineWidth=2.2;c.lineCap='round';for(let i=1;i<points.length-1;i++){const [x,y]=points[i];c.beginPath();c.moveTo(x,y);c.quadraticCurveTo(x+(i%2?7:-6),y+3,x+(i%2?14:-12),y+13);c.stroke();}}
+ c.fillStyle='#52663c';for(const [x,y]of [[7,18],[44,7],[26,47],[53,54],[18,6],[4,57]]){c.beginPath();c.ellipse(x+3,y,4,1.8,-.25,0,Math.PI*2);c.fill();c.fillStyle='#758653';c.beginPath();c.ellipse(x+5,y-2,3,1.4,.35,0,Math.PI*2);c.fill();c.fillStyle='#52663c';}
+ c.globalAlpha=.18;c.strokeStyle='#d4b982';c.lineWidth=.45;for(let y=2;y<64;y+=5)for(let x=(y%10);x<64;x+=13){c.beginPath();c.moveTo(x,y);c.bezierCurveTo(x+3,y-1,x+6,y+2,x+9,y);c.stroke();}c.globalAlpha=1;
  rootTextures.set(level,canvas);return canvas;
 }
 

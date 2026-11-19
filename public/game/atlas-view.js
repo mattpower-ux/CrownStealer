@@ -10,6 +10,13 @@ import { WORLD_HEIGHT, WORLD_WIDTH } from './world-size.js';
 const LEVELS = ['1–7', '8–15', '16–25', '26+'];
 const LEVEL_COLORS = ['#a9d890', '#ffdc81', '#ffb17d', '#ff9a95'];
 const MARKS = { town: '#fff0c4', dungeon: '#ffa4a1', gate: '#ffd46e', passage: '#8ed7f1' };
+const MARKER_STYLES=Object.freeze({
+ town:{shape:'square',color:'#f3d67c'},castle:{shape:'castle',color:'#e9b95f'},palace:{shape:'crown',color:'#f0c96d'},
+ shrine:{shape:'star',color:'#8fd8ff'},cave:{shape:'triangle',color:'#bc9472'},dig:{shape:'pick',color:'#d88952'},
+ ruin:{shape:'broken',color:'#a9a092'},dungeon:{shape:'diamond',color:'#d78278'},crypt:{shape:'coffin',color:'#b39cc9'},
+ cemetery:{shape:'cross',color:'#9ca7a5'},teleporter:{shape:'ring',color:'#73e4df'},monument:{shape:'hex',color:'#8ee6ba'},
+ conservatory:{shape:'leaf',color:'#86cf83'},tower:{shape:'spire',color:'#b79de5'},generic:{shape:'circle',color:'#dbc989'},
+});
 const escape = value => String(value).replace(/[&<>"']/g, character => (
   { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]
 ));
@@ -48,7 +55,39 @@ export function atlasRegions(state) {
 export const ATLAS_WIDTH=1500;
 export const ATLAS_HEIGHT=820;
 export const PREVIEW_ATLAS_HEIGHT=1080;
+export const ATLAS_RENDER_SCALE=3;
 export function clampAtlasZoom(value){return Math.max(.75,Math.min(3,Number(value)||1));}
+export function atlasMarker(point){
+ const text=`${point?.kind||''} ${point?.type||''} ${point?.name||''}`.toLowerCase();
+ const type=point?.mark==='town'||/\b(town|settlement|village|market)\b/.test(text)?'town'
+  :/\bpalace\b/.test(text)?'palace':/\bcastle\b|fortress|citadel/.test(text)?'castle'
+  :/teleporter|portal/.test(text)?'teleporter':/alien.*monument|monument.*alien|artifact monument/.test(text)?'monument'
+  :/conservatory/.test(text)?'conservatory':/wizard.*tower|tower.*wizard|twinklestar|widow.s bell/.test(text)?'tower'
+  :/cemetery|graveyard|burial ground/.test(text)?'cemetery':/crypt|sepulchre|tomb|ossuary/.test(text)?'crypt'
+  :/\bdig\b|mine shaft|excavation/.test(text)?'dig':/shrine|sanctuary|temple|fane/.test(text)?'shrine'
+  :/cave|cavern|grotto|burrow|den|lair/.test(text)?'cave':/ruin|abandon/.test(text)?'ruin'
+  :point?.kind==='dungeon'||point?.mark==='dungeon'?'dungeon':'generic';
+ return {type,alpha:.78,...MARKER_STYLES[type]};
+}
+
+function drawAtlasMarker(c,x,y,style){
+ c.save();c.globalAlpha=style.alpha;c.fillStyle=style.color;c.strokeStyle='#07100ddd';c.lineWidth=1.4;c.beginPath();
+ if(style.shape==='square')c.rect(x-4,y-4,8,8);
+ else if(style.shape==='triangle'||style.shape==='spire'){c.moveTo(x,y-5);c.lineTo(x+5,y+4);c.lineTo(x-5,y+4);c.closePath();}
+ else if(style.shape==='diamond'){c.moveTo(x,y-5);c.lineTo(x+5,y);c.lineTo(x,y+5);c.lineTo(x-5,y);c.closePath();}
+ else if(style.shape==='hex'){for(let i=0;i<6;i++){const a=Math.PI/3*i-Math.PI/2;(i?c.lineTo:c.moveTo).call(c,x+Math.cos(a)*5,y+Math.sin(a)*5);}c.closePath();}
+ else if(style.shape==='ring'){c.arc(x,y,5,0,Math.PI*2);c.moveTo(x+2.5,y);c.arc(x,y,2.5,0,Math.PI*2,true);}
+ else if(style.shape==='cross'){c.rect(x-1.5,y-5,3,10);c.rect(x-4,y-2.5,8,3);}
+ else if(style.shape==='coffin'){c.moveTo(x-3,y-5);c.lineTo(x+3,y-5);c.lineTo(x+4,y-2);c.lineTo(x+3,y+5);c.lineTo(x-3,y+5);c.lineTo(x-4,y-2);c.closePath();}
+ else if(style.shape==='castle'){c.rect(x-5,y-2,10,7);c.rect(x-5,y-5,3,4);c.rect(x+2,y-5,3,4);}
+ else if(style.shape==='crown'){c.moveTo(x-5,y+4);c.lineTo(x-4,y-4);c.lineTo(x,y);c.lineTo(x+4,y-4);c.lineTo(x+5,y+4);c.closePath();}
+ else if(style.shape==='star'){for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,r=i%2?2.2:5;(i?c.lineTo:c.moveTo).call(c,x+Math.cos(a)*r,y+Math.sin(a)*r);}c.closePath();}
+ else if(style.shape==='leaf'){c.ellipse(x,y,4,6,Math.PI/4,0,Math.PI*2);}
+ else if(style.shape==='pick'){c.arc(x-1,y+1,4,-Math.PI*.9,-Math.PI*.15);c.moveTo(x+2,y-2);c.lineTo(x-3,y+5);}
+ else if(style.shape==='broken'){c.moveTo(x-5,y+4);c.lineTo(x-3,y-4);c.lineTo(x,y-1);c.lineTo(x+2,y-5);c.lineTo(x+5,y+4);c.closePath();}
+ else c.arc(x,y,4.5,0,Math.PI*2);
+ c.fill(style.shape==='ring'?'evenodd':'nonzero');c.stroke();c.restore();
+}
 
 // Position the maps around their playable border connections. The wider
 // channels across eastern waters and around the Barrens stay open sea.
@@ -123,17 +162,23 @@ export function atlasView(state){
  return `<div class="atlas-chart-heading"><span>${state.flags.previewFullMap?'THE WHOLE WORLD · CLICK TO EXPLORE':'THE KNOWN WORLD'}</span><small>Drag or scroll to explore the map</small><div class="atlas-zoom-controls" role="group" aria-label="Map zoom"><button type="button" data-atlas-zoom="out" aria-label="Zoom out">−</button><output data-atlas-zoom-level>100%</output><button type="button" data-atlas-zoom="in" aria-label="Zoom in">+</button><button type="button" data-atlas-zoom="fit">Fit</button></div></div>
  <div class="atlas-panorama" tabindex="0" role="region" aria-label="Scrollable world map">
  <canvas data-atlas-world width="${ATLAS_WIDTH}" height="${state.flags.previewFullMap?PREVIEW_ATLAS_HEIGHT:ATLAS_HEIGHT}" role="img" aria-label="World map: ${names.join(', ')}. Your position is marked with a white star."></canvas></div>
- <p class="atlas-chart-legend"><span><i class="atlas-town"></i>Settlement</span><span><i class="atlas-dungeon"></i>Dungeon</span><span class="atlas-player-key">✦ You are here</span></p>`;
+ <p class="atlas-chart-legend"><span>■ Settlement</span><span>✦ Shrine</span><span>▲ Cave</span><span>◆ Dungeon</span><span>✚ Crypt</span><span>⬡ Alien site</span><span class="atlas-player-key">✦ You are here</span></p>`;
 }
 
 export function paintAtlasMaps(container,state){
  const canvas=container.querySelector('[data-atlas-world]');
  if(!canvas)return;
+ const logicalHeight=state.flags.previewFullMap?PREVIEW_ATLAS_HEIGHT:ATLAS_HEIGHT;
+ // Keep enough source pixels for the maximum 300% zoom. Without this larger
+ // backing store the browser merely stretches a 1500px bitmap and blurs labels.
+ const renderScale=canvas.style?ATLAS_RENDER_SCALE:1;
+ if(canvas.style){canvas.style.width=ATLAS_WIDTH+'px';canvas.style.aspectRatio=`${ATLAS_WIDTH} / ${logicalHeight}`;canvas.width=ATLAS_WIDTH*renderScale;canvas.height=logicalHeight*renderScale;}
  const c=canvas.getContext('2d');if(!c)return;
+ c.setTransform?.(renderScale,0,0,renderScale,0,0);
  const lands=chartLands(state),currentArea=areaFor(state);
  const sea=c.createLinearGradient(0,0,ATLAS_WIDTH,ATLAS_HEIGHT);
  sea.addColorStop(0,'#1b536e');sea.addColorStop(.55,'#143d59');sea.addColorStop(1,'#0b2940');
- c.fillStyle=sea;c.fillRect(0,0,ATLAS_WIDTH,canvas.height);
+ c.fillStyle=sea;c.fillRect(0,0,ATLAS_WIDTH,logicalHeight);
  if(!state.flags.previewFullMap){
   const known=new Set(lands.map(land=>land.id));
   for(const id of Object.keys(placements)){
@@ -169,12 +214,8 @@ export function paintAtlasMaps(container,state){
  for(const land of lands){
   for(const point of land.sites){
    const {x,y}=atlasPoint(land,point);
-   c.fillStyle=point.mark==='town'?MARKS.town:point.kind==='bottomlessPit'?'#f19e73':MARKS.dungeon;
-   c.beginPath();
-   if(point.mark==='town')c.rect(x-3.5,y-3.5,7,7);
-   else {c.moveTo(x,y-4);c.lineTo(x+4,y);c.lineTo(x,y+4);c.lineTo(x-4,y);c.closePath();}
-   c.fill();
-   label(point.name,x,y+11,land.branch?9:10,'#f4e6c1');
+   drawAtlasMarker(c,x,y,atlasMarker(point));
+   label(point.name,x,y+12,land.branch?9:10,'#f4e6c1');
   }
   label(land.name,land.x+land.width/2,land.y+18,land.branch?13:20);
   if(!land.branch)label('Levels '+land.levels,land.x+land.width/2,land.y+39,11,land.color);

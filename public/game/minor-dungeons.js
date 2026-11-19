@@ -88,6 +88,13 @@ export function minorDungeonMap(d,{courtyard=true}={}) {
       // Preserve the old secret door and its surrounding masonry.
       if(map[y][x]===1&&(!secret||Math.abs(x-secret.x)+Math.abs(y-secret.y)>1))map[y][x]=0;
     }
+    // Above-ground burial vaults stand shoulder-high to the camera and make
+    // the cemetery a set of narrow processional lanes rather than an empty yard.
+    const vaultBlocks=[[3,2,4,5],[3,8,4,12],[7,3,8,7],[7,10,8,12],[11,2,12,5],[11,8,12,11]];
+    for(const [left,top,right,bottom] of vaultBlocks)for(let y=top;y<=bottom;y++)for(let x=left;x<=right;x++){
+      if(!secret||Math.abs(x-secret.x)+Math.abs(y-secret.y)>1)map[y][x]=1;
+    }
+    map[1][1]=3;map[13][13]=2;
   }
   return map;
 }

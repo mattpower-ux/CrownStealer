@@ -27,6 +27,7 @@ import {wildernessDiscoveries} from './wilderness-discoveries.js';
 import {drawDiscoveryArt,drawHeroGhost} from './discovery-render.js';
 import {caveProfile} from './cave-profiles.js';
 import {drawTrollCaveDetails,drawTrollCaveVault,isTrollCave} from './troll-cave-render.js';
+import {drawHeatLairVault,heatLairProfile,heatMeltedPixel} from './heat-lair-render.js';
 import {drawDungeonCeiling,shrineWallInk} from './dungeon-ceilings.js';
 import {drawSolidLadders} from './ladder-render.js';
 import {isKoboldBurrow,isRuinedShrine,burrowPixel,drawBurrowPlanes,drawBurrowDarkness,drawDungeonFlicker,drawSecretDoor,drawBurrowDebris} from './burrow-render.js';
@@ -38,6 +39,8 @@ import {castleFurnishings} from './castle-furnishings.js';
 import {ROYAL_DUNGEON_ID,ROYAL_DUNGEON_CELLS,ROYAL_DUNGEON_NPCS,royalDungeonFigures} from './royal-dungeon.js';
 import {BALROG_ID} from './bottomless-pit.js';
 import {PUTRID_PALACE,WANG_ID} from './royal-trials.js';
+import {drawBarrensDesecration,isWhisperingBarrens} from './whispering-barrens.js';
+import {drawCopperWastesOccupation,isCopperWastes} from './copper-wastes.js';
 
 let viewportGround=null;
 
@@ -81,7 +84,7 @@ import {drawForest,treeFort} from './forest-render.js';
 
 import {wallDetail,wallDetailKind} from './wall-details.js';
 
-import {drawDungeonChests} from './chest-render.js';
+import {drawDungeonChests,dungeonChestTargets} from './chest-render.js';
 
 
 import {dungeonLadders,discoveredDungeonLadders} from './dungeon-ladders.js';
@@ -393,9 +396,9 @@ function drawWorldViewport(c,w,h,s){
   label(c,'N',w-33,35,15,'#d1b57c');c.strokeStyle='#d1b57c';c.beginPath();c.moveTo(w-33,42);c.lineTo(w-33,66);c.stroke();path(c,[[w-33,39],[w-38,49],[w-28,49]],'#d1b57c');
  }
 }
-export function render(canvas,s,time=0,fx=null,reduced=false){renderedHero=s;const rect=canvas.getBoundingClientRect();const dpr=Math.min(devicePixelRatio||1,2);const w=Math.max(1,rect.width),h=Math.max(1,rect.height);if(canvas.width!==Math.round(w*dpr)||canvas.height!==Math.round(h*dpr)){canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);}const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);
+export function render(canvas,s,time=0,fx=null,reduced=false){renderedHero=s;canvas.chestTargets=[];const rect=canvas.getBoundingClientRect();const dpr=Math.min(devicePixelRatio||1,2);const w=Math.max(1,rect.width),h=Math.max(1,rect.height);if(canvas.width!==Math.round(w*dpr)||canvas.height!==Math.round(h*dpr)){canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);}const c=canvas.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);
 
- if(s.dungeon&&(s.mode==='dungeon'||s.mode==='battle'&&s.returnMode==='dungeon'))canvas.dataset.wallTheme=s.dungeon.site===TWINKLESTAR_TOWER_ID?'Twinklestar’s arcane tower':s.dungeon.site===PERCIVAL_CASTLE_ID?'Percival’s haunted crypt':isMountainTunnel(s.dungeon)?'Natural red-rock mountain tunnel':isRuinedShrine(s.dungeon)?'Obsidian shrine and cut-stone vault':isKoboldBurrow(s.dungeon)?'Kobold earth burrow':caveProfile(s.dungeon.expedition)?.name||DUNGEON_WALLS[s.dungeon.index].name;else delete canvas.dataset.wallTheme;
+ if(s.dungeon&&(s.mode==='dungeon'||s.mode==='battle'&&s.returnMode==='dungeon'))canvas.dataset.wallTheme=s.dungeon.site===TWINKLESTAR_TOWER_ID?'Twinklestar’s arcane tower':s.dungeon.site===PERCIVAL_CASTLE_ID?'Percival’s haunted crypt':isWhisperingBarrens(s)?'Whispering Barrens · defiled infernal sanctuary':isCopperWastes(s)?'Copper Wastes · goblin-occupied dwarven under-city':isMountainTunnel(s.dungeon)?'Natural red-rock mountain tunnel':isRuinedShrine(s.dungeon)?'Obsidian shrine and cut-stone vault':isKoboldBurrow(s.dungeon)?'Kobold earth burrow':caveProfile(s.dungeon.expedition)?.name||DUNGEON_WALLS[s.dungeon.index].name;else delete canvas.dataset.wallTheme;
 
  if(s.mode==='battle'&&s.returnMode==='dungeon')canvas.dataset.combatDistance=String(battlefieldDistance(s));else delete canvas.dataset.combatDistance;
  const contact=s.mode==='battle'&&s.returnMode==='dungeon',wildContact=s.mode==='battle'&&s.returnMode!=='dungeon'&&s.enemy?.firstContact;
@@ -908,7 +911,8 @@ function dungeon(c,w,h,s,time){
 
  if(!corridorCache||corridorCache.key!==key){let image=corridorViews.get(key);if(!image){image=document.createElement('canvas');const ratio=Math.min(1,960/w,600/h);image.width=Math.ceil(w*ratio);image.height=Math.ceil(h*ratio);dungeonUncached(image.getContext('2d'),image.width,image.height,s,time);if(corridorViews.size>=20)corridorViews.delete(corridorViews.keys().next().value);corridorViews.set(key,image);}corridorCache={key,image};}
 
- c.save();c.imageSmoothingEnabled=true;c.imageSmoothingQuality='high';c.drawImage(corridorCache.image,0,0,w,h);c.restore();if(isCinderWardCrypt(s.dungeon))drawCinderWardLavaGlow(c,w,h,corridorCache.image.dungeonLights,time);else if(s.dungeon.site===TWINKLESTAR_TOWER_ID)drawWizardCandleGlow(c,w,h,corridorCache.image.dungeonLights,time);else drawDungeonFlicker(c,w,h,corridorCache.image.dungeonLights,time);
+ c.save();c.imageSmoothingEnabled=true;c.imageSmoothingQuality='high';c.drawImage(corridorCache.image,0,0,w,h);c.restore();drawBarrensDesecration(c,w,h,s,time);drawCopperWastesOccupation(c,w,h,s);if(isCinderWardCrypt(s.dungeon))drawCinderWardLavaGlow(c,w,h,corridorCache.image.dungeonLights,time);else if(s.dungeon.site===TWINKLESTAR_TOWER_ID)drawWizardCandleGlow(c,w,h,corridorCache.image.dungeonLights,time);else drawDungeonFlicker(c,w,h,corridorCache.image.dungeonLights,time);
+ if(s.mode==='dungeon'){const [dx,dy]=DIRS[s.dungeon.dir];canvasChestTargets(c,dungeonChestTargets(w,h,s,dungeonMap(s.dungeon),dx,dy));}
  if(s.mode==='dungeon'&&s.dungeon.site===ROYAL_DUNGEON_ID)drawRoyalDungeonFigures(c,w,h,s);
  if(nearKerrbear(s)&&s.mode==='dungeon'){c.save();c.font='bold 24px Georgia';c.textAlign='center';c.strokeStyle='#101a15';c.lineWidth=5;c.fillStyle='#f5e5b8';c.strokeText('Kerrbear guards three cubs nearby',w/2,h*.68);c.fillText('Kerrbear guards three cubs nearby',w/2,h*.68);c.restore();}
  if(s.mode==='dungeon'&&isPebbleRun(s.dungeon))drawPeebles(c,w,h,s,dungeonMap(s.dungeon),DIRS[s.dungeon.dir]);
@@ -916,6 +920,8 @@ function dungeon(c,w,h,s,time){
  if(guard){c.save();c.translate(guard.side/guard.distance*w/(2*Math.tan(Math.PI/5.2)),0);dungeonMonster(c,w,h,{...s,mode:'battle',returnMode:'dungeon',enemy:{...guard.enemy,combatDistance:guard.distance}},time,null,true);c.restore();}
 
 }
+
+function canvasChestTargets(c,targets){c.canvas.chestTargets=targets;}
 
 function drawLadderOpenings(c,w,h,d,ladders,dx,dy,fov){
  const focal=w/(2*Math.tan(fov/2));
@@ -1018,7 +1024,7 @@ function drawSageRemains(c,w,h,d,dx,dy,fov,wallDepth){
  }
 }
 
-function dungeonUncached(c,w,h,s,time){const d=s.dungeon;if(!d)return;if(d.ship){drawShip(c,w,h,s);return;}if(d.site==='elf-village'){const [dx,dy]=DIRS[d.dir];drawForest(c,w,h,s,dungeonMap(d),dx,dy);return;}const m=dungeonMap(d),ladders=dungeonLadders(d,m),cave=caveProfile(d.expedition),cinderCrypt=isCinderWardCrypt(d),pebble=isPebbleRun(d),burrow=!pebble&&isKoboldBurrow(d),cemetery=isCemeteryDungeon(d),openAir=isOpenAirCemetery(d),shrine=isRuinedShrine(d),charityMarble=isCharityMarble(d),mossyShrine=isMossyShrine(d),tunnel=isMountainTunnel(d),haunted=d.site===PERCIVAL_CASTLE_ID,twinkling=d.site===TWINKLESTAR_TOWER_ID,druid=d.site===DRUID_SITE,wall=cinderCrypt?{...DUNGEON_WALLS[3],tint:[32,0,-8],ceiling:'#241916',floor:'#3d271f'}:charityMarble?{...DUNGEON_WALLS[0],floor:'#babdc1',ceiling:'#fcfcff'}:tunnel?{...DUNGEON_WALLS[0],floor:'#3b2b1f',ceiling:'#25180f'}:d.royal==='sewer'?SEWER_WALL:DUNGEON_WALLS[twinkling?7:haunted?1:cave?.wall??(d.site==='firedrak'?3:d.index)];const ceiling=c.createLinearGradient(0,0,0,h);ceiling.addColorStop(0,wall.ceiling);ceiling.addColorStop(.5,charityMarble?'#ccd0d4':'#151b1b');ceiling.addColorStop(.51,openAir?'#424c48':d.expedition?.startsWith('planet-1')?'#c6b68e':wall.floor);ceiling.addColorStop(1,charityMarble?'#92979c':'#111816');c.fillStyle=ceiling;c.fillRect(0,0,w,h);for(let i=0;i<190;i++){const xx=(i*137.53)%w,yy=h*.52+(i*71.71)%(h*.48);c.fillStyle=charityMarble?(i%3?'#ffffffcc':'#f0f3ff99'):d.expedition?.startsWith('planet-1')?(i%2?'#e3d1a333':'#705e3b33'):'#938f7330';c.fillRect(xx,yy,2+(i%3),1);}if(tunnel)drawMountainVault(c,w,h,d.floor);else if(shrine)drawShrineVault(c,w,h,{marble:charityMarble,moss:mossyShrine});else if(!burrow&&!pebble&&!openAir)drawDungeonCeiling(c,w,h,wall,{phase:d.floor});if(d.royal==='sewer')drawSewerChannel(c,w,h,time);const splitRock=isSplitRock(d);const [dx,dy]=DIRS[d.dir];const angle=Math.atan2(dy,dx),fov=Math.PI/2.6,step=2;
+function dungeonUncached(c,w,h,s,time){const d=s.dungeon;if(!d)return;if(d.ship){drawShip(c,w,h,s);return;}if(d.site==='elf-village'){const [dx,dy]=DIRS[d.dir];drawForest(c,w,h,s,dungeonMap(d),dx,dy);return;}const m=dungeonMap(d),ladders=dungeonLadders(d,m),cave=caveProfile(d.expedition),heatLair=heatLairProfile(d),cinderCrypt=isCinderWardCrypt(d),pebble=isPebbleRun(d),burrow=!heatLair&&!pebble&&isKoboldBurrow(d),cemetery=isCemeteryDungeon(d),openAir=isOpenAirCemetery(d),shrine=isRuinedShrine(d),charityMarble=isCharityMarble(d),mossyShrine=isMossyShrine(d),tunnel=isMountainTunnel(d),haunted=d.site===PERCIVAL_CASTLE_ID,twinkling=d.site===TWINKLESTAR_TOWER_ID,druid=d.site===DRUID_SITE,wall=heatLair?{...DUNGEON_WALLS[3],tint:[18,-3,-8],ceiling:'#171112',floor:'#241817'}:cinderCrypt?{...DUNGEON_WALLS[3],tint:[32,0,-8],ceiling:'#241916',floor:'#3d271f'}:charityMarble?{...DUNGEON_WALLS[0],floor:'#babdc1',ceiling:'#fcfcff'}:tunnel?{...DUNGEON_WALLS[0],floor:'#3b2b1f',ceiling:'#25180f'}:d.royal==='sewer'?SEWER_WALL:DUNGEON_WALLS[twinkling?7:haunted?1:cave?.wall??(d.site==='firedrak'?3:d.index)];const ceiling=c.createLinearGradient(0,0,0,h);ceiling.addColorStop(0,wall.ceiling);ceiling.addColorStop(.5,charityMarble?'#ccd0d4':'#151b1b');ceiling.addColorStop(.51,openAir?'#424c48':d.expedition?.startsWith('planet-1')?'#c6b68e':wall.floor);ceiling.addColorStop(1,charityMarble?'#92979c':'#111816');c.fillStyle=ceiling;c.fillRect(0,0,w,h);for(let i=0;i<190;i++){const xx=(i*137.53)%w,yy=h*.52+(i*71.71)%(h*.48);c.fillStyle=charityMarble?(i%3?'#ffffffcc':'#f0f3ff99'):d.expedition?.startsWith('planet-1')?(i%2?'#e3d1a333':'#705e3b33'):heatLair?(i%3?'#6c35262b':'#e05a2520'):'#938f7330';c.fillRect(xx,yy,2+(i%3),1);}if(heatLair)drawHeatLairVault(c,w,h,d.floor);else if(tunnel)drawMountainVault(c,w,h,d.floor);else if(shrine)drawShrineVault(c,w,h,{marble:charityMarble,moss:mossyShrine});else if(!burrow&&!pebble&&!openAir)drawDungeonCeiling(c,w,h,wall,{phase:d.floor});if(d.royal==='sewer')drawSewerChannel(c,w,h,time);const splitRock=isSplitRock(d);const [dx,dy]=DIRS[d.dir];const angle=Math.atan2(dy,dx),fov=Math.PI/2.6,step=2;
 
  const troll=isTrollCave(d);
  if(troll)drawTrollCaveVault(c,w,h,d.floor);
@@ -1033,13 +1039,17 @@ function dungeonUncached(c,w,h,s,time){const d=s.dungeon;if(!d)return;if(d.ship)
  const cemeteryFixtures=new Map(cemetery?cemeteryTorches(d,m).map(t=>[t.wallX+':'+t.wallY,t]):[]);
  const lightSources=new Map();c.canvas.dungeonLights=[];
  const wallImage=c.getImageData(0,0,w,h),wallPixels=new Uint32Array(wallImage.data.buffer),wallDepth=new Float32Array(w).fill(18);
- for(let col=0;col<w;col+=step){const a=angle+Math.atan((col/w-.5)*2*Math.tan(fov/2));const vx=Math.cos(a),vy=Math.sin(a);let dist=.02,x=d.x+.5,y=d.y+.5;while(dist<18){x=d.x+.5+vx*dist;y=d.y+.5+vy*dist;if(rayMap[Math.floor(y)]?.[Math.floor(x)]===1||rayMap[Math.floor(y)]?.[Math.floor(x)]===undefined)break;dist+=.025;}if(dist<18){let low=Math.max(0,dist-.025),high=dist;for(let n=0;n<7;n++){const mid=(low+high)/2,mx=d.x+.5+vx*mid,my=d.y+.5+vy*mid;if(rayMap[Math.floor(my)]?.[Math.floor(mx)]===1||rayMap[Math.floor(my)]?.[Math.floor(mx)]===undefined)high=mid;else low=mid;}dist=high;x=d.x+.5+vx*dist;y=d.y+.5+vy*dist;}const corrected=dist*Math.cos(a-angle),height=Math.min(h*2,h*.85/corrected),top=(h-height)/2+(tunnel?height*(.16*(Math.abs(col/w-.5)*2)**2+.012*Math.sin(x*27+y*19)):0);for(let px=col;px<Math.min(w,col+step);px++)wallDepth[px]=corrected;const fracX=x-Math.floor(x),fracY=y-Math.floor(y),vertical=fracX<.04||fracX>.96,tex=vertical?fracY:fracX;const light=(openAir?clamp(.88-dist*.04,.34,.85):clamp(1-dist/11,.09,.95))*(vertical?.77:1);const atGate=gate?.wallX===Math.floor(x)&&gate.wallY===Math.floor(y);const wallTorch=cemeteryFixtures.get(Math.floor(x)+':'+Math.floor(y)),torchLit=wallTorch&&s.flags.cemeteryTorches?.includes(wallTorch.id);const detail=wallDetailKind(Math.floor(x),Math.floor(y),d.index);const cryptFace=Math.floor(x)*11+Math.floor(y)*7+(vertical?2:0)+d.floor;const barred=d.site===ROYAL_DUNGEON_ID&&!d.cellsOpen&&ROYAL_DUNGEON_CELLS.some(cell=>cell.door.x===Math.floor(x)&&cell.door.y===Math.floor(y));const mounted=visibleLadders.find(l=>l.wallX===Math.floor(x)&&l.wallY===Math.floor(y)&&l.x===Math.floor(x-vx*.07)&&l.y===Math.floor(y-vy*.07));const candle=burrow&&((Math.floor(x)*3+Math.floor(y)*5)%4===0)&&!mounted;const torch=cemetery?!!torchLit:!cinderCrypt&&!burrow&&!tunnel&&!haunted&&!twinkling&&!d.expedition?.startsWith('planet-')&&![4,6,8].includes(d.royal==='sewer'?8:d.index)&&detail>=7&&detail<9;
+ for(let col=0;col<w;col+=step){const a=angle+Math.atan((col/w-.5)*2*Math.tan(fov/2));const vx=Math.cos(a),vy=Math.sin(a);let dist=.02,x=d.x+.5,y=d.y+.5;while(dist<18){x=d.x+.5+vx*dist;y=d.y+.5+vy*dist;if(rayMap[Math.floor(y)]?.[Math.floor(x)]===1||rayMap[Math.floor(y)]?.[Math.floor(x)]===undefined)break;dist+=.025;}if(dist<18){let low=Math.max(0,dist-.025),high=dist;for(let n=0;n<7;n++){const mid=(low+high)/2,mx=d.x+.5+vx*mid,my=d.y+.5+vy*mid;if(rayMap[Math.floor(my)]?.[Math.floor(mx)]===1||rayMap[Math.floor(my)]?.[Math.floor(mx)]===undefined)high=mid;else low=mid;}dist=high;x=d.x+.5+vx*dist;y=d.y+.5+vy*dist;}const corrected=dist*Math.cos(a-angle),height=Math.min(h*2,h*.85/corrected),top=(h-height)/2+((tunnel||heatLair)?height*(.16*(Math.abs(col/w-.5)*2)**2+.012*Math.sin(x*27+y*19)):0);for(let px=col;px<Math.min(w,col+step);px++)wallDepth[px]=corrected;const fracX=x-Math.floor(x),fracY=y-Math.floor(y),vertical=fracX<.04||fracX>.96,tex=vertical?fracY:fracX;const light=(openAir?clamp(.88-dist*.04,.34,.85):clamp(1-dist/11,.09,.95))*(vertical?.77:1);const atGate=gate?.wallX===Math.floor(x)&&gate.wallY===Math.floor(y);const wallTorch=cemeteryFixtures.get(Math.floor(x)+':'+Math.floor(y)),torchLit=wallTorch&&s.flags.cemeteryTorches?.includes(wallTorch.id);const detail=wallDetailKind(Math.floor(x),Math.floor(y),d.index);const cryptFace=Math.floor(x)*11+Math.floor(y)*7+(vertical?2:0)+d.floor;const barred=d.site===ROYAL_DUNGEON_ID&&!d.cellsOpen&&ROYAL_DUNGEON_CELLS.some(cell=>cell.door.x===Math.floor(x)&&cell.door.y===Math.floor(y));const mounted=visibleLadders.find(l=>l.wallX===Math.floor(x)&&l.wallY===Math.floor(y)&&l.x===Math.floor(x-vx*.07)&&l.y===Math.floor(y-vy*.07));const candle=burrow&&!heatLair&&((Math.floor(x)*3+Math.floor(y)*5)%4===0)&&!mounted;const torch=cemetery?!!torchLit:!heatLair&&!cinderCrypt&&!burrow&&!tunnel&&!haunted&&!twinkling&&!d.expedition?.startsWith('planet-')&&![4,6,8].includes(d.royal==='sewer'?8:d.index)&&detail>=7&&detail<9;
  if(cinderCrypt&&cinderWardLavaChamber(cryptFace)&&Math.abs(tex-.5)<.04){
   const id=Math.floor(x)+':'+Math.floor(y)+':'+vertical,error=Math.abs(tex-.5);
   if(!lightSources.has(id)||error<lightSources.get(id).error)lightSources.set(id,{x:col/w,y:(top+height*.7)/h,size:height*.85/h,phase:cryptFace,error});
  }
+ if(heatLair&&Math.abs(cryptFace)%7===0&&Math.abs(tex-.46)<.12){
+  const id='lava:'+Math.floor(x)+':'+Math.floor(y)+':'+vertical,error=Math.abs(tex-.46);
+  if(!lightSources.has(id)||error<lightSources.get(id).error)lightSources.set(id,{x:col/w,y:(top+height*.62)/h,size:height*.72/h,phase:cryptFace,error});
+ }
  if((candle||torch||twinkling&&detail%3===1&&!mounted)&&Math.abs(tex-.5)<.035){const id=Math.floor(x)+':'+Math.floor(y)+':'+vertical,previous=lightSources.get(id),error=Math.abs(tex-.5);if(!previous||error<previous.error)lightSources.set(id,{x:col/w,y:(top+height*(candle?.365:.36))/h,size:height*(candle?.022:.065)/h,phase:Math.floor(x)*1.7+Math.floor(y)*2.3,error});}
- for(let yy=Math.max(0,top);yy<Math.min(h,top+height);yy+=2){const v=(yy-top)/height;const row=Math.floor(v*wall.rows);const mortar=(v*wall.rows)%1<.06||((tex*wall.columns+(row%2)*.5)%1)<.045;const grain=Math.sin(tex*190+v*140)*4;const wear=wall.wear===1&&(row+Math.floor(tex*9))%7===0?-9:wall.wear===2&&(tex*wall.columns)%1<.12?8:0;const base=mortar?28:78+grain+wear;let color=(255<<24)|(Math.max(0,Math.floor((base+wall.tint[2])*light))<<16)|(Math.max(0,Math.floor((base+wall.tint[1])*light))<<8)|Math.max(0,Math.floor((base+wall.tint[0])*light));if(cinderCrypt){color=cinderWardWallPixel(cryptFace,tex,v,Math.max(light,.19));}else if(druid){color=druidRootPixel(tex,v,light,(Math.floor(x)*7+Math.floor(y)*3)%6===0)??color;}else if(pebble){const face=Math.floor(x)*7+Math.floor(y)*11;color=pebblePixel('wall',tex,v,light,face%11===0?Math.floor(face/11)%3:-1)??color;}else if(tunnel){color=tunnelRockPixel(vertical?y:x,v,light);}else if(burrow){color=burrowPixel('wall',vertical?y:x,v,light,((Math.floor(x)*3+Math.floor(y)*5)%4===0)&&!mounted,splitRock);}else{const material=wallMaterialPixel(twinkling?7:haunted?1:cave?.wall??(d.expedition?.startsWith('planet-1')?4:d.site==='firedrak'?3:d.index),tex,v,light);if(material!==null)color=material;if(openAir)color=charityMarblePixel(tex,v,light*.75);if(shrine)color=mossyShrine?mossyShrinePixel(vertical?y:x,v,light):charityMarble?charityMarblePixel(tex,v,light):obsidianPixel(tex,v,light);const ink=openAir?(atGate?cemeteryGateInk(tex,v):null):d.rolandCell?rolandScratchInk(Math.floor(x),Math.floor(y),tex,v):d.site===ROADSIDE_CRYPT?shrineWallInk((Math.floor(x)*7+Math.floor(y)*11)%4===0?10:(Math.floor(x)+2*Math.floor(y))%3===0?5:1,tex,v,light):cemetery?(cemeteryTorchInk(wallTorch,torchLit,tex,v,time)||shrineWallInk(detail,tex,v,light)):shrine?shrineWallInk(detail,tex,v,light):twinkling?twinklestarWallInk(detail,tex,v):haunted?percivalWallInk(detail,tex,v):d.expedition?.startsWith('planet-')?alienWallInk(detail,tex,v):wallDetail(detail,tex,v,time,d.royal==='sewer'?8:d.index);if(ink)color=inkPixel(ink);if(cave){const r=Math.max(0,Math.min(255,(color&255)+cave.tint[0])),g=Math.max(0,Math.min(255,((color>>>8)&255)+cave.tint[1])),b=Math.max(0,Math.min(255,((color>>>16)&255)+cave.tint[2]));color=(255<<24)|(b<<16)|(g<<8)|r;}}if(twinkling)color=wizardWallPixel(detail,tex,v,light);if(mounted){const arrowV=mounted.direction==='up'?.22:.78;const arrow=Math.abs(Math.abs(tex-.5)-Math.abs(v-arrowV)*1.4)<.025&&(mounted.direction==='up'?v>arrowV&&v<arrowV+.1:v<arrowV&&v>arrowV-.1);if(arrow)color=inkPixel(mounted.direction==='up'?'#a6e4ef':'#ffe1a0');}if(barred){const beam=tex<.08||tex>.92||v<.07||v>.93||Math.abs(v-.48)<.025||(tex*9)%1<.19;color=inkPixel(beam?'#717675':'#141d20');}const y0=Math.max(0,Math.floor(yy)),y1=Math.min(h,y0+2),x1=Math.min(w,col+step);for(let py=y0;py<y1;py++){let offset=py*w+col;for(let px=col;px<x1;px++)wallPixels[offset++]=color;}}}
+ for(let yy=Math.max(0,top);yy<Math.min(h,top+height);yy+=2){const v=(yy-top)/height;const row=Math.floor(v*wall.rows);const mortar=(v*wall.rows)%1<.06||((tex*wall.columns+(row%2)*.5)%1)<.045;const grain=Math.sin(tex*190+v*140)*4;const wear=wall.wear===1&&(row+Math.floor(tex*9))%7===0?-9:wall.wear===2&&(tex*wall.columns)%1<.12?8:0;const base=mortar?28:78+grain+wear;let color=(255<<24)|(Math.max(0,Math.floor((base+wall.tint[2])*light))<<16)|(Math.max(0,Math.floor((base+wall.tint[1])*light))<<8)|Math.max(0,Math.floor((base+wall.tint[0])*light));if(heatLair){color=heatMeltedPixel(cryptFace,tex,v,Math.max(light,.16));}else if(cinderCrypt){color=cinderWardWallPixel(cryptFace,tex,v,Math.max(light,.19));}else if(druid){color=druidRootPixel(tex,v,light,(Math.floor(x)*7+Math.floor(y)*3)%6===0)??color;}else if(pebble){const face=Math.floor(x)*7+Math.floor(y)*11;color=pebblePixel('wall',tex,v,light,face%11===0?Math.floor(face/11)%3:-1)??color;}else if(tunnel){color=tunnelRockPixel(vertical?y:x,v,light);}else if(burrow){color=burrowPixel('wall',vertical?y:x,v,light,((Math.floor(x)*3+Math.floor(y)*5)%4===0)&&!mounted,splitRock);}else{const material=wallMaterialPixel(twinkling?7:haunted?1:cave?.wall??(d.expedition?.startsWith('planet-1')?4:d.site==='firedrak'?3:d.index),tex,v,light);if(material!==null)color=material;if(openAir)color=charityMarblePixel(tex,v,light*.75);if(shrine)color=mossyShrine?mossyShrinePixel(vertical?y:x,v,light):charityMarble?charityMarblePixel(tex,v,light):obsidianPixel(tex,v,light);const ink=openAir?(atGate?cemeteryGateInk(tex,v):null):d.rolandCell?rolandScratchInk(Math.floor(x),Math.floor(y),tex,v):d.site===ROADSIDE_CRYPT?shrineWallInk((Math.floor(x)*7+Math.floor(y)*11)%4===0?10:(Math.floor(x)+2*Math.floor(y))%3===0?5:1,tex,v,light):cemetery?(cemeteryTorchInk(wallTorch,torchLit,tex,v,time)||shrineWallInk(detail,tex,v,light)):shrine?shrineWallInk(detail,tex,v,light):twinkling?twinklestarWallInk(detail,tex,v):haunted?percivalWallInk(detail,tex,v):d.expedition?.startsWith('planet-')?alienWallInk(detail,tex,v):wallDetail(detail,tex,v,time,d.royal==='sewer'?8:d.index);if(ink)color=inkPixel(ink);if(cave){const r=Math.max(0,Math.min(255,(color&255)+cave.tint[0])),g=Math.max(0,Math.min(255,((color>>>8)&255)+cave.tint[1])),b=Math.max(0,Math.min(255,((color>>>16)&255)+cave.tint[2]));color=(255<<24)|(b<<16)|(g<<8)|r;}}if(twinkling)color=wizardWallPixel(detail,tex,v,light);if(mounted){const arrowV=mounted.direction==='up'?.22:.78;const arrow=Math.abs(Math.abs(tex-.5)-Math.abs(v-arrowV)*1.4)<.025&&(mounted.direction==='up'?v>arrowV&&v<arrowV+.1:v<arrowV&&v>arrowV-.1);if(arrow)color=inkPixel(mounted.direction==='up'?'#a6e4ef':'#ffe1a0');}if(barred){const beam=tex<.08||tex>.92||v<.07||v>.93||Math.abs(v-.48)<.025||(tex*9)%1<.19;color=inkPixel(beam?'#717675':'#141d20');}const y0=Math.max(0,Math.floor(yy)),y1=Math.min(h,y0+2),x1=Math.min(w,col+step);for(let py=y0;py<y1;py++){let offset=py*w+col;for(let px=col;px<x1;px++)wallPixels[offset++]=color;}}}
  c.putImageData(wallImage,0,0);
  c.canvas.dungeonLights=[...lightSources.values()];
  if(d.site===ROYAL_DUNGEON_ID)drawRoyalDungeonScenery(c,w,h,s,m,wallDepth,time);
@@ -1051,7 +1061,7 @@ function dungeonUncached(c,w,h,s,time){const d=s.dungeon;if(!d)return;if(d.ship)
  drawSolidLadders(c,w,h,d,visibleLadders,dx,dy,fov,wallDepth);
  if(haunted)drawPercivalMist(c,w,h);
 
- if(!burrow&&!openAir){const glow=c.createRadialGradient(w*.18,h*.68,5,w*.18,h*.68,w*.65);glow.addColorStop(0,twinkling?'#558cff18':haunted?'#8ac4ad18':d.royal==='sewer'?'#6ac9ad28':'#e5a84021');glow.addColorStop(1,'#d9a34400');c.fillStyle=glow;c.fillRect(0,0,w,h);}else if(burrow)drawBurrowDarkness(c,w,h);
+ if(!burrow&&!openAir){const glow=c.createRadialGradient(w*.18,h*.68,5,w*.18,h*.68,w*.65);glow.addColorStop(0,heatLair?'#ff4b262d':twinkling?'#558cff18':haunted?'#8ac4ad18':d.royal==='sewer'?'#6ac9ad28':'#e5a84021');glow.addColorStop(1,'#d9a34400');c.fillStyle=glow;c.fillRect(0,0,w,h);}else if(burrow)drawBurrowDarkness(c,w,h);
 
  const here=ladders.find(l=>l.x===d.x&&l.y===d.y);if(here?.gate)label(c,'IRON GATE',w/2,52,14,'#c7d5e6');else if(here)label(c,here.direction==='up'?'↑ CEILING LADDER':'↓ FLOOR LADDER',w/2,52,14,here.direction==='up'?'#a6e4ef':'#ffe1a0');
 
@@ -1254,6 +1264,13 @@ function dungeonMonster(c,w,h,s,time,fx,reduced){
 
  c.fillStyle='#492c28';c.fillRect(w/2-100,feet+12,200,6);c.fillStyle='#cb7860';c.fillRect(w/2-100,feet+12,200*Math.max(0,s.enemy.hp)/s.enemy.maxHp,6);c.restore();
 
+ if(fx?.projectile==='arrow'&&fx.target==='enemy'&&age>=0&&age<700){
+  const progress=reduced?1:Math.min(1,age/190),tipX=w/2-width*.04,tipY=feet-height*.48;
+  const startX=tipX-width*(1.25-progress*1.2),startY=tipY-height*(.34-progress*.31);
+  c.save();c.strokeStyle='#d5b071';c.lineWidth=Math.max(2,width*.012);c.lineCap='round';c.beginPath();c.moveTo(startX,startY);c.lineTo(tipX,tipY);c.stroke();
+  c.fillStyle='#d7e0d8';c.beginPath();c.moveTo(startX,startY);c.lineTo(startX+width*.08,startY-height*.015);c.lineTo(startX+width*.035,startY+height*.055);c.closePath();c.fill();c.restore();
+ }
+
  if(heroHit){const red=c.createRadialGradient(w/2,h/2,Math.min(w,h)*.15,w/2,h/2,Math.max(w,h)*.6);red.addColorStop(0,'#ff000000');red.addColorStop(1,`rgba(220,10,5,${pulse*.8})`);c.fillStyle=red;c.fillRect(0,0,w,h);}
 
  if(hit)label(c,`${fx.target==='enemy'?'-':'You: -'}${fx.amount}`,w/2,feet-height*.55,28,'#ffb4a0');
@@ -1435,20 +1452,20 @@ function drawTrails(c,region,size,view,s){
 
  for(const {site,points}of regionTrails(region)){if(site.id==='leviathan-pump'||!points.some(point=>visibleWorldPoint(point,view)))continue;
 
-  for(const [width,color]of [[.38,'#756546'],[.28,'#cbb181']]){c.lineWidth=size*width;c.strokeStyle=color;drawTrailCurve(c,points,size);}
+  for(const [width,color]of [[.46,'#4f402b'],[.32,'#d9bd83']]){c.lineWidth=size*width;c.strokeStyle=color;drawTrailCurve(c,points,size);}
 
-  c.strokeStyle='#e7d4a4';c.lineWidth=Math.max(1,size*.045);c.setLineDash([size*.07,size*.29]);drawTrailCurve(c,points,size);c.setLineDash([]);
+  c.strokeStyle='#fff0ba';c.lineWidth=Math.max(1.25,size*.06);c.setLineDash([size*.09,size*.26]);drawTrailCurve(c,points,size);c.setLineDash([]);
 
  }c.restore();
 
  c.save();c.lineJoin='round';c.lineCap='round';
  for(const {style,points}of minorApproachTrails(region,minorSiteList(s))){if(!points.some(point=>visibleWorldPoint(point,view)))continue;
   if(style==='footpath'){
-   c.strokeStyle='#765f3da8';c.lineWidth=Math.max(1.5,size*.12);c.setLineDash([size*.24,size*.16]);drawTrailCurve(c,points,size);
-   c.strokeStyle='#c6ad7790';c.lineWidth=Math.max(1,size*.045);c.setLineDash([size*.11,size*.29]);drawTrailCurve(c,points,size);
+   c.strokeStyle='#4b3827dc';c.lineWidth=Math.max(2,size*.16);c.setLineDash([size*.24,size*.16]);drawTrailCurve(c,points,size);
+   c.strokeStyle='#e1c68bcf';c.lineWidth=Math.max(1.25,size*.06);c.setLineDash([size*.11,size*.29]);drawTrailCurve(c,points,size);
   }else{
-   c.strokeStyle='#665e4fa8';c.lineWidth=Math.max(2,size*.2);c.setLineDash([size*.72,size*.16,size*.25,size*.22]);drawTrailCurve(c,points,size);
-   c.strokeStyle='#b0a28399';c.lineWidth=Math.max(1,size*.09);c.setLineDash([size*.45,size*.43]);drawTrailCurve(c,points,size);
+   c.strokeStyle='#494239df';c.lineWidth=Math.max(2.5,size*.25);c.setLineDash([size*.72,size*.16,size*.25,size*.22]);drawTrailCurve(c,points,size);
+   c.strokeStyle='#cec09fd6';c.lineWidth=Math.max(1.25,size*.11);c.setLineDash([size*.45,size*.43]);drawTrailCurve(c,points,size);
   }
  }
  c.setLineDash([]);c.restore();

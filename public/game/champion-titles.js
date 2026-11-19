@@ -1,4 +1,5 @@
 import {TOWNS} from './content.js';
+import {resolvePercivalDefeat} from './percival-reckoning.js';
 
 export const championTitle = townId => `CHAMPION OF ${TOWNS.find(town => town.id === townId)?.name.toUpperCase() ?? townId.toUpperCase()}`;
 export const championTitles = s => (s.championTowns ?? []).map(championTitle);
@@ -19,6 +20,12 @@ export function validateChampionState(s) {
 }
 
 export function finishChampionChallenge(s, won, note, events) {
+  if (!won && s.enemy?.percivalReckoning) {
+    resolvePercivalDefeat(s, note);
+    s.flags.percivalDefeatEpilogue = true;
+    events.push({kind:'percivalDefeat'});
+    return true;
+  }
   const town = s.enemy?.championTown;
   if (!town) return false;
   if (!won) s.championTowns = (s.championTowns ?? []).filter(id => id !== town);

@@ -1,6 +1,6 @@
 import { TOWNS } from './content.js';
 import { itemArt, itemById, merchantBuyPrice, merchantSellPrice } from './items.js';
-import { MERCHANT_CATEGORY_LABELS, canBuyMerchantSupply, canMerchantBuy, compareMerchantItems, merchantCategory } from './merchant-catalog.js';
+import { MERCHANT_CATEGORY_LABELS, canBuyMerchantSupply, canMerchantBuy, merchantCategory } from './merchant-catalog.js';
 import { stockForMerchant } from './merchant-inventory.js';
 import { merchantItemRemaining } from './merchant-supplies.js';
 import { MOUNTS } from './mounts.js';
@@ -8,6 +8,7 @@ import { MERCHANTS } from './town-personas.js';
 import { equipmentKeys } from './treasure.js';
 
 const gold = value => value.toLocaleString('en-US') + ' gold';
+export const sortEntriesByPrice=entries=>[...entries].sort((a,b)=>(a.price??Infinity)-(b.price??Infinity)||a.item.name.localeCompare(b.item.name));
 const escape = value => String(value ?? '').replace(/[&<>"']/g, char => (
   { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]
 ));
@@ -41,14 +42,14 @@ function buyEntries(state, place) {
         blocked: id === 'dragon' && state.flags.dragonCaptured ? 'Rescue in Firedrak Mountain' : state.flags.mount === id ? 'Already equipped' : '',
       };
     });
-    return [...mounts, ...supplies(state, place)];
+    return sortEntriesByPrice([...mounts, ...supplies(state, place)]);
   }
 
   if (place.merchant === 'enclave') {
-    return [
+    return sortEntriesByPrice([
       { item: { id: 'enclave-heal', name: 'Restore all health', kind: 'potion', description: 'Restore your health to its maximum.' }, price: merchantBuyPrice(state, 80), action: { type: 'enclaveHeal' }, label: 'Heal', blocked: state.hp === state.maxHp ? 'Already at full health' : '' },
       { item: { id: 'enclave-cure', name: 'Cleanse poison', kind: 'potion', description: 'Remove poison. Other potion curses remain.' }, price: merchantBuyPrice(state, 60), action: { type: 'enclaveCure' }, label: 'Cleanse' },
-    ];
+    ]);
   }
 
   const stock = stockForMerchant(state, place).map(id => {
@@ -61,13 +62,13 @@ function buyEntries(state, place) {
       action: { type: 'buyItem', id },
     };
   });
-  return [...supplies(state, place), ...stock].sort((a, b) => compareMerchantItems(a.item, b.item));
+  return sortEntriesByPrice([...supplies(state, place), ...stock]);
 }
 
 function sellEntries(state, place) {
   const counts = new Map();
   for (const id of state.bag) counts.set(id, (counts.get(id) || 0) + 1);
-  return Array.from(counts, ([id, available]) => ({ item: itemById(id, state), available }))
+  const entries=Array.from(counts, ([id, available]) => ({ item: itemById(id, state), available }))
     .filter(({ item }) => canMerchantBuy(place, item))
     .map(({ item, available }) => ({
       item,
@@ -77,7 +78,8 @@ function sellEntries(state, place) {
       bulk: true,
       blocked: equipmentKeys.some(key => state[key] === item.id) ? 'Unequip to sell' : '',
       label: 'Sell',
-    })).sort((a, b) => compareMerchantItems(a.item, b.item));
+    }));
+  return sortEntriesByPrice(entries);
 }
 
 function rowMarkup(entry, side, index) {

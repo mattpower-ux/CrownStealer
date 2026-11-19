@@ -1,6 +1,9 @@
 import {PEBBLE_RUN_ID} from './peebles.js';
 import {worldSize} from './world-size.js';
 import {mountainTunnelEnds} from './wilderness-landscape.js';
+import {BARRENS_LAIR_NAMES} from './whispering-barrens.js';
+import {SULFUR_LAIR_NAMES} from './sulfur-marsh.js';
+import {COPPER_GOBLIN_LAIRS} from './copper-wastes.js';
 
 const columns = 6;
 const rows = 4;
@@ -18,6 +21,9 @@ const regionalCaves = {
   goblin: ['Shellbank Goblin Dig','Tidecut Goblin Dig','Brinewell Goblin Dig','Saltburrow Goblin Dig','Reefside Goblin Dig','Pearlcut Goblin Dig','Driftwood Goblin Dig','Sandbar Goblin Dig'],
   troll: ['Longshadow Troll Cave','Flintjaw Troll Cave','Starless Troll Cave','Slateback Troll Cave','Frostcrag Troll Cave','Moonrift Troll Cave','Broken Fang Troll Cave','Gloamstone Troll Cave'],
   wyrm: ['Coaljaw Wyrm Hole','Cindercoil Wyrm Nest','Black Clinker Wyrm Hole','Lavafang Wyrm Nest','Ashmouth Wyrm Hole','Embercoil Wyrm Nest','Slagtooth Wyrm Hole','Scorchback Wyrm Nest'],
+  demon: BARRENS_LAIR_NAMES,
+  reptile: SULFUR_LAIR_NAMES,
+  copperGoblin: COPPER_GOBLIN_LAIRS,
 };
 
 export function minorSiteDefinition(id) {
@@ -40,7 +46,7 @@ export function minorSiteDefinition(id) {
   const nameIndex = (variant + ordinal) % names.length;
   const name = names[nameIndex];
   const occupant = kind!=='koboldCave'?null:
-    area==='wild-0'?'thegn':area==='wild-4'?'wyrm':region===2?'goblin':region===3?'troll':region===1&&name==='Sooty Kobold Den'?'fireImp':null;
+    area==='wild-0'?'thegn':area==='wild-2'?'demon':area==='wild-3'?'copperGoblin':area==='wild-4'?'wyrm':area==='wild-5'?'reptile':region===2?'goblin':region===3?'troll':region===1&&name==='Sooty Kobold Den'?'fireImp':null;
   const caveName = occupant==='fireImp'?'Sooty Fire Imp Lair':regionalCaves[occupant]?.[nameIndex];
   return {
     id, kind, name: caveName??(name==='Pebble Run Cave'&&id!==PEBBLE_RUN_ID?'Rillstone Cave':name),
