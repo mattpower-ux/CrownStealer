@@ -94,7 +94,7 @@ The staged presentation is:
 4. Percival says: “{playerName}, your time is up. You have defiled this place and defiled the hardworking people of these lands. Now you will answer to the Lawgiver of Light. I, Percival, Lord of Paladins, call you forth!”
 5. The game presents exactly two choices: `Fight him!` and `Run Away!`.
 
-The dialogue substitutes the saved player name safely. The sequence supports reduced-motion presentation and remains understandable with sound muted. The impact has a distinct crash effect; triumphant music stops at Percival's entrance. “Blade of Light” continues through the Fight/Run decision and, when the player fights, loops through the Percival battle without restarting at the transition. It fades out on exile, defeat, or dark victory. The implementation source is `C:\Users\mattp\Downloads\Blade_of_Light_2026-11-19T020326.mp3` (20.036 seconds, 497,799 bytes); implementation will create an optimized web copy while leaving the supplied original untouched.
+The dialogue substitutes the saved player name safely. The sequence supports reduced-motion presentation and remains understandable with sound muted. The impact has a distinct crash effect; triumphant music stops at Percival's entrance. “Blade of Light” continues through the Fight/Run decision and, when the player fights, loops through the Percival battle without restarting at the transition. It fades out on retreat, defeat, or dark victory. The implementation source is `C:\Users\mattp\Downloads\Blade_of_Light_2026-11-19T020326.mp3` (20.036 seconds, 497,799 bytes); implementation will create an optimized web copy while leaving the supplied original untouched.
 
 ## Percival Combat
 
@@ -138,7 +138,9 @@ Percival's victory also inflicts a distinct `percival` strain of leprosy. Unlike
 
 ### Percival Wins
 
-Percival frees the realm. The former ruler becomes a nightmarish historical figure whose story is told to naughty children to make them behave. This epilogue is shown before the player resumes in exile with leprosy and no possessions.
+Percival frees the realm. The former ruler becomes a nightmarish historical figure whose story is told to naughty children to make them behave. As Percival's victory is confirmed, “Blade of Light” fades into the supplied “Rebuild the Dawn” epilogue track. This epilogue is shown before the player resumes in exile with leprosy and no possessions. “Rebuild the Dawn” continues through the wilderness exile transition and then yields to the normal regional soundtrack.
+
+The implementation source is `C:\Users\mattp\Downloads\Rebuild_the_Dawn_2026-11-19T020602.mp3` (15.047 seconds, 378,053 bytes). Implementation creates an optimized web copy and leaves the supplied original untouched. Running away uses the ordinary disgrace/exile sound treatment rather than this victory epilogue: “Rebuild the Dawn” is reserved for Percival actually defeating the evil player.
 
 ### Player Wins
 
@@ -173,7 +175,8 @@ Use red-green TDD for each behavior. Required automated coverage includes:
 - Percival-strain weekly Constitution loss, minimum 1, persistence, White Wizard cure, and full restoration of the derived loss;
 - dark-victory terminal ending and non-repeatability;
 - browser tests for transformation visuals, throne illustration, dialogue, both choices, combat messages, sound sequencing, responsive layout, and reload recovery.
-- audio tests confirming “Blade of Light” begins after the ceiling crash, does not restart when combat begins, loops during the confrontation, respects music volume/mute controls, and stops on every outcome.
+- audio tests confirming “Blade of Light” begins after the ceiling crash, does not restart when combat begins, loops during the confrontation, respects music volume/mute controls, and stops on every outcome;
+- audio tests confirming “Rebuild the Dawn” crossfades only after Percival defeats the player, continues through the defeat epilogue and exile transition, respects music volume/mute controls, and does not play for voluntary retreat or dark victory.
 
 ## Delivery
 
