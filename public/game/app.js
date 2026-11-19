@@ -1,6 +1,7 @@
 import {shipyardMarkup} from './shipyard-view.js';
 import {SILVER_ACORN,atSilverTree} from './silver-acorn.js';
 import {nearRedGlobe,cursedByGlobe} from './red-globe.js';
+import {evilEmpowered} from './evil-route.js';
 import {nearKerrbear,KERRBEAR_TOOTH} from './kerrbear.js';
 import {canCamp} from './wilderness-camp.js';
 import {alignmentScore,alignmentLabel,paladinAlignmentAllowed,wizardAlignmentAllowed} from './alignment.js';
@@ -999,6 +1000,7 @@ function openPanel(name,{winkShot=false,winkResult=null}={}){if(state?.dungeon?.
    body.querySelector('[name="inventory-cameo"]:checked')?.focus({preventScroll:true});
   });
   if(state.flags.percivalOath==='accepted')body.querySelector('.inventory-meta').insertAdjacentHTML('afterend','<details class="champion-titles"><summary>Paladin · Oath of Sir Percival</summary><p>Fear immunity · TURN DEAD in combat · +2 Strength and +2 Charisma granted.</p><p>Oath: no evil weapons, poison, theft, attacks on unicorns or fey, or trade with orcs, goblins or trolls. Breaking it removes your blessings. Gambling is forbidden. Holy Sword, if owned: double damage against undead.</p></details>');
+  if(evilEmpowered(state))body.querySelector('.inventory-meta').insertAdjacentHTML('afterend','<details class="champion-titles evil-powers" open><summary>Evil empowerment · Horns and forked tail</summary><p>+10 Strength · Fear aura up to 30% each combat round.</p><p>Goblins, orcs, trolls, and undead will not attack unless provoked. Animals attack on sight.</p></details>');
   if(state.flags.percivalOath==='fallen')body.querySelector('.inventory-meta').insertAdjacentHTML('afterend','<details class="champion-titles"><summary>Fallen Paladin · Oath broken</summary><p>Your attribute blessings, fear immunity and TURN DEAD are permanently lost.</p></details>');
   if(isWizard(state))body.querySelector('.inventory-meta').insertAdjacentHTML('afterend','<details class="champion-titles"><summary>Wizard Apprentice · '+wizardProgress(state).gainedLevels+' levels gained</summary><p>+2 Intelligence · +20% scroll and wand damage. Outside town: cloth armor only; no blades except daggers.</p><button data-panel="wizardArts">Wizard Arts and cooldowns</button></details>');
   if(state.flags.wizardApprentice==='fallen')body.querySelector('.inventory-meta').insertAdjacentHTML('afterend','<p class="fine">Former Wizard apprentice · powers lost</p>');

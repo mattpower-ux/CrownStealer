@@ -4,6 +4,15 @@ const {avatarMarkup,drawGearAvatar}=await import('../public/game/gear-avatar.js'
 const base={bag:[],buffExpiry:{},worldTimeMs:0,armor:0};
 test('inventory sprites use the selected Him, Her or Other identity',()=>{for(const [gender,index] of [['him',0],['her',1],['shim',2]]){const html=avatarMarkup({...base,gender});assert.match(html,new RegExp('data-avatar-identity="'+gender+'"'));const draws=[];drawGearAvatar({drawImage(...args){draws.push(args);}}, {...base,gender},100,100,100);assert.equal(draws[0][1],index*512);assert.equal(draws[0][3],512);}});
 test('pig-face and shrinking effects remain visible over the selected identity',()=>{const html=avatarMarkup({...base,gender:'her',buffExpiry:{pigFace:1000,tiny:1000}});assert.match(html,/avatar-pig-head/);assert.match(html,/tiny-avatar/);assert.match(html,/data-avatar-identity="her"/);});
+test('evil empowerment adds separate horn and forked-tail layers that disappear after exile',()=>{
+ const empowered={...base,flags:{redGlobeCurse:true},evilRoute:{version:1,phase:'empowered'}};
+ const html=avatarMarkup(empowered);
+ assert.match(html,/avatar-devil-horns/);
+ assert.match(html,/avatar-evil-tail/);
+ assert.match(html,/Forked red devil tail/);
+ const exiled=avatarMarkup({...empowered,flags:{},evilRoute:{version:1,phase:'exiled'}});
+ assert.doesNotMatch(exiled,/avatar-devil-horns|avatar-evil-tail/);
+});
 test('leprosy visibly bandages the inventory head and hands without replacing identity or gear',()=>{
  const s={...base,gender:'her',flags:{leprosy:true}};
  const html=avatarMarkup(s);assert.match(html,/avatar-bandages/);assert.match(html,/Bandages cover your head and hands/);assert.match(html,/data-avatar-identity="her"/);

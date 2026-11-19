@@ -11,6 +11,7 @@ import { randomEncounterMultiplier } from './rare-gear.js';
 import { buffTimeLeft } from './world-clock.js';
 import { WEAPONS, UNARMED, armorProtection, itemById, weaponAccuracy, weaponMagicDamage } from './items.js';
 import { TREASURE_ITEMS, equippedAccessories, gearPower } from './treasure.js';
+import { evilEmpowered } from './evil-route.js';
 
 export function heroStats(s) {
   const weapon = WEAPONS[s.equipped] || UNARMED;
@@ -102,6 +103,7 @@ export function statsView(s) {
     ['Freeze chance', `${t.freeze}%`],
   ];
   const effects = [
+    evilEmpowered(s) && 'Evil empowerment: +10 Strength. At the start of each combat round you have up to a 30% chance to cause fear. Goblins, orcs, trolls, and undead do not attack unless provoked. Animals attack on sight.',
     s.flags?.leprosy && `Leprosy: charisma −${leprosyCharismaLoss(s)}; another point lost each game week. The White Wizard can cure it.`,
     s.buffs?.meal > 0 && `Meal: +4 damage · ${buffTimeLeft(s, 'meal')} game min.`,
     s.buffs?.strength > 0 && `Strength potion: +${s.buffs.strengthPower} damage · ${s.flags?.strengthMoves>0?s.flags.strengthMoves+' moves / combat actions':buffTimeLeft(s, 'strength')+' game min.'}`,

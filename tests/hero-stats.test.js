@@ -26,3 +26,16 @@ test('the Helm of Thinkiness shows a signed negative spell damage bonus', () => 
   s.equippedHead = 'helm-thinkiness';
   assert.match(statsView(s), /Spell damage bonus<\/dt><dd>-1<\/dd>/);
 });
+
+test('evil route status explains borrowed Strength, fear, and changed creature dispositions', () => {
+  const s = createGame();
+  s.flags.redGlobeSworn = true;
+  s.flags.redGlobeCurse = true;
+  s.evilRoute = {version: 1, phase: 'empowered'};
+  const html = statsView(s);
+  assert.match(html, /Evil empowerment/);
+  assert.match(html, /\+10 Strength/);
+  assert.match(html, /30% chance.*fear/i);
+  assert.match(html, /goblins, orcs, trolls, and undead.*do not attack/i);
+  assert.match(html, /Animals attack on sight/i);
+});

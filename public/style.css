@@ -942,6 +942,7 @@ dialog[data-panel="sageJournal"] #save-checkpoint { display: none; }
 .campfire-caption{position:absolute;bottom:12px;left:0;right:0;text-align:center;font-size:26px;color:#fff4ce;text-shadow:0 2px 5px #000}
 .red-globe-art{font-size:130px;text-align:center;filter:drop-shadow(0 0 28px crimson)}
 .avatar-devil-horns{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:8}
+.avatar-evil-tail{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;fill:#b51b27;stroke:#550710;stroke-width:1.2}
 
 .story-full-art{display:block;width:100%;max-height:60vh;object-fit:contain}.snare-result{font-size:24px;line-height:1.4}
 
