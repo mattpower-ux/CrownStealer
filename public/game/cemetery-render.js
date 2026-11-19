@@ -2,6 +2,35 @@ import {artLoaded} from './art-revision.js';
 import {isOpenAirCemetery,minorSiteDefinition} from './minor-sites.js';
 export {isOpenAirCemetery};
 export const isCemeteryDungeon=d=>!!d&&(d.site==='minor-site'?minorSiteDefinition(d.minorId)?.kind==='cemetery':!d.site&&!d.royal&&!d.ship&&!d.expedition&&d.index===0);
+const CEMETERY_FACADES=['vault-door','memorial-niche','sealed-crypt','buttressed-vault','family-chapel'];
+export const cemeteryFacadeKind=(x,y,vertical=false)=>CEMETERY_FACADES[Math.abs(x*17+y*29+(vertical?7:0))%CEMETERY_FACADES.length];
+export function cemeteryFacadeInk(kind,u,v){
+ const joint=v<.035||v>.965||u<.025||u>.975||Math.abs((u*5+(Math.floor(v*7)%2)*.5)%1)<.025||Math.abs((v*7)%1)<.025;
+ if(joint)return '#485158';
+ if(kind==='vault-door'){
+  const arch=Math.abs(u-.5)<.28&&v>.22&&v<.94&&(v>.43||((u-.5)/.28)**2+((v-.43)/.22)**2<1);
+  if(arch)return u%0.105<.025||Math.abs(v-.66)<.025?'#68747b':'#172027';
+ }
+ if(kind==='memorial-niche'){
+  const niche=Math.abs(u-.5)<.24&&v>.25&&v<.78;
+  if(niche)return Math.abs(u-.5)<.045&&v>.40?'#b8aa85':'#263139';
+  if(v>.80&&v<.88)return '#777c79';
+ }
+ if(kind==='sealed-crypt'){
+  if(u>.14&&u<.86&&v>.28&&v<.82)return (u*8)%1<.08||(v*5)%1<.07?'#555d61':'#81878a';
+  if(v>.20&&v<.28)return '#a1a39d';
+ }
+ if(kind==='buttressed-vault'){
+  if(u<.14||u>.86)return v>.12?'#70787a':'#93989a';
+  if(Math.abs(u-.5)<.22&&v>.36)return '#202a2e';
+ }
+ if(kind==='family-chapel'){
+  if(v<.18+Math.abs(u-.5)*.48)return '#555e64';
+  if(Math.abs(u-.5)<.19&&v>.42)return '#1c252b';
+  if(v>.30&&v<.38)return '#9b967f';
+ }
+ return null;
+}
 function poly(c,points,color,stroke){c.beginPath();points.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.closePath();c.fillStyle=color;c.fill();if(stroke){c.strokeStyle=stroke;c.stroke();}}
 function stroke(c,points,color,width=.015){c.beginPath();points.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.strokeStyle=color;c.lineWidth=width;c.stroke();}
 const remainsArt=typeof Image==='undefined'?null:new Image();if(remainsArt)remainsArt.onload=artLoaded;if(remainsArt)remainsArt.src='/assets/crypt-sarcophagus.webp';
@@ -24,23 +53,25 @@ export function drawCemeteryCoffin(c,size,opened,{stone=false}={}){
 }
 export function cemeteryRemains(d,map){
  const remains=isOpenAirCemetery(d)?[
-  {x:4,y:3,kind:'crypt'},{x:10,y:4,kind:'crypt'},{x:3,y:10,kind:'crypt'},
+  {x:4,y:3,kind:'mausoleum'},{x:10,y:4,kind:'vault'},{x:3,y:10,kind:'crypt'},
+  {x:8,y:3,kind:'vault'},{x:11,y:8,kind:'mausoleum'},{x:2,y:7,kind:'obelisk'},
+  {x:7,y:10,kind:'obelisk'},{x:11,y:11,kind:'vault'},{x:4,y:11,kind:'mausoleum'},
   {x:6,y:4,kind:'headstone'},{x:7,y:4,kind:'headstone'},
-  {x:5,y:8,kind:'sarcophagus'},{x:9,y:9,kind:'sarcophagus'},
+  {x:5,y:8,kind:'sarcophagus'},{x:9,y:9,kind:'sarcophagus'},{x:6,y:11,kind:'headstone'},{x:9,y:5,kind:'headstone'},
  ]:[];
  for(let y=1;y<map.length-1;y++)for(let x=1;x<map[y].length-1;x++){
   if(map[y][x]!==0||x===1&&y===1||x===13&&y===13)continue;
   const seed=(x*31+y*47+(d.floor||0)*17+(d.index||0)*7)%19;
-  if(seed>2)continue;
+  if(seed>(isOpenAirCemetery(d)?7:2))continue;
   const wall=[[0,-1],[1,0],[0,1],[-1,0]].find(([dx,dy])=>map[y+dy]?.[x+dx]===1);if(!wall)continue;
-  remains.push({x:x+wall[0]*.30,y:y+wall[1]*.30,kind:seed===0?'sarcophagus':'headstone',seed});
+  remains.push({x:x+wall[0]*.30,y:y+wall[1]*.30,kind:seed===0?'sarcophagus':isOpenAirCemetery(d)&&seed===3?'obelisk':isOpenAirCemetery(d)&&seed===4?'vault':'headstone',seed});
  }
  return remains;
 }
-function drawCemeteryCrypt(c,size){
+function drawCemeteryCrypt(c,size,variant='crypt'){
  c.save();c.scale(size,size);c.lineWidth=.022;
  poly(c,[[-.63,-.04],[.60,-.04],[.56,-.15],[-.57,-.15]],'#65717d','#303940');
- poly(c,[[-.56,-.15],[.32,-.15],[.32,-1.12],[-.56,-1.12]],'#89969e','#57646e');
+ poly(c,[[-.56,-.15],[.32,-.15],[.32,-1.12],[-.56,-1.12]],variant==='mausoleum'?'#b1aea4':variant==='vault'?'#777f82':'#89969e','#57646e');
  poly(c,[[.32,-.15],[.60,-.36],[.60,-1.26],[.32,-1.12]],'#515d68','#364352');
  poly(c,[[-.65,-1.12],[-.13,-1.54],[.40,-1.12]],'#a0adb4','#56636e');
  poly(c,[[-.13,-1.54],[.15,-1.73],[.70,-1.29],[.40,-1.12]],'#647280','#475663');
@@ -50,6 +81,13 @@ function drawCemeteryCrypt(c,size){
  for(const x of [-.32,-.22,-.12,-.02,.08])stroke(c,[[x,-.77],[x,-.18]],'#596675',.026);
  stroke(c,[[-.38,-.44],[.13,-.44]],'#707d88',.038);
  c.restore();
+}
+function drawCemeteryObelisk(c,size){
+ c.save();c.scale(size,size);c.lineWidth=.018;
+ poly(c,[[-.22,-.08],[.22,-.08],[.16,-.24],[-.16,-.24]],'#777b75','#343c3d');
+ poly(c,[[-.12,-.24],[.12,-.24],[.09,-1.02],[-.09,-1.02]],'#90938b','#4d5656');
+ poly(c,[[-.09,-1.02],[0,-1.34],[.09,-1.02]],'#a9aaa0','#596060');
+ stroke(c,[[0,-.91],[0,-.55]],'#c4b991',.026);stroke(c,[[-.09,-.76],[.09,-.76]],'#c4b991',.026);c.restore();
 }
 
 export function drawCemeteryNightSky(c,w,h,angle,fov){
@@ -93,7 +131,8 @@ export function drawCemeteryRemains(c,w,h,d,map,dx,dy,fov,wallDepth){
  const focal=w/(2*Math.tan(fov/2)),objects=cemeteryRemains(d,map).map(p=>{const rx=p.x-d.x,ry=p.y-d.y,depth=rx*dx+ry*dy;return {...p,depth,x:w*.5+(-dy*rx+dx*ry)*focal/depth,y:h*.5+h*.425/depth,size:h*.30/depth};}).filter(p=>p.depth>.5&&p.depth<8&&p.x+p.size>0&&p.x-p.size<w).sort((a,b)=>b.depth-a.depth);
  for(const p of objects){c.save();c.beginPath();for(let x=Math.max(0,Math.floor(p.x-p.size));x<Math.min(w,p.x+p.size);x+=2)if(p.depth<=wallDepth[x]+.1)c.rect(x,0,2,h);c.clip();c.translate(p.x,p.y);c.globalAlpha=Math.max(.42,1-p.depth*.06);
  c.fillStyle='#050909aa';c.beginPath();c.ellipse(0,0,p.size*.65,p.size*.13,0,0,Math.PI*2);c.fill();
- if(p.kind==='crypt')drawCemeteryCrypt(c,p.size);
+ if(['crypt','mausoleum','vault'].includes(p.kind))drawCemeteryCrypt(c,p.size,p.kind);
+ else if(p.kind==='obelisk')drawCemeteryObelisk(c,p.size);
  else if(p.kind==='sarcophagus')drawCemeteryCoffin(c,p.size,true,{stone:true});else{c.scale(p.size,p.size);c.lineWidth=.018;
   poly(c,[[-.48,-.08],[-.35,-.34],[-.16,-.40],[.04,-.36],[.14,-.16],[.01,-.02]],'#666f63','#989b85');
   poly(c,[[.03,-.02],[.16,-.18],[.31,-.18],[.43,-.04],[.29,.04]],'#596355','#909580');

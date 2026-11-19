@@ -4,7 +4,7 @@ import {createGame,act,dungeonMap,saveGame,loadGame} from '../public/game/engine
 import {dungeonLadders,ladderPrompt} from '../public/game/dungeon-ladders.js';
 import {cemeteryLightAt,nearestUnlitTorch} from '../public/game/cemetery-light.js';
 import {dungeonChests} from '../public/game/treasure.js';
-import {isCemeteryDungeon,isOpenAirCemetery,cemeteryRemains} from '../public/game/cemetery-render.js';
+import {isCemeteryDungeon,isOpenAirCemetery,cemeteryRemains,cemeteryFacadeKind,cemeteryFacadeInk} from '../public/game/cemetery-render.js';
 test('coffins replace cemetery loot only, including main vault and minor cemeteries',()=>{
  assert.equal(isCemeteryDungeon({index:0}),true);assert.equal(isCemeteryDungeon({site:'minor-site',minorId:'minor-r0-2',index:0}),true);
  for(const d of [{index:1},{site:'minor-site',minorId:'minor-r0-0',index:0},{site:'twinklestar-tower',index:6},{index:0,royal:'sewer'},{index:0,expedition:'wild-0-cave-0'}])assert.equal(isCemeteryDungeon(d),false);
@@ -39,4 +39,14 @@ test('every cemetery surface opens onto a moonlit yard and stairs descend to enc
  const down=dungeonLadders(d,map).find(ladder=>ladder.direction==='down');
  Object.assign(d,{x:down.x,y:down.y});
  assert.equal(act(s,{type:'descend'}).dungeon.floor,1);
+});
+
+test('surface cemeteries form a dense varied necropolis instead of a sparse yard',()=>{
+ const d={index:0,floor:0,x:1,y:1,dir:0},map=dungeonMap(d),structures=cemeteryRemains(d,map);
+ assert.ok(structures.length>=18);
+ for(const kind of ['mausoleum','vault','obelisk','headstone','sarcophagus'])assert.ok(structures.some(item=>item.kind===kind),kind);
+ const faces=new Set(Array.from({length:20},(_,i)=>cemeteryFacadeKind(i,i*3,true)));
+ assert.ok(faces.size>=4);
+ assert.equal(cemeteryFacadeInk('vault-door',.57,.72),'#172027');
+ assert.match(cemeteryFacadeInk('memorial-niche',.5,.42),/^#/);
 });

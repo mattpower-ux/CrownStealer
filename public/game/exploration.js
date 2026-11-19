@@ -10,6 +10,7 @@ import {travelSteps} from './junk-loot.js';
 import {wildernessChance} from './world-clock.js';
 import {BOTTOMLESS_PIT,PIT_FLOORS} from './bottomless-pit.js';
 import {ROLAND_ISLAND,ROLAND_LANDMARKS,rolandIslandTile} from './roadside-crypt.js';
+import {FIREHAVEN_AREA,FIREHAVEN_SITE,firehavenTerrain} from './firehaven.js';
 // Branch wilderness and orbital exploration use the existing save and combat systems.
 export const PLANETS=['Aurelia, the Glass Desert','Mycelion, the Singing Mire','Nix, the Violet Ice'];
 const names=['Briar Expanse','Crooked Fen','Whispering Barrens','Copper Wastes','Ashen Reach','Sulfur Marsh','Saltwild Coast','Drowned Heath','Pearl Badlands','Starfall Waste','Moonless Thicket','Silent Expanse'];
@@ -45,6 +46,7 @@ export const areaSites=s=>{
  if(a===ROLAND_ISLAND)return ROLAND_LANDMARKS;
  const sites=[{id:'return',kind:a.kind==='planet'?'landedShip':'returnGate',name:a.kind==='planet'?'Alien spacecraft':'Return to the occupied land',x:16,y:22},...Array.from({length:a.kind==='planet'?3:2},(_,i)=>({id:a.id+'-cave-'+i,kind:'expedition',name:(a.kind==='planet'?['Prism Vault','Spore Catacombs','Echo Laboratory'][i]:caveProfile(a.id+'-cave-'+i).name),x:[7,25,16][i],y:[7,7,15][i],index:a.region*2,expedition:a.id+'-cave-'+i})),...(a.kind==='wild'?[{...teleporterSite(a.region),x:19,y:17}]:[]),...(a.kind==='wild'&&Number(a.id.slice(5))<10?[{id:a.id,kind:'artifact',name:'Ancient alien monument',x:11,y:11}]:[])].map(p=>a.kind==='wild'?scaleWorldPoint(p):p);
  if(a.id===BOTTOMLESS_PIT.area)sites.push(BOTTOMLESS_PIT);
+ if(a.id===FIREHAVEN_AREA)sites.push(FIREHAVEN_SITE);
  return sites;
 };
 export const expeditionName=d=>{const a=AREAS.find(a=>d.expedition?.startsWith(a.id+'-cave-'));return caveProfile(d.expedition)?.name||(a?a.name+' · '+(Number(d.expedition.split('-').at(-1))+1):'Alien Starship');};
@@ -52,6 +54,7 @@ export function areaTile(s,x,y){
  const {width,height}=worldSize(s),area=areaFor(s),scale=area?.kind==='planet'?1:4;
  if(x<1||x>width-2||y<1||y>height-2)return 'water';
  if(area===ROLAND_ISLAND)return rolandIslandTile(x,y);
+ const firehaven=firehavenTerrain(area?.id,x,y);if(firehaven)return firehaven;
  if(x===16*scale||y===7*scale)return landscapeTile(s.region,area?.id,x,y,'road');
  if(areaSites(s).some(p=>Math.abs(p.x-x)<=1&&Math.abs(p.y-y)<=1))return 'grass';
  if(inlandWater(s.region,x,y,s.exploration?.area))return 'water';

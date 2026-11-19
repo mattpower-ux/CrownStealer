@@ -68,6 +68,7 @@ import {DRAGONSTONE_CHEST_ID,ROYAL_CAMPAIGN_ENDINGS,isRoyalCampaign,royalCampaig
 import {ROYAL_DUNGEON_ID,ROYAL_DUNGEON_NAME,royalDungeonMap,royalDungeonStairAt,royalDungeonAt,royalDungeonAction,royalDungeonVictory,royalDungeonHeckle,validRoyalDungeonState,leaveRoyalDungeon} from './royal-dungeon.js';
 import {atMultiverseTube,SNOUT_ENDING,snoutState} from './snout.js';
 import {AREAS,areaFor,areaTile,areaSites,branchGates,teleporterSite,visitedLands,shipMap,expeditionName,explorationAction} from './exploration.js';
+import {firehavenAction,firehavenFireResistance,wyrmbaneMultiplier} from './firehaven.js';
 import {cityOf,cityTick,cityAction,validateCities} from './city-rule.js';
 import {WILD_SITES,gameDay,forestMap,mountainTile} from './wild-sites.js';
 import {TREASURE_ITEMS,dungeonChests,dungeonMonsterLoot,gearKey,equipmentKeys,equippedAccessories,gearPower,hash,random} from './treasure.js';
@@ -321,7 +322,7 @@ function enemyStrike(s,defending,events,multiplier,attack){
  const element=attackElement==='cold'?'frost':attackElement;
  const elemental=['fire','frost','poison'].includes(element)?benefits.elementalResistance:0;
  const magical=mental||['caster','spectral'].includes(s.enemy.kind)||s.enemy.attackType==='magic'||['magic','psychic'].includes(element)?benefits.magicResistance:0;
- const resistance=Math.min(.75,wards.filter(i=>i.resistance===element).reduce((n,i)=>n+i.resistPercent/100,0)+elemental+magical);
+ const resistance=Math.min(.75,wards.filter(i=>i.resistance===element).reduce((n,i)=>n+i.resistPercent/100,0)+elemental+magical+(element==='fire'?firehavenFireResistance(s):0));
  const shield=wards.filter(i=>i.kind!=='armor').reduce((n,i)=>n+(i.protection||0),0),evasion=Math.min(.4,wards.reduce((n,i)=>n+(i.evasion||0),benefits.evasion))+(s.enemy.confused&&s.enemy.attackType!=='ranged'&&s.enemy.kind!=='caster'?.3:0);if(!mental&&evasion&&rand(s)<evasion){events.push({kind:'miss',target:'hero',amount:0,sound:'miss'});note(s,s.enemy.confused?'The confused enemy swings wide and misses.':'You evade the blow.');return;}const attackers=s.enemy.memberHp?Math.max(1,Math.ceil(s.enemy.hp/s.enemy.memberHp)):1;const damage=Math.max(1,Math.floor((attack?.power??s.enemy.attack)*(attack?.multiplier??1)*(1+.55*(attackers-1))*(.7+rand(s)*.7)*(s.enemy.speciesId==='haghilda'&&s.enemy.peppered?.5:1)*(1-resistance)-(mental||s.enemy.druidSwarm?0:armorProtection(s)*1.3+shield)))*multiplier;const ward=TREASURE_ITEMS[s.equippedShield],blocked=!mental&&ward?.block?ward.block[0]+Math.floor(rand(s)*(ward.block[1]-ward.block[0]+1)):0,taken=Math.max(0,(defending?Math.ceil(damage/3):damage)-blocked-(s.enemy.insulted?2:0));const wardBlock=s.spellEffects?.wardTurns>0?10:0;if(wardBlock)s.spellEffects.wardTurns--;const oak=s.equippedShield===DRUID_SHIELD;const finalTaken=oak&&element==='fire'?0:Math.max(0,taken-wardBlock-(oak&&(magical||mental||s.enemy.druidSwarm)?5:0));s.hp-=finalTaken;note(s,`${s.enemy.name}${alienAttack?' '+alienAttack.verb:s.enemy.speciesId==='haghilda'?' blasts suffocating toxic snot':' strikes'} for ${finalTaken}.${wardBlock?' Protective Ward absorbs '+Math.min(wardBlock,taken)+'.':''}${blocked?' Frostburn blocks '+Math.min(blocked,defending?Math.ceil(damage/3):damage)+'.':''}`);if(finalTaken>0)vampireBite(s);androsHurt(s,finalTaken,note);events.push({kind:defending?'block':'hit',target:'hero',hpAfter:Math.max(0,s.hp),amount:finalTaken,enemyImpact:finalTaken>0&&!mental,sound:attack?.sound||(defending?'block':'hurt'),...(mental?{mental:true}:{}),...(attack?{message:attack.message||s.log.at(-1),...(attack.voice?{voice:attack.voice}:{})}:{})});
  if(!mental&&ward?.retaliation){
   const ice=ward.retaliation[0]+Math.floor(rand(s)*(ward.retaliation[1]-ward.retaliation[0]+1))+benefits.magicDamage;
@@ -539,11 +540,13 @@ export function act(input,action,events=[],previewRules={}){
  if(s.mode==='world'&&input.mode==='dungeon'&&s.flags.dragonWatch){s.flags.dragonHp=s.flags.dragonWatch.hp;delete s.flags.dragonWatch;}
  prepareWands(s);
  if(s.equippedMagic&&!s.bag.includes(s.equippedMagic))s.equippedMagic=null;
- if(s.spellEffects.invisibleMoves>0||s.flags.strengthMoves>0){
+ if(s.spellEffects.invisibleMoves>0||s.flags.strengthMoves>0||s.flags.heatWardMoves>0||s.flags.everlightMoves>0){
   const moving=['move','forward','back','strafe'].includes(action?.type),p=input.mode==='town'?input.castle||input.townPosition||{x:6,y:11}:input.mode==='dungeon'?input.dungeon:input,q=s.mode==='town'?s.castle||s.townPosition||{x:6,y:11}:s.mode==='dungeon'?s.dungeon:s;
   let moves=moving&&(p?.x!==q?.x||p?.y!==q?.y)?input.mode===s.mode&&input.region===s.region?Math.max(1,Math.abs(p.x-q.x)+Math.abs(p.y-q.y)):1:input.mode==='battle'&&(events.length||['attack','guard','flee'].includes(action?.type))?1:0;
   if(s.spellEffects.invisibleMoves>0&&!(action?.type==='useItem'&&spellItem(action.id,s)?.spell==='invisibility'))s.spellEffects.invisibleMoves=Math.max(0,s.spellEffects.invisibleMoves-moves);
   if(s.flags.strengthMoves>0&&!(action?.type==='useItem'&&TREASURE_ITEMS[action.id]?.effect==='strength')){s.flags.strengthMoves=Math.max(0,s.flags.strengthMoves-moves);if(!s.flags.strengthMoves)s.buffs.strength=0;}
+  if(s.flags.heatWardMoves>0&&!(action?.type==='useItem'&&action.id==='potion-cinder-ward'))s.flags.heatWardMoves=Math.max(0,s.flags.heatWardMoves-moves);
+  if(s.flags.everlightMoves>0&&!(action?.type==='useItem'&&action.id==='scroll-everlight'))s.flags.everlightMoves=Math.max(0,s.flags.everlightMoves-moves);
  }
  if(s.mode==='world'&&!dragonFlying(s)&&!waterAccess(s)&&(areaFor(s)?areaTile(s,s.x,s.y):worldTile(s.region,s.x,s.y))==='water'){let shore=null,best=Infinity;for(let y=1;y<worldSize(s).height-1;y++)for(let x=1;x<worldSize(s).width-1;x++){const tile=areaFor(s)?areaTile(s,x,y):worldTile(s.region,x,y),distance=Math.abs(x-s.x)+Math.abs(y-s.y);if(tile!=='water'&&tile!=='mountain'&&distance<best){best=distance;shore={x,y};}}if(shore){Object.assign(s,shore);note(s,'Your water breathing fades. You swim back to the nearest safe shore.');}}
  cityTick(s,note,()=>rand(s));
@@ -706,6 +709,7 @@ if(a.type==='acknowledgeDragon'){delete s.flags.dragonGreeting;delete s.flags.dr
   if(s.mode==='battle')enemyTurn(s,false,events);
   return s;
  }
+ if(firehavenAction(s,a,message=>note(s,message)))return s;
  if(a.type==='useItem'&&a.id==='galen-fireball-ring'){
   if(s.mode!=='battle'){note(s,'Use Galen’s ring in battle.');return s;}
   if(!s.bag.includes(a.id)||!s.flags.galenRingCharges){note(s,'Galen’s ring has no charges left.');return s;}
@@ -988,7 +992,7 @@ if(a.type==='acknowledgeDragon'){delete s.flags.dragonGreeting;delete s.flags.dr
    const base=roll+(s.equipped?s.weapon*4:0)+effectiveLevel(s)*2+benefits.meleeDamage+(s.buffs?.strength>0?s.buffs.strengthPower||0:0)+gearPower(s);
    const raw=Math.floor((base+(s.buffs?.meal>0?4:0))*(gagActive(s,'tiny')?.5:1)*(effective?1.4:1)*(advantage?1.25:1));
    const protection=s.enemy.luteNumb>0?0:Math.floor(s.enemy.armor||0)+arenaDefenseBonus(s.enemy);
-   const multiplier=(s.equipped==='holy-avenger'&&undead(s.enemy)?3:paladinWeaponMultiplier(s,s.enemy))*demonWeaponMultiplier(gear,s.enemy);
+   const multiplier=(s.equipped==='holy-avenger'&&undead(s.enemy)?3:paladinWeaponMultiplier(s,s.enemy))*demonWeaponMultiplier(gear,s.enemy)*wyrmbaneMultiplier(gear,s.enemy);
    const baseDamage=multiplier*(Math.max(1,raw-protection)+weaponMagicDamage(gear,benefits.magicDamage))+poisonDamage(s);
    if(gear.freezeChance&&rand(s)<gear.freezeChance){s.enemy.frozen=1;note(s,'Frost freezes the enemy in place!');}
    s.flags.guarded=false;s.flags.combo=(s.flags.combo||0)+1;
