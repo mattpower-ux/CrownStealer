@@ -96,6 +96,20 @@ The staged presentation is:
 
 The dialogue substitutes the saved player name safely. The sequence supports reduced-motion presentation and remains understandable with sound muted. The impact has a distinct crash effect; triumphant music stops at Percival's entrance. “Blade of Light” continues through the Fight/Run decision and, when the player fights, loops through the Percival battle without restarting at the transition. It fades out on retreat, defeat, or dark victory. The implementation source is `C:\Users\mattp\Downloads\Blade_of_Light_2026-11-19T020326.mp3` (20.036 seconds, 497,799 bytes); implementation will create an optimized web copy while leaving the supplied original untouched.
 
+## Percival Visual and Music Identity
+
+Percival's ordinary leitmotif is the supplied `C:\Users\mattp\Downloads\Remembrance_of_Dawn_2026-11-19T021351.mp3` (180.036 seconds, 4,337,799 bytes). It plays for Percival shrines, sanctuaries, Percival's Lament exploration, oath audiences, and other ordinary Percival appearances. Implementation creates an optimized web copy and leaves the supplied original untouched.
+
+Special ending music has priority over the leitmotif: `Blade of Light` during the throne confrontation and combat, `Rebuild the Dawn` after Percival defeats the player, and `Sky of Ruin` after the evil player defeats Percival. Leaving Percival-related content restores the soundtrack appropriate to the destination.
+
+Percival's Lament replaces its flat wall drawings with separate lightweight, realistic assets so the raycaster can vary them instead of repeating one complete scene:
+
+- recessed tarnished-brass barrel helms based on the supplied reference, with a narrow visor, reinforced central ridge, rivets, cross-shaped breathing holes, and no mannequin or studio background;
+- worn religious seals carved into the stone, using the Lawgiver-of-Light's sunburst, sword-and-halo, and devotional geometry;
+- iron wall sconces with a pale green-white sacred flame and physically plausible light falloff.
+
+The assets use transparent backgrounds, inherit wall perspective and fog from the renderer, and remain readable without looking pasted onto the masonry. They are optimized WebP files and retain separate placement controls.
+
 ## Percival Combat
 
 Percival is a unique level-100 demigod encounter, not a random monster or ordinary palace guard.
@@ -181,6 +195,8 @@ Use red-green TDD for each behavior. Required automated coverage includes:
 - audio tests confirming “Blade of Light” begins after the ceiling crash, does not restart when combat begins, loops during the confrontation, respects music volume/mute controls, and stops on every outcome;
 - audio tests confirming “Rebuild the Dawn” crossfades only after Percival defeats the player, continues through the defeat epilogue and exile transition, respects music volume/mute controls, and does not play for voluntary retreat or dark victory.
 - audio and browser tests confirming “Sky of Ruin” plays only for `darkVictory`, continues over the black `It is finished` screen, returns to the title when the track ends, respects music volume/mute controls, and preserves the completed save.
+- audio tests confirming “Remembrance of Dawn” is selected for Percival shrines, sanctuaries, Percival's Lament, and oath scenes but yields to all three special ending tracks;
+- browser screenshots confirming separate realistic barrel-helm, devotional-carving, and sacred-sconce assets appear in varied Percival's Lament alcoves at desktop and compact viewport sizes.
 
 ## Delivery
 
