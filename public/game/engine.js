@@ -72,7 +72,7 @@ import {buildEncounter} from './encounters.js';
 import {casinoAction,validCasino} from './casino.js';
 import {townWalkable,townPosition,townPlace,townExitAt} from './town.js';
 import {isPebbleRun,PEBBLE_RUN_ID,peeblesAction,peeblesTravelsWith} from './peebles.js';
-import {WEAPONS,UNARMED,armorProtection,itemById,isMagicEquipment,merchantBuyPrice,merchantSellPrice,weaponAccuracy,weaponMagicDamage} from './items.js';
+import {WEAPONS,UNARMED,armorProtection,itemById,isCombatWeapon,isMagicEquipment,merchantBuyPrice,merchantSellPrice,weaponAccuracy,weaponMagicDamage} from './items.js';
 import {REGIONS,TOWNS,DUNGEONS,CHAPTERS,ENEMIES,ENDINGS,SIDE_QUESTS} from './content.js';
 export const DIRS=[[0,-1],[1,0],[0,1],[-1,0]];
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -916,7 +916,7 @@ if(a.type==='acknowledgeDragon'){delete s.flags.dragonGreeting;delete s.flags.dr
   }
   if(a.type==='beansWait'){enemyTurn(s,false,events);return s;}
   if(isDungeonCombat(s)&&a.type==='advanceCombat'){if(battlefieldDistance(s)>1){note(s,'You close the distance with your foe.');enemyTurn(s,false,events);}return s;}
-  if(isDungeonCombat(s)&&a.type==='switchCombatWeapon'){const item=itemById(a.id,s);if(!s.bag.includes(a.id)||!['weapon','wand'].includes(item?.kind))return s;const key=item.kind==='wand'?'equippedMagic':'equipped';if(s[key]===a.id)return s;s[key]=a.id;note(s,'You ready '+item.name+'; changing weapons takes this round.');enemyTurn(s,false,events);return s;}
+  if(a.type==='switchCombatWeapon'){const item=itemById(a.id,s);if(!s.bag.includes(a.id)||!(isCombatWeapon(item)||item?.kind==='wand'))return s;const key=item.kind==='wand'?'equippedMagic':'equipped';if(s[key]===a.id)return s;s[key]=a.id;note(s,'You ready '+item.name+'; changing weapons takes this round.');enemyTurn(s,false,events);return s;}
   if(a.type==='evade'&&s.enemy.firstContact&&s.enemy.surprised){note(s,'You slip past before '+s.enemy.name+' notices you.');s.enemy=null;s.mode=s.returnMode;return s;}
   if(a.type==='attack'&&fearStopsAttack(s,events))return s;
   if(a.type==='attack'&&WEAPONS[s.equipped]?.explosionChance&&rand(s)<WEAPONS[s.equipped].explosionChance){const broken=s.equipped,index=s.bag.indexOf(broken);if(index>=0)s.bag.splice(index,1);s.equipped=null;s.pendingLoot=s.pendingLoot.filter(id=>id!==broken||s.bag.includes(id));s.hp-=100;s.enemy.hp-=100;const message='Your Alien weapon Exploded, doing 100 points of damage to you and your foe!';note(s,message);events.push({kind:'explosion',target:'enemy',amount:100,sound:'fire-whoosh',message},{kind:'hit',target:'hero',amount:100,hpAfter:Math.max(0,s.hp),sound:'hurt',message});if(s.hp<=0){events.push({kind:'defeat',target:'hero',amount:0,sound:'defeat'});recover(s,events);}else if(s.enemy.hp<=0){events.push({kind:'victory',target:'enemy',amount:0,sound:'victory'});victory(s,events);}else enemyTurn(s,false,events);return s;}

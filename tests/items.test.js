@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createGame,act,saveGame,loadGame} from '../public/game/engine.js';
+import {readFile} from 'node:fs/promises';
 import {WEAPONS,itemArt,itemById,weaponAccuracy} from '../public/game/items.js';
 
 test('item categories retain recognizable art when an item has no known shape', () => {
@@ -21,6 +22,12 @@ test('named legendary rewards use their own art and quest bones and teeth differ
   assert.match(itemArt(itemById('job-keepsake-the-husband-in-the-ledger')), /src="\/assets\/ancient-book.webp"/);
   assert.match(itemArt(itemById('job-keepsake-an-unflattering-history')), /aria-label="bone illustration"/);
   assert.match(itemArt(itemById('job-keepsake-amnesty-in-small-print')), /aria-label="tooth illustration"/);
+});
+
+test('raster loot illustrations preserve their natural proportions',async()=>{
+ const css=await readFile(new URL('../public/style.css',import.meta.url),'utf8');
+ assert.match(css,/\.loot-card\s*>\s*img\.item-art\s*\{[^}]*object-fit\s*:\s*contain[^}]*\}/s);
+ assert.match(css,/\.loot-card\s*>\s*img\.item-art\s*\{[^}]*height\s*:\s*auto[^}]*\}/s);
 });
 function win(s=createGame('Mara')){s.mode='battle';s.enemy={name:'Wolf',hp:1,maxHp:1,attack:1,gold:15,weakness:'quick strikes'};s.returnMode='world';return act(s,{type:'attack'});}
 test('first victory gives a starter weapon and a persistent discovery notice',()=>{const s=win();assert.equal(s.pendingLoot.length,1);assert.equal(itemById(s.pendingLoot[0]).kind,'weapon');assert.notEqual(s.pendingLoot[0],'smiting');assert.deepEqual(loadGame(saveGame(s)).pendingLoot,s.pendingLoot);assert.equal(WEAPONS.smiting.toHit,3);assert.deepEqual(WEAPONS.smiting.damage,[6,10]);});

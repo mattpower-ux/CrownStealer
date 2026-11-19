@@ -7,7 +7,7 @@
 .combat-block{animation:combat-flash .35s ease-out;background:#285965}
 @media(prefers-reduced-motion:reduce){.combat-hurt,.combat-heal,.combat-block{animation:none}}
 
-.loot-card{display:grid;grid-template-columns:160px minmax(0,1fr);gap:24px;align-items:center}.item-art{width:100%;max-height:240px}.item-stats{display:flex;gap:20px;border-block:1px solid var(--line);padding:16px 0;margin:16px 0;color:#e8d2a2}.item-stats b{font-size:25px}.item-comparison{padding:14px;background:#0b1b1555;border:1px solid var(--line);margin:12px 0}.item-comparison p{margin:6px 0}.loot-card h3{font-size:28px!important}@media(max-width:550px){.loot-card{grid-template-columns:1fr;gap:6px}.item-art{height:140px}.loot-card h3{font-size:24px!important}}
+.loot-card{display:grid;grid-template-columns:160px minmax(0,1fr);gap:24px;align-items:center}.item-art{width:100%;max-height:240px}.loot-card>img.item-art{display:block;width:100%;height:auto;object-fit:contain}.item-stats{display:flex;gap:20px;border-block:1px solid var(--line);padding:16px 0;margin:16px 0;color:#e8d2a2}.item-stats b{font-size:25px}.item-comparison{padding:14px;background:#0b1b1555;border:1px solid var(--line);margin:12px 0}.item-comparison p{margin:6px 0}.loot-card h3{font-size:28px!important}@media(max-width:550px){.loot-card{grid-template-columns:1fr;gap:6px}.item-art{height:140px}.loot-card>img.item-art{height:auto}.loot-card h3{font-size:24px!important}}
 
 .portrait img{width:100%;height:100%;object-fit:contain}.movement{grid-template-rows:repeat(2,48px)}
 .dealer{display:flex;gap:22px;align-items:center;margin-bottom:22px}.dealer-portrait{width:140px;height:140px;flex-shrink:0;background-image:url('/assets/dealers.webp');background-size:400% 300%;border:1px solid var(--gold);border-radius:8px}.dealer h3{margin:6px 0;font-size:25px}.dealer p{margin-bottom:6px}.playing-hand{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin:12px 0}.playing-card{display:inline-flex;flex-direction:column;justify-content:center;align-items:center;min-width:48px;padding:10px 8px;min-height:68px;background:#eee2c5;color:#29271f;border-radius:5px;border:2px solid #bca572;font:22px Georgia}.playing-card small{font:9px Arial;margin-top:6px}.playing-card.held{border:3px solid #d5a344;background:#fff2b9}.card-back{font-size:12px;color:var(--muted)}.casino-table input[type=number]{width:90px}.casino-table select{padding:12px;background:#20372b;color:var(--ink);border:1px solid var(--gold);margin:8px}.roulette-result{font:42px Georgia;color:var(--gold)}.wink-track{height:58px;background:#816b45;border-radius:20px;position:relative;margin:20px 18px}.wink-track span,.wink-track b{position:absolute;transform:translateX(-50%);font-size:28px;top:2px}.wink-track b{top:25px;color:#f1dfb6}.casino-table input[type=range]{width:180px;vertical-align:middle}@media(max-width:540px){.dealer{gap:12px}.dealer-portrait{width:90px;height:90px}.dealer h3{font-size:20px}.playing-card{min-width:34px;padding:8px 4px;font-size:19px}.casino-table{padding:15px}.dealer .eyebrow{font-size:8px}}
@@ -316,18 +316,18 @@ dialog[data-panel="bossIntro"] img.intro-backdrop { object-fit: cover; }
 
 .wilderness-health{
   position:absolute;top:8px;left:8px;pointer-events:none;
-  width:clamp(164px,20vw,190px);max-width:calc(100% - 16px);box-sizing:border-box;padding:5px 7px;
+  width:clamp(180px,22vw,209px);max-width:calc(100% - 16px);box-sizing:border-box;padding:6px 8px;
   color:#ece0bd;background:#071912ed;border:1px solid #cdb67966;border-radius:4px;
 }
-.wilderness-health-label{display:flex;justify-content:space-between;gap:5px;align-items:baseline;font-size:9px;line-height:1.05}
+.wilderness-health-label{display:flex;justify-content:space-between;gap:5px;align-items:baseline;font-size:10px;line-height:1.05}
 .wilderness-health-label strong{font-variant-numeric:tabular-nums;white-space:nowrap}
-.wilderness-health-track{height:6px;margin-top:3px;background:#2b3527;border-radius:3px;overflow:hidden}
+.wilderness-health-track{height:7px;margin-top:3px;background:#2b3527;border-radius:3px;overflow:hidden}
 .wilderness-health-track span{display:block;height:100%;background:#adc184;border-radius:inherit}
 .wilderness-health.is-low{border-color:#ef9678}
 .wilderness-health.is-low .wilderness-health-label:not(.wilderness-xp-label) strong{color:#ffc1aa}
 .wilderness-health.is-low .wilderness-health-track:not(.wilderness-xp-track) span{background:#e98e75}
 .wilderness-xp-label{margin-top:4px}
-.wilderness-xp-track{height:5px;background:#3d3425}
+.wilderness-xp-track{height:6px;background:#3d3425}
 .wilderness-xp-track span{background:#e4bf76}
 .wilderness-health > .mode-badge{top:calc(100% + 5px);left:-1px;white-space:nowrap}
 .bridge-troll-scene{display:grid;grid-template-columns:minmax(120px,28%) 1fr;align-items:center;gap:16px}

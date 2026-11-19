@@ -19,6 +19,26 @@ test('fishing pole must be equipped before casting beside water',()=>{
  assert.match(cast.log.at(-1),/cast|fish|line|treasure/i);
 });
 
+test('fishing pole is utility gear and cannot replace a weapon during combat',()=>{
+ const s=createGame();
+ s.mode='battle';s.returnMode='dungeon';s.dungeon={index:0,floor:0,x:1,y:1,dir:1};
+ s.enemy={name:'Troll',speciesId:'troll',level:2,hp:100,maxHp:100,attack:10,armor:0,gold:1,xp:0,combatDistance:1};
+ s.bag.push('fishing-pole');
+ const next=act(s,{type:'switchCombatWeapon',id:'fishing-pole'});
+ assert.equal(next.equipped,'road-sword');
+ assert.equal(next.enemy.hp,100);
+});
+
+test('a real weapon can be changed during wilderness combat at the cost of a round',()=>{
+ const s=createGame();
+ s.mode='battle';s.returnMode='world';s.hp=s.maxHp=500;
+ s.enemy={name:'Bandit',speciesId:'bandit',level:2,hp:100,maxHp:100,attack:10,armor:0,gold:1,xp:0};
+ s.bag.push('common-bow-1');
+ const next=act(s,{type:'switchCombatWeapon',id:'common-bow-1'});
+ assert.equal(next.equipped,'common-bow-1');
+ assert.ok(next.hp<500,'switching should give the enemy its round');
+});
+
 test('fishing can catch both edible fish and random treasure',()=>{
  let fish=null,treasure=null;
  for(let rng=1;rng<5000&&(!fish||!treasure);rng++){
