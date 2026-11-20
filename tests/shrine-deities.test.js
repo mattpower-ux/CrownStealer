@@ -18,7 +18,7 @@ test('shrines have wide central rooms and deities change guardians and treasure'
  for(let y=0;y<15;y++)for(let x=0;x<15;x++)if(legacy[y]&(1<<x))assert.notEqual(expanded[y][x],1);
  for(const land of ['r0','r1','r2','r3',...Array.from({length:12},(_,i)=>'w'+i)])for(let slot=0;slot<24;slot++){const site=minorSiteDefinition('minor-'+land+'-'+slot);if(site.kind!=='ruinedShrine')continue;const profile=shrineForDungeon({site:'minor-site',minorId:site.id,index:site.index,floor:0});assert.equal(site.guarded,profile.alignment==='evil');}
  const state=slot=>({...createGame(),dungeon:{site:'minor-site',minorId:'minor-r0-'+slot,index:0,floor:0}});
- assert.equal(minorGuardian(state(4)),null);assert.equal(minorGuardian(state(10)),null);assert.equal(minorGuardian(state(7)),null);
+ assert.equal(minorGuardian(state(4)).speciesId,'sseth-thresher');assert.equal(minorGuardian(state(10)),null);assert.equal(minorGuardian(state(7)),null);
  assert.ok(minorDungeonChests(state(7),TREASURE_ITEMS)[0].items.includes('common-lesser-healing'));
  assert.ok(minorDungeonChests(state(10),TREASURE_ITEMS)[0].items.includes('common-lesser-healing'));
 });

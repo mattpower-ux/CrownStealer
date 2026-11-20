@@ -9,6 +9,7 @@ import {dungeonLadders} from '../public/game/dungeon-ladders.js';
 import {areaTile} from '../public/game/exploration.js';
 import {enterRoadsideCrypt} from '../public/game/roadside-crypt.js';
 import {PUTRID_PALACE} from '../public/game/royal-trials.js';
+import {minorGuardian} from '../public/game/minor-dungeons.js';
 
 function enterSite(predicate,branch=false){let s=createGame();if(branch)s.exploration={area:'wild-0',artifacts:[],home:{region:0,x:64,y:4}};const site=minorSiteList(s).find(predicate);assert.ok(site);Object.assign(s,{x:site.x,y:site.y});assert.equal(pointAt(s).kind,'minorSite');s=act(s,{type:'enter'});return {s,site};}
 test('entering a kobold lair immediately announces its wet-dog smell',()=>{
@@ -40,10 +41,12 @@ test('unguarded shrine treasure persists and cannot be opened twice',()=>{
  s=act(s,{type:'openChest'});const gold=s.gold;assert.ok(s.openedChests.includes(chest.id));
  s=act(loadGame(saveGame(s)),{type:'openChest'});assert.equal(s.gold,gold);assert.equal(s.relics.length,0);
 });
-test('Sseth shrines are peaceful and do not invent treasure or relics',()=>{
+test('Sseth shrines are guarded by black-robed Threshers without inventing treasure or relics',()=>{
  let {s,site}=enterSite(p=>p.minorKind==='ruinedShrine'&&!p.guarded&&!p.treasure&&!p.trapped&&p.id==='minor-r0-4');
- assert.deepEqual(dungeonChests(s,dungeonMap(s.dungeon)),[]);s.dungeon.x=12;s.dungeon.y=13;s.dungeon.dir=1;
- s=act(s,{type:'forward'});assert.equal(s.mode,'dungeon');assert.equal(s.enemy,null);
+ assert.deepEqual(dungeonChests(s,dungeonMap(s.dungeon)),[]);
+ const guardian=minorGuardian(s);assert.equal(guardian.speciesId,'sseth-thresher');assert.equal(guardian.name,'Thresher');assert.equal(guardian.kind,'swift');
+ assert.match(guardian.appearance,/black robes/i);assert.match(guardian.appearance,/black sickles/i);
+ s.dungeon.x=12;s.dungeon.y=13;s.dungeon.dir=1;s=act(s,{type:'forward'});assert.equal(s.mode,'battle');assert.equal(s.enemy.speciesId,'sseth-thresher');
  assert.equal(s.flags['minorCleared:'+site.id],undefined);assert.equal(s.relics.length,0);
 });
 test('cemetery floors use normal ladders and retain their site identity',()=>{

@@ -1109,6 +1109,7 @@ const haghilda=new Image();haghilda.src='/assets/haghilda.webp';
 const levityBoss=new Image();levityBoss.src='/assets/leviathan-levity.webp';
 const illustratedBossArt=Object.fromEntries([
  [BALROG_ID,'/assets/balrog-of-despair.webp'],[WANG_ID,'/assets/wang-the-sluglord.webp'],
+ ['sseth-thresher','/assets/sseth-thresher.png'],
  ...ROYAL_DUNGEON_NPCS.map(npc=>[npc.id,'/assets/'+npc.id+'.webp']),
 ].map(([id,src])=>{const image=new Image();image.src=src;return [id,image];}));
 

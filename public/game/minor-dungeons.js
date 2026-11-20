@@ -136,14 +136,15 @@ export function minorDungeonChests(s,items) {
 
 export function minorGuardian(s) {
   const d=s.dungeon,site=definitionFor(d);
-  if(isSplitRock(d)||!site?.guarded||d.floor!==site.floors-1)return null;
+  const shrineGuardian=shrineForDungeon(d)?.guardian;
+  if(isSplitRock(d)||!site||!site.guarded&&!shrineGuardian||d.floor!==site.floors-1)return null;
   const inhabitants=caveGuardians[site.occupant];
-  const species=inhabitants?inhabitants[site.seed%inhabitants.length]:shrineForDungeon(d)?.guardian||guardians[site.kind];
+  const species=inhabitants?inhabitants[site.seed%inhabitants.length]:shrineGuardian||guardians[site.kind];
   const level=(caveGuardianLevels[site.occupant]??[2,7,13,20][site.region])+d.floor;
   const stats=monsterStats(species,level);
   return {
     ...stats,speciesId:species.id,name:species.name,art:species.art,kind:species.kind,
-    weakness:species.weakness,undead:!!species.undead,level,maxHp:stats.hp,
+    weakness:species.weakness,appearance:species.appearance,undead:!!species.undead,level,maxHp:stats.hp,
     ...(inhabitants&&species.element?{element:species.element}:{}),
     ...(inhabitants&&species.attackType?{attackType:species.attackType}:{}),
     firstContact:true,minorGuardian:site.id,
