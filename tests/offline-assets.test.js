@@ -11,3 +11,5 @@ test('offline cache contains every runtime module and its declared assets exist'
  for(const file of await readdir(new URL('game/',root)))if(file.endsWith('.js'))assert.ok(files.includes('/game/'+file),'Missing offline module: '+file);
  assert.ok(files.includes('/game/studio-splash.js'));
 });
+
+test('Pelagos estate delivery advances the offline cache generation',async()=>{const source=await readFile(new URL('../public/sw.js',import.meta.url),'utf8');assert.match(source,/embers-v(?:20[4-9]|2[1-9]\d|[3-9]\d{2,})/);assert.match(source,/\/game\/pelagos-estates\.js/);assert.match(source,/\/game\/pelagos-estate-render\.js/);});

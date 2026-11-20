@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {minorSiteDefinition} from '../public/game/minor-sites.js';
 import {TREASURE_ITEMS} from '../public/game/treasure.js';
+import {createGame,loadGame,saveGame} from '../public/game/engine.js';
 import {
  PELAGOS_ESTATE_NAMES,
  estateContainers,
@@ -111,3 +112,5 @@ test('estate cellars carry the strongest ordinary rewards and secrets are archit
   assert.equal(stash.length,1);assert.equal(stash[0].architectural,true);assert.notEqual(stash[0].sarcophagus,true);assert.ok(!stash[0].items.includes('scornraven-signet'));
  }
 });
+
+test('legacy Pelagos cemetery-light flags remain harmless and loadable',()=>{const s=createGame();s.flags.cemeteryTorches=['minor-r1-1:0:2:3','minor-r1-10:3:7:8'];const loaded=loadGame(saveGame(s));assert.deepEqual(loaded.flags.cemeteryTorches,s.flags.cemeteryTorches);});
