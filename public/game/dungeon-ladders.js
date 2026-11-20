@@ -2,6 +2,7 @@ import {isOpenAirCemetery,minorSiteDefinition} from './minor-sites.js';
 import {dungeonFloors} from './dungeon-depths.js';
 import {isWidowsBell} from './widows-bell.js';
 import {PELAGIOS_TOWER_ID} from './pelagios-tower.js';
+import {estateStairAnchors,isPelagosEstateDungeon} from './pelagos-estates.js';
 
 const directions = [[0, -1], [1, 0], [0, 1], [-1, 0]];
 const entrance = {x: 1, y: 1};
@@ -52,6 +53,13 @@ export function dungeonLadders(d, map) {
     });
   }
   const hasDown = d.floor < dungeonFloors(d) - 1;
+  if(isPelagosEstateDungeon(d)){
+    const {entry,destination}=estateStairAnchors(d);
+    return [{...entry,direction:'up'},...(hasDown?[{...destination,direction:'down'}]:[])].map(point=>{
+      const [dx,dy]=directions.find(([x,y])=>tileAt(point.x+x,point.y+y)===1)??directions[0];
+      return {...point,wallX:point.x+dx,wallY:point.y+dy,opening:point.direction==='up'?'ceiling':'floor'};
+    });
+  }
   const hallways = d.ladderLayout === 1 && !d.royal && d.site !== 'elf-village' ? hallwayTiles(tileAt) : [];
   const up = d.floor > 0 ? hallways[Math.round((hallways.length - 1) * .25)] ?? entrance : entrance;
   const openAir = isOpenAirCemetery(d);

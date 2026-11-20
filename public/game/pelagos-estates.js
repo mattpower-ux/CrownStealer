@@ -33,3 +33,36 @@ export function estateFloorRole(d){
  if(d.floor===0)return 'ground';
  return d.floor===floors-1?'cellar':'upper';
 }
+
+export function estateStairAnchors(d){
+ return isPelagosEstateDungeon(d)?{entry:{x:1,y:1},destination:{x:13,y:13}}:null;
+}
+
+function carve(map,left,top,right,bottom){
+ for(let y=Math.max(1,top);y<=Math.min(13,bottom);y++)for(let x=Math.max(1,left);x<=Math.min(13,right);x++)map[y][x]=0;
+}
+
+export function estateDungeonMap(d){
+ const map=Array.from({length:15},()=>Array(15).fill(1)),role=estateFloorRole(d);
+ if(!role)return map;
+ const variant=(ESTATE_INDEX.get(d.minorId)+d.floor)%4;
+ if(role==='cellar'){
+  carve(map,1,1,4,4);carve(map,10,10,13,13);
+  carve(map,2,3,12,5);carve(map,2,7,12,9);carve(map,2,11,12,13);
+  carve(map,2,3,4,12);carve(map,7,3,9,12);carve(map,11,3,13,12);
+  if(variant&1)carve(map,5,1,9,3);else carve(map,5,10,9,13);
+ }else{
+  carve(map,1,1,5,4);                 // entrance hall
+  carve(map,4,4,10,10);               // great court or ballroom
+  carve(map,9,2,13,7);                // gallery wing
+  carve(map,2,9,8,13);                // baths or apartments
+  carve(map,10,10,13,13);             // far stair chamber
+  carve(map,3,3,12,5);carve(map,4,8,12,10); // two circulation routes
+  if(variant===0)carve(map,1,6,5,9);
+  if(variant===1)carve(map,7,1,10,4);
+  if(variant===2)carve(map,9,7,13,10);
+  if(variant===3)carve(map,5,10,10,13);
+ }
+ map[1][1]=3;map[13][13]=2;
+ return map;
+}

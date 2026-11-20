@@ -4,6 +4,7 @@ import {isOpenAirCemetery,minorSiteDefinition} from './minor-sites.js';
 import {secretAlcove} from './secret-alcoves.js';
 import {GROVE_ENEMIES} from './wild-sites.js';
 import {shrineForDungeon,charityPitMap} from './shrine-deities.js';
+import {estateDungeonMap,isPelagosEstateDungeon} from './pelagos-estates.js';
 
 const guardians={
   koboldCave:{id:'grove-goblin',name:'Kobold Cave Watcher',kind:'swift',weakness:'quick strikes',art:{sheet:'monsters-grove',index:0}},
@@ -40,6 +41,7 @@ function definitionFor(d) {
 
 export function minorDungeonMap(d,{courtyard=true}={}) {
   if(d.charityPit)return charityPitMap();
+  if(isPelagosEstateDungeon(d))return estateDungeonMap(d);
   const map=Array.from({length:15},()=>Array(15).fill(1));
   const site=definitionFor(d);
   if(!site)return map;

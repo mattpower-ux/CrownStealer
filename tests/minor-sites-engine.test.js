@@ -53,6 +53,19 @@ test('cemetery floors use normal ladders and retain their site identity',()=>{
  let {s,site}=enterSite(p=>p.minorKind==='cemetery'&&p.floors===3);
  for(let floor=0;floor<2;floor++){const ladder=dungeonLadders(s.dungeon,dungeonMap(s.dungeon)).find(p=>p.direction==='down');Object.assign(s.dungeon,{x:ladder.x,y:ladder.y});s=act(s,{type:'descend'});assert.equal(s.dungeon.floor,floor+1);s=loadGame(saveGame(s));assert.equal(s.dungeon.minorId,site.id);}
 });
+test('Pelagos estates traverse every floor through save/load and return to their world anchor',()=>{
+ for(const wantedFloors of [2,5]){
+  let s={...createGame(),region:1};const site=minorSiteList(s).find(p=>p.minorKind==='ruinedEstate'&&p.floors===wantedFloors);assert.ok(site);
+  Object.assign(s,{x:site.x,y:site.y});s=act(s,{type:'enter'});assert.equal(s.dungeon.minorId,site.id);
+  for(let floor=0;floor<wantedFloors-1;floor++){
+   const ladder=dungeonLadders(s.dungeon,dungeonMap(s.dungeon)).find(p=>p.direction==='down');assert.ok(ladder);
+   Object.assign(s.dungeon,{x:ladder.x,y:ladder.y});s=loadGame(saveGame(act(s,{type:'descend'})));
+   assert.equal(s.dungeon.floor,floor+1);assert.equal(s.dungeon.minorId,site.id);
+  }
+  for(let floor=wantedFloors-1;floor>0;floor--){Object.assign(s.dungeon,{x:1,y:1});s=loadGame(saveGame(act(s,{type:'leave'})));assert.equal(s.dungeon.floor,floor-1);}
+  Object.assign(s.dungeon,{x:1,y:1});s=act(s,{type:'leave'});assert.deepEqual([s.mode,s.x,s.y],['world',site.x,site.y]);
+ }
+});
 test('trapped shrine bait is consumed once and does not invent rewards',()=>{
  let {s}=enterSite(p=>p.minorKind==='ruinedShrine'&&!p.guarded&&!p.treasure&&p.trapped);const gold=s.gold;
  const chest=dungeonChests(s,dungeonMap(s.dungeon))[0];Object.assign(s.dungeon,{x:chest.x,y:chest.y});
