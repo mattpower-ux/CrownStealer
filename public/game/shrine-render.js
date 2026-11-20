@@ -5,6 +5,7 @@ function line(c,points,color,width=.012){c.beginPath();points.forEach(([x,y],i)=
 function oval(c,x,y,rx,ry,color){c.beginPath();c.ellipse(x,y,rx,ry,0,0,Math.PI*2);c.fillStyle=color;c.fill();}
 const statueArt=Object.fromEntries(['kobold','giant','goddess','lizard','blob'].map(id=>{if(typeof Image==='undefined')return [id,null];const image=new Image();image.onload=artLoaded;image.src='/assets/shrine-'+id+'-statue.webp';return [id,image];}));
 let stonefatherMaterialActive=false;
+export const shrineMaterialRevision=2;
 export const isStonefatherShrine=d=>(stonefatherMaterialActive=shrineForDungeon(d)?.id==='stonefather');
 export const stonefatherMaterialSelected=()=>stonefatherMaterialActive;
 const css=(r,g,b,a=255)=>`#${[r,g,b,a].map(value=>Math.max(0,Math.min(255,Math.round(value))).toString(16).padStart(2,'0')).join('')}`;

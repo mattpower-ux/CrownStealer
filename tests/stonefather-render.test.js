@@ -15,6 +15,12 @@ test('only Stonefather altars select giant granite walls and pale rubble floors'
  assert.match(stonefatherFloorPixel(.31,.74),/^#[0-9a-f]{8}$/i);
 });
 
+test('the Pelagos Collapsed Shrine is explicitly a Stormfather granite altar',()=>{
+ const dungeon={site:'minor-site',minorId:'minor-r2-8'};
+ assert.equal(shrineForDungeon(dungeon)?.name,'The Stormfather, God of Giants');
+ assert.equal(isStonefatherShrine(dungeon),true);
+});
+
 test('Stonefather masonry uses a few monumental courses rather than small bricks',()=>{
  const rowColors=Array.from({length:100},(_,i)=>stonefatherGranitePixel(.23,i/100,1));
  const transitions=rowColors.slice(1).filter((color,i)=>color!==rowColors[i]).length;

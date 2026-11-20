@@ -665,7 +665,7 @@ function update(){if(state.mode!=='battle')impactIndex=0;updateClockDisplay();up
  if(state.mode==='dungeon'&&nearbyWatcher(state))$('actions').insertAdjacentHTML('beforeend','<span class="fine">Watching eyes follow you. They seem peaceful.</span>'+button('Attack the Watcher',{type:'attackWatcher'}));
  if(state.mode==='dungeon'&&!state.dungeon.charityPit){const god=shrineForDungeon(state.dungeon);if(god&&Math.abs(state.dungeon.x-(god.x??7))+Math.abs(state.dungeon.y-(god.y??8))<=2)$('actions').insertAdjacentHTML('beforeend','<button data-panel="shrine">Approach '+esc(god.name)+'</button>');}
  if(state.mode==='dungeon'&&state.dungeon.charityPit)$('scene-caption').textContent='Twenty feet below Lady Charity. Other cheapskates huddle nearby. The upward ladder at (1, 1) leads out.';
- if(state.mode==='dungeon'&&secretRoomKey(state.dungeon)!==null)$('actions').insertAdjacentHTML('beforeend','<button data-panel="searchSecrets">Search Hidden</button>');
+ if(state.mode==='dungeon')$('actions').insertAdjacentHTML('beforeend','<button data-panel="searchSecrets">Search Hidden</button>');
  $('travel-status').hidden=state.mode!=='dungeon'||!isCemeteryDungeon(state.dungeon);
  $('travel-status').innerHTML=$('travel-status').hidden?'':`<strong>${state.bag.filter(id=>id==='torch').length} Torches Left</strong><span>Use Torches Automatically?</span>${button('Y',{type:'autoTorches',enabled:true},state.flags.autoTorches?'primary':'')}${button('N',{type:'autoTorches',enabled:false},!state.flags.autoTorches?'primary':'')}`;
  if(state.mode==='dungeon'&&nearestUnlitTorch(state,dungeonMap(state.dungeon)))$('actions').insertAdjacentHTML('beforeend','<button data-panel="cemeteryTorch">Light torch</button>');
@@ -890,7 +890,7 @@ function openPanel(name,{winkShot=false,winkResult=null}={}){if(state?.dungeon?.
  if(name==='shrineResult')body.innerHTML=shrineResultMarkup(state,esc);
  if(name==='beans'){body.innerHTML='<p>'+esc(BEANS_MESSAGE)+'</p><p>Three rounds. Undead and constructs are unaffected; fleeing creatures award no victory loot or experience.</p><button type="button" class="primary" data-close-percival>Catch your breath</button>';}
  else if(name==='searchSecrets'){
-  if(state.mode!=='dungeon'||secretRoomKey(state.dungeon)===null){closePanel();return;}
+  if(state.mode!=='dungeon'){closePanel();return;}
   const d=state.dungeon,key=secretRoomKey(d);
   body.innerHTML=secretSearchMapMarkup(state,dungeonMap(d),{chance:seeHiddenChance(state),message:lastSecretSearch?.key===key?lastSecretSearch.text:''});
  }

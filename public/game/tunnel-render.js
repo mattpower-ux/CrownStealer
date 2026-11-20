@@ -1,9 +1,11 @@
 import {CHARITY_SHRINE_ID} from './shrine-deities.js';
+import {stonefatherMaterialSelected,stonefatherGranitePixel} from './shrine-render.js';
 import {artLoaded} from './art-revision.js';
 import {minorSiteDefinition} from './minor-sites.js';
 import {minorResidents} from './minor-residents.js';
 export const isMountainTunnel=d=>d?.site==='minor-site'&&minorSiteDefinition(d.minorId)?.kind==='tunnel';
 const packed=(r,g,b,light)=>{const n=v=>Math.max(0,Math.min(255,Math.floor(v*light)));return (255<<24)|(n(b)<<16)|(n(g)<<8)|n(r);};
+const cssPixel=hex=>{const n=parseInt(hex.slice(1,7),16);return (255<<24)|((n&255)<<16)|(n&65280)|(n>>>16);};
 let rockPixels=null;
 if(typeof Image!=='undefined'&&typeof document!=='undefined'){const image=new Image();image.onload=()=>{const canvas=document.createElement('canvas');canvas.width=512;canvas.height=512;const c=canvas.getContext('2d');c.drawImage(image,0,0,512,512);rockPixels=c.getImageData(0,0,512,512).data;artLoaded();};image.src='/assets/mountain-rock.webp';}
 const rockAtlas=new Float32Array(256*256);
@@ -77,10 +79,11 @@ export function drawMountainVault(c,w,h,phase=0){
 
 }
 export function drawShrineVault(c,w,h,{marble=false,moss=false}={}){
+ const granite=stonefatherMaterialSelected();
  const height=Math.ceil(h*.5),img=c.createImageData(w,height),pixels=new Uint32Array(img.data.buffer);
- for(let y=0;y<height;y+=2)for(let x=0;x<w;x+=2){const depth=h/Math.max(4,h*.5-y),tone=rockAtlas[(Math.floor(depth*7)%256)*256+(Math.floor((x/w)*255)%256)]*.6,color=moss?mossyShrinePixel(x/w*2,depth*.12,.7/(1+depth*.01)):marble?charityMarblePixel(x/w*2,depth*.12,.95/(1+depth*.01)):packed(tone,tone*.97,tone*1.07,.55/(1+depth*.03));for(let yy=y;yy<Math.min(height,y+2);yy++)for(let xx=x;xx<Math.min(w,x+2);xx++)pixels[yy*w+xx]=color;}c.putImageData(img,0,0);
+ for(let y=0;y<height;y+=2)for(let x=0;x<w;x+=2){const depth=h/Math.max(4,h*.5-y),tone=rockAtlas[(Math.floor(depth*7)%256)*256+(Math.floor((x/w)*255)%256)]*.6,color=granite?cssPixel(stonefatherGranitePixel(x/w,Math.min(.999,y/height),.82/(1+depth*.006))):moss?mossyShrinePixel(x/w*2,depth*.12,.7/(1+depth*.01)):marble?charityMarblePixel(x/w*2,depth*.12,.95/(1+depth*.01)):packed(tone,tone*.97,tone*1.07,.55/(1+depth*.03));for(let yy=y;yy<Math.min(height,y+2);yy++)for(let xx=x;xx<Math.min(w,x+2);xx++)pixels[yy*w+xx]=color;}c.putImageData(img,0,0);
  c.save();c.beginPath();c.rect(0,0,w,h*.5);c.clip();
- for(const [i,t]of [1.5,1.1,.79,.57,.40,.28,.19,.12,.075].entries()){const span=w*.57*t,y=h*.5-h*.025*t,apex=y-h*.65*t;c.beginPath();c.moveTo(w*.5-span,y);c.quadraticCurveTo(w*.5,apex,w*.5+span,y);c.strokeStyle=marble?(i%2?'#ffffffdd':'#e5e7e9cc'):i%2?'#65616c88':'#45434f88';c.lineWidth=Math.max(2,t*17);c.stroke();c.strokeStyle=marble?'#a9adb044':'#111017';c.lineWidth=Math.max(1,t*2);c.stroke();for(let j=-4;j<=4;j++){const u=j/5,x=w*.5+span*u,yy=y-h*.325*t*(1-u*u);c.beginPath();c.moveTo(x,yy-t*7);c.lineTo(x+t*3,yy+t*7);c.strokeStyle=marble?'#9b9fa444':'#17151e';c.stroke();}}
+ for(const [i,t]of [1.5,1.1,.79,.57,.40,.28,.19,.12,.075].entries()){const span=w*.57*t,y=h*.5-h*.025*t,apex=y-h*.65*t;c.beginPath();c.moveTo(w*.5-span,y);c.quadraticCurveTo(w*.5,apex,w*.5+span,y);c.strokeStyle=granite?(i%2?'#777b7ddd':'#555a5ddd'):marble?(i%2?'#ffffffdd':'#e5e7e9cc'):i%2?'#65616c88':'#45434f88';c.lineWidth=Math.max(2,t*17);c.stroke();c.strokeStyle=granite?'#24292c':marble?'#a9adb044':'#111017';c.lineWidth=Math.max(1,t*2);c.stroke();for(let j=-2;j<=2;j++){const u=j/3,x=w*.5+span*u,yy=y-h*.325*t*(1-u*u);c.beginPath();c.moveTo(x,yy-t*9);c.lineTo(x+t*4,yy+t*9);c.strokeStyle=granite?'#252a2c':marble?'#9b9fa444':'#17151e';c.stroke();}}
  c.restore();
 }
 export function drawTunnelDetails(c,w,h,s,map,dx,dy,fov,wallDepth){

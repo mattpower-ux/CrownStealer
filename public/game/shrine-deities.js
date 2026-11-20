@@ -7,7 +7,7 @@ export const PERCIVAL_SHRINE_ID='minor-r1-12';
 const gods=[
  {id:'copperclaw',name:'Copperclaw, God of Kobolds',form:'kobold',alignment:'good',runes:'Share the little you carry. A small kindness fills a great cavern.',loot:['common-lesser-healing','small-emerald']},
  {id:'sseth',name:'Sseth, the Lizard God',form:'lizard',alignment:'good',runes:'Blood warms the cold stone. The scaled faithful guard their offerings.',loot:['weapon-poison-1','small-sapphire'],guardian:{id:'shrine-lizard',name:'Lizard Shrine Zealot',kind:'swift',weakness:'steady pressure',art:{sheet:'monsters-tide',index:3}}},
- {id:'stonefather',name:'The Stonefather, God of Giants',form:'giant',alignment:'good',runes:'Shelter the small beneath your shadow. Strength is a kindness freely given.',loot:['common-lesser-healing','small-pearl']},
+ {id:'stonefather',name:'The Stormfather, God of Giants',form:'giant',alignment:'good',runes:'Shelter the small beneath your shadow. Strength is a kindness freely given.',loot:['common-lesser-healing','small-pearl']},
  {id:'oozul',name:'Oozul, the Evil Blob God',form:'blob',alignment:'evil',runes:'ALL SHALL DISSOLVE. LEAVE YOUR OFFERINGS AND YOUR BONES.',loot:['weapon-poison-1','small-emerald'],guardian:{id:'bilge-slime',name:'Evil Blob Shrine Spawn',kind:'spectral',weakness:'fire',art:{sheet:'monsters-tide',index:8}}},
 ];
 export function shrineForDungeon(d){
