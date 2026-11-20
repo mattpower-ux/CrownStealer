@@ -836,6 +836,13 @@ if(a.type==='acknowledgeDragon'){delete s.flags.dragonGreeting;delete s.flags.dr
   s.gold-=yard.price;s.flags.rowboatReady=true;
   note(s,'Your rowboat is ready. Walk into the water to launch; step onto land to disembark.');return s;
  }
+ if(a.type==='buyShipyardWaterBreathing'){
+  const yard=s.mode==='world'?pointAt(s):null;
+  if(yard?.id!=='shipyard-wild-6')return s;
+  if(s.gold<180){note(s,'A Water Breathing Potion costs 180 gold.');return s;}
+  s.gold-=180;s.bag.push('water-breathing-potion');
+  note(s,'You buy a Water Breathing Potion. One draught lasts a full game day.');return s;
+ }
  if(a.type==='enter'&&s.mode==='world'&&pointAt(s)?.kind==='minorSite'){
   const site=pointAt(s);s.dungeon={site:'minor-site',minorId:site.id,index:site.index,floor:0,x:1,y:1,dir:2,ladderLayout:1,...(site.other?{tunnelExit:{...site.other}}:{})};
   s.mode=s.returnMode='dungeon';s.location=site.id;s.dungeon.dir=openDungeonDirection(s.dungeon);note(s,site.occupant==='wyrm'
@@ -956,7 +963,15 @@ if(a.type==='acknowledgeDragon'){delete s.flags.dragonGreeting;delete s.flags.dr
   else enemyTurn(s,false,events);
  }return s;
  }
- if(a.type==='useItem'){const item=TREASURE_ITEMS[a.id],index=s.bag.indexOf(a.id);if(item?.kind!=='potion'||index<0||s.mode==='ending')return s;const halfHealth=Math.ceil(s.maxHp/2);if(item.healsToHalf&&s.hp>=halfHealth){note(s,'You are already at half health or higher.');return s;}if(item.healing&&s.hp===s.maxHp){note(s,'You are already at full health.');return s;}s.bag.splice(index,1);s.pendingLoot=s.pendingLoot.filter(id=>id!==a.id||s.bag.includes(id));s.buffs??={};if(item.healing||item.healsToHalf){const amount=item.healsToHalf?halfHealth-s.hp:Math.min(s.maxHp-s.hp,Math.floor(item.healing));s.hp+=amount;events.push({kind:'heal',target:'hero',amount,sound:'magic'});}else if(item.durationMoves){if(item.effect==='strength'){s.flags.strengthMoves=item.durationMoves;s.buffs.strength=1;s.buffs.strengthPower=item.power;delete s.buffExpiry.strength;}else{s.spellEffects??={};s.spellEffects.invisibleMoves=item.durationMoves;s.buffs.invisibility=0;delete s.buffExpiry.invisibility;}}else{if(item.effect==='strength')s.flags.strengthMoves=0;if(item.effect==='invisibility')s.spellEffects.invisibleMoves=0;s.buffs[item.effect]=item.duration;setTimedBuff(s,item.effect,item.duration*5);s.buffs.strengthPower=item.effect==='strength'?item.power:s.buffs.strengthPower||0;}note(s,'Used '+item.name+'. '+item.description);if(s.mode==='battle')enemyTurn(s,false,events);return s;}
+ if(a.type==='useItem'){
+  const item=TREASURE_ITEMS[a.id],index=s.bag.indexOf(a.id);if(item?.kind!=='potion'||index<0||s.mode==='ending')return s;
+  const halfHealth=Math.ceil(s.maxHp/2);if(item.healsToHalf&&s.hp>=halfHealth){note(s,'You are already at half health or higher.');return s;}if(item.healing&&s.hp===s.maxHp){note(s,'You are already at full health.');return s;}
+  s.bag.splice(index,1);s.pendingLoot=s.pendingLoot.filter(id=>id!==a.id||s.bag.includes(id));s.buffs??={};
+  if(item.healing||item.healsToHalf){const amount=item.healsToHalf?halfHealth-s.hp:Math.min(s.maxHp-s.hp,Math.floor(item.healing));s.hp+=amount;events.push({kind:'heal',target:'hero',amount,sound:'magic'});}
+  else if(item.durationMoves){if(item.effect==='strength'){s.flags.strengthMoves=item.durationMoves;s.buffs.strength=1;s.buffs.strengthPower=item.power;delete s.buffExpiry.strength;}else{s.spellEffects??={};s.spellEffects.invisibleMoves=item.durationMoves;s.buffs.invisibility=0;delete s.buffExpiry.invisibility;}}
+  else{if(item.effect==='strength')s.flags.strengthMoves=0;if(item.effect==='invisibility')s.spellEffects.invisibleMoves=0;s.buffs[item.effect]=item.effect==='waterBreathing'?1:item.duration;setTimedBuff(s,item.effect,item.effect==='waterBreathing'?24*60:item.duration*5);s.buffs.strengthPower=item.effect==='strength'?item.power:s.buffs.strengthPower||0;}
+  note(s,'Used '+item.name+'. '+item.description);if(s.mode==='battle')enemyTurn(s,false,events);return s;
+ }
  if(a.type==='acknowledgeGuards'){delete s.flags.pennilessTown;delete s.flags.guardTauntPending;return s;}
  if(a.type==='royalSearch'&&s.mode==='dungeon'&&s.dungeon?.royal==='cell'){s.flags.royalTrapFound=true;note(s,'Behind the royal chamber pot you find a trapdoor at (3, 3). The lid reads: EMERGENCY EXIT. NO REFUNDS.');return s;}
  if(a.type==='royalSewerReturn'&&s.mode==='town'&&hasRoyalAdmission(s,s.location)&&!s.flags.galenFreed){

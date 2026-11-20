@@ -27,6 +27,16 @@ test('scarce shipyards are reachable on dry land next to water; purchases persis
  assert.equal(count,4);
 });
 
+test('Crooked Fen shipyard sells Water Breathing Potions for 180 gold',()=>{
+ let s={...engine.createGame(),region:2,gold:180,exploration:{area:'wild-6',artifacts:[]}};
+ const yard=engine.shipyardList(s)[0];Object.assign(s,{x:yard.x,y:yard.y});
+ s=engine.act(s,{type:'buyShipyardWaterBreathing'});
+ assert.equal(s.gold,0);assert.ok(s.bag.includes('water-breathing-potion'));
+ assert.equal(engine.loadGame(engine.saveGame(s)).bag.includes('water-breathing-potion'),true);
+ const poor={...s,gold:179,bag:s.bag.filter(id=>id!=='water-breathing-potion')};
+ assert.equal(engine.act(poor,{type:'buyShipyardWaterBreathing'}).bag.includes('water-breathing-potion'),false);
+});
+
 test('version-one coastal saves move safely and retain minor dungeon progress',()=>{
  const s={...engine.createGame(),region:2,x:84,y:2,wildernessTerrainVersion:1};
  const restored=engine.loadGame(engine.saveGame(s));
