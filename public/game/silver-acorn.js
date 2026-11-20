@@ -13,9 +13,10 @@ export function silverAcornAction(s,a,note){
   if(a.offering==='torch'){const i=s.bag.indexOf('torch');if(i<0)return true;s.bag.splice(i,1);}
   if(a.offering==='food'){if(s.meals<1)return true;s.meals--;}
   offered.push(a.offering);s.turns++;note(s,'Sseth accepts your offering.');
-  if(offered.length===3){s.flags.silverAcornGranted=true;s.bag.push(SILVER_ACORN.id);s.pendingLoot.push(SILVER_ACORN.id);adjustAlignment(s,12);note(s,'SSETH ACCEPTS YOUR TRIBUTE. You receive a SILVER ACORN. Plant it; in three days its tree will grant full healing.');}
+  if(offered.length===3){s.flags.silverAcornGranted=true;s.flags.silverAcornBestowalPending=true;s.bag.push(SILVER_ACORN.id);s.pendingLoot.push(SILVER_ACORN.id);adjustAlignment(s,12);note(s,'SSETH ACCEPTS YOUR TRIBUTE. You receive a SILVER ACORN. Plant it; in three days its tree will grant full healing.');}
   return true;
  }
+ if(a.type==='acknowledgeSilverAcorn'){delete s.flags.silverAcornBestowalPending;return true;}
  if(a.type==='plantAcorn'||a.type==='useItem'&&a.id===SILVER_ACORN.id){
   if(s.mode!=='world'||!s.bag.includes(SILVER_ACORN.id))return true;
   s.bag.splice(s.bag.indexOf(SILVER_ACORN.id),1);s.pendingLoot=s.pendingLoot.filter(id=>id!==SILVER_ACORN.id);
@@ -31,5 +32,6 @@ export function silverAcornAction(s,a,note){
 export function validSilverAcorn(s){
  for(const [k,v]of Object.entries(s.flags))if(k.startsWith('ssethTribute:')&&(!Array.isArray(v)||new Set(v).size!==v.length||v.some(x=>!['gold','food','torch'].includes(x))))return false;
  if(s.flags.silverAcornGranted!==undefined&&typeof s.flags.silverAcornGranted!=='boolean')return false;
+ if(s.flags.silverAcornBestowalPending!==undefined&&typeof s.flags.silverAcornBestowalPending!=='boolean')return false;
  const t=s.flags.silverTree;return t===undefined||t&&Number.isInteger(t.region)&&t.region>=0&&t.region<4&&(t.area===null||/^(wild-\d+|planet-[0-2]|north-sea-exile)$/.test(t.area))&&Number.isInteger(t.x)&&t.x>=1&&t.x<128&&Number.isInteger(t.y)&&t.y>=1&&t.y<96&&Number.isSafeInteger(t.plantedAt)&&t.plantedAt>=0;
 }
