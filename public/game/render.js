@@ -8,14 +8,14 @@ import {ROADSIDE_CRYPT} from './roadside-crypt.js';
 import {isPebbleRun} from './peebles.js';
 import {artRevision,artLoaded} from './art-revision.js';
 import {SAGE_MAZE_ID,SAGE_PEN_ID,sageRemains} from './sage-challenge.js';
-import {isMossyShrine,mossyShrinePixel,isMountainTunnel,tunnelRockPixel,obsidianPixel,isCharityMarble,charityMarblePixel,drawMountainVault,drawShrineVault,drawTunnelDetails,isCinderWardCrypt,cinderWardLavaChamber,cinderWardWallPixel,drawCinderWardBrambles,drawCinderWardLavaGlow} from './tunnel-render.js';
+import {isMossyShrine,mossyShrinePixel,isMountainTunnel,tunnelRockPixel,obsidianPixel as baseObsidianPixel,isCharityMarble,charityMarblePixel,drawMountainVault,drawShrineVault,drawTunnelDetails,isCinderWardCrypt,cinderWardLavaChamber,cinderWardWallPixel,drawCinderWardBrambles,drawCinderWardLavaGlow} from './tunnel-render.js';
 import {cemeteryTorches,cemeteryTorchInk,drawCemeteryDarkness} from './cemetery-light.js';
 import {whiteWizardCanCure} from './leper-colony.js';
 import {visibleDungeonGuardian} from './engine.js';
 import {battlefieldDistance} from './dungeon-ranged.js';
 import {beansEnemyReaction} from './bucket-beans.js';
 import {paintRoyalBody,royalVisualMap,drawRoyalDungeonScenery} from './royal-dungeon-render.js';
-import {drawShrineScene} from './shrine-render.js';
+import {drawShrineScene,isStonefatherShrine,stonefatherMaterialSelected,stonefatherGranitePixel,stonefatherFloorPixel} from './shrine-render.js';
 import {isCemeteryDungeon,isOpenAirCemetery,drawCemeteryCoffin,drawCemeteryRemains,drawCemeteryNightSky,cemeteryGateInk,cemeteryFacadeKind,cemeteryFacadeInk} from './cemetery-render.js';
 import {TWINKLESTAR_TOWER_ID,twinklestarTowerSite} from './twinklestar-tower.js';
 import {wizardAudienceAvailable,wizardInvisible} from './wizard-apprentice.js';
@@ -29,7 +29,7 @@ import {caveProfile} from './cave-profiles.js';
 import {drawTrollCaveDetails,drawTrollCaveVault,isTrollCave} from './troll-cave-render.js';
 import {drawHeatLairVault,heatLairProfile,heatMeltedPixel} from './heat-lair-render.js';
 import {firehavenLightMultiplier} from './firehaven.js';
-import {drawDungeonCeiling,shrineWallInk} from './dungeon-ceilings.js';
+import {drawDungeonCeiling,shrineWallInk as baseShrineWallInk} from './dungeon-ceilings.js';
 import {drawSolidLadders} from './ladder-render.js';
 import {isKoboldBurrow,isRuinedShrine,burrowPixel,drawBurrowPlanes,drawBurrowDarkness,drawDungeonFlicker,drawSecretDoor,drawBurrowDebris} from './burrow-render.js';
 import {mountFor} from './mounts.js';
@@ -882,6 +882,8 @@ function town(c,w,h,s,time){
 }
 
 let corridorCache=null;const corridorViews=new Map();const inkPixels=new Map();function inkPixel(hex){if(!inkPixels.has(hex)){const n=parseInt(hex.slice(1,7),16);inkPixels.set(hex,(255<<24)|((n&255)<<16)|(n&65280)|(n>>>16));}return inkPixels.get(hex);}
+function obsidianPixel(u,v,light){return stonefatherMaterialSelected()?inkPixel(stonefatherGranitePixel(u,v,light)):baseObsidianPixel(u,v,light);}
+function shrineWallInk(detail,u,v,light){return stonefatherMaterialSelected()?null:baseShrineWallInk(detail,u,v,light);}
 
 function drawRoyalDungeonFigures(c,w,h,s){
  const d=s.dungeon,map=dungeonMap(d),[dx,dy]=DIRS[d.dir],visible=[];
@@ -1025,7 +1027,7 @@ function drawSageRemains(c,w,h,d,dx,dy,fov,wallDepth){
  }
 }
 
-function dungeonUncached(c,w,h,s,time){const d=s.dungeon;if(!d)return;if(d.ship){drawShip(c,w,h,s);return;}if(d.site==='elf-village'){const [dx,dy]=DIRS[d.dir];drawForest(c,w,h,s,dungeonMap(d),dx,dy);return;}const m=dungeonMap(d),ladders=dungeonLadders(d,m),cave=caveProfile(d.expedition),heatLair=heatLairProfile(d),cinderCrypt=isCinderWardCrypt(d),pebble=isPebbleRun(d),burrow=!heatLair&&!pebble&&isKoboldBurrow(d),cemetery=isCemeteryDungeon(d),openAir=isOpenAirCemetery(d),shrine=isRuinedShrine(d),charityMarble=isCharityMarble(d),mossyShrine=isMossyShrine(d),tunnel=isMountainTunnel(d),haunted=d.site===PERCIVAL_CASTLE_ID,twinkling=d.site===TWINKLESTAR_TOWER_ID,druid=d.site===DRUID_SITE,wall=heatLair?{...DUNGEON_WALLS[3],tint:[18,-3,-8],ceiling:'#171112',floor:'#241817'}:cinderCrypt?{...DUNGEON_WALLS[3],tint:[32,0,-8],ceiling:'#241916',floor:'#3d271f'}:charityMarble?{...DUNGEON_WALLS[0],floor:'#babdc1',ceiling:'#fcfcff'}:tunnel?{...DUNGEON_WALLS[0],floor:'#3b2b1f',ceiling:'#25180f'}:d.royal==='sewer'?SEWER_WALL:DUNGEON_WALLS[twinkling?7:haunted?1:cave?.wall??(d.site==='firedrak'?3:d.index)];const ceiling=c.createLinearGradient(0,0,0,h);ceiling.addColorStop(0,wall.ceiling);ceiling.addColorStop(.5,charityMarble?'#ccd0d4':'#151b1b');ceiling.addColorStop(.51,openAir?'#424c48':d.expedition?.startsWith('planet-1')?'#c6b68e':wall.floor);ceiling.addColorStop(1,charityMarble?'#92979c':'#111816');c.fillStyle=ceiling;c.fillRect(0,0,w,h);for(let i=0;i<190;i++){const xx=(i*137.53)%w,yy=h*.52+(i*71.71)%(h*.48);c.fillStyle=charityMarble?(i%3?'#ffffffcc':'#f0f3ff99'):d.expedition?.startsWith('planet-1')?(i%2?'#e3d1a333':'#705e3b33'):heatLair?(i%3?'#6c35262b':'#e05a2520'):'#938f7330';c.fillRect(xx,yy,2+(i%3),1);}if(heatLair)drawHeatLairVault(c,w,h,d.floor);else if(tunnel)drawMountainVault(c,w,h,d.floor);else if(shrine)drawShrineVault(c,w,h,{marble:charityMarble,moss:mossyShrine});else if(!burrow&&!pebble&&!openAir)drawDungeonCeiling(c,w,h,wall,{phase:d.floor});if(d.royal==='sewer')drawSewerChannel(c,w,h,time);const splitRock=isSplitRock(d);const [dx,dy]=DIRS[d.dir];const angle=Math.atan2(dy,dx),fov=Math.PI/2.6,step=2;
+function dungeonUncached(c,w,h,s,time){const d=s.dungeon;if(!d)return;if(d.ship){drawShip(c,w,h,s);return;}if(d.site==='elf-village'){const [dx,dy]=DIRS[d.dir];drawForest(c,w,h,s,dungeonMap(d),dx,dy);return;}const m=dungeonMap(d),ladders=dungeonLadders(d,m),cave=caveProfile(d.expedition),heatLair=heatLairProfile(d),cinderCrypt=isCinderWardCrypt(d),pebble=isPebbleRun(d),burrow=!heatLair&&!pebble&&isKoboldBurrow(d),cemetery=isCemeteryDungeon(d),openAir=isOpenAirCemetery(d),shrine=isRuinedShrine(d),stonefather=isStonefatherShrine(d),charityMarble=isCharityMarble(d),mossyShrine=isMossyShrine(d),tunnel=isMountainTunnel(d),haunted=d.site===PERCIVAL_CASTLE_ID,twinkling=d.site===TWINKLESTAR_TOWER_ID,druid=d.site===DRUID_SITE,wall=heatLair?{...DUNGEON_WALLS[3],tint:[18,-3,-8],ceiling:'#171112',floor:'#241817'}:cinderCrypt?{...DUNGEON_WALLS[3],tint:[32,0,-8],ceiling:'#241916',floor:'#3d271f'}:charityMarble?{...DUNGEON_WALLS[0],floor:'#babdc1',ceiling:'#fcfcff'}:tunnel?{...DUNGEON_WALLS[0],floor:'#3b2b1f',ceiling:'#25180f'}:d.royal==='sewer'?SEWER_WALL:DUNGEON_WALLS[twinkling?7:haunted?1:cave?.wall??(d.site==='firedrak'?3:d.index)];const ceiling=c.createLinearGradient(0,0,0,h);ceiling.addColorStop(0,wall.ceiling);ceiling.addColorStop(.5,charityMarble?'#ccd0d4':'#151b1b');ceiling.addColorStop(.51,stonefather?'#d7d4c8':openAir?'#424c48':d.expedition?.startsWith('planet-1')?'#c6b68e':wall.floor);ceiling.addColorStop(1,stonefather?'#aaa9a2':charityMarble?'#92979c':'#111816');c.fillStyle=ceiling;c.fillRect(0,0,w,h);if(stonefather){for(let yy=Math.floor(h*.51);yy<h;yy+=6)for(let xx=0;xx<w;xx+=6){c.fillStyle=stonefatherFloorPixel(xx/w,yy/h);c.fillRect(xx,yy,6,6);}}else for(let i=0;i<190;i++){const xx=(i*137.53)%w,yy=h*.52+(i*71.71)%(h*.48);c.fillStyle=charityMarble?(i%3?'#ffffffcc':'#f0f3ff99'):d.expedition?.startsWith('planet-1')?(i%2?'#e3d1a333':'#705e3b33'):heatLair?(i%3?'#6c35262b':'#e05a2520'):'#938f7330';c.fillRect(xx,yy,2+(i%3),1);}if(heatLair)drawHeatLairVault(c,w,h,d.floor);else if(tunnel)drawMountainVault(c,w,h,d.floor);else if(shrine)drawShrineVault(c,w,h,{marble:charityMarble,moss:mossyShrine});else if(!burrow&&!pebble&&!openAir)drawDungeonCeiling(c,w,h,wall,{phase:d.floor});if(d.royal==='sewer')drawSewerChannel(c,w,h,time);const splitRock=isSplitRock(d);const [dx,dy]=DIRS[d.dir];const angle=Math.atan2(dy,dx),fov=Math.PI/2.6,step=2;
 
  const troll=isTrollCave(d);
  if(troll)drawTrollCaveVault(c,w,h,d.floor);

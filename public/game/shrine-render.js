@@ -4,6 +4,26 @@ function poly(c,points,fill,stroke){c.beginPath();points.forEach(([x,y],i)=>i?c.
 function line(c,points,color,width=.012){c.beginPath();points.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.strokeStyle=color;c.lineWidth=width;c.stroke();}
 function oval(c,x,y,rx,ry,color){c.beginPath();c.ellipse(x,y,rx,ry,0,0,Math.PI*2);c.fillStyle=color;c.fill();}
 const statueArt=Object.fromEntries(['kobold','giant','goddess','lizard','blob'].map(id=>{if(typeof Image==='undefined')return [id,null];const image=new Image();image.onload=artLoaded;image.src='/assets/shrine-'+id+'-statue.webp';return [id,image];}));
+let stonefatherMaterialActive=false;
+export const isStonefatherShrine=d=>(stonefatherMaterialActive=shrineForDungeon(d)?.id==='stonefather');
+export const stonefatherMaterialSelected=()=>stonefatherMaterialActive;
+const css=(r,g,b,a=255)=>`#${[r,g,b,a].map(value=>Math.max(0,Math.min(255,Math.round(value))).toString(16).padStart(2,'0')).join('')}`;
+export function stonefatherGranitePixel(u,v,light=1){
+ const row=Math.min(3,Math.floor(v*4)),shift=row%2?.23:0,across=(u+shift)%1,col=Math.min(2,Math.floor(across*3));
+ const horizontal=(v*4)%1,vertical=(across*3)%1,seam=horizontal<.035||vertical<.025;
+ const crack=((row*17+col*11)%7===0)&&Math.abs(vertical-.68+horizontal*.13)<.025;
+ const tone=seam?43:crack?36:104+row*4+col*6;
+ const shade=Math.max(.24,Math.round(light*5)/5);
+ return css(tone*shade,(tone+3)*shade,(tone+7)*shade);
+}
+export function stonefatherFloorPixel(u,v){
+ const hash=Math.abs(Math.sin((Math.floor(u*83)+1)*127.1+(Math.floor(v*71)+3)*311.7));
+ const slab=(Math.floor(u*13)+Math.floor(v*17)*3)%19===0;
+ if(slab)return hash>.5?'#8f918cff':'#b8b6adff';
+ if(hash>.78)return '#f0eee5ff';
+ if(hash>.38)return '#d7d4c8ff';
+ return '#c5c3baff';
+}
 export function drawShrineStatue(c,x,y,size,profile){
  const art=statueArt[profile.form];if(!art?.complete||!art.naturalWidth)return;
  const scale=Math.min(size*1.25/art.naturalWidth,size*1.45/art.naturalHeight),w=art.naturalWidth*scale,h=art.naturalHeight*scale;
