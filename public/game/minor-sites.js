@@ -4,6 +4,7 @@ import {mountainTunnelEnds} from './wilderness-landscape.js';
 import {BARRENS_LAIR_NAMES} from './whispering-barrens.js';
 import {SULFUR_LAIR_NAMES} from './sulfur-marsh.js';
 import {COPPER_GOBLIN_LAIRS} from './copper-wastes.js';
+import {estateDefinitionFor} from './pelagos-estates.js';
 
 const columns = 6;
 const rows = 4;
@@ -48,7 +49,7 @@ export function minorSiteDefinition(id) {
   const occupant = kind!=='koboldCave'?null:
     area==='wild-0'?'thegn':area==='wild-2'?'demon':area==='wild-3'?'copperGoblin':area==='wild-4'?'wyrm':area==='wild-5'?'reptile':region===2?'goblin':region===3?'troll':region===1&&name==='Sooty Kobold Den'?'fireImp':null;
   const caveName = occupant==='fireImp'?'Sooty Fire Imp Lair':regionalCaves[occupant]?.[nameIndex];
-  return {
+  const site={
     id, kind, name: caveName??(name==='Pebble Run Cave'&&id!==PEBBLE_RUN_ID?'Rillstone Cave':name),
     ...(occupant?{occupant}:{}),
     floors: kind === 'cemetery' ? 1 + (variant + ordinal) % 3 : 1,
@@ -60,6 +61,8 @@ export function minorSiteDefinition(id) {
     region,
     area,
   };
+  const estate=kind==='cemetery'?estateDefinitionFor(site):null;
+  return estate?{...site,...estate,kind:'ruinedEstate',guarded:true,treasure:true,trapped:false}:site;
 }
 
 export function isOpenAirCemetery(d) {

@@ -88,6 +88,14 @@ test('each land has eight caves, shrines, and cemeteries; harvest shrines stay p
   assert.deepEqual(minorSites({region: 1, exploration: {area: 'planet-0'}}, {tileAt: () => assert.fail('planet terrain queried'), landmarks: []}), []);
 });
 
+test('Pelagos replaces only its eight cemetery definitions with ruined estates',()=>{
+ const definitions=Array.from({length:24},(_,i)=>minorSiteDefinition('minor-r1-'+i));
+ assert.equal(definitions.filter(site=>site.kind==='ruinedEstate').length,8);
+ assert.equal(definitions.filter(site=>site.kind==='cemetery').length,0);
+ assert.equal(definitions.filter(site=>site.kind==='koboldCave').length,8);
+ assert.equal(definitions.filter(site=>site.kind==='ruinedShrine').length,8);
+});
+
 test('rivers block movement except at bridges and wetlands remain walkable', () => {
   const at = (x, y) => worldTile(0, x, y);
   const left = Array.from({length: 128}, (_, x) => x).find(x => at(x, 48) === 'bridge');

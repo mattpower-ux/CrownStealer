@@ -16,3 +16,9 @@ test('old shrines and cemeteries receive distinct minor approaches in every land
   for(const path of paths)assert.deepEqual(path.points.at(-1),{x:path.site.x+.5,y:path.site.y+.5});
  }
 });
+
+test('Pelagos ruined estates retain formal ruined roads',()=>{
+ const [path]=minorApproachTrails(1,[{id:'minor-r1-1',minorKind:'ruinedEstate',x:90,y:40}]);
+ assert.equal(path.style,'ruined-road');
+ assert.deepEqual(path.points.at(-1),{x:90.5,y:40.5});
+});
