@@ -288,4 +288,3 @@ Expected: only known unrelated untracked user/tool artifacts remain.
 - [ ] **Step 4: Commit any review fixes, then push and deploy**
 
 Push the tested branch and exact commit to the authorized GitHub main deployment path. Confirm Render reports the deployment `live` for that exact commit. Do not use OpenAI Sites.
-
