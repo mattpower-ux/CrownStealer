@@ -198,7 +198,12 @@ function validMinorDungeon(s){
  if(!entrance)return false;
  return site.kind==='tunnel'?d.tunnelExit?.x===entrance.other?.x&&d.tunnelExit?.y===entrance.other?.y:d.tunnelExit===undefined;
 }
-function validMinorChestId(id){const secret=/^(minor:minor-(?:r[0-3]|w(?:[0-9]|1[01]))-\d+:[0-2]):secret$/.exec(id);if(secret)return !!secretDungeonForKey(secret[1]);const match=/^minor:(minor-(?:r[0-3]|w(?:[0-9]|1[01]))-\d+):([0-2])$/.exec(id);if(!match)return false;const site=minorSiteDefinition(match[1]);return !!site&&(site.treasure||site.trapped)&&Number(match[2])===site.floors-1;}
+function validMinorChestId(id){
+ const estate=/^minor:(minor-r1-\d+):([0-4])(?::([0-4]|secret-estate))?$/.exec(id);
+ if(estate){const site=minorSiteDefinition(estate[1]),floor=Number(estate[2]);return site?.kind==='ruinedEstate'&&floor<site.floors;}
+ const secret=/^(minor:minor-(?:r[0-3]|w(?:[0-9]|1[01]))-\d+:[0-2]):secret$/.exec(id);if(secret)return !!secretDungeonForKey(secret[1]);
+ const match=/^minor:(minor-(?:r[0-3]|w(?:[0-9]|1[01]))-\d+):([0-2])$/.exec(id);if(!match)return false;const site=minorSiteDefinition(match[1]);return !!site&&(site.treasure||site.trapped)&&Number(match[2])===site.floors-1;
+}
 function minorGuardianAt(s){
  if(startMinorResident(s,'move',note))return true;
  if(s.dungeon?.site!=='minor-site'||s.flags['minorCleared:'+s.dungeon.minorId]||Math.abs(s.dungeon.x-13)+Math.abs(s.dungeon.y-13)>1)return false;

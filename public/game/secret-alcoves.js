@@ -5,10 +5,11 @@ import {effectiveAttributes} from './attributes.js';
 import {TREASURE_ITEMS} from './treasure.js';
 import {seeHiddenBonus} from './see-hidden.js';
 import {isBarrensShrine} from './whispering-barrens.js';
+import {estateSecretStash,isPelagosEstateDungeon} from './pelagos-estates.js';
 
 export function secretAlcove(d,map,{originalLayout=false,state=null}={}){
  if(isMossyGlobeShrine(d))return d.secretRoom||{x:2,y:8};
- const site=d.site==='minor-site'?minorSiteDefinition(d.minorId):null,barrensShrine=isBarrensShrine(d)&&site?.kind==='ruinedShrine',kobold=d.site==='minor-site'&&['koboldCave','cemetery'].includes(site?.kind),minorSecret=kobold||barrensShrine;
+ const site=d.site==='minor-site'?minorSiteDefinition(d.minorId):null,barrensShrine=isBarrensShrine(d)&&site?.kind==='ruinedShrine',estate=isPelagosEstateDungeon(d),kobold=d.site==='minor-site'&&['koboldCave','cemetery'].includes(site?.kind),minorSecret=kobold||barrensShrine||estate;
  if(barrensShrine&&state&&(state.alignment??0)<=0)return null;
  if(d.royal||d.ship||d.expedition||d.site&&!minorSecret||!minorSecret&&(d.floor+1)%5!==0)return null;
  if(d.secretRoom)return d.secretRoom;
@@ -25,15 +26,16 @@ export function secretAlcove(d,map,{originalLayout=false,state=null}={}){
 export function secretMap(d,map){if(!d.secretRoom)return map;const copy=map.map(row=>[...row]);copy[d.secretRoom.y][d.secretRoom.x]=0;if(isMossyGlobeShrine(d))for(let y=6;y<=10;y++)copy[y][1]=0;return copy;}
 export function secretRoomKey(d){
  if(isMossyGlobeShrine(d))return 'minor:'+d.minorId+':'+d.floor;
+ if(isPelagosEstateDungeon(d))return 'minor:'+d.minorId+':'+d.floor;
  if(d.royal||d.ship||d.expedition||d.site&&d.site!=='minor-site'||d.site==='minor-site'&&!['koboldCave','cemetery'].includes(minorSiteDefinition(d.minorId)?.kind)&&!isBarrensShrine(d))return null;
  return (d.site==='minor-site'?'minor:'+d.minorId:d.index)+':'+d.floor;
 }
 export function secretDungeonForKey(key){
  const normal=/^([0-7]):([0-9]{1,2})$/.exec(key);
  if(normal)return {index:Number(normal[1]),floor:Number(normal[2])};
- const minor=/^minor:(minor-(?:r[0-3]|w(?:[0-9]|1[01]))-\d+):([0-2])$/.exec(key);
+ const minor=/^minor:(minor-(?:r[0-3]|w(?:[0-9]|1[01]))-\d+):([0-4])$/.exec(key);
  const site=minor&&minorSiteDefinition(minor[1]);
- return (['koboldCave','cemetery'].includes(site?.kind)||site?.kind==='ruinedShrine'&&/^minor-w2-/.test(site.id)||isMossyGlobeShrine({site:'minor-site',minorId:site?.id}))&&Number(minor[2])<site.floors?{site:'minor-site',minorId:site.id,index:site.index,floor:Number(minor[2])}:null;
+ return (['koboldCave','cemetery','ruinedEstate'].includes(site?.kind)||site?.kind==='ruinedShrine'&&/^minor-w2-/.test(site.id)||isMossyGlobeShrine({site:'minor-site',minorId:site?.id}))&&Number(minor[2])<site.floors?{site:'minor-site',minorId:site.id,index:site.index,floor:Number(minor[2])}:null;
 }
 // Read equipped attribute bonuses only when calculating a check. Importing the
 // full items module here makes its eager weapon registry run before treasure
@@ -50,6 +52,7 @@ export function revealSecretRoom(s,room){
 export function secretStash(s){
  const d=s.dungeon;
  if(!d?.secretRoom||d.site!=='minor-site')return [];
+ if(isPelagosEstateDungeon(d))return estateSecretStash(s);
  if(isMossyGlobeShrine(d)){const id=secretRoomKey(d)+':globe-chest';return [{x:1,y:7,id,item:'small-ruby',items:['small-ruby'],gold:50,rarity:'rare',trap:false,opened:!!s.openedChests?.includes(id)}];}
  const site=minorSiteDefinition(d.minorId);
  if(site.kind==='ruinedShrine'&&/^minor-w2-/.test(site.id)){

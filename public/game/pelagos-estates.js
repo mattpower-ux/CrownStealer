@@ -66,3 +66,39 @@ export function estateDungeonMap(d){
  map[1][1]=3;map[13][13]=2;
  return map;
 }
+
+function openCells(map){
+ const cells=[];
+ for(let y=1;y<14;y++)for(let x=1;x<14;x++)if(map[y]?.[x]===0&&Math.abs(x-1)+Math.abs(y-1)>3&&Math.abs(x-13)+Math.abs(y-13)>2)cells.push({x,y});
+ return cells;
+}
+
+const RESIDENTS={
+ ground:[['Goblin Plunderer','goblin',false],['Orc Estate Reaver','orc',false],['Alabaster Guardian','construct',false]],
+ upper:[['Orc Hallbreaker','orc',false],['Dark-Elf Retainer','dark-elf',false],['Stained-Glass Guardian','construct',false],['Goblin Relic Thief','goblin',false]],
+ cellar:[['Goblin Cellarer','goblin',false],['Orc Cask Raider','orc',false],['Dark-Elf Vault Keeper','dark-elf',false],['Wine-Cellar Spirit','spirit',true]],
+};
+
+export function estateResidents(s,map){
+ const d=s?.dungeon,role=estateFloorRole(d);if(!role)return [];
+ const cells=openCells(map),pool=RESIDENTS[role],count=2+(ESTATE_INDEX.get(d.minorId)+d.floor)%3,defeated=s.flags?.minorResidentsDefeated||[];
+ return Array.from({length:count},(_,slot)=>{const [name,kind,undead]=pool[(ESTATE_INDEX.get(d.minorId)+d.floor+slot)%pool.length],p=cells[Math.floor((slot+1)*cells.length/(count+1))];return {...p,id:`${d.minorId}:${d.floor}:${slot}`,name,kind,undead,level:8+d.floor*3+slot};}).filter(r=>!defeated.includes(r.id));
+}
+
+function rewardId(items,candidates){return candidates.find(id=>items[id])||null;}
+
+export function estateContainers(s,map,items){
+ const d=s?.dungeon,role=estateFloorRole(d);if(!role)return [];
+ const cells=openCells(map),estate=ESTATE_INDEX.get(d.minorId),count=2+(estate+d.floor)%4,legacy=`minor:${d.minorId}:${d.floor}`;
+ const pools={ground:['common-lesser-healing','small-emerald','common-ring-1'],upper:['rare-medium-healing','small-sapphire','rare-ring-2','rare-sword-2'],cellar:['epic-ultra-healing','large-sapphire','epic-necklace-3','epic-sword-3']},pool=pools[role];
+ return Array.from({length:count},(_,slot)=>{
+  const id=`${legacy}:${slot}`,item=rewardId(items,[pool[(estate+d.floor+slot)%pool.length],'small-diamond']),p=cells[Math.floor((slot+.6)*cells.length/count)],cellar=role==='cellar';
+  return {...p,id,item,items:item?[item]:[],rarity:items[item]?.rarity||'common',gold:(cellar?110:role==='upper'?45:20)+estate*3+d.floor*7+slot*5,trap:false,architectural:true,opened:!!s.openedChests?.includes(id)||(slot===0&&!!s.openedChests?.includes(legacy))};
+ });
+}
+
+export function estateSecretStash(s){
+ const d=s?.dungeon;if(!d?.secretRoom||!isPelagosEstateDungeon(d))return [];
+ const id=`minor:${d.minorId}:${d.floor}:secret-estate`,items=['rare-medium-healing','small-sapphire'];
+ return [{...d.secretRoom,id,item:items[0],items,rarity:'rare',gold:75+d.floor*20,trap:false,architectural:true,opened:!!s.openedChests?.includes(id)}];
+}

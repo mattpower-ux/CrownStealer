@@ -1,11 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {minorSiteDefinition} from '../public/game/minor-sites.js';
+import {TREASURE_ITEMS} from '../public/game/treasure.js';
 import {
  PELAGOS_ESTATE_NAMES,
+ estateContainers,
  estateDefinitionFor,
  estateDungeonMap,
  estateFloorRole,
+ estateResidents,
+ estateSecretStash,
  estateStairAnchors,
  isPelagosEstateDungeon,
  isPelagosEstateSite,
@@ -83,5 +87,27 @@ test('cemeteries outside Pelagos retain their original identity and depths',()=>
   assert.ok(site.floors>=1&&site.floors<=3,id);
   assert.equal(isPelagosEstateSite(site),false);
   assert.equal(isPelagosEstateDungeon({site:'minor-site',minorId:id,floor:0}),false);
+ }
+});
+
+test('every estate floor has reachable residents and two to five stable architectural containers',()=>{
+ for(const id of estateIds){const site=minorSiteDefinition(id);for(let floor=0;floor<site.floors;floor++){
+  const d={site:'minor-site',minorId:id,floor},map=estateDungeonMap(d),s={dungeon:d,treasureSeed:187441,openedChests:[],flags:{}};
+  const residents=estateResidents(s,map),containers=estateContainers(s,map,TREASURE_ITEMS);
+  assert.ok(residents.length>=2&&residents.length<=4,id+':'+floor);
+  assert.ok(residents.every(r=>map[r.y][r.x]!==1&&(r.kind==='spirit'||!r.undead)&&r.id.startsWith(id+':'+floor+':')));
+  assert.ok(containers.length>=2&&containers.length<=5);
+  assert.ok(containers.every(c=>map[c.y][c.x]!==1&&!c.sarcophagus&&c.id.startsWith('minor:'+id+':'+floor+':')));
+  assert.equal(new Set(containers.map(c=>c.id)).size,containers.length);
+  assert.deepEqual(estateContainers(s,map,TREASURE_ITEMS),containers);
+ }}
+});
+
+test('estate cellars carry the strongest ordinary rewards and secrets are architectural',()=>{
+ for(const id of estateIds){const site=minorSiteDefinition(id),values=[];
+  for(let floor=0;floor<site.floors;floor++){const d={site:'minor-site',minorId:id,floor},s={dungeon:d,treasureSeed:9182,openedChests:[],flags:{}};values.push(estateContainers(s,estateDungeonMap(d),TREASURE_ITEMS).reduce((sum,c)=>sum+c.gold+c.items.reduce((n,itemId)=>n+(TREASURE_ITEMS[itemId]?.value||0),0),0));}
+  assert.equal(Math.max(...values),values.at(-1));
+  const d={site:'minor-site',minorId:id,floor:0,secretRoom:{x:6,y:6}},stash=estateSecretStash({dungeon:d,openedChests:[]});
+  assert.equal(stash.length,1);assert.equal(stash[0].architectural,true);assert.notEqual(stash[0].sarcophagus,true);assert.ok(!stash[0].items.includes('scornraven-signet'));
  }
 });
