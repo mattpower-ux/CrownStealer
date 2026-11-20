@@ -33,12 +33,14 @@ import {BRAVERY_NECKLACE,ROYAL_DUNGEON_ID,ROYAL_DUNGEON_LOOT} from './royal-dung
 import {dragonstoneChest,royalCampaignItems} from './royal-campaign.js';
 import {BARRENS_HISTORY} from './whispering-barrens.js';
 import {FIREHAVEN_ITEMS} from './firehaven.js';
+import {DRAGON_BRIDLE} from './mounts.js';
 export const RARITIES=['common','rare','epic','legendary'];
 export const rarityFor=roll=>roll<.60?'common':roll<.80?'rare':roll<.95?'epic':'legendary';
 const colors=['#b6baa5','#77bbec','#c69aef','#efcb70'];
 export const TREASURE_ITEMS={
  ...FIREHAVEN_ITEMS,
  [SILVER_ACORN.id]:SILVER_ACORN,
+ [DRAGON_BRIDLE.id]:DRAGON_BRIDLE,
  [KERRBEAR_TOOTH.id]:KERRBEAR_TOOTH,
  [GUARDED_SLEEP.id]:GUARDED_SLEEP,
  ...DRUID_ITEMS,

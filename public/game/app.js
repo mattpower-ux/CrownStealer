@@ -1104,7 +1104,9 @@ function openPanel(name,{winkShot=false,winkResult=null}={}){if(state?.dungeon?.
  if(name==='dragonGreeting'){body.innerHTML='<div class="dragon-greeting"><span class="dragon-run-in" aria-hidden="true"></span><img src="/assets/dragon-greeting.webp" alt="Your dragon bounds up and licks your face with dreadful breath"><div><h3>GLEEEEEP!</h3><p>Your new dragon runs up, licks your face, and shares its horrifying breath.</p>'+button('Saddle up',{type:'acknowledgeDragon'},'primary')+'</div></div>';audio.unlock().then(()=>audio.effect('dragon-greep'));}
  if(name==='dragonMeal'){
   $('panel-title').textContent='A Very Happy Dragon';
-  body.innerHTML='<div class="dragon-greeting dragon-meal"><img src="/assets/dragon-ate-mount.png" alt="A delighted dragon licking his lips beside an empty stable"><div><p class="royal-dialogue">Your dragon looks extremely happy. He just ate your new mount. Please buy more!</p>'+button('Continue',{type:'acknowledgeDragonMeal'},'primary')+'</div></div>';
+  const mealNames=state.flags.dragonAteMount?.names||[];
+  const meal=mealNames.length?'Your dragon immediately ate '+mealNames.join(mealNames.length>1?' and ':'')+'. Your stabled mounts remain safe.':'Your dragon looks extremely happy. He just ate your new mount. Please buy more!';
+  body.innerHTML='<div class="dragon-greeting dragon-meal"><img src="/assets/dragon-ate-mount.png" alt="A delighted dragon licking his lips beside an empty stable"><div><p class="royal-dialogue">'+esc(meal)+'</p>'+button('Continue',{type:'acknowledgeDragonMeal'},'primary')+'</div></div>';
  }
  if(name==='dragonDefense')body.innerHTML=dragonDefenseView(state,button);
  if(name==='dragonNotice'&&state.flags.dragonDeparted&&state.flags.dragonNotice?.startsWith('Gleep found')){

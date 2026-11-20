@@ -42,7 +42,19 @@ function buyEntries(state, place) {
         blocked: id === 'dragon' && state.flags.dragonCaptured ? 'Rescue in Firedrak Mountain' : state.flags.mount === id ? 'Already equipped' : '',
       };
     });
-    return sortEntriesByPrice([...mounts, ...supplies(state, place)]);
+    const stable = [
+      ...(state.flags.mounts || []).filter(id => id !== state.flags.mount).map(id => ({
+        item: { ...itemById('mount-' + id, state), id: 'stable-' + id, name: 'Stable ' + MOUNTS[id].name, description: 'Store this mount safely for 3 gold per game week. The single fee covers every mount in stable service.' },
+        price: null, action: { type: 'stableMount', id }, label: 'Store',
+      })),
+      ...(state.flags.stabledMounts || []).map(id => ({
+        item: { ...itemById('mount-' + id, state), id: 'retrieve-' + id, name: 'Retrieve ' + MOUNTS[id].name, description: 'Return this protected mount to your traveling collection.' },
+        price: null, action: { type: 'retrieveMount', id }, label: 'Retrieve', blocked: state.flags.stableDebt ? state.flags.stableDebt + ' gold overdue' : '',
+      })),
+      ...(state.flags.stableDebt ? [{ item: { id: 'stable-debt', name: 'Overdue Stable Fees', kind: 'service', description: 'Pay the balance before retrieving stored mounts.' }, price: state.flags.stableDebt, action: { type: 'payStableDebt' }, label: 'Pay fees' }] : []),
+      ...([...(state.flags.mounts || []), ...(state.flags.stabledMounts || [])].includes('dragon') ? [{ item: itemById('dragon-bridle', state), price: null, action: { type: state.flags.dragonBridled ? 'removeDragonBridle' : 'equipDragonBridle' }, label: state.flags.dragonBridled ? 'Remove bridle' : 'Equip bridle' }] : []),
+    ];
+    return sortEntriesByPrice([...mounts, ...stable, ...supplies(state, place)]);
   }
 
   if (place.merchant === 'enclave') {
