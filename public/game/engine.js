@@ -1,5 +1,5 @@
 import {shipyardProfile} from './shipyard-view.js';
-import {HAUNTED_SHIPYARD_AREA,HAUNTED_SHIPYARD_ID,isHauntedShipyardDungeon} from './haunted-shipyard.js';
+import {HAUNTED_SHIPYARD_AREA,HAUNTED_SHIPYARD_ID,hauntedShipyardMap,isHauntedShipyardDungeon} from './haunted-shipyard.js';
 import {triggerKoboldSnare,koboldSnareAction,validKoboldSnare} from './kobold-snare.js';
 import {silverAcornAction,silverTree,validSilverAcorn} from './silver-acorn.js';
 import {redGlobeAction,fulfillRedGlobe,validRedGlobe,cursedByGlobe} from './red-globe.js';
@@ -94,7 +94,7 @@ export function createGame(name='Wanderer',gender='him',cameo){
  const town=TOWNS[0];return prepareAttributes({...(characterCameo(cameo)?{cameo}:{}),...(characterLook(cameo)?{look:cameo}:{}),attributeHealthAdjustment:0,wildernessTerrainVersion:3,worldMapVersion:WORLD_MAP_VERSION,wandCharges:{},wandSerial:0,spellEffects:{},worldTimeMs:8*HOUR_MS,buffExpiry:{},gender:CHARACTER_FACES.some(f=>f.id===gender)?gender:'him',cities:{},treasureSeed:hash(String(name)),openedChests:[],buffs:{},equippedBelt:null,equippedRing2:null,equippedHands:null,equippedHead:null,equippedBoots:null,equippedShield:null,equippedRing:null,equippedNecklace:null,version:1,torchSupplyVersion:1,bag:['road-sword','travel-armor','scroll-return',...Array(20).fill('torch')],equipped:'road-sword',equippedArmor:'travel-armor',equipmentVersion:1,pendingLoot:[],name:String(name).trim().slice(0,24)||'Wanderer',region:0,x:town.x-1,y:town.y,mode:'world',location:null,hp:80,maxHp:80,gold:65,meals:3,level:1,xp:0,weapon:1,armor:1,potions:3,chapter:0,relics:[],quests:[],wanted:[0,0,0,0],reputation:0,flags:{victories:0,guardVictories:0,transport:false,mounts:[],stabledMounts:[],stableDebt:0},log:['The crown has called for a hero. Unfortunately, it has found you.',CHAPTERS[0].text],rng:187441,turns:0,dungeon:null,enemy:null,returnMode:'world',ending:null});
 }
 export function createRoyalGame(name,gender,cameo){const s=createGame(name,gender,cameo),court=TOWNS[1];s.treasureSeed=crypto.getRandomValues(new Uint32Array(1))[0];s.mode='town';s.location=court.id;s.x=court.x;s.y=court.y;s.townPosition={x:6,y:11};s.gold=1;s.meals=1;s.potions=0;s.bag=['rusty-sword','travel-armor','scroll-return','starter-healing','starter-healing',...Array(20).fill('torch')];s.equipped='rusty-sword';s.equippedArmor=null;s.flags.royalStoryVersion=2;s.flags.royalQuest='opening';s.flags.royalEntranceSeen=false;s.flags.royalIntroLine=0;s.log=[ROYAL_INTRO[0].text];return s;}
-export function dungeonMap(d){if(d.site===DRUID_SITE)return makeDungeon(druidMapIndex(d),d.floor);if(d.site===SAGE_MAZE_ID)return sageMap(d);if(d.site===PELAGIOS_TOWER_ID)return secretMap(d,pelagiosTowerMap(d));if(d.site===TWINKLESTAR_TOWER_ID)return secretMap(d,twinklestarTowerMap(d));if(d.site===PERCIVAL_CASTLE_ID)return secretMap(d,percivalCastleMap(d));if(d.site===ROYAL_DUNGEON_ID)return royalDungeonMap(d);return secretMap(d, d.site==='minor-site'?minorDungeonMap(d):[ROADSIDE_CRYPT,ROLAND_CAVE].includes(d.site)?roadsideCryptMap(d):d.ship?shipMap():d.site==='elf-village'?forestMap(d.floor):d.royal==='cell'?royalCell():makeDungeon(d.expedition?100+hash(d.expedition)%10000:d.royal==='sewer'?8:d.site===BOTTOMLESS_PIT.id?PIT_MAP_SEED:d.site===PUTRID_PALACE.id?PUTRID_PALACE_SEED:d.index,d.floor));}
+export function dungeonMap(d){if(d.site===DRUID_SITE)return makeDungeon(druidMapIndex(d),d.floor);if(d.site===HAUNTED_SHIPYARD_ID)return secretMap(d,hauntedShipyardMap(d.floor));if(d.site===SAGE_MAZE_ID)return sageMap(d);if(d.site===PELAGIOS_TOWER_ID)return secretMap(d,pelagiosTowerMap(d));if(d.site===TWINKLESTAR_TOWER_ID)return secretMap(d,twinklestarTowerMap(d));if(d.site===PERCIVAL_CASTLE_ID)return secretMap(d,percivalCastleMap(d));if(d.site===ROYAL_DUNGEON_ID)return royalDungeonMap(d);return secretMap(d, d.site==='minor-site'?minorDungeonMap(d):[ROADSIDE_CRYPT,ROLAND_CAVE].includes(d.site)?roadsideCryptMap(d):d.ship?shipMap():d.site==='elf-village'?forestMap(d.floor):d.royal==='cell'?royalCell():makeDungeon(d.expedition?100+hash(d.expedition)%10000:d.royal==='sewer'?8:d.site===BOTTOMLESS_PIT.id?PIT_MAP_SEED:d.site===PUTRID_PALACE.id?PUTRID_PALACE_SEED:d.index,d.floor));}
 export function dungeonName(d){if(d.site===DRUID_SITE)return druidKeeper(d.circleId)+'’s Grove · Floor '+(d.floor+1);if(d.site===HAUNTED_SHIPYARD_ID)return 'Haunted Shipyard · Drowned Level '+(d.floor+1);if(d.site===SAGE_MAZE_ID)return 'The Secret Maze of the Sage';if(d.site===PELAGIOS_TOWER_ID)return 'Tower of Pelagios · '+pelagiosFloorName(d.floor);if(d.site===TWINKLESTAR_TOWER_ID)return 'Twinklestar Tower · Floor '+(d.floor+1);if(d.site===PERCIVAL_CASTLE_ID)return 'Percival’s Lament · Level '+(d.floor+1);return d.site===ROYAL_DUNGEON_ID?ROYAL_DUNGEON_NAME:d.site===ROADSIDE_CRYPT?'Forgotten Roadside Crypt':d.site===BOTTOMLESS_PIT.id?BOTTOMLESS_PIT.name:d.site===PUTRID_PALACE.id?PUTRID_PALACE.name:d.site==='firedrak'?'Mount Firedrake':d.ship?'Alien Spacecraft · Command Deck':d.expedition?expeditionName(d)+' · Level '+(d.floor+1):d.site==='elf-village'?'The Abandoned Elven Village · Level '+(d.floor+1):d.royal==='cell'?'The Royal Dungeon':d.royal==='sewer'?'The Royal Sewers':DUNGEONS[d.index].name;}
 function banishRoyal(s){const c=TOWNS[1];s.flags.royalQuest='banished';s.flags.royalIntroLine=ROYAL_INTRO.length-1;s.mode='world';s.location=null;s.x=c.x-1;s.y=c.y;s.dungeon=null;note(s,isRoyalCampaign(s)?'King Malachi sends you out with a rusty sword, a moldy meal, and one gold piece. Earn 500 gold and bring it back to him.':'You are kicked outside Bellwether with a rusty sword, a moldy meal and one gold piece. Return with 500 gold. Rock Troll toes are not required.');}
 export function worldTile(region,x,y){
@@ -200,7 +200,9 @@ function validMinorDungeon(s){
  if(!entrance)return false;
  return site.kind==='tunnel'?d.tunnelExit?.x===entrance.other?.x&&d.tunnelExit?.y===entrance.other?.y:d.tunnelExit===undefined;
 }
+const validHauntedShipyardChestId=id=>/^haunted-shipyard:[0-9]:(?:[0-5]|secret|boss)$/.test(id);
 function validMinorChestId(id){
+ if(validHauntedShipyardChestId(id))return true;
  const estate=/^minor:(minor-r1-\d+):([0-4])(?::([0-4]|secret-estate))?$/.exec(id);
  if(estate){const site=minorSiteDefinition(estate[1]),floor=Number(estate[2]);return site?.kind==='ruinedEstate'&&floor<site.floors;}
  const secret=/^(minor:minor-(?:r[0-3]|w(?:[0-9]|1[01]))-\d+:[0-2]):secret$/.exec(id);if(secret)return !!secretDungeonForKey(secret[1]);
@@ -1175,6 +1177,11 @@ if(a.type==='acknowledgeDragon'){delete s.flags.dragonGreeting;delete s.flags.dr
     s.mode='world';s.returnMode='world';s.dungeon=null;s.location=null;s.x=BOTTOMLESS_PIT.x;s.y=BOTTOMLESS_PIT.y;
     note(s,'The iron elevator carries you all the way back to the Whispering Barrens.');
    }
+   return s;
+  }
+  if(d.site===HAUNTED_SHIPYARD_ID){
+   if(a.type==='descend'&&canDescend){changeDungeonFloor(d,1);note(s,'You descend to drowned level '+(d.floor+1)+'. The pressure and darkness deepen.');}
+   else if(a.type==='descend'&&bottom)note(s,'A barnacled gate seals the deepest flooded dock.');
    return s;
   }
   if(d.site==='minor-site'){
