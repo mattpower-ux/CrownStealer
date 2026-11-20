@@ -45,6 +45,7 @@ import {ROYAL_DUNGEON_ID,ROYAL_DUNGEON_CELLS,ROYAL_DUNGEON_NPCS,royalDungeonFigu
 import {BALROG_ID} from './bottomless-pit.js';
 import {PUTRID_PALACE,WANG_ID} from './royal-trials.js';
 import {drawBarrensDesecration,isWhisperingBarrens} from './whispering-barrens.js';
+import {barrensPalette,barrensScenery,drawBarrensDeadTree,drawBarrensRuin,isWhisperingBarrensMap} from './whispering-barrens-render.js';
 import {drawCopperWastesOccupation,isCopperWastes} from './copper-wastes.js';
 
 let viewportGround=null;
@@ -202,9 +203,9 @@ function drawBridgeDeck(c,x,y,size,vertical){
 
 function paintGroundTile(c,map,gx,gy,x,y,size){
 
- const {region,tileAt,width,height,area}=map,t=tileAt(gx,gy),b=BIOMES[region];
+ const {region,tileAt,width,height,area}=map,t=tileAt(gx,gy),barrens=isWhisperingBarrensMap(map),b=barrens?barrensPalette:BIOMES[region];
 
- if(t==='water'||t==='bridge'){c.fillStyle=area?.kind==='planet'?['#28243d','#243c39','#2b3151'][Number(area.id.at(-1))]:area?.kind==='exile'?'#274d69':area?'#448b99':REGIONS[region].palette.water;c.fillRect(x,y,size+.5,size+.5);const watery=c.createLinearGradient(0,0,size,size);watery.addColorStop(0,'#79c9d525');watery.addColorStop(1,'#081e3320');c.fillStyle=watery;c.fillRect(x,y,size+.5,size+.5);c.strokeStyle='#94dde43d';c.lineWidth=.7;for(let k=0;k<5;k++){const yy=size*(k+.4)/5;c.beginPath();c.moveTo(size*.06,yy);c.quadraticCurveTo(size*.3,yy-size*.045,size*.48,yy);c.quadraticCurveTo(size*.7,yy+size*.035,size*.94,yy-size*.01);c.stroke();}for(const [dx,dy] of DIRS){if(['water','bridge'].includes(tileAt(gx+dx,gy+dy)))continue;c.strokeStyle=region===3?'#d6e7e3aa':'#cfcca177';c.lineWidth=size*.08;c.lineCap='round';c.beginPath();if(dx){const xx=dx>0?size:0;c.moveTo(xx,size*.1);c.quadraticCurveTo(xx-dx*size*.06,size*.5,xx,size*.9);}else{const yy=dy>0?size:0;c.moveTo(size*.1,yy);c.quadraticCurveTo(size*.5,yy-dy*size*.06,size*.9,yy);}c.stroke();}
+ if(t==='water'||t==='bridge'){c.fillStyle=barrens?b.water:area?.kind==='planet'?['#28243d','#243c39','#2b3151'][Number(area.id.at(-1))]:area?.kind==='exile'?'#274d69':area?'#448b99':REGIONS[region].palette.water;c.fillRect(x,y,size+.5,size+.5);const watery=c.createLinearGradient(0,0,size,size);watery.addColorStop(0,barrens?'#87825820':'#79c9d525');watery.addColorStop(1,barrens?'#080b092f':'#081e3320');c.fillStyle=watery;c.fillRect(x,y,size+.5,size+.5);c.strokeStyle=barrens?'#8e84564d':'#94dde43d';c.lineWidth=.7;for(let k=0;k<5;k++){const yy=size*(k+.4)/5;c.beginPath();c.moveTo(size*.06,yy);c.quadraticCurveTo(size*.3,yy-size*.045,size*.48,yy);c.quadraticCurveTo(size*.7,yy+size*.035,size*.94,yy-size*.01);c.stroke();}for(const [dx,dy] of DIRS){if(['water','bridge'].includes(tileAt(gx+dx,gy+dy)))continue;c.strokeStyle=barrens?'#3e382f':region===3?'#d6e7e3aa':'#cfcca177';c.lineWidth=size*.08;c.lineCap='round';c.beginPath();if(dx){const xx=dx>0?size:0;c.moveTo(xx,size*.1);c.quadraticCurveTo(xx-dx*size*.06,size*.5,xx,size*.9);}else{const yy=dy>0?size:0;c.moveTo(size*.1,yy);c.quadraticCurveTo(size*.5,yy-dy*size*.06,size*.9,yy);}c.stroke();}
  if(t==='bridge'){
   const route=(tx,ty)=>['road','bridge'].includes(tileAt(tx,ty));
   const vertical=Number(route(gx,gy-1))+Number(route(gx,gy+1))>Number(route(gx-1,gy))+Number(route(gx+1,gy));
@@ -212,7 +213,7 @@ function paintGroundTile(c,map,gx,gy,x,y,size){
  }
  return;}
 
- c.fillStyle=area?.kind==='exile'?'#d0dce1':b.ground;c.fillRect(x,y,size+.5,size+.5);if(area?.kind!=='exile'&&regionGround.complete&&regionGround.naturalWidth){const sw=regionGround.width/2,sh=regionGround.height/2;c.drawImage(regionGround,(region%2)*sw+gx/width*sw,Math.floor(region/2)*sh+gy/height*sh,sw/width,sh/height,x,y,size+.5,size+.5);}
+ c.fillStyle=area?.kind==='exile'?'#d0dce1':b.ground;c.fillRect(x,y,size+.5,size+.5);if(!barrens&&area?.kind!=='exile'&&regionGround.complete&&regionGround.naturalWidth){const sw=regionGround.width/2,sh=regionGround.height/2;c.drawImage(regionGround,(region%2)*sw+gx/width*sw,Math.floor(region/2)*sh+gy/height*sh,sw/width,sh/height,x,y,size+.5,size+.5);}
  if(t==='swamp'||t==='sand'){c.fillStyle=t==='swamp'?'#36584175':'#dfbb6b55';c.fillRect(x,y,size+.5,size+.5);}
 
  let seed=((gx*73856093)^(gy*19349663)^(region*83492791))>>>0;
@@ -225,9 +226,9 @@ function paintGroundTile(c,map,gx,gy,x,y,size){
 
  for(let i=0;i<26;i++){const xx=Math.floor(random()*46),yy=Math.floor(random()*46);c.fillStyle=i%3?b.light+'70':'#23332845';c.fillRect(xx,yy,2,1);if(i%4===0&&region!==1){c.fillRect(xx+1,yy-2,1,3);c.fillRect(xx-1,yy-1,1,2);}}
 
- if(random()<.24&&region!==3){c.fillStyle=region===1?'#d8ae77':'#ded39a';for(let i=0;i<3;i++)c.fillRect(Math.floor(random()*44)+2,Math.floor(random()*44)+2,1,1);}
+ if(!barrens&&random()<.24&&region!==3){c.fillStyle=region===1?'#d8ae77':'#ded39a';for(let i=0;i<3;i++)c.fillRect(Math.floor(random()*44)+2,Math.floor(random()*44)+2,1,1);}
 
- if((t==='forest'||t==='mountain')&&richTerrain.complete&&richTerrain.naturalWidth){return;}
+ if(!barrens&&(t==='forest'||t==='mountain')&&richTerrain.complete&&richTerrain.naturalWidth){return;}
 
  if(t==='swamp'){
   for(let pool=0;pool<3;pool++){
@@ -262,9 +263,11 @@ function paintGroundTile(c,map,gx,gy,x,y,size){
 
  }
 
- if(t==='mountain'){c.fillStyle='#626f66';c.fillRect(x,y+size*.5,size,size*.5);for(const [dx,dy] of DIRS){if(tileAt(gx+dx,gy+dy)==='mountain')path(c,[[x+size*.5,y+size*.25],[x+size*(.5+dx),y+size*(.7+dy*.5)],[x+size*.5,y+size]],'#6b786f');}path(c,[[x,y+size],[x+size*.14,y+size*.55],[x+size*.28,y+size*.58],[x+size*.48,y+size*.05],[x+size*.63,y+size*.4],[x+size*.74,y+size*.35],[x+size,y+size]],'#747e7d','#535f5d');path(c,[[x+size*.48,y],[x+size*.55,y+size*.83],[x+size,y+size]],'#515f60');path(c,[[x+size*.48,y],[x+size*.24,y+size*.49],[x+size*.41,y+size*.39],[x+size*.52,y+size*.51],[x+size*.61,y+size*.38],[x+size*.74,y+size*.5]],'#eef3e6');for(let k=0;k<7;k++){const yy=y+size*(.5+k*.065);c.strokeStyle=k%2?'#adb5a0':'#455956';c.lineWidth=1;c.beginPath();c.moveTo(x+size*.48,yy-size*.12);c.lineTo(x+size*(.18+k*.018),yy);c.stroke();}}
+ if(t==='mountain'){if(barrens){c.fillStyle=b.mountain;c.fillRect(x,y+size*.55,size,size*.45);path(c,[[x,y+size],[x+size*.17,y+size*.58],[x+size*.31,y+size*.61],[x+size*.49,y+size*.04],[x+size*.65,y+size*.43],[x+size*.78,y+size*.34],[x+size,y+size]],b.mountain,b.mountainTop);path(c,[[x+size*.49,y+size*.04],[x+size*.31,y+size*.61],[x+size*.6,y+size*.49]],b.mountainTop);c.strokeStyle='#8f3e253d';c.lineWidth=Math.max(1,size*.025);c.beginPath();c.moveTo(x+size*.49,y+size*.18);c.lineTo(x+size*.56,y+size*.5);c.stroke();}else{c.fillStyle='#626f66';c.fillRect(x,y+size*.5,size,size*.5);for(const [dx,dy] of DIRS){if(tileAt(gx+dx,gy+dy)==='mountain')path(c,[[x+size*.5,y+size*.25],[x+size*(.5+dx),y+size*(.7+dy*.5)],[x+size*.5,y+size]],'#6b786f');}path(c,[[x,y+size],[x+size*.14,y+size*.55],[x+size*.28,y+size*.58],[x+size*.48,y+size*.05],[x+size*.63,y+size*.4],[x+size*.74,y+size*.35],[x+size,y+size]],'#747e7d','#535f5d');path(c,[[x+size*.48,y],[x+size*.55,y+size*.83],[x+size,y+size]],'#515f60');path(c,[[x+size*.48,y],[x+size*.24,y+size*.49],[x+size*.41,y+size*.39],[x+size*.52,y+size*.51],[x+size*.61,y+size*.38],[x+size*.74,y+size*.5]],'#eef3e6');for(let k=0;k<7;k++){const yy=y+size*(.5+k*.065);c.strokeStyle=k%2?'#adb5a0':'#455956';c.lineWidth=1;c.beginPath();c.moveTo(x+size*.48,yy-size*.12);c.lineTo(x+size*(.18+k*.018),yy);c.stroke();}}}
 
  if(t==='forest'){
+
+  if(barrens){drawBarrensDeadTree(c,x,y,size,(gx*31+gy*17)>>>0);if((gx+gy)%5===0)drawBarrensDeadTree(c,x-size*.15,y+size*.2,size*.72,(gx*13+gy*7)>>>0);return;}
 
   const palettes=[['#354d2c','#4f7138','#719548','#a3bd60'],['#574930','#75663c','#91804b','#b1a16b'],['#244d44','#356555','#54856a','#85a17a'],['#3b5b57','#598079','#9bb5ac','#e0e9dc']];
 
@@ -288,6 +291,12 @@ function paintGroundTile(c,map,gx,gy,x,y,size){
 
   }
 
+ }
+
+ if(barrens&&t!=='road'&&t!=='mountain'){
+  const scenery=barrensScenery(gx,gy);
+  if(scenery==='ruin')drawBarrensRuin(c,x,y,size,(gx*19+gy*23)>>>0);
+  else if(scenery==='dead-tree')drawBarrensDeadTree(c,x,y,size*.82,(gx*11+gy*29)>>>0);
  }
 
 
@@ -328,7 +337,7 @@ function worldGround(map,view,s){
  c.translate(-left*unit,-top*unit);
  for(let y=top;y<bottom;y++)for(let x=left;x<right;x++)groundTile(c,map,x,y,x*unit,y*unit,unit);
  if(!map.area)drawTrails(c,map.region,unit,view,s);
- if(richTerrain.complete&&richTerrain.naturalWidth){
+ if(!isWhisperingBarrensMap(map)&&richTerrain.complete&&richTerrain.naturalWidth){
   const cell=richTerrain.width/4;
   for(let y=Math.max(1,top-1);y<Math.min(map.height-1,bottom+2);y++){
    for(let x=Math.max(1,left-1);x<Math.min(map.width-1,right+1);x++){
