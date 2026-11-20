@@ -11,6 +11,7 @@ test('world atlas markers vary by location type and remain translucent',()=>{
   [{name:'Hollow Rune Ruins'},'ruin','broken'],
   [{name:'Moon Ward Crypt'},'crypt','coffin'],
   [{name:'Tilted Headstone Cemetery'},'cemetery','cross'],
+  [{kind:'ruinedEstate',name:'Ruined Estate of House Aelvaris'},'estate','manor'],
   [{name:'Bar the Gates Castle'},'castle','castle'],
   [{name:'The Putrid Palace'},'palace','crown'],
   [{name:'Alien Teleporter'},'teleporter','ring'],

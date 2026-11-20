@@ -14,7 +14,7 @@ const MARKER_STYLES=Object.freeze({
  town:{shape:'square',color:'#f3d67c'},castle:{shape:'castle',color:'#e9b95f'},palace:{shape:'crown',color:'#f0c96d'},
  shrine:{shape:'star',color:'#8fd8ff'},cave:{shape:'triangle',color:'#bc9472'},dig:{shape:'pick',color:'#d88952'},
  ruin:{shape:'broken',color:'#a9a092'},dungeon:{shape:'diamond',color:'#d78278'},crypt:{shape:'coffin',color:'#b39cc9'},
- cemetery:{shape:'cross',color:'#9ca7a5'},teleporter:{shape:'ring',color:'#73e4df'},monument:{shape:'hex',color:'#8ee6ba'},
+ cemetery:{shape:'cross',color:'#9ca7a5'},estate:{shape:'manor',color:'#e8dfc5'},teleporter:{shape:'ring',color:'#73e4df'},monument:{shape:'hex',color:'#8ee6ba'},
  conservatory:{shape:'leaf',color:'#86cf83'},tower:{shape:'spire',color:'#b79de5'},generic:{shape:'circle',color:'#dbc989'},
 });
 const escape = value => String(value).replace(/[&<>"']/g, character => (
@@ -63,7 +63,7 @@ export function atlasMarker(point){
   :/\bpalace\b/.test(text)?'palace':/\bcastle\b|fortress|citadel/.test(text)?'castle'
   :/teleporter|portal/.test(text)?'teleporter':/alien.*monument|monument.*alien|artifact monument/.test(text)?'monument'
   :/conservatory/.test(text)?'conservatory':/wizard.*tower|tower.*wizard|twinklestar|widow.s bell/.test(text)?'tower'
-  :/cemetery|graveyard|burial ground/.test(text)?'cemetery':/crypt|sepulchre|tomb|ossuary/.test(text)?'crypt'
+  :/ruined estate|\bestate\b/.test(text)?'estate':/cemetery|graveyard|burial ground/.test(text)?'cemetery':/crypt|sepulchre|tomb|ossuary/.test(text)?'crypt'
   :/\bdig\b|mine shaft|excavation/.test(text)?'dig':/shrine|sanctuary|temple|fane/.test(text)?'shrine'
   :/cave|cavern|grotto|burrow|den|lair/.test(text)?'cave':/ruin|abandon/.test(text)?'ruin'
   :point?.kind==='dungeon'||point?.mark==='dungeon'?'dungeon':'generic';
@@ -80,6 +80,7 @@ function drawAtlasMarker(c,x,y,style){
  else if(style.shape==='cross'){c.rect(x-1.5,y-5,3,10);c.rect(x-4,y-2.5,8,3);}
  else if(style.shape==='coffin'){c.moveTo(x-3,y-5);c.lineTo(x+3,y-5);c.lineTo(x+4,y-2);c.lineTo(x+3,y+5);c.lineTo(x-3,y+5);c.lineTo(x-4,y-2);c.closePath();}
  else if(style.shape==='castle'){c.rect(x-5,y-2,10,7);c.rect(x-5,y-5,3,4);c.rect(x+2,y-5,3,4);}
+ else if(style.shape==='manor'){c.rect(x-5,y-1,10,6);c.moveTo(x-6,y-1);c.lineTo(x,y-6);c.lineTo(x+6,y-1);c.closePath();}
  else if(style.shape==='crown'){c.moveTo(x-5,y+4);c.lineTo(x-4,y-4);c.lineTo(x,y);c.lineTo(x+4,y-4);c.lineTo(x+5,y+4);c.closePath();}
  else if(style.shape==='star'){for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,r=i%2?2.2:5;(i?c.lineTo:c.moveTo).call(c,x+Math.cos(a)*r,y+Math.sin(a)*r);}c.closePath();}
  else if(style.shape==='leaf'){c.ellipse(x,y,4,6,Math.PI/4,0,Math.PI*2);}
