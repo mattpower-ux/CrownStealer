@@ -4,6 +4,7 @@ import {SILVER_ACORN,atSilverTree} from './silver-acorn.js';
 import {nearRedGlobe,cursedByGlobe} from './red-globe.js';
 import {evilEmpowered} from './evil-route.js';
 import {nearKerrbear,KERRBEAR_TOOTH} from './kerrbear.js';
+import {caveStoryAt,caveStoryView} from './cave-stories.js';
 import {canCamp} from './wilderness-camp.js';
 import {alignmentScore,alignmentLabel,paladinAlignmentAllowed,wizardAlignmentAllowed} from './alignment.js';
 import {rootActive,DRUID_SITE,DRUID_STAFF,DRUID_FLOORS,druidHistory,druidKeeper,druidKeeperAt} from './druid-grove.js';
@@ -242,6 +243,7 @@ if(gained.length)queueMicrotask(()=>showRewardCelebration('CONGRATS!',gained.map
 if(snoutState(state)&&['snoutReconfigure','snoutChoose','snoutEpilogue'].includes(a.type)&&state!==before){persist();update();openPanel('snout');return;}
 if(state.flags.koboldSnare){persist();update();openPanel('koboldSnare');return;}if(activePanel==='koboldSnare')closePanel();
 if(['feedKerrbear','attackKerrbear'].includes(a.type)&&activePanel==='kerrbear')closePanel();
+if(a.type==='caveStoryChoice'&&activePanel==='caveStory')closePanel();
 if(a.type==='visitEarth'&&canVisitEarth(before)){persist();update();openPanel('peeblesEarth');return;}
 if(a.type==='rolandCandles'&&rolandCellActive(state)&&!rolandCellActive(before)){
  closePanel();persist();update();openPanel('rolandFall');return;
@@ -692,6 +694,7 @@ function update(){if(state.mode!=='battle')impactIndex=0;updateClockDisplay();up
  if(state.dungeon?.site===BOTTOMLESS_PIT.id&&state.mode==='dungeon'&&state.flags.andros>0)$('actions').insertAdjacentHTML('beforeend','<span>Andros · Level 40 · '+state.flags.andros+' / '+BATTLE_BEAR_HP+' HP</span>');
  if(atMultiverseTube(state))$('actions').insertAdjacentHTML('afterbegin','<button class="primary" data-panel="multiverseTube">MULTIVERSE TELEPORTER</button>');
  if(nearKerrbear(state))$('actions').insertAdjacentHTML('afterbegin','<button class="primary" data-panel="kerrbear">Meet Kerrbear</button>');
+ const caveStory=caveStoryAt(state);if(caveStory)$('actions').insertAdjacentHTML('afterbegin','<button class="primary" data-panel="caveStory">'+caveStory.title+'</button>');
  if(state.mode==='battle'&&state.equippedNecklace===KERRBEAR_TOOTH.id&&!state.flags.kerrbearSummoned&&!state.enemy?.kerrbear)$('actions').insertAdjacentHTML('beforeend',button('Call Kerrbear · '+(state.flags.kerrbearCalls||0)+'/3',{type:'callKerrbear'}));
  if(nearRedGlobe(state))$('actions').insertAdjacentHTML('beforeend','<button data-panel="redGlobe">Examine the red globe</button>');
  if(state.mode==='world'&&state.bag.includes(SILVER_ACORN.id)&&!['water','mountain'].includes(worldTile(state.region,state.x,state.y)))$('actions').insertAdjacentHTML('beforeend',button('Plant Silver Acorn',{type:'plantAcorn'}));
@@ -990,6 +993,10 @@ function openPanel(name,{winkShot=false,winkResult=null}={}){if(state?.dungeon?.
  if(!nearKerrbear(state)){closePanel();return;}
  $('panel-title').textContent='Kerrbear and his cubs';
  body.innerHTML='<img src="/assets/kerrbear-family.webp" alt="An armored bear sheltering three cubs in a painted gray-rock cave" style="width:100%;max-height:65vh;object-fit:contain"><p>Kerrbear watches you carefully, sheltering three small cubs behind his armor.</p><div class="panel-actions">'+(state.flags.kerrbearFed?'<p>He remembers your kindness.</p>':button('Offer food · 1 meal',{type:'feedKerrbear'},'primary'))+button('Attack Kerrbear',{type:'attackKerrbear'})+'<button data-close-discovery>Leave them in peace</button></div>';
+ }
+ if(name==='caveStory'){
+  const story=caveStoryAt(state);if(!story){closePanel();return;}
+  $('panel-title').textContent=story.title;body.innerHTML=caveStoryView(story,state,button);
  }
  if(name==='peeblesCompanion'){
   if(!peeblesTravelsWith(state)){closePanel();return;}

@@ -988,3 +988,4 @@ dialog[data-panel="sageJournal"] #save-checkpoint { display: none; }
 @keyframes silver-tree-strike{0%,35%{opacity:1}36%,72%{opacity:.12}73%,100%{opacity:.85}}
 @keyframes silver-tree-weeps{0%{transform:translateY(-8px);opacity:.2}70%{opacity:1}100%{transform:translateY(32px);opacity:0}}
 @media (prefers-reduced-motion:reduce){.silver-tree-lightning,.silver-tree-tears{animation:none}}
+.cave-story-art{width:100%;aspect-ratio:3/2;max-height:52vh;background-size:500% 100%;background-repeat:no-repeat;border:2px solid #8d754d;border-radius:8px;box-shadow:0 8px 24px #0008}

@@ -5,6 +5,7 @@ import {BARRENS_LAIR_NAMES} from './whispering-barrens.js';
 import {SULFUR_LAIR_NAMES} from './sulfur-marsh.js';
 import {COPPER_GOBLIN_LAIRS} from './copper-wastes.js';
 import {estateDefinitionFor} from './pelagos-estates.js';
+import {CAVE_STORY_BY_SITE} from './cave-stories.js';
 
 const columns = 6;
 const rows = 4;
@@ -61,6 +62,8 @@ export function minorSiteDefinition(id) {
     region,
     area,
   };
+  const story=CAVE_STORY_BY_SITE[id];
+  if(story&&kind==='koboldCave')Object.assign(site,{name:story.name,story:story.id,treasure:false,trapped:false});
   const estate=kind==='cemetery'?estateDefinitionFor(site):null;
   return estate?{...site,...estate,kind:'ruinedEstate',guarded:true,treasure:true,trapped:false}:site;
 }

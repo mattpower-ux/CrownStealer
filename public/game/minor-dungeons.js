@@ -140,7 +140,7 @@ export function minorDungeonChests(s,items) {
 export function minorGuardian(s) {
   const d=s.dungeon,site=definitionFor(d);
   const shrineGuardian=shrineForDungeon(d)?.guardian;
-  if(isSplitRock(d)||!site||!site.guarded&&!shrineGuardian||d.floor!==site.floors-1)return null;
+  if(isSplitRock(d)||site?.story||!site||!site.guarded&&!shrineGuardian||d.floor!==site.floors-1)return null;
   const inhabitants=caveGuardians[site.occupant];
   const species=inhabitants?inhabitants[site.seed%inhabitants.length]:shrineGuardian||guardians[site.kind];
   const level=(caveGuardianLevels[site.occupant]??[2,7,13,20][site.region])+d.floor;
