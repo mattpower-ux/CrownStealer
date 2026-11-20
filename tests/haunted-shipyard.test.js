@@ -4,6 +4,7 @@ import * as engine from '../public/game/engine.js';
 import {dungeonLadders} from '../public/game/dungeon-ladders.js';
 import {dungeonChests} from '../public/game/treasure.js';
 import {HAUNTED_SHIPYARD_FLOORS,HAUNTED_SHIPYARD_ID,hauntedShipyardMap} from '../public/game/haunted-shipyard.js';
+import {underwaterWallPixel,underwaterSceneProfile} from '../public/game/underwater-render.js';
 
 const reachable=(map,start,target)=>{
  const queue=[start],seen=new Set([start.x+','+start.y]);
@@ -52,4 +53,25 @@ test('the drowned route descends through all ten levels and returns upward to it
  const restored=engine.loadGame(engine.saveGame(state));assert.equal(restored.dungeon.floor,9);
  const up=dungeonLadders(restored.dungeon,engine.dungeonMap(restored.dungeon)).find(l=>l.direction==='up');
  Object.assign(restored.dungeon,{x:up.x,y:up.y});const ascended=engine.act(restored,{type:'leave'});assert.equal(ascended.dungeon.floor,8);
+});
+
+test('the Haunted Shipyard selects slime-coated translucent underwater scenery without torches',()=>{
+ const profile=underwaterSceneProfile({site:HAUNTED_SHIPYARD_ID,floor:7});
+ assert.equal(profile.underwater,true);assert.equal(profile.torches,false);assert.match(profile.description,/slime|submerged/i);
+ const shallow=underwaterWallPixel(3,.37,.44,.8),deep=underwaterWallPixel(8,.37,.44,.8);
+ assert.equal(Number.isInteger(shallow),true);assert.notEqual(shallow,deep);
+});
+
+test('expired Water Breathing causes progressive drowning and permits another potion or retreat',()=>{
+ const drowned=engine.createGame();Object.assign(drowned,{mode:'dungeon',returnMode:'dungeon',region:2,hp:100,maxHp:100,exploration:{area:'wild-6',artifacts:[]},location:HAUNTED_SHIPYARD_ID,previewRules:{noEncounters:true}});
+ drowned.dungeon={site:HAUNTED_SHIPYARD_ID,index:4,floor:2,x:1,y:1,dir:engine.dungeonNavigation({site:HAUNTED_SHIPYARD_ID,index:4,floor:2,x:1,y:1,dir:0,ladderLayout:1}).forward?0:1,ladderLayout:1};
+ drowned.buffExpiry.waterBreathing=drowned.worldTimeMs;drowned.buffs.waterBreathing=0;
+ const first=engine.act(drowned,{type:'forward'});assert.equal(first.hp,88);assert.equal(first.flags.hauntedDrowningRounds,1);assert.match(first.log.at(-1),/drown/i);
+ const second=engine.act(first,{type:'back'});assert.equal(second.hp,68);assert.equal(second.flags.hauntedDrowningRounds,2);
+ second.bag.push('water-breathing-potion');const breathing=engine.act(second,{type:'useItem',id:'water-breathing-potion'});
+ assert.equal(breathing.flags.hauntedDrowningRounds,undefined);assert.ok(breathing.buffExpiry.waterBreathing>breathing.worldTimeMs);
+ const stranded=structuredClone(first);const escaped=engine.act(stranded,{type:'retreatHauntedShipyard'});
+ assert.equal(escaped.mode,'world');assert.equal(escaped.dungeon,null);assert.equal(engine.pointAt(escaped).id,HAUNTED_SHIPYARD_ID);
+ const failing=structuredClone(drowned);failing.hp=1;const rescued=engine.act(failing,{type:'forward'});
+ assert.equal(rescued.mode,'world');assert.equal(rescued.dungeon,null);assert.equal(rescued.flags.rescuePending,true);
 });

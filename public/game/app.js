@@ -1,4 +1,5 @@
 import {shipyardMarkup} from './shipyard-view.js';
+import {isHauntedShipyardDungeon} from './haunted-shipyard.js';
 import {SILVER_ACORN,atSilverTree} from './silver-acorn.js';
 import {nearRedGlobe,cursedByGlobe} from './red-globe.js';
 import {evilEmpowered} from './evil-route.js';
@@ -670,6 +671,10 @@ function update(){if(state.mode!=='battle')impactIndex=0;updateClockDisplay();up
  if(state.mode==='dungeon'&&!state.dungeon.charityPit){const god=shrineForDungeon(state.dungeon);if(god&&Math.abs(state.dungeon.x-(god.x??7))+Math.abs(state.dungeon.y-(god.y??8))<=2)$('actions').insertAdjacentHTML('beforeend','<button data-panel="shrine">Approach '+esc(god.name)+'</button>');}
  if(state.mode==='dungeon'&&state.dungeon.charityPit)$('scene-caption').textContent='Twenty feet below Lady Charity. Other cheapskates huddle nearby. The upward ladder at (1, 1) leads out.';
  if(state.mode==='dungeon')$('actions').insertAdjacentHTML('beforeend','<button data-panel="searchSecrets">Search Hidden</button>');
+ if(['dungeon','battle'].includes(state.mode)&&isHauntedShipyardDungeon(state.dungeon)&&(state.buffExpiry?.waterBreathing||0)<=worldTimeMs(state)){
+  const potion=state.bag.includes('water-breathing-potion')?button('Drink Water Breathing',{type:'useItem',id:'water-breathing-potion'},'primary'):'';
+  $('actions').insertAdjacentHTML('afterbegin','<span class="fine">DROWNING · '+(state.flags.hauntedDrowningRounds||0)+' rounds</span>'+potion+button('Retreat to the surface',{type:'retreatHauntedShipyard'}));
+ }
  $('travel-status').hidden=state.mode!=='dungeon'||!isCemeteryDungeon(state.dungeon);
  $('travel-status').innerHTML=$('travel-status').hidden?'':`<strong>${state.bag.filter(id=>id==='torch').length} Torches Left</strong><span>Use Torches Automatically?</span>${button('Y',{type:'autoTorches',enabled:true},state.flags.autoTorches?'primary':'')}${button('N',{type:'autoTorches',enabled:false},!state.flags.autoTorches?'primary':'')}`;
  if(state.mode==='dungeon'&&nearestUnlitTorch(state,dungeonMap(state.dungeon)))$('actions').insertAdjacentHTML('beforeend','<button data-panel="cemeteryTorch">Light torch</button>');
