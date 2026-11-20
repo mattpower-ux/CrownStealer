@@ -1,4 +1,5 @@
 import {shipyardProfile} from './shipyard-view.js';
+import {HAUNTED_SHIPYARD_AREA,HAUNTED_SHIPYARD_ID,isHauntedShipyardDungeon} from './haunted-shipyard.js';
 import {triggerKoboldSnare,koboldSnareAction,validKoboldSnare} from './kobold-snare.js';
 import {silverAcornAction,silverTree,validSilverAcorn} from './silver-acorn.js';
 import {redGlobeAction,fulfillRedGlobe,validRedGlobe,cursedByGlobe} from './red-globe.js';
@@ -94,7 +95,7 @@ export function createGame(name='Wanderer',gender='him',cameo){
 }
 export function createRoyalGame(name,gender,cameo){const s=createGame(name,gender,cameo),court=TOWNS[1];s.treasureSeed=crypto.getRandomValues(new Uint32Array(1))[0];s.mode='town';s.location=court.id;s.x=court.x;s.y=court.y;s.townPosition={x:6,y:11};s.gold=1;s.meals=1;s.potions=0;s.bag=['rusty-sword','travel-armor','scroll-return','starter-healing','starter-healing',...Array(20).fill('torch')];s.equipped='rusty-sword';s.equippedArmor=null;s.flags.royalStoryVersion=2;s.flags.royalQuest='opening';s.flags.royalEntranceSeen=false;s.flags.royalIntroLine=0;s.log=[ROYAL_INTRO[0].text];return s;}
 export function dungeonMap(d){if(d.site===DRUID_SITE)return makeDungeon(druidMapIndex(d),d.floor);if(d.site===SAGE_MAZE_ID)return sageMap(d);if(d.site===PELAGIOS_TOWER_ID)return secretMap(d,pelagiosTowerMap(d));if(d.site===TWINKLESTAR_TOWER_ID)return secretMap(d,twinklestarTowerMap(d));if(d.site===PERCIVAL_CASTLE_ID)return secretMap(d,percivalCastleMap(d));if(d.site===ROYAL_DUNGEON_ID)return royalDungeonMap(d);return secretMap(d, d.site==='minor-site'?minorDungeonMap(d):[ROADSIDE_CRYPT,ROLAND_CAVE].includes(d.site)?roadsideCryptMap(d):d.ship?shipMap():d.site==='elf-village'?forestMap(d.floor):d.royal==='cell'?royalCell():makeDungeon(d.expedition?100+hash(d.expedition)%10000:d.royal==='sewer'?8:d.site===BOTTOMLESS_PIT.id?PIT_MAP_SEED:d.site===PUTRID_PALACE.id?PUTRID_PALACE_SEED:d.index,d.floor));}
-export function dungeonName(d){if(d.site===DRUID_SITE)return druidKeeper(d.circleId)+'’s Grove · Floor '+(d.floor+1);if(d.site===SAGE_MAZE_ID)return 'The Secret Maze of the Sage';if(d.site===PELAGIOS_TOWER_ID)return 'Tower of Pelagios · '+pelagiosFloorName(d.floor);if(d.site===TWINKLESTAR_TOWER_ID)return 'Twinklestar Tower · Floor '+(d.floor+1);if(d.site===PERCIVAL_CASTLE_ID)return 'Percival’s Lament · Level '+(d.floor+1);return d.site===ROYAL_DUNGEON_ID?ROYAL_DUNGEON_NAME:d.site===ROADSIDE_CRYPT?'Forgotten Roadside Crypt':d.site===BOTTOMLESS_PIT.id?BOTTOMLESS_PIT.name:d.site===PUTRID_PALACE.id?PUTRID_PALACE.name:d.site==='firedrak'?'Mount Firedrake':d.ship?'Alien Spacecraft · Command Deck':d.expedition?expeditionName(d)+' · Level '+(d.floor+1):d.site==='elf-village'?'The Abandoned Elven Village · Level '+(d.floor+1):d.royal==='cell'?'The Royal Dungeon':d.royal==='sewer'?'The Royal Sewers':DUNGEONS[d.index].name;}
+export function dungeonName(d){if(d.site===DRUID_SITE)return druidKeeper(d.circleId)+'’s Grove · Floor '+(d.floor+1);if(d.site===HAUNTED_SHIPYARD_ID)return 'Haunted Shipyard · Drowned Level '+(d.floor+1);if(d.site===SAGE_MAZE_ID)return 'The Secret Maze of the Sage';if(d.site===PELAGIOS_TOWER_ID)return 'Tower of Pelagios · '+pelagiosFloorName(d.floor);if(d.site===TWINKLESTAR_TOWER_ID)return 'Twinklestar Tower · Floor '+(d.floor+1);if(d.site===PERCIVAL_CASTLE_ID)return 'Percival’s Lament · Level '+(d.floor+1);return d.site===ROYAL_DUNGEON_ID?ROYAL_DUNGEON_NAME:d.site===ROADSIDE_CRYPT?'Forgotten Roadside Crypt':d.site===BOTTOMLESS_PIT.id?BOTTOMLESS_PIT.name:d.site===PUTRID_PALACE.id?PUTRID_PALACE.name:d.site==='firedrak'?'Mount Firedrake':d.ship?'Alien Spacecraft · Command Deck':d.expedition?expeditionName(d)+' · Level '+(d.floor+1):d.site==='elf-village'?'The Abandoned Elven Village · Level '+(d.floor+1):d.royal==='cell'?'The Royal Dungeon':d.royal==='sewer'?'The Royal Sewers':DUNGEONS[d.index].name;}
 function banishRoyal(s){const c=TOWNS[1];s.flags.royalQuest='banished';s.flags.royalIntroLine=ROYAL_INTRO.length-1;s.mode='world';s.location=null;s.x=c.x-1;s.y=c.y;s.dungeon=null;note(s,isRoyalCampaign(s)?'King Malachi sends you out with a rusty sword, a moldy meal, and one gold piece. Earn 500 gold and bring it back to him.':'You are kicked outside Bellwether with a rusty sword, a moldy meal and one gold piece. Return with 500 gold. Rock Troll toes are not required.');}
 export function worldTile(region,x,y){
  if(x<1||x>WORLD_WIDTH-2||y<1||y>WORLD_HEIGHT-2)return 'water';
@@ -187,7 +188,8 @@ export function shipyardList(s){
  }
  const targetY=18+s.region*17;
  candidates.sort((a,b)=>(Math.abs(a.y-targetY)+a.x)-(Math.abs(b.y-targetY)+b.x)||a.y-b.y||a.x-b.x);
- const chosen=candidates[0];const result=chosen?[{...chosen,id:'shipyard-'+key,kind:'shipyard',region:s.region,name:shipyardProfile('shipyard-'+key).name,price:250}]:[];
+ const chosen=candidates[0],id=key===HAUNTED_SHIPYARD_AREA?HAUNTED_SHIPYARD_ID:'shipyard-'+key;
+ const result=chosen?[{...chosen,id,kind:'shipyard',region:s.region,name:shipyardProfile(id).name,price:250}]:[];
  shipyardCache.set(key,result);return result;
 }
 export function pointAt(s){const tree=silverTree(s);if(tree&&tree.x===s.x&&tree.y===s.y)return tree;if(areaFor(s))return [...(twinklestarTowerSite(s)?[twinklestarTowerSite(s)]:[]),...shipyardList(s),...areaSites(s),...minorSiteList(s),...wildernessDiscoveries(s)].find(p=>p.x===s.x&&p.y===s.y);return [...(pelagiosTowerSite(s)?[pelagiosTowerSite(s)]:[]),...(percivalCastleSite(s)?[percivalCastleSite(s)]:[]),...shipyardList(s),...branchGates(s.region),teleporterSite(s.region),PUTRID_PALACE,...WILD_SITES,...TOWNS.map(p=>({...p,kind:'town'})),...DUNGEONS.map((p,index)=>({...p,index,kind:'dungeon'})),...minorSiteList(s),...wildernessDiscoveries(s)].find(p=>p.region===s.region&&p.x===s.x&&p.y===s.y);}
@@ -838,10 +840,21 @@ if(a.type==='acknowledgeDragon'){delete s.flags.dragonGreeting;delete s.flags.dr
  }
  if(a.type==='buyShipyardWaterBreathing'){
   const yard=s.mode==='world'?pointAt(s):null;
-  if(yard?.id!=='shipyard-wild-6')return s;
+  if(yard?.id!==HAUNTED_SHIPYARD_ID)return s;
   if(s.gold<180){note(s,'A Water Breathing Potion costs 180 gold.');return s;}
   s.gold-=180;s.bag.push('water-breathing-potion');
   note(s,'You buy a Water Breathing Potion. One draught lasts a full game day.');return s;
+ }
+ if(a.type==='enterHauntedShipyard'){
+  const yard=s.mode==='world'?pointAt(s):null;
+  if(yard?.id!==HAUNTED_SHIPYARD_ID)return s;
+  if((s.buffExpiry?.waterBreathing||0)<=worldTimeMs(s)){
+   note(s,'The flooded stairs are impassable without Water Breathing. Drink a potion before descending.');return s;
+  }
+  s.mode=s.returnMode='dungeon';s.location=HAUNTED_SHIPYARD_ID;
+  s.dungeon={site:HAUNTED_SHIPYARD_ID,index:4,floor:0,x:1,y:1,dir:1,ladderLayout:1};
+  s.dungeon.dir=openDungeonDirection(s.dungeon);
+  note(s,'You descend the flooded stairs beneath the Haunted Shipyard. Green-black water closes over the last daylight.');return s;
  }
  if(a.type==='enter'&&s.mode==='world'&&pointAt(s)?.kind==='minorSite'){
   const site=pointAt(s);s.dungeon={site:'minor-site',minorId:site.id,index:site.index,floor:0,x:1,y:1,dir:2,ladderLayout:1,...(site.other?{tunnelExit:{...site.other}}:{})};
@@ -1348,7 +1361,7 @@ export function loadGame(json){
   const door=doors.sort((a,b)=>(Math.abs(a.x-s.x)+Math.abs(a.y-s.y))-(Math.abs(b.x-s.x)+Math.abs(b.y-s.y)))[0];
   if(door){s.x=door.x;s.y=door.y;if(door.other)s.dungeon.tunnelExit={...door.other};}
  }
- if(s.dungeon?.site&&!(validDruidDungeon(s)||s.dungeon.site===ROLAND_CAVE||s.dungeon.site===ROYAL_DUNGEON_ID||s.dungeon.site===PERCIVAL_CASTLE_ID||s.dungeon.site===TWINKLESTAR_TOWER_ID||s.dungeon.site===PELAGIOS_TOWER_ID||(s.dungeon.site==='minor-site'&&validMinorDungeon(s))||(s.dungeon.site===ROADSIDE_CRYPT&&s.dungeon.floor===0&&Number.isSafeInteger(s.dungeon.cryptId)&&s.dungeon.cryptId>0&&!s.exploration?.area?.startsWith('planet-')&&!s.dungeon.royal&&!s.dungeon.ship&&!s.dungeon.expedition)||(s.dungeon.site===BOTTOMLESS_PIT.id&&s.dungeon.index===BOTTOMLESS_PIT.index&&s.exploration?.area===BOTTOMLESS_PIT.area&&!s.dungeon.expedition&&!s.dungeon.royal&&!s.dungeon.ship)||(s.dungeon.site===PUTRID_PALACE.id&&s.dungeon.index===PUTRID_PALACE.index&&!s.exploration?.area&&!s.dungeon.expedition&&!s.dungeon.royal&&!s.dungeon.ship)||(s.dungeon.site==='elf-village'&&s.dungeon.floor>=0&&s.dungeon.floor<=3&&s.dungeon.index===0)||(s.dungeon.site==='firedrak'&&s.dungeon.floor>=0&&s.dungeon.floor<=9&&s.dungeon.index===2)) )throw Error('Invalid forest site.');
+ if(s.dungeon?.site&&!(validDruidDungeon(s)||s.dungeon.site===ROLAND_CAVE||s.dungeon.site===ROYAL_DUNGEON_ID||s.dungeon.site===PERCIVAL_CASTLE_ID||s.dungeon.site===TWINKLESTAR_TOWER_ID||s.dungeon.site===PELAGIOS_TOWER_ID||(isHauntedShipyardDungeon(s.dungeon)&&s.exploration?.area===HAUNTED_SHIPYARD_AREA&&s.dungeon.index===4)||(s.dungeon.site==='minor-site'&&validMinorDungeon(s))||(s.dungeon.site===ROADSIDE_CRYPT&&s.dungeon.floor===0&&Number.isSafeInteger(s.dungeon.cryptId)&&s.dungeon.cryptId>0&&!s.exploration?.area?.startsWith('planet-')&&!s.dungeon.royal&&!s.dungeon.ship&&!s.dungeon.expedition)||(s.dungeon.site===BOTTOMLESS_PIT.id&&s.dungeon.index===BOTTOMLESS_PIT.index&&s.exploration?.area===BOTTOMLESS_PIT.area&&!s.dungeon.expedition&&!s.dungeon.royal&&!s.dungeon.ship)||(s.dungeon.site===PUTRID_PALACE.id&&s.dungeon.index===PUTRID_PALACE.index&&!s.exploration?.area&&!s.dungeon.expedition&&!s.dungeon.royal&&!s.dungeon.ship)||(s.dungeon.site==='elf-village'&&s.dungeon.floor>=0&&s.dungeon.floor<=3&&s.dungeon.index===0)||(s.dungeon.site==='firedrak'&&s.dungeon.floor>=0&&s.dungeon.floor<=9&&s.dungeon.index===2)) )throw Error('Invalid forest site.');
  const retiredPebbleGuard='minorCleared:'+PEBBLE_RUN_ID;
  if(s.flags[retiredPebbleGuard]===true)delete s.flags[retiredPebbleGuard];
  if(s.mode==='battle'&&s.returnMode==='dungeon'&&isPebbleRun(s.dungeon)&&s.enemy?.minorGuardian===PEBBLE_RUN_ID){

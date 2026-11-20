@@ -6,5 +6,6 @@ import {PUTRID_PALACE,PUTRID_PALACE_FLOORS} from './royal-trials.js';
 import {ROYAL_DUNGEON_ID} from './royal-dungeon.js';
 import {ROLAND_CAVE} from './roadside-crypt.js';
 import {PELAGIOS_FLOORS,PELAGIOS_TOWER_ID} from './pelagios-tower.js';
+import {HAUNTED_SHIPYARD_FLOORS,HAUNTED_SHIPYARD_ID} from './haunted-shipyard.js';
 export const REGION_DEPTHS=[10,15,20,100];
-export const dungeonFloors=d=>d.site===DRUID_SITE?DRUID_FLOORS:d.site===PELAGIOS_TOWER_ID?PELAGIOS_FLOORS:d.site==='twinklestar-tower'?9:d.site==='percivals-lament'?3:d.site==='minor-site'?(minorSiteDefinition(d.minorId)?.floors||1):d.site==='roadside-crypt'||d.site===ROLAND_CAVE||d.site===ROYAL_DUNGEON_ID?1:d.site===BOTTOMLESS_PIT.id?PIT_FLOORS:d.site===PUTRID_PALACE.id?PUTRID_PALACE_FLOORS:d.site==='firedrak'?10:d.ship||d.royal?1:d.expedition?3:d.site==='elf-village'?4:REGION_DEPTHS[DUNGEONS[d.index]?.region||0];
+export const dungeonFloors=d=>d.site===DRUID_SITE?DRUID_FLOORS:d.site===HAUNTED_SHIPYARD_ID?HAUNTED_SHIPYARD_FLOORS:d.site===PELAGIOS_TOWER_ID?PELAGIOS_FLOORS:d.site==='twinklestar-tower'?9:d.site==='percivals-lament'?3:d.site==='minor-site'?(minorSiteDefinition(d.minorId)?.floors||1):d.site==='roadside-crypt'||d.site===ROLAND_CAVE||d.site===ROYAL_DUNGEON_ID?1:d.site===BOTTOMLESS_PIT.id?PIT_FLOORS:d.site===PUTRID_PALACE.id?PUTRID_PALACE_FLOORS:d.site==='firedrak'?10:d.ship||d.royal?1:d.expedition?3:d.site==='elf-village'?4:REGION_DEPTHS[DUNGEONS[d.index]?.region||0];

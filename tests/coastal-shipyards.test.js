@@ -37,6 +37,21 @@ test('Crooked Fen shipyard sells Water Breathing Potions for 180 gold',()=>{
  assert.equal(engine.act(poor,{type:'buyShipyardWaterBreathing'}).bag.includes('water-breathing-potion'),false);
 });
 
+test('Crooked Fen has a fixed Haunted Shipyard whose flooded stairs require Water Breathing',()=>{
+ const base={...engine.createGame(),region:2,exploration:{area:'wild-6',artifacts:[]}};
+ const yard=engine.shipyardList(base)[0],again=engine.shipyardList(structuredClone(base))[0];
+ assert.equal(yard.id,'haunted-shipyard');assert.equal(yard.name,'Haunted Shipyard');assert.deepEqual(yard,again);
+ assert.notEqual(areaTile(base,yard.x,yard.y),'water');
+ assert.ok(engine.DIRS.some(([dx,dy])=>areaTile(base,yard.x+dx,yard.y+dy)==='water'));
+ const atYard={...base,x:yard.x,y:yard.y};
+ const refused=engine.act(atYard,{type:'enterHauntedShipyard'});
+ assert.equal(refused.mode,'world');assert.match(refused.log.at(-1),/Water Breathing/i);
+ atYard.buffExpiry.waterBreathing=atYard.worldTimeMs+86_400_000;atYard.buffs.waterBreathing=1;
+ const entered=engine.act(atYard,{type:'enterHauntedShipyard'});
+ assert.equal(entered.mode,'dungeon');assert.equal(entered.dungeon.site,'haunted-shipyard');assert.equal(entered.dungeon.floor,0);
+ assert.equal(engine.loadGame(engine.saveGame(entered)).dungeon.site,'haunted-shipyard');
+});
+
 test('version-one coastal saves move safely and retain minor dungeon progress',()=>{
  const s={...engine.createGame(),region:2,x:84,y:2,wildernessTerrainVersion:1};
  const restored=engine.loadGame(engine.saveGame(s));
