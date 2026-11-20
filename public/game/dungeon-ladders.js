@@ -1,6 +1,7 @@
 import {isOpenAirCemetery,minorSiteDefinition} from './minor-sites.js';
 import {dungeonFloors} from './dungeon-depths.js';
 import {isWidowsBell} from './widows-bell.js';
+import {PELAGIOS_TOWER_ID} from './pelagios-tower.js';
 
 const directions = [[0, -1], [1, 0], [0, 1], [-1, 0]];
 const entrance = {x: 1, y: 1};
@@ -38,6 +39,18 @@ export function dungeonLadders(d, map) {
   if (d.ship) return [];
   // Secret alcoves open after a floor is generated. Keep its ladders fixed.
   const tileAt = (x, y) => d.secretRoom?.x === x && d.secretRoom.y === y ? 1 : (map[y]?.[x] ?? 1);
+  if(d.site===PELAGIOS_TOWER_ID){
+    const points=[];
+    for(let y=0;y<map.length;y++)for(let x=0;x<map[y].length;x++){
+      const tile=map[y][x];
+      if(tile===3)points.push({x,y,direction:'up'});
+      if(tile===2)points.push({x,y,direction:'down'});
+    }
+    return points.map(point=>{
+      const [dx,dy]=directions.find(([x,y])=>tileAt(point.x+x,point.y+y)===1)??directions[0];
+      return {...point,wallX:point.x+dx,wallY:point.y+dy,opening:point.direction==='up'?'ceiling':'floor'};
+    });
+  }
   const hasDown = d.floor < dungeonFloors(d) - 1;
   const hallways = d.ladderLayout === 1 && !d.royal && d.site !== 'elf-village' ? hallwayTiles(tileAt) : [];
   const up = d.floor > 0 ? hallways[Math.round((hallways.length - 1) * .25)] ?? entrance : entrance;

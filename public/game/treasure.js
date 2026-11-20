@@ -50,6 +50,7 @@ export const TREASURE_ITEMS={
  [BALROG_WHIP]:{id:BALROG_WHIP,kind:'key',shape:'key',name:'Whip of the Balrog of Despair',rarity:'legendary',unique:true,notForSale:true,value:0,color:'#f28a50',description:'Proof of the Balrog’s defeat. Bring it to King Malachi at Bellwether Court.'},
 };
 Object.assign(TREASURE_ITEMS,{
+ 'scornraven-signet':{id:'scornraven-signet',kind:'ring',shape:'ring',rarity:'legendary',unique:true,notForSale:true,name:'Scornraven’s Obsidian Signet',color:'#9a78dc',value:0,power:7,protection:3,description:'Taken from the dark-elf usurper of Pelagios. Adds 7 weapon damage and blocks 3 incoming damage.'},
  'demon-slayer-longsword':{id:'demon-slayer-longsword',kind:'weapon',family:'sword',shape:'sword',tier:3,rarity:'legendary',unique:true,name:'DemonSlayer Longsword',damage:[22,34],toHit:5,demonMultiplier:2,color:'#fff0a8',value:0,description:'A surviving weapon of the Knights of Justice. Deals double damage to demons and devils.'},
  'arrows-of-truth':{id:'arrows-of-truth',kind:'supply',shape:'arrow',rarity:'epic',unique:true,name:'Arrows of Truth',quantity:12,truthBurn:true,color:'#fff5b0',value:0,description:'A limited quiver of consecrated arrows. Each hit burns a demon or devil for d20 damage per combat round.'},
  'last-knight-journal':{id:'last-knight-journal',kind:'book',shape:'book',rarity:'rare',unique:true,name:'Journal of the Last Knight',color:'#d7c18a',value:0,description:BARRENS_HISTORY},
@@ -129,12 +130,12 @@ function buildChests(s,map){
  if(!d)return [];
  const key=`${d.expedition||d.site||d.royal||d.index}:${d.floor}`;
  const seed=s.treasureSeed??187441,rng=random(hash(`${seed}:${key}`));
- const count=2+Math.floor(rng()*4),cells=[],seen=new Set(),queue=[[1,1]];
+ const count=2+Math.floor(rng()*4),cells=[],seen=new Set(),entrance=map.flatMap((row,y)=>row.map((tile,x)=>tile===3?[x,y]:null)).find(Boolean)??[1,1],queue=[entrance];
  while(queue.length){
   const [x,y]=queue.shift(),k=x+','+y;
   if(seen.has(k)||map[y]?.[x]===undefined||map[y][x]===1)continue;
   seen.add(k);
-  if(!(x===1&&y===1)&&map[y][x]!==2&&!(x===13&&y===13))cells.push({x,y});
+  if(map[y][x]===0)cells.push({x,y});
   for(const [dx,dy] of [[0,1],[1,0],[0,-1],[-1,0]])queue.push([x+dx,y+dy]);
  }
  for(let i=cells.length-1;i>0;i--){
