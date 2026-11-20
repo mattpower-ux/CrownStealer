@@ -11,11 +11,13 @@ import {briarThegn} from './briar-animals.js';
 import {BARRENS_ENEMIES,isWhisperingBarrens} from './whispering-barrens.js';
 import {SULFUR_ENEMIES,isSulfurMarsh} from './sulfur-marsh.js';
 import {COPPER_GOBLINS,isCopperWastes} from './copper-wastes.js';
+import {DAVEY_JONES_ID,HAUNTED_SHIPYARD_ID} from './haunted-shipyard.js';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export const REGION_MIN_LEVELS=[1,8,16,26],REGION_MAX_TARGETS=[24,32,44,58],REGION_DUNGEON_BONUS=[0,4,9,16];
 export const wildernessTarget=s=>{const region=clamp(s.region||0,0,3);return clamp(REGION_MIN_LEVELS[region]+Math.floor((s.level-1)*.85),REGION_MIN_LEVELS[region],REGION_MAX_TARGETS[region]);};
 export function encounterPool(s){if(s.dungeon?.site==='firedrak')return [{id:'firedrak-imp',name:'Firedrak Imp',level:5,kind:'swift',element:'fire',weakness:'quick strikes'},{id:'firedrak-elemental',name:'Fire Elemental',level:8,kind:'brute',element:'fire',weakness:'steady pressure'}];if(isWhisperingBarrens(s))return BARRENS_ENEMIES;if(isSulfurMarsh(s))return SULFUR_ENEMIES;if(isCopperWastes(s))return COPPER_GOBLINS;if(s.mode==='dungeon'&&planetaryDungeon(s.dungeon))return planetaryPool(s.dungeon,ENEMIES);return s.mode==='dungeon'&&s.dungeon.site==='elf-village'?GROVE_ENEMIES:s.mode==='dungeon'?depthPool(s,ENEMIES.filter(m=>m.dungeon===s.dungeon.index||m.legacyDungeon===s.dungeon.index),dungeonFloors(s.dungeon)):ENEMIES.filter(m=>m.wild&&m.region===s.region);}
 function baseEncounter(s,roll,boss=false,guard=false){
+ if(boss&&s.dungeon?.site===HAUNTED_SHIPYARD_ID)return {speciesId:DAVEY_JONES_ID,name:'Davey Jones',level:58,hp:980,maxHp:980,attack:118,armor:38,gold:600,xp:850,kind:'spectral',element:'frost',undead:true,weakness:'DemonSlayer steel and fire',boss:true,guard:false,firstContact:true};
  if(boss&&s.dungeon?.site==='firedrak')return {speciesId:'drake-defiler',name:'Drake the Defiler',level:25,hp:650,maxHp:650,attack:60,armor:18,gold:300,xp:500,kind:'caster',element:'fire',weakness:'steady pressure',boss:true,firstContact:true};
  if(guard)return {speciesId:'royal-pursuer',name:"King Malachi the Ineffable's Royal Guard",level:50,hp:900,maxHp:900,attack:110,armor:45,element:'fire',gold:170,xp:200,kind:'armored',weakness:'steady pressure',boss:false,guard:true,firstContact:true};
  if(s.dungeon?.site===BOTTOMLESS_PIT.id)return pitEncounter(s.dungeon,roll,boss);

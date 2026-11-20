@@ -1,6 +1,9 @@
 export const HAUNTED_SHIPYARD_ID='haunted-shipyard';
 export const HAUNTED_SHIPYARD_AREA='wild-6';
 export const HAUNTED_SHIPYARD_FLOORS=10;
+export const DAVEY_JONES_ID='davey-jones';
+export const DROWNED_ADMIRAL_CUTLASS='drowned-admiral-cutlass';
+export const HAUNTED_SHIPYARD_BOSS_AT={x:13,y:13};
 
 const directions=[[0,-1],[1,0],[0,1],[-1,0]];
 const mapCache=new Map();

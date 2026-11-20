@@ -27,3 +27,14 @@ export function drawUnderwaterAtmosphere(c,w,h,dungeon,time=0){
  for(let i=0;i<3;i++){const x=((i*271+phase*12)%1.25)*w-w*.12,y=h*(.2+i*.16);c.fillStyle='#06151288';c.beginPath();c.ellipse(x,y,w*.035,h*.012,0,0,Math.PI*2);c.lineTo(x-w*.055,y-h*.018);c.lineTo(x-w*.055,y+h*.018);c.closePath();c.fill();}
  const veil=c.createLinearGradient(0,0,w,h);veil.addColorStop(0,'#143f4b20');veil.addColorStop(.55,'#0b4f4430');veil.addColorStop(1,'#020b1290');c.fillStyle=veil;c.fillRect(0,0,w,h);c.restore();
 }
+
+export const underwaterGalleonVisible=state=>isHauntedShipyardDungeon(state?.dungeon)&&state.dungeon.floor===9&&state.flags?.underwaterGalleonRevealed===true;
+
+export function drawUnderwaterGalleon(c,w,h){
+ c.save();c.translate(w*.5,h*.48);const scale=Math.min(w,h)/520;c.scale(scale,scale);c.globalAlpha=.82;
+ c.fillStyle='#06100f';c.strokeStyle='#77a894';c.lineWidth=3;
+ c.beginPath();c.moveTo(-190,45);c.quadraticCurveTo(0,135,190,45);c.lineTo(145,105);c.quadraticCurveTo(0,165,-145,105);c.closePath();c.fill();c.stroke();
+ for(const x of [-95,0,90]){c.beginPath();c.moveTo(x,55);c.lineTo(x,-145);c.stroke();c.beginPath();c.moveTo(x,-130);c.quadraticCurveTo(x+85,-85,x,-35);c.closePath();c.fill();c.stroke();}
+ c.fillStyle='#9ed3bd';for(let x=-125;x<=125;x+=42){c.beginPath();c.arc(x,82,5,0,Math.PI*2);c.fill();}
+ c.font='700 20px Georgia';c.textAlign='center';c.fillText('THE UNDERWATER GALLEON',0,195);c.restore();
+}

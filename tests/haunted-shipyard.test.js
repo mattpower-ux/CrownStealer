@@ -4,7 +4,8 @@ import * as engine from '../public/game/engine.js';
 import {dungeonLadders} from '../public/game/dungeon-ladders.js';
 import {dungeonChests} from '../public/game/treasure.js';
 import {HAUNTED_SHIPYARD_FLOORS,HAUNTED_SHIPYARD_ID,hauntedShipyardMap} from '../public/game/haunted-shipyard.js';
-import {underwaterWallPixel,underwaterSceneProfile} from '../public/game/underwater-render.js';
+import {underwaterGalleonVisible,underwaterWallPixel,underwaterSceneProfile} from '../public/game/underwater-render.js';
+import {buildEncounter} from '../public/game/encounters.js';
 
 const reachable=(map,start,target)=>{
  const queue=[start],seen=new Set([start.x+','+start.y]);
@@ -74,4 +75,16 @@ test('expired Water Breathing causes progressive drowning and permits another po
  assert.equal(escaped.mode,'world');assert.equal(escaped.dungeon,null);assert.equal(engine.pointAt(escaped).id,HAUNTED_SHIPYARD_ID);
  const failing=structuredClone(drowned);failing.hp=1;const rescued=engine.act(failing,{type:'forward'});
  assert.equal(rescued.mode,'world');assert.equal(rescued.dungeon,null);assert.equal(rescued.flags.rescuePending,true);
+});
+
+test('Davey Jones guards level ten and his defeat reveals the persistent Underwater Galleon',()=>{
+ let state=engine.createGame();Object.assign(state,{mode:'dungeon',returnMode:'dungeon',region:2,level:50,exploration:{area:'wild-6',artifacts:[]},location:HAUNTED_SHIPYARD_ID,previewRules:{invulnerable:true,noEncounters:true}});
+ state.dungeon={site:HAUNTED_SHIPYARD_ID,index:4,floor:9,x:13,y:13,dir:1,ladderLayout:1};state.buffExpiry.waterBreathing=state.worldTimeMs+86_400_000;state.buffs.waterBreathing=1;
+ const boss=buildEncounter(state,.5,true);assert.equal(boss.speciesId,'davey-jones');assert.equal(boss.name,'Davey Jones');assert.equal(boss.boss,true);
+ state=engine.act(state,{type:'descend'});assert.equal(state.mode,'battle');assert.equal(state.enemy.speciesId,'davey-jones');
+ state.enemy.hp=1;state.enemy.combatDistance=1;state.equipped='crown-breaker';state.bag.push('crown-breaker');
+ for(let tries=0;tries<12&&state.enemy;tries++)state=engine.act(state,{type:'attack'},[],{invulnerable:true,noEncounters:true});
+ assert.equal(state.flags.daveyJonesDefeated,true);assert.equal(state.flags.underwaterGalleonRevealed,true);assert.ok(state.bag.includes('drowned-admiral-cutlass'));
+ assert.ok(state.log.some(line=>/Underwater Galleon/.test(line)));
+ const restored=engine.loadGame(engine.saveGame(state));assert.equal(restored.flags.underwaterGalleonRevealed,true);assert.ok(restored.bag.includes('drowned-admiral-cutlass'));assert.equal(underwaterGalleonVisible(restored),true);
 });
