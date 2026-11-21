@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import {act,createGame,loadGame,minorSiteList,saveGame} from '../public/game/engine.js';
 import {minorSiteDefinition} from '../public/game/minor-sites.js';
 import {caveStoryAt,caveStoryView} from '../public/game/cave-stories.js';
@@ -90,6 +91,11 @@ test('each unresolved story renders its narrative, illustration, and three choic
   assert.match(html,/cave-stories\.webp/);assert.match(html,/data-choice="help"/);assert.match(html,/data-choice="attack"/);assert.match(html,/data-choice="leave"/);
   assert.ok(html.length>300);
  }
+});
+
+test('cave story art preserves each portrait panel without stretching it',()=>{
+ const css=fs.readFileSync(new URL('../public/style.css',import.meta.url),'utf8');
+ assert.match(css,/\.cave-story-art\s*\{[^}]*width:min\(100%,calc\(52vh\*3\/5\)\)[^}]*aspect-ratio:3\/5[^}]*background-size:500% 100%[^}]*\}/s);
 });
 
 test('save loading rejects a cave-story enemy attached to the wrong cave',()=>{
