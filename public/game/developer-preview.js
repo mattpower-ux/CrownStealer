@@ -32,7 +32,7 @@ export function previewCharacter(){const s=createGame('Preview adventurer');s.le
 function clearEncounter(s){delete s.flags.halChallenge;delete s.flags.halOutcome;delete s.flags.dragonWatch;delete s.flags.dragonNotice;delete s.flags.dragonGreeting;if(s.spellEffects)s.spellEffects.stunnedTurns=0;for(const key of ['rescuePending','rescueMessage','boatReveal','gagReveal','gossipGuardTown'])delete s.flags[key];s.enemy=null;s.ending=null;s.pendingLoot=[];delete s.casino;delete s.flags.borderTauntPending;delete s.flags.guardTauntPending;delete s.flags.royalQuest;delete s.flags.goldLoot;return s;}
 export function previewJump(input,id,floor=1){
  const target=previewDestinations.find(d=>d.id===id);if(!target)throw Error('Choose a destination.');
- const s=clearEncounter(structuredClone(input));delete s.castle;s.region=target.region;s.mode='world';s.returnMode='world';s.dungeon=null;s.location=null;s.x=23;s.y=28;
+ const s=clearEncounter(structuredClone(target.story?previewCharacter():input));delete s.castle;s.region=target.region;s.mode='world';s.returnMode='world';s.dungeon=null;s.location=null;s.x=23;s.y=28;
  if(id.startsWith('area:')){s.exploration={...(s.exploration||{artifacts:[]}),area:id.slice(5),home:{region:0,x:23,y:28}};s.x=16;s.y=21;}else if(s.exploration)s.exploration.area=null;
  if(id.startsWith('town:')){const t=TOWNS.find(t=>t.id===id.slice(5));s.mode='town';s.location=t.id;s.x=t.x;s.y=t.y;s.townPosition={x:6,y:11};}
  if(id==='royal-dungeon'){const t=TOWNS.find(t=>t.id==='bellwether');s.mode='town';s.location=t.id;s.x=t.x;s.y=t.y;s.townPosition={x:4,y:3};s.castle={...ROYAL_DUNGEON_STAIR,alarm:false};}

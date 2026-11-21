@@ -13,6 +13,8 @@ test('Beaver Household preview opens at the unresolved lodge interaction with fo
  assert.equal(s.mode,'dungeon');assert.equal(s.dungeon.site,'minor-site');assert.equal(s.dungeon.minorId,'minor-w1-4');
  assert.deepEqual([s.dungeon.x,s.dungeon.y],[13,12]);assert.ok(s.meals>=1);assert.equal(caveStoryAt(s)?.id,'beaver-household');
  assert.match(previewView(previewCharacter(),{}),/data-destination="story:beaver-household"/);
+ const stale=previewCharacter();stale.log=Array(60).fill('Old preview entry');
+ assert.doesNotThrow(()=>loadGame(saveGame(previewJump(stale,'story:beaver-household'))));
 });
 
 test('Royal Dungeon preview stages the Bellwether ladder rather than the story prison',()=>{
