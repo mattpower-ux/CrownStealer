@@ -60,3 +60,7 @@ Inventory shortcut and unlimited bag. APK: 5,888,988 bytes. SHA-256: 809a23c7c55
 
 ## 0.6.2 — 2026-10-27
 Encounter camera turns away from point-blank walls; nearest turn, longer corridor tie-break, no movement or extra resource cost. Random encounters verified in all eight dungeons, bosses and already-clear facing covered. APK 5,893,086 bytes; SHA-256 8d242a03935fd47b200548a06084eb498b1861a956807e68c79ab2f3171549ef. Version code 10; signatures v2/v3, all 36 bundled assets and 20 native routing checks passed. Physical tablet testing remains pending.
+
+## 0.9.51 — 2026-11-21
+
+APK: 93,447,050 bytes; SHA-256 6c5877e922d9818ceaaaedcf4fc35844b4714ca0a87aae5b62a82f870f206c6a. Version code 70. The existing signing identity, APK v2/v3 signatures and ZIP alignment were verified. All 572 bundled public assets matched their source hashes, and all 20 native routing/MIME checks passed. Physical Android tablet testing remains pending.
