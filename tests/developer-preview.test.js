@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {PREVIEW_KEYS,previewCharacter,previewJump,previewEncounter,previewDestinations,previewMonsters} from '../public/game/developer-preview.js';
+import {PREVIEW_KEYS,previewCharacter,previewJump,previewEncounter,previewDestinations,previewMonsters,previewView} from '../public/game/developer-preview.js';
 import {act,loadGame,saveGame,dungeonNavigation} from '../public/game/engine.js';
 import {slotKeys} from '../public/game/save-slots.js';
 import {caveStoryAt} from '../public/game/cave-stories.js';
@@ -12,6 +12,7 @@ test('Beaver Household preview opens at the unresolved lodge interaction with fo
  const s=loadGame(saveGame(previewJump(previewCharacter(),'story:beaver-household')));
  assert.equal(s.mode,'dungeon');assert.equal(s.dungeon.site,'minor-site');assert.equal(s.dungeon.minorId,'minor-w1-4');
  assert.deepEqual([s.dungeon.x,s.dungeon.y],[13,12]);assert.ok(s.meals>=1);assert.equal(caveStoryAt(s)?.id,'beaver-household');
+ assert.match(previewView(previewCharacter(),{}),/data-destination="story:beaver-household"/);
 });
 
 test('Royal Dungeon preview stages the Bellwether ladder rather than the story prison',()=>{
