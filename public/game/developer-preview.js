@@ -13,6 +13,7 @@ import {ENEMIES} from './bestiary.js';
 import {GROVE_ENEMIES} from './wild-sites.js';
 import {TREASURE_ITEMS} from './treasure.js';
 import {WEAPONS} from './items.js';
+import {minorSiteDefinition} from './minor-sites.js';
 export const PREVIEW_KEYS={save:'crownstealer-developer-save-v1',checkpoint:'crownstealer-developer-checkpoint-v1'};
 export const previewDestinations=[
  ...REGIONS.map((r,i)=>({id:'land:'+i,name:r.name,region:i})),
@@ -22,6 +23,7 @@ export const previewDestinations=[
  ...AREAS.filter(a=>a.kind==='planet').flatMap(a=>[{id:'area:'+a.id,name:a.name,region:a.region},...Array.from({length:3},(_,i)=>({id:'expedition:'+a.id+'-cave-'+i,name:a.name+' · '+['Prism Vault','Spore Catacombs','Echo Laboratory'][i],region:a.region,floors:3}))]),
  {id:'firedrak',name:'Firedrak Mountain',region:1,floors:10},
  {id:'elf',name:'Abandoned Elven Village',region:0,floors:4},
+ {id:'story:beaver-household',name:'Beaver Household · Timbertooth Lodge',region:0,story:'minor-w1-4'},
  {id:'royal-dungeon',name:'Royal Dungeon · Bellwether castle ladder',region:0},
  {id:'cell',name:'Story prison cell · hidden sewer escape',region:0,floors:1},
  {id:'sewer',name:'Royal sewers',region:0,floors:1}
@@ -34,6 +36,7 @@ export function previewJump(input,id,floor=1){
  if(id.startsWith('area:')){s.exploration={...(s.exploration||{artifacts:[]}),area:id.slice(5),home:{region:0,x:23,y:28}};s.x=16;s.y=21;}else if(s.exploration)s.exploration.area=null;
  if(id.startsWith('town:')){const t=TOWNS.find(t=>t.id===id.slice(5));s.mode='town';s.location=t.id;s.x=t.x;s.y=t.y;s.townPosition={x:6,y:11};}
  if(id==='royal-dungeon'){const t=TOWNS.find(t=>t.id==='bellwether');s.mode='town';s.location=t.id;s.x=t.x;s.y=t.y;s.townPosition={x:4,y:3};s.castle={...ROYAL_DUNGEON_STAIR,alarm:false};}
+ if(target.story){const site=minorSiteDefinition(target.story);s.exploration={area:site.area,artifacts:[],visitedAreas:[site.area],home:{region:site.region,x:23,y:28}};const entrance=minorSiteList(s).find(p=>p.id===site.id);s.x=entrance.x;s.y=entrance.y;s.mode='dungeon';s.returnMode='dungeon';s.location=null;s.dungeon={site:'minor-site',minorId:site.id,index:site.index,floor:0,x:13,y:12,dir:2,ladderLayout:1};s.meals=Math.max(1,s.meals);}
  if(target.floors){const index=id.startsWith('dungeon:')?Number(id.slice(8)):0;const d={index,floor:Math.max(0,Math.min(target.floors-1,Math.floor(floor||1)-1)),x:1,y:1,dir:1};if(id==='ship'){d.ship=true;d.x=7;d.y=12;d.dir=0;s.exploration={...(s.exploration||{artifacts:[]}),area:null,home:{region:0,x:23,y:28}};}if(id.startsWith('expedition:')){d.expedition=id.slice(11);const a=AREAS.find(a=>d.expedition.startsWith(a.id+'-cave-'));d.index=a.region*2;s.exploration={...(s.exploration||{artifacts:[]}),area:a.id,home:{region:0,x:23,y:28}};}if(id==='firedrak'){d.site='firedrak';d.index=2;}if(id==='elf')d.site='elf-village';if(['cell','sewer'].includes(id))d.royal=id;
  const map=dungeonMap(d);if(map[d.y]?.[d.x]===1){outer:for(let y=0;y<map.length;y++)for(let x=0;x<map[y].length;x++)if(map[y][x]!==1){d.x=x;d.y=y;break outer;}}
  for(let dir=0;dir<4;dir++){d.dir=dir;if(dungeonNavigation(d).forward)break;}d.dir%=4;
