@@ -7,7 +7,7 @@ This file replaces the November 11 implementation inventory. The archived reques
 - No known archived gameplay or web-deployment requests remain unfinished.
 - The five fixed cave stories are implemented: the werebear and dogs, Grub's larder, the rabbit dinner, the Flowerhaven children and the Beaver Household.
 - Cave-story artwork uses each portrait sprite at its native 3:5 proportions.
-- Web release 0.9.51 and Android release 0.9.51 share the current game content and offline cache generation `embers-v212`.
+- Web release 0.9.52 and Android release 0.9.52 share the current game content and offline cache generation `embers-v213`.
 - Existing browser saves remain separate from the Android package. Installing the APK as an update preserves Android app data when the existing package identity is retained.
 
 ## Completed archived work

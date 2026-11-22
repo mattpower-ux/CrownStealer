@@ -5,6 +5,7 @@ import {secretAlcove} from './secret-alcoves.js';
 import {GROVE_ENEMIES} from './wild-sites.js';
 import {shrineForDungeon,charityPitMap} from './shrine-deities.js';
 import {estateContainers,estateDungeonMap,isPelagosEstateDungeon} from './pelagos-estates.js';
+import {BARRENS_ENEMIES} from './whispering-barrens.js';
 
 const guardians={
   koboldCave:{id:'grove-goblin',name:'Kobold Cave Watcher',kind:'swift',weakness:'quick strikes',art:{sheet:'monsters-grove',index:0}},
@@ -21,8 +22,9 @@ const caveGuardians={
     {...MONSTER_BY_ID['ember-drake'],name:'Coal-Eating Wyrm',element:'fire',attackType:'ranged'},
     {...MONSTER_BY_ID['ember-drake'],name:'Lava-Rock Wyrm',element:'fire',attackType:'ranged'},
   ],
+  demon:BARRENS_ENEMIES,
 };
-const caveGuardianLevels={thegn:7,goblin:16,troll:26,fireImp:8,wyrm:10};
+const caveGuardianLevels={thegn:7,goblin:16,troll:26,fireImp:8,wyrm:10,demon:16};
 const gearKinds=new Set(['weapon','armor','ring','necklace','shield','head','hands','boots']);
 
 // The waypoints double as room centers. A zero-sized room leaves a corridor bend.
@@ -147,7 +149,7 @@ export function minorGuardian(s) {
   const stats=monsterStats(species,level);
   return {
     ...stats,speciesId:species.id,name:species.name,art:species.art,kind:species.kind,
-    weakness:species.weakness,appearance:species.appearance,undead:!!species.undead,level,maxHp:stats.hp,
+    weakness:species.weakness,appearance:species.appearance,undead:!!species.undead,demon:!!species.demon,level,maxHp:stats.hp,
     ...(inhabitants&&species.element?{element:species.element}:{}),
     ...(inhabitants&&species.attackType?{attackType:species.attackType}:{}),
     firstContact:true,minorGuardian:site.id,

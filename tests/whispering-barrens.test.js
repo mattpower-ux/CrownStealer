@@ -4,6 +4,7 @@ import {createGame,dungeonMap} from '../public/game/engine.js';
 import {encounterPool} from '../public/game/encounters.js';
 import {minorSiteDefinition} from '../public/game/minor-sites.js';
 import {caveProfile} from '../public/game/cave-profiles.js';
+import {minorGuardian} from '../public/game/minor-dungeons.js';
 import {secretAlcove,secretStash} from '../public/game/secret-alcoves.js';
 import {TREASURE_ITEMS} from '../public/game/treasure.js';
 import {demonWeaponMultiplier,truthArrowStrike,truthBurnDamage} from '../public/game/whispering-barrens.js';
@@ -24,6 +25,19 @@ test('Barrens caves and minor lairs are defiled infernal locations',()=>{
  const caves=Array.from({length:24},(_,slot)=>minorSiteDefinition(`minor-w2-${slot}`)).filter(site=>site.kind==='koboldCave');
  assert.ok(caves.length);
  for(const cave of caves){assert.equal(cave.occupant,'demon');assert.doesNotMatch(cave.name,/kobold/i);}
+});
+
+test('every guarded Barrens lair uses an infernal guardian instead of a kobold',()=>{
+ const caves=Array.from({length:24},(_,slot)=>minorSiteDefinition(`minor-w2-${slot}`)).filter(site=>site.kind==='koboldCave'&&site.guarded);
+ for(const site of caves){
+  const state=createGame();
+  state.mode='dungeon';state.region=site.region;state.exploration={area:site.area,artifacts:[],visitedAreas:[site.area]};
+  state.dungeon={site:'minor-site',minorId:site.id,index:site.index,floor:site.floors-1,x:13,y:12,dir:2};
+  const guardian=minorGuardian(state);
+  assert.ok(guardian,site.id);
+  assert.equal(guardian.demon,true,site.id);
+  assert.doesNotMatch(`${guardian.speciesId} ${guardian.name}`,/kobold|goblin/i,site.id);
+ }
 });
 
 test('only good heroes can reveal the Barrens shrine sanctuary and claim holy stores',()=>{

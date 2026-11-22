@@ -64,3 +64,7 @@ Encounter camera turns away from point-blank walls; nearest turn, longer corrido
 ## 0.9.51 — 2026-11-21
 
 APK: 93,447,050 bytes; SHA-256 6c5877e922d9818ceaaaedcf4fc35844b4714ca0a87aae5b62a82f870f206c6a. Version code 70. The existing signing identity, APK v2/v3 signatures and ZIP alignment were verified. All 572 bundled public assets matched their source hashes, and all 20 native routing/MIME checks passed. Physical Android tablet testing remains pending.
+
+## 0.9.52 — 2026-11-21
+
+APK: 93,447,050 bytes; SHA-256 e5215a487e18fd7c96b497608f46fd364d1946640815af1b554fcde984cce325. Version code 71. The existing signing identity, APK v2/v3 signatures and ZIP alignment were verified. All 572 bundled public assets matched their source hashes, and all 20 native routing/MIME checks passed. Physical Android tablet testing remains pending.
