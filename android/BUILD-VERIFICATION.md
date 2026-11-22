@@ -69,6 +69,12 @@ APK: 93,447,050 bytes; SHA-256 6c5877e922d9818ceaaaedcf4fc35844b4714ca0a87aae5b6
 
 APK: 93,447,050 bytes; SHA-256 e5215a487e18fd7c96b497608f46fd364d1946640815af1b554fcde984cce325. Version code 71. The existing signing identity, APK v2/v3 signatures and ZIP alignment were verified. All 572 bundled public assets matched their source hashes, and all 20 native routing/MIME checks passed. Physical Android tablet testing remains pending.
 
+## 0.9.54 — 2026-11-22
+
+- Added three reusable cave-troll variants with distinct equipment, hair, scars, and combat poses.
+- Rebuilt abandoned mansion interiors with rib-vaulted ceilings, broken stained glass, vine-covered pillars, pale masonry, and fallen debris.
+- Verified the full automated suite and the mansion browser-render regression.
+
 ## 0.9.53 — 2026-11-22
 
 APK: 93,451,226 bytes; SHA-256 0e5da445bbabe8a85b14f9904b808b080a9bbe9a868af1d0534bcdee88b4604f. Version code 72. The existing signing identity, APK v2/v3 signatures and ZIP alignment were verified. All 573 bundled public assets matched their source hashes, all 20 native routing/MIME checks passed, and 954 Node tests passed. Physical Android tablet testing remains pending.

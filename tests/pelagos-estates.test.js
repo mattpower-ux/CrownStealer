@@ -15,6 +15,7 @@ import {
  isPelagosEstateDungeon,
  isPelagosEstateSite,
 } from '../public/game/pelagos-estates.js';
+import {estateScenePlan} from '../public/game/pelagos-estate-render.js';
 
 const estateIds=['minor-r1-1','minor-r1-4','minor-r1-7','minor-r1-10','minor-r1-13','minor-r1-16','minor-r1-19','minor-r1-22'];
 
@@ -114,3 +115,27 @@ test('estate cellars carry the strongest ordinary rewards and secrets are archit
 });
 
 test('legacy Pelagos cemetery-light flags remain harmless and loadable',()=>{const s=createGame();s.flags.cemeteryTorches=['minor-r1-1:0:2:3','minor-r1-10:3:7:8'];const loaded=loadGame(saveGame(s));assert.deepEqual(loaded.flags.cemeteryTorches,s.flags.cemeteryTorches);});
+
+test('abandoned mansion rooms plan architectural features with depth-aware decay',()=>{
+ const d={site:'minor-site',minorId:'minor-r1-1',floor:0};
+ const plan=estateScenePlan(d,1600,900);
+ assert.equal(plan.role,'ground');
+ assert.ok(plan.vaultRibs.length>=4,'arched ceiling ribs');
+ assert.ok(plan.pillars.length>=3,'supporting pillars');
+ assert.ok(plan.windows.length>=2,'broken stained-glass windows');
+ assert.ok(plan.windows.every(window=>window.broken&&window.depth>0));
+ assert.ok(plan.vines.length>=3,'overgrown vines');
+ assert.ok(plan.debris.length>=5,'rubble and abandoned-room debris');
+ assert.ok(plan.lightBeams.every(beam=>beam.sourceWindow>=0&&beam.alpha<.18),'soft window-bound light');
+});
+
+test('estate cellars remain enclosed service spaces instead of stained-glass halls',()=>{
+ const site=minorSiteDefinition('minor-r1-1');
+ const d={site:'minor-site',minorId:site.id,floor:site.floors-1};
+ const plan=estateScenePlan(d,1600,900);
+ assert.equal(plan.role,'cellar');
+ assert.equal(plan.windows.length,0);
+ assert.equal(plan.lightBeams.length,0);
+ assert.ok(plan.casks.length>=4);
+ assert.ok(plan.debris.length>=3);
+});

@@ -201,3 +201,18 @@ test('every troll cave guardian is a stable group of two or three trolls',()=>{
  }
  assert.deepEqual(counts,new Set([2,3]));
 });
+
+test('troll cave guardians expose three distinct reusable character variants',()=>{
+ let site;
+ for(const land of ['r3','w9','w10','w11'])for(let slot=0;slot<24&&!site;slot++){
+  const candidate=minorSiteDefinition(`minor-${land}-${slot}`);
+  if(candidate.kind==='koboldCave'&&candidate.occupant==='troll')site=candidate;
+ }
+ const guardian=minorGuardian(visit(site.id));
+ assert.deepEqual(guardian.variantAssets,[
+  '/assets/cave-troll-eyepatch.webp',
+  '/assets/cave-troll-shaggy.webp',
+  '/assets/cave-troll-scarred.webp',
+ ]);
+ assert.equal(new Set(guardian.variantAssets).size,3);
+});

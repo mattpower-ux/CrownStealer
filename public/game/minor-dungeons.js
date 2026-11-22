@@ -156,7 +156,10 @@ export function minorGuardian(s) {
   };
   if(site.occupant==='troll'){
     const groupSize=2+site.seed%2;
-    Object.assign(guardian,{groupSize,memberHp:stats.hp,hp:stats.hp*groupSize,maxHp:stats.hp*groupSize,gold:stats.gold*groupSize,xp:stats.xp*groupSize});
+    Object.assign(guardian,{
+      groupSize,memberHp:stats.hp,hp:stats.hp*groupSize,maxHp:stats.hp*groupSize,gold:stats.gold*groupSize,xp:stats.xp*groupSize,
+      variantAssets:['/assets/cave-troll-eyepatch.webp','/assets/cave-troll-shaggy.webp','/assets/cave-troll-scarred.webp'],
+    });
   }
   return guardian;
 }
