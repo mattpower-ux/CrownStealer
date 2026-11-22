@@ -34,10 +34,6 @@ export const truthBurnDamage=random=>1+Math.floor(random()*20);
 export function drawBarrensDesecration(c,w,h,state,time=0){
  if(!isWhisperingBarrens(state)||!state.dungeon)return;
  c.save();c.fillStyle='#3b000018';c.fillRect(0,0,w,h);
- // Bloody angular sigils cover the conquered sanctuaries and mine walls.
- c.strokeStyle='#b3262dcc';c.shadowColor='#ff3128';c.shadowBlur=4;c.lineWidth=Math.max(2,w/520);c.lineCap='round';
- for(const side of [-1,1])for(let i=0;i<3;i++){const x=w*.5+side*w*(.25+i*.095),y=h*(.24+i*.13),r=Math.min(w,h)*(.035+i*.004);c.beginPath();c.moveTo(x-r,y+r);c.lineTo(x,y-r);c.lineTo(x+r,y+r);c.moveTo(x-r*.7,y);c.lineTo(x+r*.7,y);c.moveTo(x,y-r);c.lineTo(x+side*r*.55,y+r*.55);c.stroke();}
- c.shadowBlur=0;
  // Four toppled emblems recall Lancemol, Galahad, Tristan and Bedever.
  c.fillStyle='#756c60';c.strokeStyle='#29251f';c.lineWidth=3;for(let i=0;i<4;i++){const x=w*(.16+i*.22),y=h*.79+(i%2)*h*.035;c.save();c.translate(x,y);c.rotate((i%2?-.28:.22));c.fillRect(-w*.045,-h*.018,w*.09,h*.036);c.strokeRect(-w*.045,-h*.018,w*.09,h*.036);c.beginPath();c.arc(0,-h*.027,h*.022,0,Math.PI*2);c.fill();c.stroke();c.restore();}
  if(state.dungeon.secretRoom){for(let i=0;i<7;i++){const x=w*(.31+i*.063),y=h*.77+Math.sin(i)*5,flame=5+Math.sin(time*.008+i)*2;c.fillStyle='#d7c394';c.fillRect(x-2,y,4,h*.045);c.fillStyle='#ffda62';c.shadowColor='#ff7b24';c.shadowBlur=12;c.beginPath();c.ellipse(x,y-flame*.5,flame*.38,flame,0,0,Math.PI*2);c.fill();}c.shadowBlur=0;}

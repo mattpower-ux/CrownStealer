@@ -147,11 +147,16 @@ export function minorGuardian(s) {
   const species=inhabitants?inhabitants[site.seed%inhabitants.length]:shrineGuardian||guardians[site.kind];
   const level=(caveGuardianLevels[site.occupant]??[2,7,13,20][site.region])+d.floor;
   const stats=monsterStats(species,level);
-  return {
+  const guardian={
     ...stats,speciesId:species.id,name:species.name,art:species.art,kind:species.kind,
     weakness:species.weakness,appearance:species.appearance,undead:!!species.undead,demon:!!species.demon,level,maxHp:stats.hp,
     ...(inhabitants&&species.element?{element:species.element}:{}),
     ...(inhabitants&&species.attackType?{attackType:species.attackType}:{}),
     firstContact:true,minorGuardian:site.id,
   };
+  if(site.occupant==='troll'){
+    const groupSize=2+site.seed%2;
+    Object.assign(guardian,{groupSize,memberHp:stats.hp,hp:stats.hp*groupSize,maxHp:stats.hp*groupSize,gold:stats.gold*groupSize,xp:stats.xp*groupSize});
+  }
+  return guardian;
 }

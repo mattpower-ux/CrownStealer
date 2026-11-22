@@ -186,3 +186,18 @@ test('regional caves use local inhabitants and keep regional difficulty',()=>{
  assert.equal(minorGuardian(visit(sooty.id)).element,'fire');
  assert.equal(minorGuardian(visit('minor-r0-0')).name,'Kobold Cave Watcher');
 });
+
+test('every troll cave guardian is a stable group of two or three trolls',()=>{
+ const counts=new Set();
+ for(const land of ['r3','w9','w10','w11'])for(let slot=0;slot<24;slot++){
+  const site=minorSiteDefinition(`minor-${land}-${slot}`);
+  if(site.kind!=='koboldCave'||site.occupant!=='troll')continue;
+  const first=minorGuardian(visit(site.id)),second=minorGuardian(visit(site.id));
+  counts.add(first.groupSize);
+  assert.ok(first.groupSize===2||first.groupSize===3,site.id);
+  assert.equal(first.memberHp*first.groupSize,first.maxHp);
+  assert.equal(first.hp,first.maxHp);
+  assert.deepEqual(first,second);
+ }
+ assert.deepEqual(counts,new Set([2,3]));
+});

@@ -37,3 +37,25 @@ export function drawDungeonIcon(c,site,x,y,size,claimed=false){
 }
 
 export function drawCemeteryStones(c,x,y,size){c.save();c.translate(x,y);c.scale(size/64,size/64);c.lineWidth=1.5;c.strokeStyle='#34433e';for(const [xx,yy,tilt]of [[-48,8,-.13],[40,13,.12]]){c.save();c.translate(xx,yy);c.rotate(tilt);c.fillStyle='#a7a99a';c.beginPath();c.moveTo(-8,8);c.lineTo(-8,-8);c.arc(0,-8,8,Math.PI,0);c.lineTo(8,8);c.closePath();c.fill();c.stroke();c.strokeStyle='#535e54';c.beginPath();c.moveTo(0,-11);c.lineTo(0,0);c.moveTo(-4,-7);c.lineTo(4,-7);c.moveTo(-5,4);c.lineTo(4,4);c.stroke();c.restore();}c.restore();}
+
+export const cemeteryMapIconFeatures=['gate','graves','monument','path','lantern'];
+export function drawCemeteryMapIcon(c,x,y,size,{stone='#77775b',edge='#a39b75',moss='#5b653b'}={}){
+ c.save();c.translate(x,y);c.scale(size,size);c.lineJoin='round';c.lineCap='round';c.lineWidth=.035;
+ c.fillStyle='#14201588';c.beginPath();c.ellipse(0,.34,.64,.19,0,0,Math.PI*2);c.fill();
+ c.fillStyle=moss;c.beginPath();c.moveTo(-.6,.28);c.quadraticCurveTo(-.22,-.03,.03,.04);c.quadraticCurveTo(.28,.08,.59,.27);c.lineTo(.42,.42);c.lineTo(-.44,.42);c.closePath();c.fill();
+ c.strokeStyle='#c8b58a';c.lineWidth=.075;c.beginPath();c.moveTo(-.08,.42);c.quadraticCurveTo(-.02,.22,.16,.05);c.stroke();
+ // Wrought-iron gate and arch.
+ c.strokeStyle='#28332e';c.lineWidth=.045;for(const gx of [-.53,-.42,.42,.53]){c.beginPath();c.moveTo(gx,.31);c.lineTo(gx,-.25);c.stroke();}
+ c.beginPath();c.moveTo(-.53,-.1);c.quadraticCurveTo(0,-.62,.53,-.1);c.stroke();
+ for(const gx of [-.32,-.16,0,.16,.32]){c.beginPath();c.moveTo(gx,.26);c.lineTo(gx,-.25+Math.abs(gx)*.34);c.stroke();}
+ // Central weathered obelisk.
+ c.fillStyle=stone;c.fillRect(-.105,-.27,.21,.46);c.fillStyle=edge;c.beginPath();c.moveTo(-.13,-.27);c.lineTo(0,-.47);c.lineTo(.13,-.27);c.closePath();c.fill();c.fillRect(-.16,.17,.32,.07);
+ // Varied crooked graves.
+ for(const [gx,gy,tilt,shape] of [[-.38,.18,-.16,0],[.3,.13,.13,1],[-.2,.31,.08,1],[.4,.31,-.12,0]]){
+  c.save();c.translate(gx,gy);c.rotate(tilt);c.fillStyle=stone;c.strokeStyle=edge;c.beginPath();c.moveTo(-.075,.07);c.lineTo(-.075,-.09);if(shape)c.quadraticCurveTo(0,-.19,.075,-.09);else c.arc(0,-.09,.075,Math.PI,0);c.lineTo(.075,.07);c.closePath();c.fill();c.stroke();c.restore();
+ }
+ // One warm lantern provides a memorable focal point.
+ const glow=c.createRadialGradient(.48,-.05,0,.48,-.05,.22);glow.addColorStop(0,'#ffd77a99');glow.addColorStop(1,'#ffd77a00');c.fillStyle=glow;c.fillRect(.26,-.27,.44,.44);
+ c.fillStyle='#332f25';c.fillRect(.465,-.06,.03,.32);c.fillStyle='#efbd59';c.fillRect(.43,-.16,.1,.12);c.strokeStyle='#ffe7a0';c.strokeRect(.43,-.16,.1,.12);
+ c.restore();
+}

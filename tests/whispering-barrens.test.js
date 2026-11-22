@@ -7,7 +7,18 @@ import {caveProfile} from '../public/game/cave-profiles.js';
 import {minorGuardian} from '../public/game/minor-dungeons.js';
 import {secretAlcove,secretStash} from '../public/game/secret-alcoves.js';
 import {TREASURE_ITEMS} from '../public/game/treasure.js';
-import {demonWeaponMultiplier,truthArrowStrike,truthBurnDamage} from '../public/game/whispering-barrens.js';
+import {demonWeaponMultiplier,drawBarrensDesecration,truthArrowStrike,truthBurnDamage} from '../public/game/whispering-barrens.js';
+
+test('Barrens dungeon scenery contains no red line sigil overlay',()=>{
+ const redStrokes=[];
+ const context={
+  fillStyle:'',strokeStyle:'',shadowColor:'',shadowBlur:0,lineWidth:1,lineCap:'',
+  save(){},restore(){},fillRect(){},beginPath(){},moveTo(){},lineTo(){},translate(){},rotate(){},arc(){},fill(){},strokeRect(){},
+  stroke(){if(/^#(?:b3262d|ff3128)/i.test(this.strokeStyle)||/^#(?:b3262d|ff3128)/i.test(this.shadowColor))redStrokes.push(this.strokeStyle);},
+ };
+ drawBarrensDesecration(context,1600,900,{exploration:{area:'wild-2'},dungeon:{site:'minor-site'}},0);
+ assert.deepEqual(redStrokes,[]);
+});
 
 test('Whispering Barrens wilderness and delves contain only its infernal roster',()=>{
  const outdoor={...createGame(),region:0,exploration:{area:'wild-2'},mode:'world'};
