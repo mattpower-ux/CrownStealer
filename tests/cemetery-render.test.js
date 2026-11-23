@@ -74,5 +74,5 @@ test('cemetery props are dimensional gothic stone and contain only human remains
   assert.ok(profile.depth>.08,kind);
   assert.ok(profile.facets>=3,kind);
  }
- assert.deepEqual(cemeteryStonePalette(),{face:'#30363a',side:'#171c20',edge:'#596168',moss:'#27372d'});
+ assert.deepEqual(cemeteryStonePalette(),{face:'#c7cec7',side:'#59645f',edge:'#e0e3d8',moss:'#526451'});
 });
