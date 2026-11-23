@@ -16,7 +16,7 @@ test('opened cemetery coffins render the foreshortened skeleton cutout instead o
    set fillStyle(value){},set strokeStyle(value){},set lineWidth(value){},set lineJoin(value){},set lineCap(value){},set globalAlpha(value){},set filter(value){},
   };
   drawCemeteryCoffin(context,120,true,{stone:true});
-  assert.ok(loaded.some(url=>url.endsWith('/assets/cemetery-skeleton.png')));
+  assert.ok(loaded.some(url=>new URL(url,'http://test').pathname.endsWith('/assets/cemetery-skeleton.png')));
   assert.equal(imageDraws,1);
   assert.ok(transforms>=1,'the flat cutout receives a perspective transform inside the coffin');
  }finally{globalThis.Image=PreviousImage;}

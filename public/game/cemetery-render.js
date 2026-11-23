@@ -3,7 +3,7 @@ export {isOpenAirCemetery};
 export const isCemeteryDungeon=d=>!!d&&(d.site==='minor-site'?minorSiteDefinition(d.minorId)?.kind==='cemetery':!d.site&&!d.royal&&!d.ship&&!d.expedition&&d.index===0);
 const CEMETERY_FACADES=['vault-door','memorial-niche','sealed-crypt','buttressed-vault','family-chapel'];
 const coffinSkeleton=typeof Image==='undefined'?null:new Image();
-if(coffinSkeleton)coffinSkeleton.src='/assets/cemetery-skeleton.png';
+if(coffinSkeleton)coffinSkeleton.src='/assets/cemetery-skeleton.png?v=20261123b';
 export const cemeteryFacadeKind=(x,y,vertical=false)=>CEMETERY_FACADES[Math.abs(x*17+y*29+(vertical?7:0))%CEMETERY_FACADES.length];
 export const cemeteryStonePalette=()=>({face:'#c7cec7',side:'#59645f',edge:'#e0e3d8',moss:'#526451'});
 const fract=n=>n-Math.floor(n);

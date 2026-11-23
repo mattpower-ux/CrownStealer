@@ -25,7 +25,7 @@ import {BEANS_MESSAGE,beansEnemyReaction} from './bucket-beans.js';
 import {shrineForDungeon} from './shrine-deities.js';
 import {drawShrinePortrait} from './shrine-render.js';
 import {shrinePanelMarkup,shrineResultMarkup} from './shrine-view.js';
-import {isCemeteryDungeon} from './cemetery-render.js';
+import {isCemeteryDungeon} from './cemetery-render.js?v=20261123b';
 import {secretRoomKey,seeHiddenChance} from './secret-alcoves.js';
 import {secretSearchMapMarkup} from './secret-search-view.js';
 import {TWINKLESTAR_TOWER_ID,twinklestarGuardian} from './twinklestar-tower.js';
@@ -86,7 +86,7 @@ import {WEAPONS,UNARMED,itemById,itemArt,isCombatWeapon,isMagicEquipment,merchan
 import {REGIONS,TOWNS,DUNGEONS,CHAPTERS,LORE,ENDINGS} from './content.js';
 import {createGame,createRoyalGame,act,pointAt,nextObjective,saveGame,loadGame,dungeonNavigation,dungeonName,dungeonMap,wildernessStepDelay,worldTile,xpForNextLevel} from './engine.js';
 import {undead} from './spell-items.js';
-import {render,paintMonster,paintArenaOpponentPreview,worldViewport,castleViewport,castlePointVisible,renderCastleOverview,castleGovernorPortrait,castleGuardPortrait,castleChestPortrait} from './render.js';
+import {render,paintMonster,paintArenaOpponentPreview,worldViewport,castleViewport,castlePointVisible,renderCastleOverview,castleGovernorPortrait,castleGuardPortrait,castleChestPortrait} from './render.js?v=20261123b';
 import {AudioDirector} from './audio.js';
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const developerMode=!window.Android&&new URLSearchParams(location.search).get('developer')==='1';

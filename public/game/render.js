@@ -16,7 +16,7 @@ import {battlefieldDistance} from './dungeon-ranged.js';
 import {beansEnemyReaction} from './bucket-beans.js';
 import {paintRoyalBody,royalVisualMap,drawRoyalDungeonScenery} from './royal-dungeon-render.js';
 import {drawShrineScene,isStonefatherShrine,isTumbledShrine,stonefatherMaterialSelected,tumbledMaterialSelected,stonefatherGranitePixel,stonefatherFloorPixel,tumbledRomanesqueInk,STONEFATHER_FLOOR_SAMPLE_SIZE,shrineMaterialRevision} from './shrine-render.js';
-import {isCemeteryDungeon,isOpenAirCemetery,drawCemeteryCoffin,drawCemeteryRemains,drawCemeteryNightSky,cemeteryGateInk,cemeteryFacadeKind,cemeteryFacadeInk} from './cemetery-render.js';
+import {isCemeteryDungeon,isOpenAirCemetery,drawCemeteryCoffin,drawCemeteryRemains,drawCemeteryNightSky,cemeteryGateInk,cemeteryFacadeKind,cemeteryFacadeInk} from './cemetery-render.js?v=20261123b';
 import {TWINKLESTAR_TOWER_ID,twinklestarTowerSite} from './twinklestar-tower.js';
 import {PELAGIOS_TOWER_ID,pelagiosTowerSite} from './pelagios-tower.js';
 import {drawPelagiosTower,drawPelagiosVault,drawPelagiosAtmosphere,pelagiosWallPixel} from './pelagios-render.js';
