@@ -4,7 +4,7 @@ import {createGame,act,dungeonMap,saveGame,loadGame} from '../public/game/engine
 import {dungeonLadders,ladderPrompt} from '../public/game/dungeon-ladders.js';
 import {cemeteryLightAt,nearestUnlitTorch} from '../public/game/cemetery-light.js';
 import {dungeonChests} from '../public/game/treasure.js';
-import {isCemeteryDungeon,isOpenAirCemetery,cemeteryRemains,cemeteryFacadeKind,cemeteryFacadeInk,cemeteryPropProfile,cemeteryStonePalette} from '../public/game/cemetery-render.js';
+import {isCemeteryDungeon,isOpenAirCemetery,cemeteryRemains,cemeteryFacadeKind,cemeteryFacadeInk,cemeteryMarblePixel,cemeteryPropProfile,cemeteryStonePalette} from '../public/game/cemetery-render.js';
 test('coffins replace cemetery loot only, including main vault and minor cemeteries',()=>{
  assert.equal(isCemeteryDungeon({index:0}),true);assert.equal(isCemeteryDungeon({site:'minor-site',minorId:'minor-r0-2',index:0}),true);
  for(const d of [{index:1},{site:'minor-site',minorId:'minor-r0-0',index:0},{site:'twinklestar-tower',index:6},{index:0,royal:'sewer'},{index:0,expedition:'wild-0-cave-0'}])assert.equal(isCemeteryDungeon(d),false);
@@ -50,6 +50,18 @@ test('surface cemeteries form a dense varied necropolis instead of a sparse yard
  const door=cemeteryFacadeInk('vault-door',.57,.72),rgb=door.match(/[0-9a-f]{2}/gi).map(value=>parseInt(value,16));
  assert.ok(rgb.reduce((sum,value)=>sum+value,0)<90,'vault entrance stays nearly black');
  assert.match(cemeteryFacadeInk('memorial-niche',.5,.42),/^#/);
+});
+
+test('surface vault marble is deterministic, varied and visibly weathered',()=>{
+ const sample=[];
+ for(let y=0;y<20;y++)for(let x=0;x<24;x++)sample.push(cemeteryMarblePixel(7,(x+.5)/24,(y+.5)/20,1));
+ assert.deepEqual(sample,Array.from({length:20},(_,y)=>Array.from({length:24},(_,x)=>cemeteryMarblePixel(7,(x+.5)/24,(y+.5)/20,1))).flat());
+ assert.ok(new Set(sample).size>45,'marble has granular variation instead of broad flat blocks');
+ const rgb=sample.map(color=>[color&255,(color>>>8)&255,(color>>>16)&255]);
+ const brightness=rgb.map(([r,g,b])=>(r+g+b)/3);
+ assert.ok(Math.max(...brightness)>175,'clean marble remains pale under moonlight');
+ assert.ok(Math.min(...brightness)<95,'runoff, cracks and pits visibly weather the stone');
+ assert.ok(rgb.some(([r,g,b])=>g>r+5&&g>b),'some lower stone carries restrained moss staining');
 });
 
 test('cemetery props are dimensional gothic stone and contain only human remains',()=>{
