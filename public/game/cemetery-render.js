@@ -2,6 +2,8 @@ import {isOpenAirCemetery,minorSiteDefinition} from './minor-sites.js';
 export {isOpenAirCemetery};
 export const isCemeteryDungeon=d=>!!d&&(d.site==='minor-site'?minorSiteDefinition(d.minorId)?.kind==='cemetery':!d.site&&!d.royal&&!d.ship&&!d.expedition&&d.index===0);
 const CEMETERY_FACADES=['vault-door','memorial-niche','sealed-crypt','buttressed-vault','family-chapel'];
+const coffinSkeleton=typeof Image==='undefined'?null:new Image();
+if(coffinSkeleton)coffinSkeleton.src='/assets/cemetery-skeleton.png';
 export const cemeteryFacadeKind=(x,y,vertical=false)=>CEMETERY_FACADES[Math.abs(x*17+y*29+(vertical?7:0))%CEMETERY_FACADES.length];
 export const cemeteryStonePalette=()=>({face:'#c7cec7',side:'#59645f',edge:'#e0e3d8',moss:'#526451'});
 const fract=n=>n-Math.floor(n);
@@ -71,6 +73,14 @@ function drawMarbleVeins(c,shape,seed=0){
  c.restore();
 }
 function drawCoffinSkeleton(c){
+ if(coffinSkeleton?.complete&&coffinSkeleton.naturalWidth){
+  c.save();
+  c.beginPath();c.moveTo(-.18,-.77);c.lineTo(.18,-.77);c.lineTo(.35,-.61);c.lineTo(.23,-.20);c.lineTo(-.23,-.20);c.lineTo(-.35,-.61);c.closePath();c.clip();
+  c.fillStyle='#040706aa';c.beginPath();c.ellipse(0,-.46,.18,.26,0,0,Math.PI*2);c.fill();
+  c.transform(1,-.035,.055,1,0,0);c.filter='contrast(1.08) saturate(.72) brightness(.92) drop-shadow(0 .012px .010px #000a)';
+  c.drawImage(coffinSkeleton,-.23,-.79,.46,.64);c.restore();
+  return;
+ }
  const bone='#d6d0b4',shadow='#77725f',hollow='#20231e';
  c.save();c.lineCap='round';c.lineJoin='round';
  c.fillStyle=bone;c.beginPath();c.ellipse(0,-.645,.074,.066,0,0,Math.PI*2);c.fill();

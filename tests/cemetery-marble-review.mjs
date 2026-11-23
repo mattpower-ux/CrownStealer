@@ -8,9 +8,10 @@ const browser=await chromium.launch({channel:'chrome',headless:true});
 try{
  const page=await browser.newPage({serviceWorkers:'block',viewport:{width:1280,height:800}}),errors=[];
  page.on('pageerror',error=>errors.push(error.message));
- await page.route('http://review.test/**',async route=>{const path=new URL(route.request().url()).pathname;if(path==='/')return route.fulfill({contentType:'text/html',body:'<style>body{margin:0;background:#06100d}canvas{width:1280px;height:800px}</style><canvas></canvas>'});try{await route.fulfill({body:await readFile('public'+path),contentType:path.endsWith('.js')?'text/javascript':'image/webp'});}catch{await route.fulfill({status:404,body:''});}});
+ await page.route('http://review.test/**',async route=>{const path=new URL(route.request().url()).pathname;if(path==='/')return route.fulfill({contentType:'text/html',body:'<style>body{margin:0;background:#06100d}canvas{width:1280px;height:800px}</style><canvas></canvas>'});try{await route.fulfill({body:await readFile('public'+path),contentType:path.endsWith('.js')?'text/javascript':path.endsWith('.png')?'image/png':'image/webp'});}catch{await route.fulfill({status:404,body:''});}});
  await page.goto('http://review.test/');
  await page.evaluate(async()=>{
+  const skeleton=new Image();skeleton.src='/assets/cemetery-skeleton.png';await skeleton.decode();
   const {createGame,dungeonMap}=await import('/game/engine.js');
   const {render}=await import('/game/render.js');
   const {dungeonChests}=await import('/game/treasure.js');

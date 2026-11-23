@@ -1,25 +1,24 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-test('opened cemetery coffins render procedural human remains instead of the legacy fish asset',async()=>{
+test('opened cemetery coffins render the foreshortened skeleton cutout instead of symbolic line art',async()=>{
  const PreviousImage=globalThis.Image;
- class LoadedImage{complete=true;naturalWidth=100;naturalHeight=60;set src(value){this.url=value;}}
+ const loaded=[];
+ class LoadedImage{complete=true;naturalWidth=1024;naturalHeight=1536;set src(value){this.url=value;loaded.push(value);}}
  globalThis.Image=LoadedImage;
  try{
   const {drawCemeteryCoffin}=await import('../public/game/cemetery-render.js?human-coffin-test');
-  let imageDraws=0,ellipses=0,curves=0,arcs=0;
+  let imageDraws=0,transforms=0;
   const gradient={addColorStop(){}};
   const context={
-   save(){},restore(){},scale(){},beginPath(){},moveTo(){},lineTo(){},closePath(){},fill(){},stroke(){},translate(){},rotate(){},fillRect(){},clip(){},
-   arc(){arcs++;},quadraticCurveTo(){curves++;},
-   ellipse(){ellipses++;},drawImage(){imageDraws++;},createLinearGradient(){return gradient;},
-   set fillStyle(value){},set strokeStyle(value){},set lineWidth(value){},set lineJoin(value){},set lineCap(value){},set globalAlpha(value){},
+   save(){},restore(){},scale(){},transform(){transforms++;},beginPath(){},moveTo(){},lineTo(){},closePath(){},fill(){},stroke(){},translate(){},rotate(){},fillRect(){},clip(){},arc(){},quadraticCurveTo(){},
+   ellipse(){},drawImage(){imageDraws++;},createLinearGradient(){return gradient;},
+   set fillStyle(value){},set strokeStyle(value){},set lineWidth(value){},set lineJoin(value){},set lineCap(value){},set globalAlpha(value){},set filter(value){},
   };
   drawCemeteryCoffin(context,120,true,{stone:true});
-  assert.equal(imageDraws,0);
-  assert.ok(ellipses>=3,'the skull has a cranium and recessed eye sockets');
-  assert.ok(curves>=10,'the torso has a curved anatomical rib cage');
-  assert.ok(arcs>=8,'the arms and legs have articulated joints');
+  assert.ok(loaded.some(url=>url.endsWith('/assets/cemetery-skeleton.png')));
+  assert.equal(imageDraws,1);
+  assert.ok(transforms>=1,'the flat cutout receives a perspective transform inside the coffin');
  }finally{globalThis.Image=PreviousImage;}
 });
 
