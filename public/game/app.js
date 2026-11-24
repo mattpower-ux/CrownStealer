@@ -40,7 +40,7 @@ import {percivalAudienceAvailable,PERCIVAL_REJECTION,PALADIN_FORSAKEN,PALADIN_GA
 import {drawDiscoveryArt,drawHeroGhost} from './discovery-render.js';
 import {wildernessEventView} from './wilderness-event-view.js';
 let halSequenceTimer=null,halPhaseSpoken=null,beansFx=null;
-let lastDiscoveryAttempt=null,lastWizardAttempt=null,lastSecretSearch=null,wizardUiLast=0;
+let lastDiscoveryAttempt=null,lastWizardAttempt=null,lastSecretSearch=null,searchSecretsResolving=false,wizardUiLast=0;
 import {halView,halOutcomeView,isHal} from './hal-challenge.js';
 import {dragonDefenseView} from './dragon.js';
 import {renderMerchantView} from './merchant-view.js';
@@ -942,6 +942,12 @@ function openPanel(name,{winkShot=false,winkResult=null}={}){if(state?.dungeon?.
  if(name==='beans'){body.innerHTML='<p>'+esc(BEANS_MESSAGE)+'</p><p>Three rounds. Undead and constructs are unaffected; fleeing creatures award no victory loot or experience.</p><button type="button" class="primary" data-close-percival>Catch your breath</button>';}
  else if(name==='searchSecrets'){
   if(state.mode!=='dungeon'){closePanel();return;}
+  if(!searchSecretsResolving){
+   searchSecretsResolving=true;
+   dispatch({type:'searchSecrets'});
+   searchSecretsResolving=false;
+   return;
+  }
   const d=state.dungeon,key=secretRoomKey(d);
   body.innerHTML=secretSearchMapMarkup(state,dungeonMap(d),{chance:seeHiddenChance(state),message:lastSecretSearch?.key===key?lastSecretSearch.text:''});
  }

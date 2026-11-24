@@ -10,7 +10,8 @@ test('Search Hidden shows a sixty-foot local map centered on the player',()=>{
  assert.match(html,/sixty-foot area/);
  assert.match(html,/Search chance: <strong>27%/);
  assert.match(html,/secret-map-player/);
- assert.match(html,/Search this area/);
+ assert.doesNotMatch(html,/Search this area/);
+ assert.match(html,/Return to exploring/);
 });
 
 test('revealed hidden doors are highlighted and replace the search control',()=>{
