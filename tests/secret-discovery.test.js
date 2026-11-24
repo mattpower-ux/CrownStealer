@@ -12,6 +12,23 @@ test('every kobold cave has a hidden reachable wall stash without moving existin
  for(let slot=0;slot<24;slot++){const id='minor-r0-'+slot,site=minorSiteDefinition(id);if(site.kind!=='koboldCave')continue;caves++;const d={site:'minor-site',minorId:id,index:0,floor:0},map=dungeonMap(d),room=secretAlcove(d,map);assert.ok(room);assert.equal(map[room.y][room.x],1);const opened=dungeonMap({...d,secretRoom:room});assert.equal(opened[room.y][room.x],0);for(let y=0;y<15;y++)for(let x=0;x<15;x++)if(map[y][x]!==1)assert.equal(opened[y][x],map[y][x]);}
  assert.ok(caves>0);
 });
+
+test('every cave and mountain throat has a hidden wall alcove and cave layouts vary',()=>{
+ const s=createGame(),layouts=new Set();let locations=0;
+ for(let slot=0;slot<=24;slot++){
+  const id='minor-r0-'+slot,site=minorSiteDefinition(id);
+  if(!['koboldCave','tunnel'].includes(site.kind))continue;
+  locations++;
+  const d={site:'minor-site',minorId:id,index:site.index,floor:0},map=dungeonMap(d),room=secretAlcove(d,map);
+  assert.ok(room,site.name+' has a hidden alcove');
+  assert.equal(map[room.y][room.x],1,site.name+' alcove starts behind a wall');
+  const adjacent=[[1,0],[-1,0],[0,1],[0,-1]].some(([dx,dy])=>map[room.y+dy]?.[room.x+dx]!==1);
+  assert.ok(adjacent,site.name+' alcove is adjacent to explored ground');
+  if(site.kind==='koboldCave')layouts.add(map.map(row=>row.join('')).join('/'));
+ }
+ assert.ok(locations>0);
+ assert.ok(layouts.size>=3,'caves use several distinct chamber and branch layouts');
+});
 test('Intelligence improves See Hidden and failed deliberate searches cost time',()=>{
  let s=cave();adjacent(s);const low=seeHiddenChance(s);s.attributes.intelligence=30;assert.ok(seeHiddenChance(s)>low);s.attributes.intelligence=10;
  s.rng=seedFor(false);const turns=s.turns,time=s.worldTimeMs;s=act(s,{type:'searchSecrets'});assert.equal(s.dungeon.secretRoom,undefined);assert.equal(s.turns,turns+1);assert.equal(s.worldTimeMs,time+300000);

@@ -65,16 +65,22 @@ export function minorDungeonMap(d,{courtyard=true}={}) {
     carve(x,fromY,x,y);
   }
   if(site.kind==='koboldCave'){
-    // Expand around the old paths rather than replacing them: an adventurer saved
-    // anywhere in the earlier burrow still loads onto connected, walkable ground.
-    // Overlapping rounded chambers create wide, short necks instead of a maze.
-    const chambers=[
-      [3.3,3.1,3.25,2.8+offset*.15],
-      [6.6+offset*.35,7.1,3.8,3.8],
-      [10.8,10.9,3.2+offset*.1,3.3],
-    ];
+    // Keep the old route and open one of three deterministic additions around
+    // it. Old saves therefore remain on connected floor while new caves read
+    // as round grottos, forked chambers, or a long narrow throat with pockets.
+    const variant=(site.seed+d.floor)%3;
+    const layoutsByVariant=[
+      [[3.3,3.1,3.25,2.8+offset*.15],[6.6+offset*.35,7.1,3.8,3.8],[10.8,10.9,3.2+offset*.1,3.3]],
+      [[3.1,4.2,3.1,3.5],[8.1,7.1,3.3,2.6],[10.9,3.5,2.1,2.2],[11.1,11.2,2.5,2.1]],
+      [[2.8,3.2,2.4,3.2],[6.4,7.0,2.1,4.0],[10.8,10.7,3.2,2.6]],
+    ][variant];
     for(let y=1;y<=13;y++)for(let x=1;x<=13;x++){
-      if(chambers.some(([cx,cy,rx,ry])=>((x-cx)/rx)**2+((y-cy)/ry)**2<=1))carve(x,y,x,y);
+      if(layoutsByVariant.some(([cx,cy,rx,ry])=>((x-cx)/rx)**2+((y-cy)/ry)**2<=1))carve(x,y,x,y);
+    }
+    if(variant===1){
+      carve(8,6,11,6);carve(10,4,10,6); // forked upper chamber
+    }else if(variant===2){
+      carve(5,5,5,9);carve(5,7,8,7); // a cramped throat between larger pockets
     }
   }
   // Open a broad ceremonial room without removing any old walkable tiles.
@@ -83,6 +89,9 @@ export function minorDungeonMap(d,{courtyard=true}={}) {
     // Short blind spurs branch from the old connected route; existing saves stay walkable.
     const bx=4+offset;carve(bx,2,bx+3,2);carve(bx,2,bx,4);
     carve(7,9+offset,10,9+offset);carve(7,9+offset,7,13);
+    // A second blind nook makes each tunnel feel like a throat with a choice,
+    // and leaves a one-wall-deep alcove for its secret cache.
+    carve(10,5+offset,12,5+offset);carve(12,5+offset,12,7+offset);
   }
   map[1][1]=3;
   map[13][13]=2;

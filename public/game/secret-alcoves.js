@@ -9,7 +9,7 @@ import {estateSecretStash,isPelagosEstateDungeon} from './pelagos-estates.js';
 
 export function secretAlcove(d,map,{originalLayout=false,state=null}={}){
  if(isMossyGlobeShrine(d))return d.secretRoom||{x:2,y:8};
- const site=d.site==='minor-site'?minorSiteDefinition(d.minorId):null,barrensShrine=isBarrensShrine(d)&&site?.kind==='ruinedShrine',estate=isPelagosEstateDungeon(d),kobold=d.site==='minor-site'&&['koboldCave','cemetery'].includes(site?.kind),minorSecret=kobold||barrensShrine||estate;
+ const site=d.site==='minor-site'?minorSiteDefinition(d.minorId):null,barrensShrine=isBarrensShrine(d)&&site?.kind==='ruinedShrine',estate=isPelagosEstateDungeon(d),kobold=d.site==='minor-site'&&['koboldCave','cemetery','tunnel'].includes(site?.kind),minorSecret=kobold||barrensShrine||estate;
  if(barrensShrine&&state&&(state.alignment??0)<=0)return null;
  if(d.royal||d.ship||d.expedition||d.site&&!minorSecret||!minorSecret&&(d.floor+1)%5!==0)return null;
  if(d.secretRoom)return d.secretRoom;
@@ -27,7 +27,7 @@ export function secretMap(d,map){if(!d.secretRoom)return map;const copy=map.map(
 export function secretRoomKey(d){
  if(isMossyGlobeShrine(d))return 'minor:'+d.minorId+':'+d.floor;
  if(isPelagosEstateDungeon(d))return 'minor:'+d.minorId+':'+d.floor;
- if(d.royal||d.ship||d.expedition||d.site&&d.site!=='minor-site'||d.site==='minor-site'&&!['koboldCave','cemetery'].includes(minorSiteDefinition(d.minorId)?.kind)&&!isBarrensShrine(d))return null;
+ if(d.royal||d.ship||d.expedition||d.site&&d.site!=='minor-site'||d.site==='minor-site'&&!['koboldCave','cemetery','tunnel'].includes(minorSiteDefinition(d.minorId)?.kind)&&!isBarrensShrine(d))return null;
  return (d.site==='minor-site'?'minor:'+d.minorId:d.index)+':'+d.floor;
 }
 export function secretDungeonForKey(key){
@@ -35,7 +35,7 @@ export function secretDungeonForKey(key){
  if(normal)return {index:Number(normal[1]),floor:Number(normal[2])};
  const minor=/^minor:(minor-(?:r[0-3]|w(?:[0-9]|1[01]))-\d+):([0-4])$/.exec(key);
  const site=minor&&minorSiteDefinition(minor[1]);
- return (['koboldCave','cemetery','ruinedEstate'].includes(site?.kind)||site?.kind==='ruinedShrine'&&/^minor-w2-/.test(site.id)||isMossyGlobeShrine({site:'minor-site',minorId:site?.id}))&&Number(minor[2])<site.floors?{site:'minor-site',minorId:site.id,index:site.index,floor:Number(minor[2])}:null;
+ return (['koboldCave','cemetery','tunnel','ruinedEstate'].includes(site?.kind)||site?.kind==='ruinedShrine'&&/^minor-w2-/.test(site.id)||isMossyGlobeShrine({site:'minor-site',minorId:site?.id}))&&Number(minor[2])<site.floors?{site:'minor-site',minorId:site.id,index:site.index,floor:Number(minor[2])}:null;
 }
 // Read equipped attribute bonuses only when calculating a check. Importing the
 // full items module here makes its eager weapon registry run before treasure
@@ -59,7 +59,11 @@ export function secretStash(s){
   const id=secretRoomKey(d)+':sanctuary',items=['legendary-ultra-healing','demon-slayer-longsword','arrows-of-truth',...(site.id.endsWith('-1')?['last-knight-journal']:[])];
   return [{...d.secretRoom,id,item:items[0],items,rarity:'legendary',gold:0,trap:false,opened:!!s.openedChests?.includes(id)}];
  }
- if(!['koboldCave','cemetery'].includes(site?.kind))return [];
+ if(!['koboldCave','cemetery','tunnel'].includes(site?.kind))return [];
+ if(site.kind==='tunnel'){
+  const id=secretRoomKey(d)+':secret',items=['miners-cap','small-sapphire','old-lockpicks'].filter(item=>TREASURE_ITEMS[item]);
+  return [{...d.secretRoom,id,item:items[0]??null,items,rarity:'rare',gold:30,trap:false,opened:!!s.openedChests?.includes(id)}];
+ }
  if(site.kind==='cemetery'){const id=secretRoomKey(d)+':secret',items=['rare-ring-'+Math.min(3,site.region+1),'small-diamond'];return [{...d.secretRoom,id,item:items[0],items,rarity:'rare',gold:120+site.region*50,trap:false,sarcophagus:true,opened:!!s.openedChests?.includes(id)}];}
  const id=secretRoomKey(d)+':secret',items=['common-lesser-healing',['small-emerald','small-pearl','small-sapphire'][site.seed%3]];
  return [{...d.secretRoom,id,item:items[0],items,rarity:'common',gold:25+site.region*10,trap:true,opened:!!s.openedChests?.includes(id)}];
