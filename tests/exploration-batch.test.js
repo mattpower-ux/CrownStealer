@@ -24,7 +24,8 @@ test('asking a bridge troll about the errand presents and accepts the goat oatca
  assert.match(notes.at(-1),/Billy Goats.*oatcakes/i);
  bridgeTrollAction(s,{type:'bridgeTroll',choice:'acceptQuest'},note);
  assert.equal(s.flags.bridgeTroll.quest,'accepted');
- assert.equal(s.alignment,-8);
+ assert.equal(s.alignmentPoints,300);
+ assert.equal(s.alignment,-40);
  assert.match(notes.at(-1),/old lady/i);
 });
 import {TREASURE_ITEMS} from '../public/game/treasure.js';

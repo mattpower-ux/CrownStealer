@@ -1,5 +1,5 @@
 import {itemById} from './items.js';
-import {adjustAlignment} from './alignment.js';
+import {applyAlignmentImpact} from './alignment.js';
 export const BRIDGE_TROLL_ART='/assets/bridge-troll.webp';
 const gearKinds=new Set(['weapon','armor','shield','head','hands','boots','ring','necklace']);
 export function startBridgeTroll(s,key,note,previous={x:s.x,y:s.y}){
@@ -32,7 +32,7 @@ export function bridgeTrollAction(s,a,note){
  if(a.type!=='bridgeTroll')return ['move','mapStep','enter'].includes(a.type);
  if(a.choice==='leave'){s.x=troll.backX;s.y=troll.backY;delete s.flags.bridgeTroll;note(s,'You retreat from the troll bridge.');return true;}
  if(a.choice==='quest'){troll.quest='offered';note(s,'“Those Billy Goats bully me every day. Dress as an old lady and offer them poisonous oatcakes at their cottage. Agree, and I will make it worth your while.”');return true;}
- if(a.choice==='acceptQuest'){troll.quest='accepted';adjustAlignment(s,-8);note(s,'You agree to play the old lady. The troll hands over a basket of poisonous oatcakes and whispers the cottage is ten clicks away in the grassy field.');return true;}
+ if(a.choice==='acceptQuest'){troll.quest='accepted';applyAlignmentImpact(s,-200,'Agreeing to poison the Billy Goats');note(s,'You agree to play the old lady. The troll hands over a basket of poisonous oatcakes and whispers the cottage is ten clicks away in the grassy field.');return true;}
  if(a.choice==='gold'){if(s.gold<troll.toll){note(s,'The troll insists on the entire toll.');return true;}s.gold-=troll.toll;}
  else if(a.choice==='gear'){if(!bridgeTrollGear(s).includes(a.id)){note(s,'Choose an unequipped piece of gear to surrender.');return true;}s.bag.splice(s.bag.indexOf(a.id),1);s.pendingLoot=s.pendingLoot.filter(id=>id!==a.id||s.bag.includes(id));}
  else if(a.choice==='sleep'||a.choice==='fight'){

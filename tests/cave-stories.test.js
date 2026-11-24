@@ -67,12 +67,13 @@ test('saving the dinner rabbit, Flowerhaven children, and beaver home grants eac
  }
 });
 
-test('saving the Beaver Household from flooding shifts alignment fifteen points toward good once',()=>{
- let s=inStory('minor-w1-4');s.meals=3;s.alignment=-12;
+test('saving the Beaver Household from flooding shifts alignment one hundred points toward good once',()=>{
+ let s=inStory('minor-w1-4');s.meals=3;s.alignment=-12;s.alignmentPoints=440;
  s=act(s,{type:'caveStoryChoice',choice:'help'});
- assert.equal(s.alignment,3);
+ assert.equal(s.alignmentPoints,540);
+ assert.equal(s.alignment,8);
  const restored=act(loadGame(saveGame(s)),{type:'caveStoryChoice',choice:'help'});
- assert.equal(restored.alignment,3);
+ assert.equal(restored.alignmentPoints,540);
 });
 
 test('alignment shifts have a clear good or evil notification',()=>{

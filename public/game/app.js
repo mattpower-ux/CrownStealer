@@ -6,7 +6,7 @@ import {evilEmpowered} from './evil-route.js';
 import {nearKerrbear,KERRBEAR_TOOTH} from './kerrbear.js';
 import {caveStoryAt,caveStoryView} from './cave-stories.js';
 import {canCamp} from './wilderness-camp.js';
-import {alignmentScore,alignmentLabel,alignmentShiftMessage,paladinAlignmentAllowed,wizardAlignmentAllowed} from './alignment.js';
+import {alignmentScore,alignmentPoints,alignmentLabel,alignmentShiftMessage,paladinAlignmentAllowed,wizardAlignmentAllowed} from './alignment.js';
 import {rootActive,DRUID_SITE,DRUID_STAFF,DRUID_FLOORS,druidHistory,druidKeeper,druidKeeperAt} from './druid-grove.js';
 import {sageView} from './sage-view.js';
 import {SAGE_MAZE_ID,SAGE_PEN_ID,sageRemainsAt} from './sage-challenge.js';
@@ -135,8 +135,8 @@ function toast(message){$('toast').textContent=message;$('toast').classList.add(
 let observedAlignment;
 function announceAlignmentChange(){
  if(!state)return;
- const before={alignment:observedAlignment},notice=observedAlignment===undefined?null:alignmentShiftMessage(before,state);
- observedAlignment=alignmentScore(state);
+ const before={alignmentPoints:observedAlignment},notice=observedAlignment===undefined?null:alignmentShiftMessage(before,state);
+ observedAlignment=alignmentPoints(state);
  if(notice)toast(notice);
 }
 setInterval(announceAlignmentChange,200);

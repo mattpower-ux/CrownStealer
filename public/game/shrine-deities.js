@@ -1,6 +1,7 @@
-import {adjustAlignment} from './alignment.js';
+import {adjustAlignment,applyAlignmentImpact} from './alignment.js';
 import {minorSiteDefinition,OOZUL_SHRINE_IDS} from './minor-sites.js';
 import {applyAttributeItem} from './attributes.js';
+import {gameDay} from './wild-sites.js';
 
 export const CHARITY_SHRINE_ID='minor-r0-1';
 export const PERCIVAL_SHRINE_ID='minor-r1-12';
@@ -36,7 +37,7 @@ export function charityAction(s,a,{random,note,events}){
  if(a.choice==='donate'){
   if(s.gold<500){note(s,'Lady Charity asks for 500 gold. You may leave and return when you have enough.');return;}
   if(!applyAttributeItem(s,{kind:'potion',rarity:'legendary',attributeEffect:{attribute:'charisma',amount:1}})){note(s,'Your Charisma is already at its limit. Lady Charity leaves the choice open.');return;}
-  s.gold-=500;adjustAlignment(s,15);s.flags.charityChoice='donated';s.flags.charityStanding=true;s.reputation+=2;s.turns++;
+  s.gold-=500;applyAlignmentImpact(s,50,'Donating to Lady Charity');s.flags.charityChoice='donated';s.flags.charityStanding=true;s.reputation+=2;s.turns++;
   note(s,'Lady Charity accepts 500 gold and grants +1 permanent Charisma. Mothbridge and Bellwether welcome your generosity: their merchants offer you a 5% courtesy discount.');return;
  }
  s.flags.charityChoice='refused';const damage=1+Math.floor(random()*150);s.flags.charityPitDamage=damage;
@@ -49,7 +50,7 @@ export function charityTownDiscount(s){return s.flags?.charityStanding&&['mothbr
 export function validShrineState(s){
  const trial=s.flags.percivalTrial;
  if(trial!==undefined&&trial!=='passed'&&trial!=='failed'&&(!trial||typeof trial!=='object'||!Number.isInteger(trial.step)||trial.step<1||trial.step>=PERCIVAL_TRIAL_QUESTIONS.length))return false;
- for(const [key,value] of Object.entries(s.flags))if(key.startsWith('shrineStrength:')&&(!shrineForDungeon({site:'minor-site',minorId:key.slice(15)})||value!==true))return false;
+ for(const [key,value] of Object.entries(s.flags)){if(key.startsWith('shrineStrength:')&&(!shrineForDungeon({site:'minor-site',minorId:key.slice(15)})||value!==true))return false;if(key.startsWith('shrineDonationMonth:')&&(!shrineForDungeon({site:'minor-site',minorId:key.slice(20)})||!Number.isInteger(value)||value<0))return false;}
  if(s.flags.charityChoice!==undefined&&!['donated','refused'].includes(s.flags.charityChoice))return false;
  if(s.flags.charityStanding!==undefined&&(typeof s.flags.charityStanding!=='boolean'||s.flags.charityStanding&&s.flags.charityChoice!=='donated'))return false;
  if(s.flags.charityPitDamage!==undefined&&(!Number.isInteger(s.flags.charityPitDamage)||s.flags.charityPitDamage<1||s.flags.charityPitDamage>150||s.flags.charityChoice!=='refused'))return false;
@@ -92,12 +93,13 @@ export function shrineOffering(s,a,note,events=[]){
   events.push({kind:'charityHealed'});
   return true;
  }
- const id=s.dungeon.minorId;
- if(s.flags['shrineStrength:'+id]){note(s,'This shrine has already bestowed its blessing.');return false;}
+ const id=s.dungeon.minorId,month=Math.floor(gameDay(s)/30),donationKey='shrineDonationMonth:'+id;
+ if(s.flags[donationKey]===month){note(s,'This temple has already accepted your offering this game month.');return false;}
  const amount=a.amount??10;if(!Number.isSafeInteger(amount)||amount<10){note(s,'An offering of at least 10 gold is required.');return false;}
  if(s.gold<amount){note(s,'You do not have enough gold for this offering.');return false;}
- if(!applyAttributeItem(s,{kind:'potion',rarity:'legendary',attributeEffect:{attribute:'strength',amount:1}})){note(s,'Your Strength is already at its limit.');return false;}
- s.gold-=amount;adjustAlignment(s,god.alignment==='good'?8:-12);s.flags['shrineStrength:'+id]=true;s.turns++;note(s,god.name+' accepts '+amount+' gold and grants +1 permanent Strength.');return true;
+ const firstBlessing=!s.flags['shrineStrength:'+id];
+ if(firstBlessing&&!applyAttributeItem(s,{kind:'potion',rarity:'legendary',attributeEffect:{attribute:'strength',amount:1}})){note(s,'Your Strength is already at its limit.');return false;}
+ s.gold-=amount;s.flags[donationKey]=month;applyAlignmentImpact(s,(god.alignment==='good'?1:-1)*Math.min(50,Math.max(1,Math.floor(amount/10))),'Temple offering');if(firstBlessing)s.flags['shrineStrength:'+id]=true;s.turns++;note(s,god.name+' accepts '+amount+' gold'+(firstBlessing?' and grants +1 permanent Strength.':' Your offering is recorded.'));return true;
 }
 export function shrineLore(d){
  const god=shrineForDungeon(d);if(!god)return '';
