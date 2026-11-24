@@ -922,6 +922,7 @@ dialog[data-panel="sageJournal"] #save-checkpoint { display: none; }
 @keyframes snout-end-grow { from { transform:scale(.45); } to { transform:scale(1.55); } }
 .alien-warning { font-family:Impact,Haettenschweiler,'Arial Narrow Bold',sans-serif; font-size:clamp(2.1rem,5vw,4.6rem); letter-spacing:.13em; line-height:.92; color:#bafff2; text-shadow:0 0 10px #64ffdd,0 0 24px #24aeaf; text-align:center; }
 .alien-warning small { display:block; margin-top:.6rem; font-family:Arial,sans-serif; font-size:.32em; letter-spacing:.34em; color:#ebc66b; text-shadow:none; }
+.roadside-offer-creature { position:relative; inset:auto; width:100%; height:auto; max-height:340px; pointer-events:none; }
 @keyframes snout-story-in { from { transform:translateY(.7rem); } to { transform:translateY(0); } }
 @media (prefers-reduced-motion:reduce) { .snout-ending .snout-story,.snout-ending-revealing .snout-story { animation:none; } }
 .multiverse-chamber { text-align:center; }
