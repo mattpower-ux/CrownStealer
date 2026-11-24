@@ -86,7 +86,7 @@ import {WEAPONS,UNARMED,itemById,itemArt,isCombatWeapon,isMagicEquipment,merchan
 import {REGIONS,TOWNS,DUNGEONS,CHAPTERS,LORE,ENDINGS} from './content.js';
 import {createGame,createRoyalGame,act,pointAt,nextObjective,saveGame,loadGame,dungeonNavigation,dungeonName,dungeonMap,wildernessStepDelay,worldTile,xpForNextLevel} from './engine.js';
 import {undead} from './spell-items.js';
-import {render,paintMonster,paintArenaOpponentPreview,worldViewport,castleViewport,castlePointVisible,renderCastleOverview,castleGovernorPortrait,castleGuardPortrait,castleChestPortrait} from './render.js?v=20261123f';
+import {render,paintMonster,paintArenaOpponentPreview,worldViewport,castleViewport,castlePointVisible,renderCastleOverview,castleGovernorPortrait,castleGuardPortrait,castleChestPortrait} from './render.js?v=20261123g';
 import {AudioDirector} from './audio.js';
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const developerMode=!window.Android&&new URLSearchParams(location.search).get('developer')==='1';

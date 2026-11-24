@@ -43,7 +43,7 @@ export function drawBeaverLodgeVault(c,w,h,phase=0){
 
 const LODGE_OBJECTS=[
  {kind:'hearth',x:13.5,y:13.72,scale:1.2},
- {kind:'household',x:13.18,y:13.12,scale:1.05,members:4},
+ {kind:'household',x:13.5,y:13.12,scale:1.05,members:4},
  {kind:'shelf',x:12.48,y:13.72,scale:.92},
  {kind:'branches',x:14.35,y:13.55,scale:.85},
  {kind:'platform',x:12.35,y:12.78,scale:1},
@@ -52,12 +52,13 @@ const LODGE_OBJECTS=[
 ];
 
 const BEAVER_HOUSEHOLD_IMAGE=typeof Image==='undefined'?null:Object.assign(new Image(),{src:'/assets/creatures/beaver-household-realistic.png'});
-export const beaverHouseholdArtworkReady=()=>Boolean(BEAVER_HOUSEHOLD_IMAGE?.complete&&BEAVER_HOUSEHOLD_IMAGE.naturalWidth);
+const BEAVER_HEARTH_IMAGE=typeof Image==='undefined'?null:Object.assign(new Image(),{src:'/assets/creatures/beaver-hearth-realistic.png'});
+export const beaverHouseholdArtworkReady=()=>Boolean(BEAVER_HOUSEHOLD_IMAGE?.complete&&BEAVER_HOUSEHOLD_IMAGE.naturalWidth&&BEAVER_HEARTH_IMAGE?.complete&&BEAVER_HEARTH_IMAGE.naturalWidth);
 
 export function projectLodgeObject(camera,object,dx,dy,fov,w,h){
  const rx=object.x-camera.x,ry=object.y-camera.y,depth=rx*dx+ry*dy,side=-rx*dy+ry*dx;
  if(depth<.28||Math.abs(side/depth)>.82)return null;
- const focal=w/(2*Math.tan(fov/2)),size=Math.min(h*.62,h*.72/depth)*(object.scale||1);
+ const focal=w/(2*Math.tan(fov/2)),maxSize=object.kind==='household'?h*.3:object.kind==='hearth'?h*.38:h*.62,size=Math.min(maxSize,h*.72/depth)*(object.scale||1);
  return {...object,depth,x:w*.5+side*focal/depth,y:Math.min(h*.9,h*.5+h*.39/depth),size};
 }
 
@@ -66,17 +67,27 @@ export function visibleLodgeObjects(camera,dx,dy,fov,w,h){
 }
 
 function drawHearth(c,o,time){
- const s=o.size,flicker=Math.sin(time/130)*s*.025;
- c.fillStyle='#817665';c.beginPath();c.moveTo(-s*.42,0);c.lineTo(-s*.30,-s*.72);c.lineTo(s*.30,-s*.72);c.lineTo(s*.42,0);c.closePath();c.fill();
- c.strokeStyle='#423c35';c.lineWidth=Math.max(1,s*.012);
- for(let row=0;row<5;row++)for(let col=0;col<4;col++)c.strokeRect(s*(-.3+col*.15+(row%2)*.06),s*(-.68+row*.13),s*.17,s*.11);
- roundRect(c,-s*.25,-s*.28,s*.5,s*.31,s*.055,'#1a1510','#665643');
- c.fillStyle='#ffb33f';c.beginPath();c.moveTo(-s*.12,-s*.03);c.quadraticCurveTo(-s*.15,-s*.25+flicker,0,-s*.42);c.quadraticCurveTo(s*.17,-s*.23-flicker,s*.12,-s*.03);c.fill();
- c.fillStyle='#fff0a6';c.beginPath();c.moveTo(-s*.045,-s*.03);c.quadraticCurveTo(-s*.055,-s*.17,0,-s*.28);c.quadraticCurveTo(s*.06,-s*.15,s*.045,-s*.03);c.fill();
+ const s=o.size;if(BEAVER_HEARTH_IMAGE?.complete&&BEAVER_HEARTH_IMAGE.naturalWidth)c.drawImage(BEAVER_HEARTH_IMAGE,-s*.56,-s,s*1.12,s);
+ const glow=c.createRadialGradient(0,-s*.24,0,0,-s*.24,s*.42);glow.addColorStop(0,`rgba(255,190,74,${.2+Math.sin(time/130)*.025})`);glow.addColorStop(1,'rgba(255,130,30,0)');c.fillStyle=glow;c.fillRect(-s*.5,-s*.65,s,s*.65);
+}
+
+function drawLogBench(c,s,x,y,width){
+ c.save();c.translate(s*x,s*y);c.fillStyle='#5e3b24';c.strokeStyle='#2f2118';c.lineWidth=Math.max(1,s*.014);
+ roundRect(c,-s*width/2,-s*.08,s*width,s*.15,s*.07,'#674328','#2f2118');
+ c.fillStyle='#3e291d';c.fillRect(-s*width*.36,s*.045,s*.09,s*.16);c.fillRect(s*(width*.36-.09),s*.045,s*.09,s*.16);c.restore();
+}
+
+function drawHangingProduce(c,s){
+ c.strokeStyle='#9d8356';c.lineWidth=Math.max(1,s*.012);
+ for(const x of [-.52,-.34,.34,.52]){c.beginPath();c.moveTo(s*x,-s*.91);c.lineTo(s*x,-s*.7);c.stroke();}
+ // carrots
+ for(const x of [-.56,-.48,-.38,-.31]){c.fillStyle='#d66b27';c.beginPath();c.moveTo(s*x,-s*.72);c.lineTo(s*(x-.035),-s*.56);c.lineTo(s*(x+.035),-s*.56);c.closePath();c.fill();c.strokeStyle='#718044';c.beginPath();c.moveTo(s*x,-s*.72);c.lineTo(s*(x-.035),-s*.78);c.moveTo(s*x,-s*.72);c.lineTo(s*(x+.04),-s*.78);c.stroke();}
+ // cabbages
+ for(const x of [.35,.51]){c.fillStyle='#6f8b4a';c.beginPath();c.arc(s*x,-s*.62,s*.10,0,Math.PI*2);c.fill();c.strokeStyle='#9bab69';c.beginPath();c.arc(s*x,-s*.62,s*.065,0,Math.PI*2);c.moveTo(s*x,-s*.71);c.lineTo(s*x,-s*.53);c.stroke();}
 }
 
 function drawBeaverHousehold(c,o){
- const s=o.size;
+ const s=o.size;drawHangingProduce(c,s);drawLogBench(c,s,-.63,.22,.48);drawLogBench(c,s,.63,.22,.48);
  if(beaverHouseholdArtworkReady())c.drawImage(BEAVER_HOUSEHOLD_IMAGE,-s*.9,-s*.77,s*1.8,s*1.2);
 }
 

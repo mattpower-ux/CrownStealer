@@ -31,7 +31,7 @@ import {wildernessDiscoveries} from './wilderness-discoveries.js';
 import {drawDiscoveryArt,drawHeroGhost} from './discovery-render.js';
 import {caveProfile} from './cave-profiles.js';
 import {drawTrollCaveDetails,drawTrollCaveVault,isTrollCave} from './troll-cave-render.js';
-import {drawBeaverLodgeDetails,drawBeaverLodgeVault,isTimbertoothLodge,timberWallPixel} from './beaver-lodge-render.js?v=20261123f';
+import {drawBeaverLodgeDetails,drawBeaverLodgeVault,isTimbertoothLodge,timberWallPixel} from './beaver-lodge-render.js?v=20261123g';
 import {drawHeatLairVault,heatLairProfile,heatMeltedPixel} from './heat-lair-render.js';
 import {firehavenLightMultiplier} from './firehaven.js';
 import {drawDungeonCeiling,shrineWallInk as baseShrineWallInk} from './dungeon-ceilings.js';

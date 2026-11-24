@@ -42,3 +42,19 @@ test('the Beaver Household uses detailed realistic creature artwork',async()=>{
  assert.ok(artwork.length>500_000,'the household should use finished high-detail artwork, not a tiny placeholder');
  assert.equal(artwork[25],6,'the PNG must retain an alpha channel for clean in-world compositing');
 });
+
+test('the Beaver Household scene includes log seating and hanging winter stores',async()=>{
+ const source=await readFile(new URL('../public/game/beaver-lodge-render.js',import.meta.url),'utf8');
+ assert.match(source,/drawLogBench/);
+ assert.match(source,/drawHangingProduce/);
+ assert.match(source,/carrot/);
+ assert.match(source,/cabbage/);
+});
+
+test('the hearth uses realistic transparent stone artwork',async()=>{
+ const source=await readFile(new URL('../public/game/beaver-lodge-render.js',import.meta.url),'utf8');
+ const artwork=await readFile(new URL('../public/assets/creatures/beaver-hearth-realistic.png',import.meta.url));
+ assert.match(source,/beaver-hearth-realistic\.png/);
+ assert.ok(artwork.length>500_000);
+ assert.equal(artwork[25],6);
+});
