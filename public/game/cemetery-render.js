@@ -3,7 +3,7 @@ export {isOpenAirCemetery};
 export const isCemeteryDungeon=d=>!!d&&(d.site==='minor-site'?minorSiteDefinition(d.minorId)?.kind==='cemetery':!d.site&&!d.royal&&!d.ship&&!d.expedition&&d.index===0);
 const CEMETERY_FACADES=['vault-door','memorial-niche','sealed-crypt','buttressed-vault','family-chapel'];
 const coffinSkeleton=typeof Image==='undefined'?null:new Image();
-if(coffinSkeleton)coffinSkeleton.src='/assets/cemetery-skeleton.png?v=20261123b';
+if(coffinSkeleton)coffinSkeleton.src='/assets/cemetery-skeleton.png?v=20261123c';
 export const cemeteryFacadeKind=(x,y,vertical=false)=>CEMETERY_FACADES[Math.abs(x*17+y*29+(vertical?7:0))%CEMETERY_FACADES.length];
 export const cemeteryStonePalette=()=>({face:'#c7cec7',side:'#59645f',edge:'#e0e3d8',moss:'#526451'});
 const fract=n=>n-Math.floor(n);
@@ -142,17 +142,27 @@ export function cemeteryRemains(d,map){
 export function drawCemeteryCrypt(c,size,variant='crypt',seed=0){
  c.save();c.scale(size,size);c.lineWidth=.022;
  poly(c,[[-.68,-.04],[.62,-.04],[.57,-.17],[-.60,-.17]],'#252c30','#111619');
- poly(c,[[-.60,-.17],[.32,-.17],[.32,-1.18],[-.60,-1.18]],variant==='mausoleum'?'#c7cec7':variant==='vault'?'#b8c2bb':'#d0d5ce','#59645f');
- drawMarbleVeins(c,[[-.60,-.17],[.32,-.17],[.32,-1.18],[-.60,-1.18]],seed);
- poly(c,[[.32,-.17],[.62,-.39],[.62,-1.31],[.32,-1.18]],'#171d20','#0b0f11');
- poly(c,[[-.70,-1.18],[-.15,-1.66],[.43,-1.18]],'#3d4447','#181e21');
- poly(c,[[-.15,-1.66],[.13,-1.82],[.73,-1.33],[.43,-1.18]],'#1d2428','#0e1316');
+ const face=[[-.60,-.17],[.32,-.17],[.32,-2.06],[-.60,-2.06]],pediment=[[-.66,-2.06],[-.14,-2.48],[.39,-2.06]];
+ poly(c,face,variant==='mausoleum'?'#c7cec7':variant==='vault'?'#b8c2bb':'#d0d5ce','#59645f');
+ drawMarbleVeins(c,face,seed);
+ c.save();c.beginPath();face.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.closePath();c.clip();c.lineCap='round';
+ for(let row=1;row<=5;row++){
+  const y=-.36-(row-1)*.36;stroke(c,[[-.62,y],[.34,y]],row%2?'#6f7c73':'#89958b',.012);
+  const offset=row%2?.11:-.07;for(let x=-.49+offset;x<.30;x+=.31)stroke(c,[[x,y],[x,y-.32]],'#37483f',.010);
+ }
+ for(let i=0;i<5;i++){const x=-.51+i*.19+stoneNoise(i,seed,61)*.05;stroke(c,[[x,-1.98],[x+.025*Math.sin(seed+i),-.28]],'#4b5b52',i%2?.010:.016);}
+ c.fillStyle='#4d5c52';c.globalAlpha=.48;for(let i=0;i<18;i++){const x=-.56+stoneNoise(i,seed,67)*.84,y=-1.98+stoneNoise(seed,i,71)*1.70;c.beginPath();c.ellipse(x,y,.008+.018*stoneNoise(i,seed,73),.006+.012*stoneNoise(seed,i,79),0,0,Math.PI*2);c.fill();}
+ c.restore();
+ const side=[[.32,-.17],[.62,-.39],[.62,-2.13],[.32,-2.06]];poly(c,side,'#6d7873','#242c2d');drawMarbleVeins(c,side,seed+11);
+ poly(c,[[-.67,-2.02],[.40,-2.02],[.47,-2.13],[-.72,-2.13]],'#8e9991','#313a38');
+ poly(c,pediment,'#aeb8b1','#59645f');drawMarbleVeins(c,pediment,seed+5);
+ const roofSide=[[-.14,-2.48],[.10,-2.54],[.70,-2.12],[.39,-2.06]];poly(c,roofSide,'#69736f','#202829');drawMarbleVeins(c,roofSide,seed+13);
  c.beginPath();c.moveTo(-.39,-.17);c.lineTo(-.39,-.67);
- c.quadraticCurveTo(-.39,-.98,-.12,-1.03);c.quadraticCurveTo(.14,-.98,.14,-.67);
+ c.quadraticCurveTo(-.39,-1.34,-.12,-1.40);c.quadraticCurveTo(.14,-1.34,.14,-.67);
  c.lineTo(.14,-.17);c.closePath();c.fillStyle='#05090b';c.fill();c.strokeStyle='#535d62';c.stroke();
  for(const x of [-.32,-.22,-.12,-.02,.08])stroke(c,[[x,-.77],[x,-.18]],'#333c41',.026);
  stroke(c,[[-.38,-.44],[.13,-.44]],'#444e53',.038);
- for(const x of [-.53,.26]){poly(c,[[x,-1.13],[x+.07,-1.34],[x+.14,-1.13]],'#596166','#161c1f');stroke(c,[[x+.07,-1.34],[x+.07,-1.49]],'#434c50',.024);}
+ for(const x of [-.53,.26]){poly(c,[[x,-1.48],[x+.07,-1.70],[x+.14,-1.48]],'#596166','#161c1f');stroke(c,[[x+.07,-1.70],[x+.07,-1.88]],'#434c50',.024);}
  c.restore();
 }
 export function drawCemeteryObelisk(c,size,seed=0){

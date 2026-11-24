@@ -76,3 +76,19 @@ test('coffin skeleton uses heavy full-length limbs that remain readable from the
  assert.ok(heavyBoneLimbs>=4,`arms and legs need four heavy readable strokes; got ${heavyBoneLimbs}`);
  assert.ok(lowestBone>=-.20,`leg bones need to extend to the foot of the coffin; lowest y was ${lowestBone}`);
 });
+
+test('cemetery vaults are monumental wall-height masonry rather than short tent silhouettes',async()=>{
+ const {drawCemeteryCrypt}=await import('../public/game/cemetery-render.js?monumental-vault-test');
+ let minY=0,strokeStyle='',weathering=0,horizontalCourses=0;
+ const context={
+  save(){},restore(){},scale(){},beginPath(){},moveTo(_x,y){minY=Math.min(minY,y);},lineTo(_x,y){minY=Math.min(minY,y);},closePath(){},fill(){},stroke(){if(['#6f7c73','#89958b','#4b5b52','#37483f'].includes(strokeStyle))weathering++;},clip(){},fillRect(){},ellipse(){},arc(){},quadraticCurveTo(){},
+  createLinearGradient(){return {addColorStop(){}};},
+  set fillStyle(value){},set strokeStyle(value){strokeStyle=value;},set lineWidth(value){},set lineJoin(value){},set lineCap(value){},set globalAlpha(value){},
+ };
+ const originalLineTo=context.lineTo;
+ context.lineTo=(x,y)=>{originalLineTo(x,y);if(Math.abs(y-(-.36))<.02||Math.abs(y-(-.72))<.02||Math.abs(y-(-1.08))<.02||Math.abs(y-(-1.44))<.02)horizontalCourses++;};
+ drawCemeteryCrypt(context,100,'vault',7);
+ assert.ok(minY<=-2.45,`vault should reach nearly the projected wall height; top was ${minY}`);
+ assert.ok(horizontalCourses>=4,`vault face needs layered masonry courses; got ${horizontalCourses}`);
+ assert.ok(weathering>=8,`vault face needs mineral streaks, chips, and aged joints; got ${weathering}`);
+});
