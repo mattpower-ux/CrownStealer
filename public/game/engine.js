@@ -62,6 +62,7 @@ import {CEMETERY_DUNGEONS} from './dungeon-populations.js';
 import {allocateAttribute,applyAttributeItem,applyLevelDrain,attributeBenefits,attributeLabel,attributeSave,effectiveAttributes,effectiveLevel,expireAttributeEffects,prepareAttributes,syncAttributeHealth,validateAttributeState,WILDERNESS_RECOVERY_HP,wildernessRecoveryInterval} from './attributes.js';
 import {dungeonFloors} from './dungeon-depths.js';
 import {dungeonLadders,rememberDungeonLadder} from './dungeon-ladders.js';
+import {rememberDungeonExploration} from './dungeon-exploration.js';
 import {BOTTOMLESS_PIT,PIT_MAP_SEED,BALROG_ID,BALROG_ATTACKS,BALROG_WHIP,ROYAL_BALROG_TRIAL,pitBottomAction,pitVictory} from './bottomless-pit.js';
 import {PUTRID_PALACE,PUTRID_PALACE_SEED,WANG_ID,WANG_TRIAL_DIALOGUE,freeGalen,castGalenRing,turnInWang} from './royal-trials.js';
 import {castleChestAt,castleInteractionsAt,castleLayout,castleAction,castleFineFor,castleGuardResponse,exitCastle,validCastleState} from './castle-interiors.js';
@@ -593,6 +594,10 @@ export function act(input,action,events=[],previewRules={}){
    if(beforeDungeon&&input.mode==='dungeon')rememberDungeonLadder({...s,dungeon:beforeDungeon},dungeonMap(beforeDungeon));
    rememberDungeonLadder(s,dungeonMap(s.dungeon));
   }
+  // Initial placement can be blocked by a wall, but it still reveals the area
+  // around the explorer. Recording every dungeon tick also restores old saves
+  // that predate exploration memory.
+  rememberDungeonExploration(s,dungeonMap(s.dungeon));
  }
  if(s.equipped===AVENGER_SWORD&&!isPaladin(s))s.equipped=null;if(s.castle&&(!['town','battle'].includes(s.mode)||s.location!==input.location))delete s.castle;
  return s;

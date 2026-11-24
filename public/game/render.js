@@ -100,6 +100,7 @@ import {drawDungeonChests,dungeonChestTargets} from './chest-render.js';
 
 
 import {dungeonLadders,discoveredDungeonLadders} from './dungeon-ladders.js';
+import {revealedDungeonTiles} from './dungeon-exploration.js';
 import {isWidowsBell,widowsBellArrowSlitInk,drawWidowsBellTop} from './widows-bell.js';
 
 import {silhouetteComponents} from './sprite-bounds.js';
@@ -1122,7 +1123,7 @@ function dungeonUncached(c,w,h,s,time){const d=s.dungeon;if(!d)return;if(d.ship)
  if(d.site!==SAGE_MAZE_ID){
  drawRedGlobe(c,w,h,d,m,dx,dy);
  drawMultiverseTube(c,w,h,d,m,dx,dy);
- const grid=m.length,z=Math.min(7,w/(grid+50),h/(grid+34)),mx=w-grid*z-18,my=18;c.fillStyle='#06100de6';c.fillRect(mx-7,my-7,grid*z+14,grid*z+14);for(let y=0;y<grid;y++)for(let x=0;x<grid;x++){c.fillStyle=m[y][x]===1?(d.royal==='sewer'?SEWER_WALL.map:'#354239'):'#101c19';c.fillRect(mx+x*z,my+y*z,z-1,z-1);}if(d.secretRoom){c.strokeStyle='#cfc396';c.lineWidth=1;c.strokeRect(mx+d.secretRoom.x*z,my+d.secretRoom.y*z,z-1,z-1);}for(const ladder of discoveredDungeonLadders(s,ladders)){c.fillStyle=ladder.direction==='up'?'#9dd1db':'#d8ab73';c.fillRect(mx+ladder.x*z+1,my+ladder.y*z+1,z-2,z-2);}if(d.site===ROYAL_DUNGEON_ID){for(const npc of royalDungeonFigures(s))circle(c,mx+(npc.x+.5)*z,my+(npc.y+.5)*z,z*.35,'#dba17f');if(!d.cellsOpen)for(const cell of ROYAL_DUNGEON_CELLS){c.fillStyle='#dba979';c.fillRect(mx+cell.door.x*z+1,my+cell.door.y*z+1,z-2,z-2);for(const prisoner of cell.prisoners)circle(c,mx+(prisoner.x+.5)*z,my+(prisoner.y+.5)*z,z*.31,'#9ed0d2');}}circle(c,mx+(d.x+.5)*z,my+(d.y+.5)*z,z*.4,'#f4db9c');c.strokeStyle='#f4db9c';c.beginPath();c.moveTo(mx+(d.x+.5)*z,my+(d.y+.5)*z);c.lineTo(mx+(d.x+.5+dx)*z,my+(d.y+.5+dy)*z);c.stroke();
+ const grid=m.length,z=Math.min(7,w/(grid+50),h/(grid+34)),mx=w-grid*z-18,my=18,revealed=revealedDungeonTiles(s,m);c.fillStyle='#06100de6';c.fillRect(mx-7,my-7,grid*z+14,grid*z+14);for(let y=0;y<grid;y++)for(let x=0;x<grid;x++){const seen=revealed.has(x+','+y);c.fillStyle=!seen?'#06100d':m[y][x]===1?(d.royal==='sewer'?SEWER_WALL.map:'#354239'):'#101c19';c.fillRect(mx+x*z,my+y*z,z-1,z-1);}if(d.secretRoom&&revealed.has(d.secretRoom.x+','+d.secretRoom.y)){c.strokeStyle='#cfc396';c.lineWidth=1;c.strokeRect(mx+d.secretRoom.x*z,my+d.secretRoom.y*z,z-1,z-1);}for(const ladder of discoveredDungeonLadders(s,ladders)){if(!revealed.has(ladder.x+','+ladder.y))continue;c.fillStyle=ladder.direction==='up'?'#9dd1db':'#d8ab73';c.fillRect(mx+ladder.x*z+1,my+ladder.y*z+1,z-2,z-2);}if(d.site===ROYAL_DUNGEON_ID){for(const npc of royalDungeonFigures(s)){if(revealed.has(npc.x+','+npc.y))circle(c,mx+(npc.x+.5)*z,my+(npc.y+.5)*z,z*.35,'#dba17f');}if(!d.cellsOpen)for(const cell of ROYAL_DUNGEON_CELLS){if(revealed.has(cell.door.x+','+cell.door.y)){c.fillStyle='#dba979';c.fillRect(mx+cell.door.x*z+1,my+cell.door.y*z+1,z-2,z-2);}for(const prisoner of cell.prisoners){if(revealed.has(prisoner.x+','+prisoner.y))circle(c,mx+(prisoner.x+.5)*z,my+(prisoner.y+.5)*z,z*.31,'#9ed0d2');}}}circle(c,mx+(d.x+.5)*z,my+(d.y+.5)*z,z*.4,'#f4db9c');c.strokeStyle='#f4db9c';c.beginPath();c.moveTo(mx+(d.x+.5)*z,my+(d.y+.5)*z);c.lineTo(mx+(d.x+.5+dx)*z,my+(d.y+.5+dy)*z);c.stroke();
 
  }
  label(c,['NORTH','EAST','SOUTH','WEST'][d.dir],w/2,28,12,'#bfad85');

@@ -5,8 +5,8 @@ import {atlasMarker} from '../public/game/atlas-view.js';
 test('world atlas markers vary by location type and remain translucent',()=>{
  const cases=[
   [{mark:'town',name:'Mothbridge'},'town','square'],
-  [{name:'Galahad Shrine'},'shrine','star'],
-  [{name:'Emberjaw Cavern'},'cave','triangle'],
+  [{name:'Galahad Shrine'},'shrine','bolt-circle'],
+  [{name:'Emberjaw Cavern'},'cave','pick'],
   [{name:'Sandbar Goblin Dig'},'dig','pick'],
   [{name:'Hollow Rune Ruins'},'ruin','broken'],
   [{name:'Moon Ward Crypt'},'crypt','coffin'],
