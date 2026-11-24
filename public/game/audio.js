@@ -20,7 +20,7 @@ export const THEMES = Object.freeze({
 });
 
 export const recordedMusic=scene=>scene==='percival-confrontation'?'/assets/percival-confrontation.mp3':scene==='percival-defeat'?'/assets/percival-defeat.mp3':scene==='percival-victory'?'/assets/percival-victory.mp3':scene==='dungeon:ruined-shrine'?'/assets/shrine-of-dead-gods.mp3':scene==='dungeon:druid-grove'?'/assets/druidic-tomb.mp3':scene==='dungeon:kobold'?null:scene==='boss'?'/assets/mob-boss.mp3':scene==='dungeon:ship'?'/assets/hollow-signal.mp3':scene==='dungeon:6'?'/assets/the-echoing-clock.mp3':scene==='dungeon:sewer'?'/assets/below-the-grates.mp3':scene==='snow'?'/assets/against-the-whiteout.mp3':scene==='desert'?'/assets/sands-beyond-the-horizon.mp3':scene==='land:0'?'/assets/countryside-wander.mp3':scene==='dungeon'||scene.startsWith('dungeon:')?'/assets/whispers-beneath-stone.mp3':null;
-export const RECORDED_EFFECTS={...Object.fromEntries(["sfx-impact-him-0","sfx-impact-him-1","sfx-impact-him-2","sfx-impact-her-0","sfx-impact-her-1","sfx-impact-her-2"].map(name=>[name,name])),hit:'sfx-strike',hurt:'sfx-hurt',miss:'sfx-miss',roulette:'sfx-roulette',cards:'sfx-cards',rescue:'sfx-rescue',dungeonEntrance:'sfx-dungeon',casinoWin:'sfx-casino-win',goldFound:'sfx-gold',townEntrance:'sfx-town',defeat:'sfx-defeat',wolfEncounter:'sfx-wolf','dragon-greep':'sfx-gleep',drakeVoice:'voice-drake','voice-rock-troll':'voice-rock-troll','voice-bailiff':'voice-bailiff','voice-haghilda':'voice-haghilda','voice-leviathan':'voice-leviathan','voice-morgana':'voice-morgana'};
+export const RECORDED_EFFECTS={...Object.fromEntries(["sfx-impact-him-0","sfx-impact-him-1","sfx-impact-him-2","sfx-impact-her-0","sfx-impact-her-1","sfx-impact-her-2"].map(name=>[name,name])),hit:'sfx-strike',hurt:'sfx-hurt',miss:'sfx-miss',roulette:'sfx-roulette',cards:'sfx-cards',rescue:'sfx-rescue',multiverse:'multiverse-teleport',dungeonEntrance:'sfx-dungeon',casinoWin:'sfx-casino-win',goldFound:'sfx-gold',townEntrance:'sfx-town',defeat:'sfx-defeat',wolfEncounter:'sfx-wolf','dragon-greep':'sfx-gleep',drakeVoice:'voice-drake','voice-rock-troll':'voice-rock-troll','voice-bailiff':'voice-bailiff','voice-haghilda':'voice-haghilda','voice-leviathan':'voice-leviathan','voice-morgana':'voice-morgana'};
 const hz = midi => 440 * 2 ** ((midi - 69) / 12);
 const volume = (value, fallback) => Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : fallback;
 
@@ -362,6 +362,10 @@ export class AudioDirector {
       case 'hal-crush': this.brush(now,.85,.28,'effects',280);tone(180,0,1,.24,35,'sawtooth');break;
       case 'dragon-greep': tone(220,0,.16,.32,700,'sawtooth');tone(780,.14,.85,.32,1450,'sawtooth');tone(1500,.2,.7,.11,2400,'sine');tone(470,.95,.2,.22,160,'triangle');break;
       case 'launch': for(let i=0;i<12;i++)this.brush(now+i*.25,.65,.10+Math.sin(i/12*Math.PI)*.12,'effects',350+i*320);tone(55,0,3.6,.12,240,'sawtooth');break;
+      case 'multiverse':
+        tone(46,0,3.95,.13,330,'sawtooth');
+        for(let i=0;i<28;i++){const delay=i*.135;this.brush(now+delay,.09,.022,'effects',500+i*105);tone(520+(i%7)*95,delay,.22,.045,860+(i%4)*140,'sine');}
+        break;
       case 'wolfEncounter':
       case 'encounter': return this.playEncounter();
       case 'roulette': for(let i=0;i<42;i++)this.brush(now+Math.pow(i/41,1.5)*2.9,.025,.035,'effects',3200);break;

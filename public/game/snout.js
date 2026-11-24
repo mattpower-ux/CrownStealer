@@ -1,5 +1,5 @@
 export const SNOUT_ENDING = 'snout';
-export const MULTIVERSE_TUBE = {x:11,y:4};
+export const MULTIVERSE_TUBE = {x:11,y:10};
 
 export function atMultiverseTube(s) {
  const d = s?.dungeon;

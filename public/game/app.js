@@ -16,6 +16,7 @@ import {drawHearthmarchDream} from './standing-stones-view.js';
 import {briarMeetingView,BATTLE_BEAR_HP} from './briar-animals.js';
 import {atMultiverseTube,snoutState,snoutView} from './snout.js';
 import {atShipConsole} from './ship-console.js';
+import {MULTIVERSE_TRANSITION_MS,multiverseTransitionProgress} from './multiverse-transition.js';
 import {canSpeakToPeebles,canVisitEarth,EARTH_COORDINATES,peeblesTravelsWith} from './peebles.js';
 import {nearbyWatcher} from './minor-residents.js';
 import {nearestUnlitTorch,cemeteryLightAt} from './cemetery-light.js';
@@ -194,6 +195,15 @@ function launchPlanetFlight(action){
  function frame(now){const elapsed=now-start;if(elapsed>=4000){overlay.remove();shipInFlight=false;dispatch(action);return;}const w=innerWidth,h=innerHeight;if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}ctx.fillStyle='#030b18';ctx.fillRect(0,0,w,h);for(const star of stars){const t=reduced?star.offset:(star.offset+elapsed*.0005*star.speed)%1,r=t*t*Math.hypot(w,h)*.65,x=w/2+Math.cos(star.angle)*r,y=h/2+Math.sin(star.angle)*r;ctx.strokeStyle=star.offset>.5?'#c2eaff':'#7bc8dd';ctx.lineWidth=1+t*2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-Math.cos(star.angle)*(reduced?2:8+t*95),y-Math.sin(star.angle)*(reduced?2:8+t*95));ctx.stroke();}requestAnimationFrame(frame);}
  requestAnimationFrame(frame);
 }
+function launchMultiverseTransition(action){
+ shipInFlight=true;
+ const overlay=document.createElement('div');overlay.className='ship-flight multiverse-flight';overlay.setAttribute('role','status');
+ const canvas=document.createElement('canvas'),caption=document.createElement('strong');caption.textContent='REALITY RECONFIGURING';overlay.append(canvas,caption);document.body.append(overlay);
+ audio.unlock().then(()=>{if(shipInFlight)audio.effect('multiverse');});
+ const ctx=canvas.getContext('2d'),start=performance.now(),reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+ function frame(now){const elapsed=now-start,progress=multiverseTransitionProgress(elapsed);if(progress>=1){overlay.remove();shipInFlight=false;completingMultiverse=true;dispatch(action);return;}const w=innerWidth,h=innerHeight;if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}const cx=w/2,cy=h/2,max=Math.hypot(w,h);ctx.fillStyle='#06021a';ctx.fillRect(0,0,w,h);const spin=reduced?0:elapsed*.0034;for(let ring=0;ring<18;ring++){const inner=ring/18*max*.1,outer=(ring+1)/18*max*.9,wedges=9+(ring%4)*2;for(let i=0;i<wedges;i++){const a=spin*(ring%2?1:-1)+i*Math.PI*2/wedges+ring*.19;ctx.beginPath();ctx.moveTo(cx+Math.cos(a)*inner,cy+Math.sin(a)*inner);ctx.arc(cx,cy,outer,a,a+Math.PI*2/wedges);ctx.lineTo(cx+Math.cos(a+Math.PI*2/wedges)*inner,cy+Math.sin(a+Math.PI*2/wedges)*inner);ctx.closePath();ctx.fillStyle=`hsl(${(ring*31+i*47+elapsed*.075)%360} 88% ${40+ring%3*12}%)`;ctx.globalAlpha=.32+progress*.38;ctx.fill();}}ctx.globalAlpha=1;requestAnimationFrame(frame);}
+ requestAnimationFrame(frame);
+}
 const rewardCelebration=$('reward-celebration');
 function showRewardCelebration(title, lines, sound) {
  $('reward-celebration-title').textContent=title;
@@ -204,7 +214,7 @@ function showRewardCelebration(title, lines, sound) {
  audio.unlock().then(()=>audio.effect(sound));
 }
 
-let completingFlight=false;
+let completingFlight=false,completingMultiverse=false;
 let lastTravelActivity=performance.now();
 let campSequence=false;
 function beginCamp(){
@@ -213,7 +223,7 @@ function beginCamp(){
  setTimeout(()=>{campSequence=false;closePanel();dispatch({type:'setCamp',resolved:true});if(state.mode!=='battle')toast(state.log.at(-1));},4500);
 }
 
-function dispatch(a,automatic=false){if(campSequence)return;if(a.type==='setCamp'&&!a.resolved){beginCamp();return;}if(a.type!=='idleEncounter')lastTravelActivity=performance.now();if(a.type==='snoutReconfigure'&&atMultiverseTube(state)&&!hasCheckpoint()){try{localStorage.setItem(CHECKPOINT,saveGame(state));}catch{toast('Cannot preserve a checkpoint. Free up device storage before reconfiguring reality.');return;}}if(a.type==='autoAttack'){toggleAutoAttack();return;}if(!state||combatView||shipInFlight)return;if(!automatic&&autoAttackEnabled)stopAutoAttack();if(a.type==='inspectCastle'){inspectCastle(a.id);return;}if(a.type==='mapTurn'){state.flags.mapFacing=((state.flags.mapFacing||0)+a.delta+4)%4;persist();toast('Facing '+['north','east','south','west'][state.flags.mapFacing]);return;}if(a.type==='mapStep'){const dir=state.castle?0:state.flags.mapFacing||0;let dx=a.dx,dy=a.dy;for(let i=0;i<dir;i++)[dx,dy]=[-dy,dx];a={type:'move',dx,dy};}if(a.type==='navigatePlanet'&&!completingFlight&&state.mode==='dungeon'&&state.dungeon?.ship&&Math.abs(state.dungeon.x-7)+Math.abs(state.dungeon.y-5)<=7&&Number.isInteger(a.planet)&&a.planet>=0&&a.planet<3){completingFlight=true;launchPlanetFlight(a);return;}completingFlight=false;flushClock(false);entryPrompt.hidden=true;ladderPopup.hidden=true;if(state.mode==='world'&&a.type==='enter'&&pointAt(state)?.kind==='wildernessDiscovery'){openPanel('discovery');return;}if(a.type==='enter'&&atLeperColony(state)){state=act(state,a);persist();update();openPanel('leperColony');return;}if(state.mode==='world'&&a.type==='enter'&&pointAt(state)?.kind==='silverTree'){a={type:'askSilverTree'};}if(state.mode==='world'&&a.type==='enter'&&pointAt(state)?.kind==='purity'){openPanel('purity');return;}if(state.mode==='world'&&a.type==='enter'&&pointAt(state)?.kind==='shipyard'){openPanel('shipyard');return;}if(state.mode==='world'&&a.type==='enter'&&pointAt(state)?.kind==='firehaven'){openPanel('firehaven');return;}if(state.mode==='world'&&a.type==='enter'&&pointAt(state)?.kind==='teleporter'){openPanel('crystalTravel');return;}if(state.mode==='town'&&a.type==='enter'){interactTown();return;}const before=state,events=[];state=act(state,a,events,developerMode?previewRules:{});if(state.log.at(-1)!==before.log.at(-1)&&(state.flags.impaledMoves||before.flags.impaledMoves))toast(state.log.at(-1));
+function dispatch(a,automatic=false){if(campSequence)return;if(a.type==='setCamp'&&!a.resolved){beginCamp();return;}if(a.type!=='idleEncounter')lastTravelActivity=performance.now();if(a.type==='snoutReconfigure'&&atMultiverseTube(state)&&!hasCheckpoint()){try{localStorage.setItem(CHECKPOINT,saveGame(state));}catch{toast('Cannot preserve a checkpoint. Free up device storage before reconfiguring reality.');return;}}if(a.type==='autoAttack'){toggleAutoAttack();return;}if(!state||combatView||shipInFlight)return;if(!automatic&&autoAttackEnabled)stopAutoAttack();if(a.type==='inspectCastle'){inspectCastle(a.id);return;}if(a.type==='mapTurn'){state.flags.mapFacing=((state.flags.mapFacing||0)+a.delta+4)%4;persist();toast('Facing '+['north','east','south','west'][state.flags.mapFacing]);return;}if(a.type==='mapStep'){const dir=state.castle?0:state.flags.mapFacing||0;let dx=a.dx,dy=a.dy;for(let i=0;i<dir;i++)[dx,dy]=[-dy,dx];a={type:'move',dx,dy};}if(a.type==='navigatePlanet'&&!completingFlight&&atShipConsole(state)&&Number.isInteger(a.planet)&&a.planet>=0&&a.planet<3){completingFlight=true;launchPlanetFlight(a);return;}completingFlight=false;if(a.type==='snoutReconfigure'&&!completingMultiverse&&atMultiverseTube(state)){launchMultiverseTransition(a);return;}completingMultiverse=false;flushClock(false);entryPrompt.hidden=true;ladderPopup.hidden=true;if(state.mode==='world'&&a.type==='enter'&&pointAt(state)?.kind==='wildernessDiscovery'){openPanel('discovery');return;}if(a.type==='enter'&&atLeperColony(state)){state=act(state,a);persist();update();openPanel('leperColony');return;}if(state.mode==='world'&&a.type==='enter'&&pointAt(state)?.kind==='silverTree'){a={type:'askSilverTree'};}if(state.mode==='world'&&a.type==='enter'&&pointAt(state)?.kind==='purity'){openPanel('purity');return;}if(state.mode==='world'&&a.type==='enter'&&pointAt(state)?.kind==='shipyard'){openPanel('shipyard');return;}if(state.mode==='world'&&a.type==='enter'&&pointAt(state)?.kind==='firehaven'){openPanel('firehaven');return;}if(state.mode==='world'&&a.type==='enter'&&pointAt(state)?.kind==='teleporter'){openPanel('crystalTravel');return;}if(state.mode==='town'&&a.type==='enter'){interactTown();return;}const before=state,events=[];state=act(state,a,events,developerMode?previewRules:{});if(state.log.at(-1)!==before.log.at(-1)&&(state.flags.impaledMoves||before.flags.impaledMoves))toast(state.log.at(-1));
 if(['percivalFight','percivalRun'].includes(a.type)&&activePanel==='percivalReckoning')closePanel();
 if(state.flags.silverAcornBestowalPending&&!before.flags.silverAcornBestowalPending){persist();update();openPanel('silverAcornBestowal');return;}
 if(state.flags.silverTreeOutcomePending&&!before.flags.silverTreeOutcomePending){persist();update();openPanel('silverTreeOutcome');return;}
@@ -545,7 +555,8 @@ function updateWildernessHealth(){
  wildernessXpTrack.firstElementChild.style.width=`${xp/xpGoal*100}%`;
 }
 
-function update(){if(state.mode!=='battle')impactIndex=0;updateClockDisplay();updateWildernessHealth();if(!state.castle)castleHeadVisit=null;if(castleTileVisit!==castleTileKey())castleTileVisit=null;
+let multiverseApproachVisible=false;
+function update(){const enteredMultiverse=atMultiverseTube(state)&&!multiverseApproachVisible;multiverseApproachVisible=atMultiverseTube(state);if(state.mode!=='battle')impactIndex=0;updateClockDisplay();updateWildernessHealth();if(!state.castle)castleHeadVisit=null;if(castleTileVisit!==castleTileKey())castleTileVisit=null;
  const minor=state.dungeon?.site==='minor-site'?minorSiteDefinition(state.dungeon.minorId):null;
  updateLevelBanner();
  document.querySelector('.portrait').innerHTML=faceMarkup(state);
@@ -729,7 +740,7 @@ function update(){if(state.mode!=='battle')impactIndex=0;updateClockDisplay();up
   else if(notice&&!notice.includes('journal:'))$('scene-caption').textContent=notice;
  }
  updateCombatPanel(state);
- $('event-log').innerHTML=state.log.slice(-5).map(t=>`<p>${esc(t)}</p>`).join('');$('event-log').scrollTop=$('event-log').scrollHeight;
+ $('event-log').innerHTML=state.log.slice(-5).map(t=>`<p>${esc(t)}</p>`).join('');$('event-log').scrollTop=$('event-log').scrollHeight;if(enteredMultiverse&&!activePanel)setTimeout(()=>{if(atMultiverseTube(state)&&!activePanel)openPanel('multiverseTube');},0);
 }
 let cemeteryHaunt=null,hauntPosition=null;
 function updateCemeteryHaunt(t){
@@ -858,7 +869,7 @@ function openPanel(name,{winkShot=false,winkResult=null}={}){if(state?.dungeon?.
  if(name==='multiverseTube'){
   if(!atMultiverseTube(state)){closePanel();return;}
   $('panel-title').textContent='MULTIVERSE TELEPORTER';
-  body.innerHTML='<div class="multiverse-chamber"><div class="multiverse-tube" aria-hidden="true"></div><p class="multiverse-warning">Warning: Experimental. Use at Own Risk.</p><div class="panel-actions">'+button('RECONFIGURE REALITY',{type:'snoutReconfigure'},'reconfigure-reality')+'<button id="leave-multiverse-tube">Step out</button></div></div>';
+  body.innerHTML='<div class="multiverse-chamber"><div class="multiverse-tube" aria-hidden="true"></div><p class="multiverse-warning">Multiverse Teleporter—Experimental—Do Not Use!</p><div class="panel-actions">'+button('RECONFIGURE REALITY',{type:'snoutReconfigure'},'reconfigure-reality')+'<button id="leave-multiverse-tube">Step out</button></div></div>';
   $('leave-multiverse-tube').onclick=closePanel;
  }
  if(name==='snout'){

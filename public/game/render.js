@@ -2,6 +2,7 @@ import {silverTree} from './silver-acorn.js';
 import {drawRedGlobe} from './red-globe-render.js';
 import {isSplitRock,nearKerrbear} from './kerrbear.js';
 import {MULTIVERSE_TUBE} from './snout.js';
+import {shipConsoleLayout} from './ship-layout.js';
 import {drawPeebles,drawPebblePlanes,pebbleMaterialRevision,pebblePixel} from './pebble-materials.js';
 import {BRIDGE_TROLL_ART} from './bridge-trolls.js';
 import {ROADSIDE_CRYPT} from './roadside-crypt.js';
@@ -1483,7 +1484,7 @@ function drawShip(c,w,h,s){
 
  drawDungeonChests(c,w,h,s,m,dx,dy);
 
- const rx=7-d.x,ry=5-d.y,depth=rx*dx+ry*dy,side=-rx*dy+ry*dx,here=rx===0&&ry===0;if(here||depth>0&&Math.abs(side/depth)<.6){const size=Math.min(w*.4,h*.45/Math.max(1,depth)*5),x=w/2+side/Math.max(1,depth)*w*.6,y=h*.63;c.fillStyle='#1d3848';c.fillRect(x-size/2,y-size*.5,size,size*.6);c.fillStyle='#86e9d0';c.fillRect(x-size*.4,y-size*.42,size*.8,size*.28);for(let i=0;i<10;i++){c.fillStyle=i%2?'#f6c776':'#95b9f1';c.fillRect(x-size*.35+i*size*.12,y-size*.05,size*.07,size*.05);}label(c,'SHIP CONTROL STATION',x,y+size*.2,Math.max(10,size*.07));}
+ const consoleLayout=shipConsoleLayout(d,w,h);if(consoleLayout.visible){const {frame,screen,buttons,label:caption}=consoleLayout;c.save();c.fillStyle='#102a38';c.fillRect(frame.x,frame.y,frame.width,frame.height);c.strokeStyle='#5d8b97';c.lineWidth=Math.max(1,frame.width*.018);c.strokeRect(frame.x,frame.y,frame.width,frame.height);c.fillStyle='#86e9d0';c.fillRect(screen.x,screen.y,screen.width,screen.height);for(const control of buttons){c.fillStyle=control.tint;c.fillRect(control.x,control.y,control.width,control.height);}c.restore();label(c,'SHIP CONTROL STATION',caption.x,caption.y,caption.size,'#d7fff6');}
 
  drawRedGlobe(c,w,h,d,m,dx,dy);
  drawMultiverseTube(c,w,h,d,m,dx,dy);
