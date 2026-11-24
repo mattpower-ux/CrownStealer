@@ -1,3 +1,5 @@
+import {adjustAlignment} from './alignment.js';
+
 export const CAVE_STORIES={
  'werebear-dogs':{id:'werebear-dogs',title:'The Werebear and His Dogs',siteId:'minor-w1-1',name:'Moonpaw Cave',reward:'small-emerald'},
  'kobold-hoard':{id:'kobold-hoard',title:'Grub’s Private Larder',siteId:'minor-r0-6',name:'Fullbelly Burrow',reward:'common-lesser-healing'},
@@ -61,9 +63,12 @@ export function caveStoryAction(s,a,note){
   s.gold-=10;s.meals+=6;s.flags.caveStories[story.id]='bargained';reward(s,story,note);note(s,'Grub parts with six meals and counts your ten coins twice.');return true;
  }
  if(story.id==='beaver-household'&&s.meals<1){note(s,'You need one meal to keep the household fed while everyone repairs the dam.');return true;}
- if(story.id==='beaver-household')s.meals--;
+ if(story.id==='beaver-household'){
+  s.meals--;
+  adjustAlignment(s,15);
+ }
  s.flags.caveStories[story.id]='helped';reward(s,story,note);
- note(s,story.id==='rabbit-dinner'?'You cut the rabbit loose before it becomes dinner.':story.id==='flowerhaven-children'?'You guide every child through the cave and point them toward Flowerhaven.':'You brace the broken timbers until the beaver family seals its underground home.');
+ note(s,story.id==='rabbit-dinner'?'You cut the rabbit loose before it becomes dinner.':story.id==='flowerhaven-children'?'You guide every child through the cave and point them toward Flowerhaven.':'You brace the broken timbers until the beaver family seals its underground home. Good alignment +15.');
  return true;
 }
 

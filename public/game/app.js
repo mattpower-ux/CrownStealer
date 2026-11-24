@@ -6,7 +6,7 @@ import {evilEmpowered} from './evil-route.js';
 import {nearKerrbear,KERRBEAR_TOOTH} from './kerrbear.js';
 import {caveStoryAt,caveStoryView} from './cave-stories.js';
 import {canCamp} from './wilderness-camp.js';
-import {alignmentScore,alignmentLabel,paladinAlignmentAllowed,wizardAlignmentAllowed} from './alignment.js';
+import {alignmentScore,alignmentLabel,alignmentShiftMessage,paladinAlignmentAllowed,wizardAlignmentAllowed} from './alignment.js';
 import {rootActive,DRUID_SITE,DRUID_STAFF,DRUID_FLOORS,druidHistory,druidKeeper,druidKeeperAt} from './druid-grove.js';
 import {sageView} from './sage-view.js';
 import {SAGE_MAZE_ID,SAGE_PEN_ID,sageRemainsAt} from './sage-challenge.js';
@@ -132,6 +132,14 @@ function showPotionNotice(message){
  potionNoticeTimer=setTimeout(()=>{notice.hidePopover?.();notice.hidden=true;},2600);
 }
 function toast(message){$('toast').textContent=message;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),3200);}
+let observedAlignment;
+function announceAlignmentChange(){
+ if(!state)return;
+ const before={alignment:observedAlignment},notice=observedAlignment===undefined?null:alignmentShiftMessage(before,state);
+ observedAlignment=alignmentScore(state);
+ if(notice)toast(notice);
+}
+setInterval(announceAlignmentChange,200);
 function persist(){try{localStorage.setItem(SAVE,saveGame(state));$('save-status').textContent='Progress saved on this device';}catch{$('save-status').textContent='Storage unavailable — export your save from Settings';}}
 function hasSave(){try{return !!localStorage.getItem(SAVE);}catch{return false;}}
 $('continue-game').hidden=!hasSave();

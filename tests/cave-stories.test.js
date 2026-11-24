@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import {act,createGame,loadGame,minorSiteList,saveGame} from '../public/game/engine.js';
 import {minorSiteDefinition} from '../public/game/minor-sites.js';
 import {caveStoryAt,caveStoryView} from '../public/game/cave-stories.js';
+import {alignmentShiftMessage} from '../public/game/alignment.js';
 
 const assignments={
   'minor-w1-1':'werebear-dogs',
@@ -64,6 +65,20 @@ test('saving the dinner rabbit, Flowerhaven children, and beaver home grants eac
   const again=act(loadGame(saveGame(s)),{type:'caveStoryChoice',choice:'help'});
   assert.equal(again.bag.filter(item=>item===reward).length,before+1);
  }
+});
+
+test('saving the Beaver Household from flooding shifts alignment fifteen points toward good once',()=>{
+ let s=inStory('minor-w1-4');s.meals=3;s.alignment=-12;
+ s=act(s,{type:'caveStoryChoice',choice:'help'});
+ assert.equal(s.alignment,3);
+ const restored=act(loadGame(saveGame(s)),{type:'caveStoryChoice',choice:'help'});
+ assert.equal(restored.alignment,3);
+});
+
+test('alignment shifts have a clear good or evil notification',()=>{
+ assert.equal(alignmentShiftMessage({alignment:-12},{alignment:3}),'Your alignment shifted toward the good!');
+ assert.equal(alignmentShiftMessage({alignment:3},{alignment:-12}),'Your alignment shifted toward the evil!');
+ assert.equal(alignmentShiftMessage({alignment:3},{alignment:3}),null);
 });
 
 test('defeating each hostile story enemy finalizes the outcome and grants one reward',()=>{
