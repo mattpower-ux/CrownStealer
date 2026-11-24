@@ -92,3 +92,16 @@ test('cemetery vaults are monumental wall-height masonry rather than short tent 
  assert.ok(horizontalCourses>=4,`vault face needs layered masonry courses; got ${horizontalCourses}`);
  assert.ok(weathering>=8,`vault face needs mineral streaks, chips, and aged joints; got ${weathering}`);
 });
+
+test('cemetery headstones use tall slab vault faces instead of tiny peaked tents',async()=>{
+ const {drawGothicHeadstone}=await import('../public/game/cemetery-render.js?slab-headstone-test');
+ let minY=0,verticalJoints=0;
+ const context={
+  save(){},restore(){},scale(){},beginPath(){},moveTo(_x,y){minY=Math.min(minY,y);},lineTo(x,y){minY=Math.min(minY,y);if(y<-.4&&Math.abs(x)>.18)verticalJoints++;},closePath(){},fill(){},stroke(){},clip(){},fillRect(){},ellipse(){},arc(){},quadraticCurveTo(){},
+  createLinearGradient(){return {addColorStop(){}};},
+  set fillStyle(_value){},set strokeStyle(_value){},set lineWidth(_value){},set lineJoin(_value){},set lineCap(_value){},set globalAlpha(_value){}
+ };
+ drawGothicHeadstone(context,100,6);
+ assert.ok(minY<=-1.55,`headstone should read as a tall masonry slab; top was ${minY}`);
+ assert.ok(verticalJoints>=2,`headstone needs vertical facade joints, got ${verticalJoints}`);
+});
