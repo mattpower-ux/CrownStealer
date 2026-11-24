@@ -1,4 +1,4 @@
-import {atlasView,atlasPoint,chartLands,ATLAS_WIDTH,PREVIEW_ATLAS_HEIGHT} from './atlas-view.js';
+import {atlasView,atlasPoint,atlasMarker,chartLands,ATLAS_WIDTH,PREVIEW_ATLAS_HEIGHT} from './atlas-view.js';
 import {areaSites} from './exploration.js';
 import {WILD_SITES} from './wild-sites.js';
 import {wildernessDiscoverySites} from './wilderness-discoveries.js';
@@ -71,13 +71,14 @@ export function previewMapJump(input,key,rules={}){
  // Enter using the normal location handler so caves, towns and story sites keep their own rules.
  s=act(s,{type:'enter'},[],rules);return s;
 }
-function previewMarker(p){
+export function previewMarker(p){
  if(p.mark==='town'||p.kind==='town')return '♜';
  if(p.kind==='shipyard'||p.boatOnly)return '⚓';
  if(p.kind==='branchGate'||p.kind==='gate'||p.kind==='returnGate')return '↗';
  if(p.kind==='bottomlessPit')return '◉';
  if(p.kind==='wildernessDiscovery')return '✦';
- return {koboldCave:'▲',cemetery:'†',ruinedShrine:'◇',tunnel:'↔'}[p.theme||p.kind]||'◆';
+ const glyphs={town:'♜',palace:'♛',castle:'♜',shrine:'✦',cave:'▲',dig:'⛏',ruin:'▰',dungeon:'◆',crypt:'⚰',cemetery:'†',estate:'⌂',teleporter:'◉',monument:'⬡',conservatory:'♧',tower:'⇧',generic:'●'};
+ return glyphs[atlasMarker(p).type]||glyphs.generic;
 }
 export function previewView(s,rules){
  const markers=previewMapLocations(s).map(p=>`<button class="preview-map-pin" style="left:${p.mapX/ATLAS_WIDTH*100}%;top:${p.mapY/PREVIEW_ATLAS_HEIGHT*100}%" data-preview="map" data-destination="${esc(p.key)}" title="${esc(p.name)}" aria-label="Jump to ${esc(p.name)}"><span>${previewMarker(p)}</span><small>${esc(p.name)}</small></button>`).join('');
