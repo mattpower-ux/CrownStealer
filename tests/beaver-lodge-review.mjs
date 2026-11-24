@@ -19,11 +19,13 @@ try{
   const {render}=await import('/game/render.js');
   const state=createGame('Timbertooth review');state.mode='dungeon';
   state.dungeon={site:'minor-site',minorId:'minor-w1-4',index:0,floor:0,x:11,y:13,dir:1,ladderLayout:1};
-  const canvas=document.querySelector('canvas');render(canvas,state,750,null,true);
+  const canvas=document.querySelector('canvas');window.reviewState=state;render(canvas,state,750,null,true);
   return {theme:canvas.dataset.wallTheme,view:canvas.dataset.view};
  });
  assert.equal(result.theme,'Timbertooth Lodge · engineered beaver home');
  assert.equal(result.view,'dungeon-3d');
+ await page.waitForFunction(async()=>{const lodge=await import('/game/beaver-lodge-render.js?v=20261123f');return lodge.beaverHouseholdArtworkReady();});
+ await page.evaluate(async()=>{const {render}=await import('/game/render.js');render(document.querySelector('canvas'),window.reviewState,900,null,true);});
  await mkdir('artifacts',{recursive:true});
  await page.screenshot({path:'artifacts/beaver-lodge-review.png'});
  assert.deepEqual(errors,[]);

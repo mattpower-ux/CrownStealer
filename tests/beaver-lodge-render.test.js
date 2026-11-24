@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
 import * as lodge from '../public/game/beaver-lodge-render.js';
 
 const {isTimbertoothLodge,timberWallPixel}=lodge;
@@ -29,7 +30,15 @@ test('lodge furnishings shrink with distance and disappear behind the player',()
 
 test('the far chamber visibly contains a peaceful beaver household',()=>{
  const visible=lodge.visibleLodgeObjects?.({x:11.5,y:13.5},1,0,Math.PI/2.6,1200,800)||[];
- assert.equal(visible.filter(object=>object.kind==='beaver').length,4);
+ assert.equal(visible.find(object=>object.kind==='household')?.members,4);
  assert.ok(visible.some(object=>object.kind==='hearth'));
  assert.ok(visible.every(object=>object.depth>0));
+});
+
+test('the Beaver Household uses detailed realistic creature artwork',async()=>{
+ const source=await readFile(new URL('../public/game/beaver-lodge-render.js',import.meta.url),'utf8');
+ const artwork=await readFile(new URL('../public/assets/creatures/beaver-household-realistic.png',import.meta.url));
+ assert.match(source,/beaver-household-realistic\.png/);
+ assert.ok(artwork.length>500_000,'the household should use finished high-detail artwork, not a tiny placeholder');
+ assert.equal(artwork[25],6,'the PNG must retain an alpha channel for clean in-world compositing');
 });

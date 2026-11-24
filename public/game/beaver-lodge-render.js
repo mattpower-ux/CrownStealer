@@ -43,16 +43,16 @@ export function drawBeaverLodgeVault(c,w,h,phase=0){
 
 const LODGE_OBJECTS=[
  {kind:'hearth',x:13.5,y:13.72,scale:1.2},
- {kind:'beaver',x:12.72,y:13.18,scale:.72,variant:0},
- {kind:'beaver',x:13.18,y:13.02,scale:.66,variant:1},
- {kind:'beaver',x:13.82,y:13.22,scale:.7,variant:2},
- {kind:'beaver',x:13.42,y:12.52,scale:.58,variant:3},
+ {kind:'household',x:13.18,y:13.12,scale:1.05,members:4},
  {kind:'shelf',x:12.48,y:13.72,scale:.92},
  {kind:'branches',x:14.35,y:13.55,scale:.85},
  {kind:'platform',x:12.35,y:12.78,scale:1},
  {kind:'platform',x:14.42,y:12.9,scale:1},
  {kind:'sluice',x:13.72,y:12.28,scale:.95},
 ];
+
+const BEAVER_HOUSEHOLD_IMAGE=typeof Image==='undefined'?null:Object.assign(new Image(),{src:'/assets/creatures/beaver-household-realistic.png'});
+export const beaverHouseholdArtworkReady=()=>Boolean(BEAVER_HOUSEHOLD_IMAGE?.complete&&BEAVER_HOUSEHOLD_IMAGE.naturalWidth);
 
 export function projectLodgeObject(camera,object,dx,dy,fov,w,h){
  const rx=object.x-camera.x,ry=object.y-camera.y,depth=rx*dx+ry*dy,side=-rx*dy+ry*dx;
@@ -75,20 +75,9 @@ function drawHearth(c,o,time){
  c.fillStyle='#fff0a6';c.beginPath();c.moveTo(-s*.045,-s*.03);c.quadraticCurveTo(-s*.055,-s*.17,0,-s*.28);c.quadraticCurveTo(s*.06,-s*.15,s*.045,-s*.03);c.fill();
 }
 
-function drawBeaver(c,o){
- const s=o.size,v=o.variant||0;
- c.fillStyle='#4b2e20';c.beginPath();c.ellipse(s*.25,-s*.01,s*.30,s*.115,-.38,0,Math.PI*2);c.fill();
- c.strokeStyle='#2c1c15';c.lineWidth=Math.max(1,s*.012);for(let i=-2;i<=2;i++){c.beginPath();c.moveTo(s*(.08+i*.055),-s*.12);c.lineTo(s*(.25+i*.055),s*.07);c.stroke();}
- c.fillStyle=['#8a5838','#6e442e','#9a6742','#775039'][v%4];c.beginPath();c.ellipse(0,-s*.32,s*.26,s*.36,0,0,Math.PI*2);c.fill();
- c.beginPath();c.arc(0,-s*.67,s*.20,0,Math.PI*2);c.fill();
- c.beginPath();c.arc(-s*.15,-s*.82,s*.065,0,Math.PI*2);c.arc(s*.15,-s*.82,s*.065,0,Math.PI*2);c.fill();
- c.fillStyle='#17120e';c.beginPath();c.arc(-s*.07,-s*.7,s*.026,0,7);c.arc(s*.07,-s*.7,s*.026,0,7);c.fill();
- c.fillStyle='#d9b486';c.beginPath();c.ellipse(0,-s*.59,s*.085,s*.055,0,0,7);c.fill();
- c.fillStyle='#f1dfbd';c.fillRect(-s*.07,-s*.535,s*.055,s*.10);c.fillRect(s*.015,-s*.535,s*.055,s*.10);
- c.strokeStyle='#d9b486';c.lineWidth=Math.max(1,s*.008);for(const side of [-1,1])for(let i=-1;i<=1;i++){c.beginPath();c.moveTo(side*s*.06,-s*(.6+i*.025));c.lineTo(side*s*.22,-s*(.62+i*.045));c.stroke();}
- c.strokeStyle=v%2?'#b89962':'#4f3422';c.lineWidth=Math.max(2,s*.035);c.beginPath();
- if(v%2){c.moveTo(-s*.24,-s*.37);c.lineTo(s*.29,-s*.12);c.moveTo(s*.23,-s*.38);c.lineTo(-s*.28,-s*.15);}else{c.moveTo(-s*.22,-s*.31);c.lineTo(s*.22,-s*.31);}
- c.stroke();
+function drawBeaverHousehold(c,o){
+ const s=o.size;
+ if(beaverHouseholdArtworkReady())c.drawImage(BEAVER_HOUSEHOLD_IMAGE,-s*.9,-s*.77,s*1.8,s*1.2);
 }
 
 function drawShelf(c,o){
@@ -116,9 +105,9 @@ function drawSluice(c,o){
 export function drawBeaverLodgeDetails(c,w,h,d,dx,dy,fov,wallDepth,time=0){
  const camera={x:d.x+.5,y:d.y+.5},objects=visibleLodgeObjects(camera,dx,dy,fov,w,h);
  for(const object of objects){
-  const half=object.size*.55,left=Math.max(0,Math.floor(object.x-half)),right=Math.min(w,Math.ceil(object.x+half));
+  const half=object.size*(object.kind==='household'?.95:.55),left=Math.max(0,Math.floor(object.x-half)),right=Math.min(w,Math.ceil(object.x+half));
   c.save();c.beginPath();for(let x=left;x<right;x+=2)if(object.depth<=wallDepth[x]+.16)c.rect(x,0,2,h);c.clip();c.translate(object.x,object.y);
-  if(object.kind==='hearth')drawHearth(c,object,time);else if(object.kind==='beaver')drawBeaver(c,object);else if(object.kind==='shelf')drawShelf(c,object);else if(object.kind==='branches')drawBranches(c,object);else if(object.kind==='platform')drawPlatform(c,object);else if(object.kind==='sluice')drawSluice(c,object);
+  if(object.kind==='hearth')drawHearth(c,object,time);else if(object.kind==='household')drawBeaverHousehold(c,object);else if(object.kind==='shelf')drawShelf(c,object);else if(object.kind==='branches')drawBranches(c,object);else if(object.kind==='platform')drawPlatform(c,object);else if(object.kind==='sluice')drawSluice(c,object);
   c.restore();
  }
 }
