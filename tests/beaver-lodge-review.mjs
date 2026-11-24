@@ -18,7 +18,7 @@ try{
   const {createGame}=await import('/game/engine.js');
   const {render}=await import('/game/render.js');
   const state=createGame('Timbertooth review');state.mode='dungeon';
-  state.dungeon={site:'minor-site',minorId:'minor-w1-4',index:0,floor:0,x:1,y:1,dir:1,ladderLayout:1};
+  state.dungeon={site:'minor-site',minorId:'minor-w1-4',index:0,floor:0,x:11,y:13,dir:1,ladderLayout:1};
   const canvas=document.querySelector('canvas');render(canvas,state,750,null,true);
   return {theme:canvas.dataset.wallTheme,view:canvas.dataset.view};
  });

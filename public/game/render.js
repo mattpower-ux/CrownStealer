@@ -31,7 +31,7 @@ import {wildernessDiscoveries} from './wilderness-discoveries.js';
 import {drawDiscoveryArt,drawHeroGhost} from './discovery-render.js';
 import {caveProfile} from './cave-profiles.js';
 import {drawTrollCaveDetails,drawTrollCaveVault,isTrollCave} from './troll-cave-render.js';
-import {drawBeaverLodgeDetails,drawBeaverLodgeVault,isTimbertoothLodge,timberWallPixel} from './beaver-lodge-render.js';
+import {drawBeaverLodgeDetails,drawBeaverLodgeVault,isTimbertoothLodge,timberWallPixel} from './beaver-lodge-render.js?v=20261123e';
 import {drawHeatLairVault,heatLairProfile,heatMeltedPixel} from './heat-lair-render.js';
 import {firehavenLightMultiplier} from './firehaven.js';
 import {drawDungeonCeiling,shrineWallInk as baseShrineWallInk} from './dungeon-ceilings.js';
@@ -1085,7 +1085,7 @@ function dungeonUncached(c,w,h,s,time){const d=s.dungeon;if(!d)return;if(d.ship)
  if(cemetery)drawCemeteryRemains(c,w,h,d,m,dx,dy,fov,wallDepth);
  if(burrow)drawBurrowDebris(c,w,h,d,m,dx,dy,fov,wallDepth);
  if(troll)drawTrollCaveDetails(c,w,h,d,dx,dy,fov,wallDepth,time);
- if(beaverLodge)drawBeaverLodgeDetails(c,w,h,time);
+ if(beaverLodge)drawBeaverLodgeDetails(c,w,h,d,dx,dy,fov,wallDepth,time);
  drawSecretDoor(c,w,h,d,m,dx,dy,fov,wallDepth);
  drawSolidLadders(c,w,h,d,visibleLadders,dx,dy,fov,wallDepth);
  if(haunted)drawPercivalMist(c,w,h);
