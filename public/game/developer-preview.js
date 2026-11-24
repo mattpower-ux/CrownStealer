@@ -77,7 +77,7 @@ export function previewMarker(p){
  if(p.kind==='branchGate'||p.kind==='gate'||p.kind==='returnGate')return '↗';
  if(p.kind==='bottomlessPit')return '◉';
  if(p.kind==='wildernessDiscovery')return '✦';
- const glyphs={town:'♜',palace:'♛',castle:'♜',shrine:'✦',cave:'▲',dig:'⛏',ruin:'▰',dungeon:'◆',crypt:'⚰',cemetery:'†',estate:'⌂',teleporter:'◉',monument:'⬡',conservatory:'♧',tower:'⇧',generic:'●'};
+ const glyphs={town:'♜',palace:'♛',castle:'♜',shrine:'ϟ',tree:'♣',cave:'⛏',dig:'⛏',ruin:'▰',dungeon:'◆',crypt:'⚰',cemetery:'†',estate:'⌂',teleporter:'◉',monument:'⬡',conservatory:'♧',tower:'⇧',generic:'●'};
  return glyphs[atlasMarker(p).type]||glyphs.generic;
 }
 export function previewView(s,rules){

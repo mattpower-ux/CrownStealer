@@ -12,7 +12,7 @@ const LEVEL_COLORS = ['#a9d890', '#ffdc81', '#ffb17d', '#ff9a95'];
 const MARKS = { town: '#fff0c4', dungeon: '#ffa4a1', gate: '#ffd46e', passage: '#8ed7f1' };
 const MARKER_STYLES=Object.freeze({
  town:{shape:'square',color:'#f3d67c'},castle:{shape:'castle',color:'#e9b95f'},palace:{shape:'crown',color:'#f0c96d'},
- shrine:{shape:'star',color:'#8fd8ff'},cave:{shape:'triangle',color:'#bc9472'},dig:{shape:'pick',color:'#d88952'},
+ shrine:{shape:'bolt-circle',color:'#ffffff'},tree:{shape:'tree',color:'#58bc63'},cave:{shape:'pick',color:'#bc9472'},dig:{shape:'pick',color:'#d88952'},
  ruin:{shape:'broken',color:'#a9a092'},dungeon:{shape:'diamond',color:'#d78278'},crypt:{shape:'coffin',color:'#b39cc9'},
  cemetery:{shape:'cross',color:'#9ca7a5'},estate:{shape:'manor',color:'#e8dfc5'},teleporter:{shape:'ring',color:'#73e4df'},monument:{shape:'hex',color:'#8ee6ba'},
  conservatory:{shape:'leaf',color:'#86cf83'},tower:{shape:'spire',color:'#b79de5'},generic:{shape:'circle',color:'#dbc989'},
@@ -65,13 +65,15 @@ export function atlasMarker(point){
   :/conservatory/.test(text)?'conservatory':/wizard.*tower|tower.*wizard|twinklestar|widow.s bell/.test(text)?'tower'
   :/ruined estate|\bestate\b/.test(text)?'estate':/cemetery|graveyard|burial ground/.test(text)?'cemetery':/crypt|sepulchre|tomb|ossuary/.test(text)?'crypt'
   :/\bdig\b|mine shaft|excavation/.test(text)?'dig':/shrine|sanctuary|temple|fane/.test(text)?'shrine'
-  :/cave|cavern|grotto|burrow|den|lair/.test(text)?'cave':/ruin|abandon/.test(text)?'ruin'
+  :/tree|grove|forest/.test(text)?'tree':/cave|cavern|grotto|burrow|den|lair/.test(text)?'cave':/ruin|abandon/.test(text)?'ruin'
   :point?.kind==='dungeon'||point?.mark==='dungeon'?'dungeon':'generic';
  return {type,alpha:.78,...MARKER_STYLES[type]};
 }
 
 function drawAtlasMarker(c,x,y,style){
  c.save();c.globalAlpha=style.alpha;c.fillStyle=style.color;c.strokeStyle='#07100ddd';c.lineWidth=1.4;c.beginPath();
+ if(style.shape==='bolt-circle'){c.arc(x,y,5,0,Math.PI*2);c.fillStyle='#17352a';c.fill();c.strokeStyle=style.color;c.stroke();c.beginPath();c.moveTo(x+1,y-5);c.lineTo(x-3,y+1);c.lineTo(x,y+1);c.lineTo(x-1,y+5);c.lineTo(x+4,y-2);c.lineTo(x+1,y-2);c.closePath();c.fillStyle=style.color;c.fill();c.restore();return;}
+ if(style.shape==='tree'){c.beginPath();c.moveTo(x,y-5);c.lineTo(x-4.5,y+1);c.lineTo(x-2.3,y+1);c.lineTo(x-5,y+4);c.lineTo(x+5,y+4);c.lineTo(x+2.3,y+1);c.lineTo(x+4.5,y+1);c.closePath();c.fill();c.stroke();c.beginPath();c.moveTo(x,y+4);c.lineTo(x,y+6);c.strokeStyle='#c89b5d';c.stroke();c.restore();return;}
  if(style.shape==='square')c.rect(x-4,y-4,8,8);
  else if(style.shape==='triangle'||style.shape==='spire'){c.moveTo(x,y-5);c.lineTo(x+5,y+4);c.lineTo(x-5,y+4);c.closePath();}
  else if(style.shape==='diamond'){c.moveTo(x,y-5);c.lineTo(x+5,y);c.lineTo(x,y+5);c.lineTo(x-5,y);c.closePath();}
