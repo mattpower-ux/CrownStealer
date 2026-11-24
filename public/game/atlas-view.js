@@ -38,7 +38,7 @@ export function atlasRegions(state) {
     const branches = branchGates(region.id).map(gate => {
       const branch = AREAS.find(candidate => candidate.id === gate.area);
       return {
-        ...branch, gate, discovered: discovered.has(branch.id), open: canCross && (!gate.boatOnly || ridingDragon || boatReady), current: area?.id === branch.id,
+        ...branch, gate, discovered: discovered.has(branch.id), open: gate.boatOnly ? ridingDragon || boatReady : canCross, current: area?.id === branch.id,
         sites: areaSites({ region: region.id, exploration: { area: branch.id } })
           .filter(site => ['expedition', 'bottomless-pit'].includes(site.kind) || site.id === 'bottomless-pit'),
       };

@@ -783,7 +783,7 @@ if(a.type==='acknowledgeDragon'){delete s.flags.dragonGreeting;delete s.flags.dr
  if(castleAction(s,a,{note,clock,random:()=>rand(s),dexterity:()=>effectiveAttributes(s,itemById).dexterity,startGuard:startCastleGuard,reportRoyalProgress:state=>isRoyalCampaign(state)?reportRoyalCampaign(state,note):advanceRoyalAudience(state),deliverRoyalMessage:state=>deliverRoyalMessage(state,note),imprison:state=>imprisonInArena(state,note),events}))return s;
  if(cityAction(s,a,note,state=>encounter(state,false,true,true)))return s;
  const branch=s.mode==='world'&&!areaFor(s)&&branchGates(s.region).find(p=>p.x===s.x&&p.y===s.y);
- if(branch&&!dragonFlying(s)&&(a.type==='enter'||a.type==='move'&&(a.dx<0&&branch.direction==='west'||a.dy<0&&branch.direction==='north'||a.dy>0&&branch.direction==='south'))&&!hasRegionRelics(s,s.region)){s.flags.borderTauntPending=true;s.flags.borderVoice=Math.floor(rand(s)*3);note(s,'Two relics, you wandering turnip! The guards lock the gate and laugh.');return s;}
+ if(branch&&!branch.boatOnly&&!dragonFlying(s)&&(a.type==='enter'||a.type==='move'&&(a.dx<0&&branch.direction==='west'||a.dy<0&&branch.direction==='north'||a.dy>0&&branch.direction==='south'))&&!hasRegionRelics(s,s.region)){s.flags.borderTauntPending=true;s.flags.borderVoice=Math.floor(rand(s)*3);note(s,'Two relics, you wandering turnip! The guards lock the gate and laugh.');return s;}
  if(s.flags.peacefulEncounter&&s.mode==='world'){
   const offer=s.flags.peacefulEncounter;
   if(offer.peaceful&&s.exploration?.area===BRIAR_AREA){

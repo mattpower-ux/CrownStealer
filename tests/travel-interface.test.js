@@ -51,13 +51,13 @@ test('the Atlas distinguishes reachable gates and the active branch', () => {
   assert.equal(atlasRegions(s)[0].east.open, true);
 });
 
-test('the Atlas requires a boat and both relics for sailing passages unless a dragon is equipped', () => {
+test('the Atlas opens sailing passages with a boat, without requiring regional relics', () => {
   const s = createGame();
   s.flags.visitedLands = [0,3,'wild-10','wild-11'];
   const sailing = () => atlasRegions(s)[3].branches.filter(branch => branch.gate.boatOnly);
   assert.equal(sailing().length, 2);
   s.flags.rowboatReady = true;
-  assert.ok(sailing().every(branch => !branch.open));
+  assert.ok(sailing().every(branch => branch.open));
   assert.ok(sailing().every(branch => branch.discovered));
   s.relics.push(...atlasRegions(s)[3].dungeons.map(dungeon => dungeon.id));
   assert.ok(sailing().every(branch => branch.open));

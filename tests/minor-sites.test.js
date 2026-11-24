@@ -189,8 +189,7 @@ test('curved coasts vary their shoreline and leave optional Vesper passages acce
     s = act(s, {type: 'useItem', id: 'shrinkable-sailboat'});
     for (let step = 0; step < Math.abs(gate.x - x) + Math.abs(gate.y - y); step++) s = act(s, move, [], {noRandom: true});
     assert.equal(pointAt(s)?.id, gate.id);
-    assert.equal(act(s, {type: 'enter'}).exploration?.area, undefined);
-    s = act({...s, relics: localRelics}, {type: 'enter'});
+    s = act(s, {type: 'enter'});
     assert.equal(s.exploration.area, gate.area);
     s = act({...s, x: landing.x, y: landing.y}, {type: 'enter'});
     assert.deepEqual([s.x, s.y, s.exploration.area], [gate.x, gate.y, null]);

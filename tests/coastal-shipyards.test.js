@@ -69,12 +69,18 @@ test('a purchased rowboat opens both offshore regions while walkers and relic-fr
  Object.assign(s,{x:yard.x,y:yard.y});s=engine.act(s,{type:'buyRowboat'});
  for(const gate of branchGates(3).filter(p=>p.boatOnly)){
   const atGate={...s,x:gate.x,y:gate.y};
-  assert.equal(engine.act(atGate,{type:'enter'}).exploration?.area,undefined);
-  atGate.relics=DUNGEONS.filter(p=>p.region===3).map(p=>p.id);
   const walker=structuredClone(atGate);delete walker.flags.rowboatReady;
   assert.equal(engine.act(walker,{type:'enter'}).exploration?.area,undefined);
   const landed=engine.act(atGate,{type:'enter'});
   assert.equal(landed.exploration.area,gate.area);
   assert.equal(engine.loadGame(engine.saveGame(landed)).exploration.area,gate.area);
  }
+});
+
+test('a rowboat crosses the offshore sailing passage before the regional relics are recovered',()=>{
+ const gate=branchGates(0).find(candidate=>candidate.boatOnly);
+ const s=engine.createGame();
+ Object.assign(s,{x:gate.x,y:gate.y});s.flags.rowboatReady=true;
+ const sailed=engine.act(s,{type:'move',dx:-1,dy:0},[],{noRandom:true});
+ assert.equal(sailed.exploration?.area,gate.area);
 });
