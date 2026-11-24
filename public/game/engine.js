@@ -796,6 +796,7 @@ if(a.type==='acknowledgeDragon'){delete s.flags.dragonGreeting;delete s.flags.dr
    else if(offer.offer==='trade'&&s.meals>0){s.meals--;s.bag.push('starter-healing');}
    else if(offer.offer==='sell'&&s.gold>=offer.amount){s.gold-=offer.amount;s.bag.push('starter-healing');}
    else return s;
+   if(offer.offer==='gold')applyAlignmentImpact(s,1,'Leaving a creature in peace');
    note(s,'You and '+offer.name+' part ways peacefully.');
   }
   if(['peacefulAccept','peacefulLeave','move'].includes(a.type))delete s.flags.peacefulEncounter;
@@ -1277,7 +1278,17 @@ if(a.type==='acknowledgeDragon'){delete s.flags.dragonGreeting;delete s.flags.dr
   if(a.type==='steal'){s.wanted[s.region]++;s.reputation-=2;const haul=12+Math.floor(rand(s)*30);s.gold+=haul;note(s,`You lift ${haul} gold. A witness develops an inconvenient memory. Local bounty: ${s.wanted[s.region]*25} gold.`);if(s.wanted[s.region]>=4&&!s.flags['townGarrison:'+s.location])encounter(s,false,true);}
   if(a.type==='pardon'){const cost=s.wanted[s.region]*25;if(s.gold>=cost){s.gold-=cost;s.wanted[s.region]=0;note(s,'Your fine is paid. The law discovers your excellent character.');}else note(s,`The clerk requires ${cost} gold. Kitchen work and wilderness treasure remain available.`);}
   if(a.type==='challenge'){if(s.flags['townGarrison:'+s.location])note(s,'The garrison has surrendered. Its empty barracks are a monument to poor career advice.');else{encounter(s,false,true,true);if(s.location!=='bellwether')s.enemy.name='Palace Guard '+((s.flags['palaceWins:'+s.location]||0)+1)+' of 5';}}
- if(a.type==='gamble'||a.type?.startsWith('casino')){const goldBefore=s.gold;casinoAction(s,a,()=>rand(s),text=>note(s,text));if(a.type==='gamble'&&s.gold<goldBefore)applyAlignmentImpact(s,-1,'Gambling');}
+ if(a.type==='gamble'||a.type?.startsWith('casino')){
+  const validWager=a.type==='gamble'&&Number.isSafeInteger(a.bet)&&a.bet>=1&&a.bet<=s.gold&&['blackjack','poker','roulette','tiddlywinks'].includes(a.game)&&
+   (a.game!=='roulette'||['red','black','odd','even',...Array.from({length:37},(_,i)=>String(i))].includes(String(a.choice)));
+  const resultBefore=s.casino?.resultId;
+  casinoAction(s,a,()=>rand(s),text=>note(s,text));
+  if(validWager)applyAlignmentImpact(s,-1,'Gambling');
+  if(s.casino?.resultId!==resultBefore&&s.casino?.won){
+   const windfallPenalty=Math.max(0,Math.floor((s.casino.payout||0)/1000)-1);
+   if(windfallPenalty)applyAlignmentImpact(s,-windfallPenalty,'Large gambling win');
+  }
+ }
   if(a.type==='quest'){const q=SIDE_QUESTS.find(q=>q.id===a.id&&q.town===town.id);if(!q||s.quests.includes(q.id))return s;const value=q.need==='gold'?s.gold:q.need==='victory'?s.flags.victories:q.need==='item'?s.bag.filter(id=>id===q.questItem).length:0;if(value<q.target){note(s,`${q.title}: ${q.text} [Need ${q.target} ${q.need}.]`);}else{if(q.need==='gold')s.gold-=q.target;if(q.need==='item'){s.bag.splice(s.bag.indexOf(q.questItem),1);s.pendingLoot=s.pendingLoot.filter(id=>id!==q.questItem);}s.gold+=q.reward;s.xp+=q.xp||15;while(s.xp>=xpForNextLevel(s)){s.xp-=xpForNextLevel(s);s.level++;s.maxHp+=14;s.hp=Math.min(s.maxHp,s.hp+30);}s.quests.push(q.id);adjustAlignment(s,6);s.reputation+=2;note(s,q.conclusion);note(s,`Quest complete: ${q.title}. ${q.reward} gold; reputation +2.`);}}
   if(a.type==='travel'){const region=Number(a.region);if(!Number.isInteger(region)||region<0||region>3)return s;if(!canTakeCaravan(s,region)){note(s,'The route is sealed. Recover both relics from each land you must cross.');return s;}s.region=region;const p=TOWNS.find(t=>t.region===region);s.x=p.x-1;s.y=p.y;s.mode='world';s.location=null;note(s,'You cross into a different sky. The road remembers no titles.');if(region===1&&s.relics.length>=2)advance(s,5);if(region===2&&s.relics.length>=4)advance(s,9);if(region===3&&s.relics.length>=6)advance(s,13);if(region===0&&s.relics.length===8)advance(s,17);}
   if(a.type==='ending'){if(s.relics.length<8||town.id!=='bellwether'){note(s,'The final audience awaits at Bellwether Court with all eight relics.');return s;}if(!Object.hasOwn(ENDINGS,a.choice))return s;s.ending=a.choice;s.flags.legacy=a.choice;s.mode='ending';advance(s,19);if(a.choice==='alliance'){s.reputation+=10;s.wanted=[0,0,0,0];}if(a.choice==='rebel'){s.flags['garrison:0']=true;s.wanted[0]=0;}if(a.choice==='usurper'){s.flags['garrison:0']=true;s.reputation-=10;}note(s,ENDINGS[a.choice]);}

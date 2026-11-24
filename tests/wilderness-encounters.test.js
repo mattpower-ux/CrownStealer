@@ -34,6 +34,15 @@ test('main lands and branches support payoff, trade and sale encounters', () => 
   }
 });
 
+test('accepting gold to leave a peaceful creature alone shifts alignment toward good', () => {
+  const s = traveler(null, 1980);
+  s.flags.peacefulEncounter = {name: 'Wandering Crypt Ghoul', speciesId: 'crypt-ghoul', offer: 'gold', amount: 22};
+  const before = s.alignmentPoints;
+  const accepted = act(s, {type: 'peacefulAccept'});
+  assert.equal(accepted.gold, s.gold + 22);
+  assert.equal(accepted.alignmentPoints, before + 1);
+});
+
 test('a roadside offer cannot persist or reopen inside the Royal Dungeon', () => {
   const s = createGame('Royal dungeon traveler');
   Object.assign(s, {

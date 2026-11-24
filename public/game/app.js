@@ -530,7 +530,7 @@ const wildernessXpValue=wildernessHealth.querySelector('.wilderness-xp-label str
 const wildernessXpTrack=wildernessHealth.querySelector('.wilderness-xp-track');
 
 function updateWildernessHealth(){
- wildernessHealth.hidden=!['world','dungeon'].includes(state.mode)||!!combatView;
+ wildernessHealth.hidden=state.mode==='ending'||!!combatView;
  if(wildernessHealth.hidden){
   if(modeBadge.parentElement===wildernessHealth)wildernessHealth.after(modeBadge);
   return;
