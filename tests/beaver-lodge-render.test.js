@@ -58,3 +58,9 @@ test('the hearth uses realistic transparent stone artwork',async()=>{
  assert.ok(artwork.length>500_000);
  assert.equal(artwork[25],6);
 });
+
+test('the dungeon corridor cache refreshes when lodge artwork finishes loading',async()=>{
+ const source=await readFile(new URL('../public/game/render.js',import.meta.url),'utf8');
+ assert.match(source,/beaverHouseholdArtworkReady\(\)/);
+ assert.match(source,/artRevision,pebbleMaterialRevision,shrineMaterialRevision,lodgeArtworkReady/);
+});

@@ -24,7 +24,7 @@ try{
  });
  assert.equal(result.theme,'Timbertooth Lodge · engineered beaver home');
  assert.equal(result.view,'dungeon-3d');
- await page.waitForFunction(async()=>{const lodge=await import('/game/beaver-lodge-render.js?v=20261123g');return lodge.beaverHouseholdArtworkReady();});
+ await page.waitForFunction(async()=>{const lodge=await import('/game/beaver-lodge-render.js?v=20261123h');return lodge.beaverHouseholdArtworkReady();});
  await page.evaluate(async()=>{const {render}=await import('/game/render.js');render(document.querySelector('canvas'),window.reviewState,900,null,true);});
  await mkdir('artifacts',{recursive:true});
  await page.screenshot({path:'artifacts/beaver-lodge-review.png'});

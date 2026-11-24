@@ -31,7 +31,7 @@ import {wildernessDiscoveries} from './wilderness-discoveries.js';
 import {drawDiscoveryArt,drawHeroGhost} from './discovery-render.js';
 import {caveProfile} from './cave-profiles.js';
 import {drawTrollCaveDetails,drawTrollCaveVault,isTrollCave} from './troll-cave-render.js';
-import {drawBeaverLodgeDetails,drawBeaverLodgeVault,isTimbertoothLodge,timberWallPixel} from './beaver-lodge-render.js?v=20261123g';
+import {beaverHouseholdArtworkReady,drawBeaverLodgeDetails,drawBeaverLodgeVault,isTimbertoothLodge,timberWallPixel} from './beaver-lodge-render.js?v=20261123h';
 import {drawHeatLairVault,heatLairProfile,heatMeltedPixel} from './heat-lair-render.js';
 import {firehavenLightMultiplier} from './firehaven.js';
 import {drawDungeonCeiling,shrineWallInk as baseShrineWallInk} from './dungeon-ceilings.js';
@@ -928,7 +928,8 @@ function drawRoyalDungeonFigures(c,w,h,s){
 
 function dungeon(c,w,h,s,time){
 
- const key=JSON.stringify([w,h,s.dungeon,s.flags,s.relics,s.openedChests,wallMaterialRevision,artRevision,pebbleMaterialRevision,shrineMaterialRevision]);
+ const lodgeArtworkReady=isTimbertoothLodge(s.dungeon)&&beaverHouseholdArtworkReady();
+ const key=JSON.stringify([w,h,s.dungeon,s.flags,s.relics,s.openedChests,wallMaterialRevision,artRevision,pebbleMaterialRevision,shrineMaterialRevision,lodgeArtworkReady]);
 
  if(!corridorCache||corridorCache.key!==key){let image=corridorViews.get(key);if(!image){image=document.createElement('canvas');const ratio=Math.min(1,960/w,600/h);image.width=Math.ceil(w*ratio);image.height=Math.ceil(h*ratio);dungeonUncached(image.getContext('2d'),image.width,image.height,s,time);if(corridorViews.size>=20)corridorViews.delete(corridorViews.keys().next().value);corridorViews.set(key,image);}corridorCache={key,image};}
 
