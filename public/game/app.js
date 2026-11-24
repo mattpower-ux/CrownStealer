@@ -116,6 +116,7 @@ function updateLevelBanner(){
 
 let dealerReactionUntil=0,dealerReactionTimer,rouletteTimer;
 let state=null,activePanel=null,frame=0,lastFrame=0,toastTimer,installPrompt=null;
+let handlePreviewAction=()=>false;
 let volumes={music:.35,effects:.55};try{const v=JSON.parse(localStorage.getItem(SETTINGS));if(v&&Number.isFinite(v.music)&&Number.isFinite(v.effects))volumes={music:Math.max(0,Math.min(1,v.music)),effects:Math.max(0,Math.min(1,v.effects))};}catch{}
 const audio=new AudioDirector();audio.setVolumes(volumes.music,volumes.effects);
 // Attempt the opening score during the studio splash; retain this player on the title.
@@ -1352,7 +1353,7 @@ function showLoot(){
  showCastleTileInteraction();
 }
 $('close-panel').onclick=closePanel;$('panel').addEventListener('cancel',e=>{e.preventDefault();closePanel();});
-$('panel').addEventListener('click',e=>{if(e.target.closest('[data-wizard-recharge]')){dispatch({type:'wizardRecharge',id:$('wizard-recharge-target')?.value});return;}if(e.target.closest('[data-close-discovery],[data-close-percival]')){closePanel();return;}if(activePanel==='quests'&&e.target.closest('[data-next-odd-job]')){oddJobId=nextOddJob(state,oddJobId);openPanel('quests');$('panel').querySelector('[data-next-odd-job]')?.focus();return;}if(e.target.closest('[data-ask-webster]')&&state.bag.includes('webster')){openPanel('webster');return;}if(e.target.closest('[data-close-item]')){inventorySelection=null;openPanel('inventory');return;}const page=e.target.closest('[data-bag-page]');if(page){changeBagPage(Number(page.dataset.bagPage));openPanel('inventory');return;}const quick=e.target.closest('[data-quick-equip]');if(quick){const a=quickEquipAction(state,quick.dataset.quickEquip);if(a){inventorySelection=null;dispatch({...a,quick:true});}return;}const choice=e.target.closest('[data-inspect]');if(choice){inventorySelection={id:choice.dataset.inspect,source:choice.dataset.source,slot:choice.dataset.gearSlot};openPanel('inventory');return;}const actionButton=e.target.closest('button[data-action]');if(actionButton){try{dispatch(JSON.parse(actionButton.dataset.action));}catch(err){toast(err.message);}return;}const b=e.target.closest('[data-bet]');if(b){const game=b.dataset.bet,wager=$('wager');if(!wager.reportValidity())return;dispatch({type:'gamble',game,bet:Number(wager.value),choice:$('roulette-choice')?.value});if(game==='blackjack')playBlackjackTaunt();else{stopIntroVoice();if(game==='roulette'&&state.casino?.spinning)audio.unlock().then(()=>audio.effect('roulette'));}}if(e.target.closest('#shoot-wink'))dispatch({type:'casinoShoot',power:Number($('wink-power').value)});});
+$('panel').addEventListener('click',e=>{if(handlePreviewAction(e))return;if(e.target.closest('[data-wizard-recharge]')){dispatch({type:'wizardRecharge',id:$('wizard-recharge-target')?.value});return;}if(e.target.closest('[data-close-discovery],[data-close-percival]')){closePanel();return;}if(activePanel==='quests'&&e.target.closest('[data-next-odd-job]')){oddJobId=nextOddJob(state,oddJobId);openPanel('quests');$('panel').querySelector('[data-next-odd-job]')?.focus();return;}if(e.target.closest('[data-ask-webster]')&&state.bag.includes('webster')){openPanel('webster');return;}if(e.target.closest('[data-close-item]')){inventorySelection=null;openPanel('inventory');return;}const page=e.target.closest('[data-bag-page]');if(page){changeBagPage(Number(page.dataset.bagPage));openPanel('inventory');return;}const quick=e.target.closest('[data-quick-equip]');if(quick){const a=quickEquipAction(state,quick.dataset.quickEquip);if(a){inventorySelection=null;dispatch({...a,quick:true});}return;}const choice=e.target.closest('[data-inspect]');if(choice){inventorySelection={id:choice.dataset.inspect,source:choice.dataset.source,slot:choice.dataset.gearSlot};openPanel('inventory');return;}const actionButton=e.target.closest('button[data-action]');if(actionButton){try{dispatch(JSON.parse(actionButton.dataset.action));}catch(err){toast(err.message);}return;}const b=e.target.closest('[data-bet]');if(b){const game=b.dataset.bet,wager=$('wager');if(!wager.reportValidity())return;dispatch({type:'gamble',game,bet:Number(wager.value),choice:$('roulette-choice')?.value});if(game==='blackjack')playBlackjackTaunt();else{stopIntroVoice();if(game==='roulette'&&state.casino?.spinning)audio.unlock().then(()=>audio.effect('roulette'));}}if(e.target.closest('#shoot-wink'))dispatch({type:'casinoShoot',power:Number($('wink-power').value)});});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){flushClock(true,true);stopIntroVoice();finishCombat();audio.suspend();if(state)persist();cancelAnimationFrame(frame);}else{clockLast=performance.now();audio.resume();if(activePanel==='casino'&&state?.casino?.spinning)openPanel('casino');if(activePanel==='royalIntro'&&state?.flags.royalEntranceSeen===false)playIntroVoice();if(state&&!$('game').hidden){cancelAnimationFrame(frame);frame=requestAnimationFrame(draw);showLoot();}}});
 window.addEventListener('pagehide',()=>{flushClock(true,true);if(state)persist();});
 window.addEventListener('beforeunload',()=>{if(state)persist();});
@@ -1553,10 +1554,10 @@ if(developerMode){
  const control=document.createElement('button');control.textContent='Developer preview';control.dataset.panel='developer';document.querySelector('.game-header nav').prepend(control);
  document.title='Developer preview · Bar the Gates';
  document.addEventListener('change',e=>{if(e.target.id==='preview-destination'){const d=previewDestinations.find(d=>d.id===e.target.value);$('preview-floor').max=d.floors||1;$('preview-floor').value=1;}});
- document.addEventListener('click',e=>{const action=e.target.closest('[data-preview]')?.dataset.preview;if(!action)return;
+ handlePreviewAction=e=>{const action=e.target.closest('[data-preview]')?.dataset.preview;if(!action)return false;
  try{
- if(action==='encounters-off'||action==='encounters-on'){const off=action==='encounters-off';previewRules={...previewRules,noRandom:off,noEncounters:off};try{localStorage.setItem('crownstealer-developer-rules-v1',JSON.stringify(previewRules));}catch{}if(e.target.closest('[data-dungeon-encounters]'))update();else openPanel('developer');return;}
- if(action==='rules'){previewRules={invulnerable:$('preview-invulnerable').checked,noRandom:$('preview-no-random').checked};try{localStorage.setItem('crownstealer-developer-rules-v1',JSON.stringify(previewRules));}catch{}toast('Preview rules updated');return;}
+ if(action==='encounters-off'||action==='encounters-on'){const off=action==='encounters-off';previewRules={...previewRules,noRandom:off,noEncounters:off};try{localStorage.setItem('crownstealer-developer-rules-v1',JSON.stringify(previewRules));}catch{}if(e.target.closest('[data-dungeon-encounters]'))update();else openPanel('developer');return true;}
+ if(action==='rules'){previewRules={invulnerable:$('preview-invulnerable').checked,noRandom:$('preview-no-random').checked};try{localStorage.setItem('crownstealer-developer-rules-v1',JSON.stringify(previewRules));}catch{}toast('Preview rules updated');return true;}
  let next=structuredClone(state);
  if(action==='map')next=previewMapJump(next,e.target.closest('[data-preview]').dataset.destination,previewRules);
  if(action==='destination')next=previewJump(next,e.target.closest('[data-preview]').dataset.destination);
@@ -1568,8 +1569,10 @@ if(developerMode){
  if(action==='reset')next=previewCharacter();
  next=loadGame(saveGame(next));stopIntroVoice();cancelArrowTap();$('panel').close();activePanel=null;start(next);persist();
  if(['stats','item','unlock','reset'].includes(action))openPanel('developer');
- }catch(error){toast('Preview: '+error.message);}
- });
+ return true;
+ }catch(error){toast('Preview: '+error.message);return true;}
+ };
+ document.addEventListener('click',e=>{handlePreviewAction(e);});
  try{start(hasSave()?loadGame(localStorage.getItem(SAVE)):previewCharacter());}catch{start(previewCharacter());}
  openPanel('developer');
 }
