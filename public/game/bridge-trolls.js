@@ -1,4 +1,5 @@
 import {itemById} from './items.js';
+import {adjustAlignment} from './alignment.js';
 export const BRIDGE_TROLL_ART='/assets/bridge-troll.webp';
 const gearKinds=new Set(['weapon','armor','shield','head','hands','boots','ring','necklace']);
 export function startBridgeTroll(s,key,note,previous={x:s.x,y:s.y}){
@@ -30,7 +31,8 @@ export function bridgeTrollAction(s,a,note){
  const troll=s.flags.bridgeTroll;if(!troll||s.mode!=='world')return false;
  if(a.type!=='bridgeTroll')return ['move','mapStep','enter'].includes(a.type);
  if(a.choice==='leave'){s.x=troll.backX;s.y=troll.backY;delete s.flags.bridgeTroll;note(s,'You retreat from the troll bridge.');return true;}
- if(a.choice==='quest'){troll.quest=true;note(s,'“Bring me the shadow of tomorrow, bottled before yesterday. Then I shall consider a discount.” The errand is impossible.');return true;}
+ if(a.choice==='quest'){troll.quest='offered';note(s,'“Those Billy Goats bully me every day. Dress as an old lady and offer them poisonous oatcakes at their cottage. Agree, and I will make it worth your while.”');return true;}
+ if(a.choice==='acceptQuest'){troll.quest='accepted';adjustAlignment(s,-8);note(s,'You agree to play the old lady. The troll hands over a basket of poisonous oatcakes and whispers the cottage is ten clicks away in the grassy field.');return true;}
  if(a.choice==='gold'){if(s.gold<troll.toll){note(s,'The troll insists on the entire toll.');return true;}s.gold-=troll.toll;}
  else if(a.choice==='gear'){if(!bridgeTrollGear(s).includes(a.id)){note(s,'Choose an unequipped piece of gear to surrender.');return true;}s.bag.splice(s.bag.indexOf(a.id),1);s.pendingLoot=s.pendingLoot.filter(id=>id!==a.id||s.bag.includes(id));}
  else if(a.choice==='sleep'||a.choice==='fight'){
@@ -41,12 +43,12 @@ export function bridgeTrollAction(s,a,note){
  }else return true;
  s.flags.bridgeTrollPaid??=[];s.flags.bridgeTrollPaid.push(troll.key);delete s.flags.bridgeTroll;s.turns++;note(s,'The troll pockets your toll and allows you across.');return true;
 }
-export function bridgeTrollView(s,button,esc){const t=s.flags.bridgeTroll;if(!t)return '';return '<div class="bridge-troll-scene"><img src="'+BRIDGE_TROLL_ART+'" alt="A tusked troll holds out a hand for the toll"><div><h3>The keeper of the bridge</h3><p>“'+t.toll+' gold. Or a piece of your gear. I also have a little errand—or a perfectly safe cave where you can sleep.”</p>'+(t.quest?'<p>Bring the shadow of tomorrow, bottled before yesterday. No such object exists.</p>':'')+'</div></div><div class="panel-actions">'+button('Pay '+t.toll+' gold',{type:'bridgeTroll',choice:'gold'},'primary',s.gold<t.toll)+bridgeTrollGear(s).map(id=>button('Give '+esc(itemById(id,s).name),{type:'bridgeTroll',choice:'gear',id})).join('')+button('Ask about the errand',{type:'bridgeTroll',choice:'quest'})+button('Sleep in his cave',{type:'bridgeTroll',choice:'sleep'})+button('Fight the troll',{type:'bridgeTroll',choice:'fight'})+button('Turn back',{type:'bridgeTroll',choice:'leave'})+'</div>';}
+export function bridgeTrollView(s,button,esc){const t=s.flags.bridgeTroll;if(!t)return '';const quest=t.quest==='offered'?'<p>The Billy Goats have been bullying him. He wants you to dress as an old lady and take them poisonous oatcakes.</p>':t.quest==='accepted'?'<p>The poisonous oatcakes are in your basket. Find Billy Goat Cottage ten clicks away in the grassy field.</p>':'';return '<div class="bridge-troll-scene"><img src="'+BRIDGE_TROLL_ART+'" alt="A tusked troll holds out a hand for the toll"><div><h3>The keeper of the bridge</h3><p>“'+t.toll+' gold. Or a piece of your gear. I also have a little errand—or a perfectly safe cave where you can sleep.”</p>'+quest+'</div></div><div class="panel-actions">'+button('Pay '+t.toll+' gold',{type:'bridgeTroll',choice:'gold'},'primary',s.gold<t.toll)+bridgeTrollGear(s).map(id=>button('Give '+esc(itemById(id,s).name),{type:'bridgeTroll',choice:'gear',id})).join('')+(t.quest==='offered'?button('Agree to poison the goats',{type:'bridgeTroll',choice:'acceptQuest'},'danger'):t.quest==='accepted'?'':button('Ask about the errand',{type:'bridgeTroll',choice:'quest'}))+button('Sleep in his cave',{type:'bridgeTroll',choice:'sleep'})+button('Fight the troll',{type:'bridgeTroll',choice:'fight'})+button('Turn back',{type:'bridgeTroll',choice:'leave'})+'</div>';}
 export function validBridgeTrollState(s){
  const validKey=key=>typeof key==='string'&&/^(?:r[0-3]|wild-(?:[0-9]|1[01])):[0-9]{1,3}:[0-9]{1,3}$/.test(key);
  const paid=s.flags.bridgeTrollPaid;
  if(paid!==undefined&&(!Array.isArray(paid)||paid.length>2000||paid.some(key=>!validKey(key))||new Set(paid).size!==paid.length))return false;
  const bank=s.enemy?.bridgeApproach;if(bank&&(!Number.isInteger(bank.x)||bank.x<1||bank.x>126||!Number.isInteger(bank.y)||bank.y<1||bank.y>94||!Number.isInteger(bank.atX)||bank.atX<1||bank.atX>126||!Number.isInteger(bank.atY)||bank.atY<1||bank.atY>94||bank.region!==s.region||(bank.area??null)!==(s.exploration?.area??null)))return false;
  const t=s.flags.bridgeTroll;
- return t===undefined||!!t&&s.mode==='world'&&validKey(t.key)&&['x','y','backX','backY'].every(k=>Number.isInteger(t[k])&&t[k]>=1&&t[k]<=126)&&t.x===s.x&&t.y===s.y&&Number.isInteger(t.toll)&&t.toll===500+s.region*250&&(t.quest===undefined||t.quest===true);
+ return t===undefined||!!t&&s.mode==='world'&&validKey(t.key)&&['x','y','backX','backY'].every(k=>Number.isInteger(t[k])&&t[k]>=1&&t[k]<=126)&&t.x===s.x&&t.y===s.y&&Number.isInteger(t.toll)&&t.toll===500+s.region*250&&(t.quest===undefined||['offered','accepted'].includes(t.quest));
 }

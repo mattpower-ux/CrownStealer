@@ -17,6 +17,16 @@ import {readStandingStones,wildernessDiscoverySites} from '../public/game/wilder
 test('standing stones waking dream reveals only Hearthmarch without moving player',()=>{const s=createGame();s.mode='world';const site=wildernessDiscoverySites(s).find(p=>p.type==='standing-stones');s.x=site.x;s.y=site.y;const start=[s.x,s.y];readStandingStones(s,site.id,()=>{});assert.equal(s.flags.hearthmarchDream,true);assert.deepEqual([s.x,s.y],start);assert.deepEqual(s.flags.visitedLands,[0]);assert.match(site.result,/Annal Nathrac Uth Spas Vessud/);});
 import {startBridgeTroll,bridgeTrollAction} from '../public/game/bridge-trolls.js';
 test('bridge tolls charge once and sleep trick starts troll ambush',()=>{const s=createGame();s.mode='world';s.gold=1000;startBridgeTroll(s,'r0:80:14',()=>{});bridgeTrollAction(s,{type:'bridgeTroll',choice:'gold'},()=>{});assert.equal(s.gold,500);assert.ok(s.flags.bridgeTrollPaid.includes('r0:80:14'));startBridgeTroll(s,'r0:80:21',()=>{});bridgeTrollAction(s,{type:'bridgeTroll',choice:'sleep'},()=>{});assert.equal(s.mode,'battle');assert.equal(s.enemy.speciesId,'bridge-troll');assert.equal(s.returnMode,'world');});
+test('asking a bridge troll about the errand presents and accepts the goat oatcake job',()=>{
+ const s=createGame(),notes=[],note=(_state,text)=>notes.push(text);s.mode='world';startBridgeTroll(s,'r0:80:14',note);
+ bridgeTrollAction(s,{type:'bridgeTroll',choice:'quest'},note);
+ assert.equal(s.flags.bridgeTroll.quest,'offered');
+ assert.match(notes.at(-1),/Billy Goats.*oatcakes/i);
+ bridgeTrollAction(s,{type:'bridgeTroll',choice:'acceptQuest'},note);
+ assert.equal(s.flags.bridgeTroll.quest,'accepted');
+ assert.equal(s.alignment,-8);
+ assert.match(notes.at(-1),/old lady/i);
+});
 import {TREASURE_ITEMS} from '../public/game/treasure.js';
 import {canMerchantBuy} from '../public/game/merchant-catalog.js';
 import {minorDungeonChests} from '../public/game/minor-dungeons.js';
