@@ -15,6 +15,7 @@ import {bridgeDirections,bridgeTrollView} from './bridge-trolls.js';
 import {drawHearthmarchDream} from './standing-stones-view.js';
 import {briarMeetingView,BATTLE_BEAR_HP} from './briar-animals.js';
 import {atMultiverseTube,snoutState,snoutView} from './snout.js';
+import {SNOUT_EPILOGUE_REVEAL_MS} from './snout-ending.js';
 import {atShipConsole} from './ship-console.js';
 import {MULTIVERSE_TRANSITION_MS,multiverseTransitionProgress} from './multiverse-transition.js';
 import {canSpeakToPeebles,canVisitEarth,EARTH_COORDINATES,peeblesTravelsWith} from './peebles.js';
@@ -869,13 +870,21 @@ function openPanel(name,{winkShot=false,winkResult=null}={}){if(state?.dungeon?.
  if(name==='multiverseTube'){
   if(!atMultiverseTube(state)){closePanel();return;}
   $('panel-title').textContent='MULTIVERSE TELEPORTER';
-  body.innerHTML='<div class="multiverse-chamber"><div class="multiverse-tube" aria-hidden="true"></div><p class="multiverse-warning">Multiverse Teleporter—Experimental—Do Not Use!</p><div class="panel-actions">'+button('RECONFIGURE REALITY',{type:'snoutReconfigure'},'reconfigure-reality')+'<button id="leave-multiverse-tube">Step out</button></div></div>';
+  body.innerHTML='<div class="multiverse-chamber"><div class="multiverse-tube" aria-hidden="true"></div><p class="multiverse-warning alien-warning" aria-label="Multiverse Teleporter—Experimental—Do Not Use!">⌁ MŮŁŦĬVΞRŚΞ ŦΞŁΞPØRŦΞR ⌁<small>EXPERIMENTAL · DO NOT USE</small></p><div class="panel-actions">'+button('RECONFIGURE REALITY',{type:'snoutReconfigure'},'reconfigure-reality')+'<button id="leave-multiverse-tube">Step out</button></div></div>';
   $('leave-multiverse-tube').onclick=closePanel;
  }
  if(name==='snout'){
   if(!snoutState(state)){closePanel();return;}
   $('panel-title').textContent='Snout';
   body.innerHTML=snoutView(state,button,esc,hasCheckpoint());
+  if(state.flags.snoutStage==='epilogue'){
+   audio.unlock().then(()=>audio.effect('rooster'));
+   body.querySelector('[data-snout-end-reveal]')?.addEventListener('click',()=>{
+    const scene=body.querySelector('.snout-ending'),question=body.querySelector('.snout-end-question');
+    scene?.classList.add('snout-ending-revealing');question?.setAttribute('disabled','');
+    setTimeout(()=>{if(activePanel!=='snout'||!scene)return;const actions=document.createElement('div');actions.className='snout-final-actions';actions.innerHTML='<button class="primary" data-load-checkpoint>Wait, what does this scroll do?</button><button data-ending-title>Back to title</button>';scene.append(actions);requestAnimationFrame(()=>{scene.classList.add('snout-ending-complete');actions.querySelector('button')?.focus();});},SNOUT_EPILOGUE_REVEAL_MS);
+   });
+  }
  }
  if(name==='druidKeeper'){
   if(!druidKeeperAt(state)){closePanel();return;}

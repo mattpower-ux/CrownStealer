@@ -911,8 +911,19 @@ dialog[data-panel="sageJournal"] #save-checkpoint { display: none; }
 .snout-ending .snout-story { animation:snout-story-in 1.4s ease-out both; }
 .snout-story p + p { margin-top:.7rem; }
 .snout-story h3 { text-align:center; font-size:clamp(1.7rem,5vw,3.25rem); margin:.75rem 0; }
+.snout-end-question { display:block; margin:1rem auto 0; border:0; background:transparent; color:var(--gold); font-family:Georgia,serif; font-size:clamp(1.7rem,5vw,3.25rem); }
+.snout-final-actions { display:flex; gap:8px; flex-wrap:wrap; opacity:0; }
+.snout-ending-revealing { min-height:56vh; display:grid; place-items:center; background:#000; transition:background .8s ease; }
+.snout-ending-revealing > img,.snout-ending-revealing .snout-story p { opacity:0; max-height:0; margin:0; overflow:hidden; transition:opacity .6s ease,max-height .6s ease,margin .6s ease; }
+.snout-ending-revealing .snout-story { animation:snout-end-grow 4s ease-in forwards; }
+.snout-ending-revealing .snout-end-question { font-size:clamp(2.7rem,12vw,9rem); color:#eee5cd; }
+.snout-ending-complete .snout-story { opacity:0; pointer-events:none; transition:opacity .5s ease; }
+.snout-ending-complete .snout-final-actions { opacity:1; transition:opacity 1.2s ease-in .25s; }
+@keyframes snout-end-grow { from { transform:scale(.45); } to { transform:scale(1.55); } }
+.alien-warning { font-family:Impact,Haettenschweiler,'Arial Narrow Bold',sans-serif; font-size:clamp(2.1rem,5vw,4.6rem); letter-spacing:.13em; line-height:.92; color:#bafff2; text-shadow:0 0 10px #64ffdd,0 0 24px #24aeaf; text-align:center; }
+.alien-warning small { display:block; margin-top:.6rem; font-family:Arial,sans-serif; font-size:.32em; letter-spacing:.34em; color:#ebc66b; text-shadow:none; }
 @keyframes snout-story-in { from { transform:translateY(.7rem); } to { transform:translateY(0); } }
-@media (prefers-reduced-motion:reduce) { .snout-ending .snout-story { animation:none; } }
+@media (prefers-reduced-motion:reduce) { .snout-ending .snout-story,.snout-ending-revealing .snout-story { animation:none; } }
 .multiverse-chamber { text-align:center; }
 .multiverse-tube { position:relative; width:105px; height:178px; margin:.95rem auto 1.4rem; border:2px solid #8ab8bb; border-radius:54px / 16px; background:linear-gradient(90deg,#3a656a,#22434b70 22%,#32535b 51%,#53868c); box-shadow:0 10px 16px #050d10,inset 10px 0 0 #a1d3d51c; }
 .multiverse-tube::before,.multiverse-tube::after { content:''; position:absolute; left:-8px; right:-8px; height:18px; border:2px solid #9ab0af; border-radius:50%; background:#3d5357; }
