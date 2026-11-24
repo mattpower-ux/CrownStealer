@@ -15,6 +15,7 @@ import {bridgeDirections,bridgeTrollView} from './bridge-trolls.js';
 import {drawHearthmarchDream} from './standing-stones-view.js';
 import {briarMeetingView,BATTLE_BEAR_HP} from './briar-animals.js';
 import {atMultiverseTube,snoutState,snoutView} from './snout.js';
+import {atShipConsole} from './ship-console.js';
 import {canSpeakToPeebles,canVisitEarth,EARTH_COORDINATES,peeblesTravelsWith} from './peebles.js';
 import {nearbyWatcher} from './minor-residents.js';
 import {nearestUnlitTorch,cemeteryLightAt} from './cemetery-light.js';
@@ -628,10 +629,10 @@ function update(){if(state.mode!=='battle')impactIndex=0;updateClockDisplay();up
   const tileAt=(x,y)=>areaFor(state)?areaTile(state,x,y):worldTile(state.region,x,y);
   if([[1,0],[-1,0],[0,1],[0,-1]].some(([dx,dy])=>tileAt(state.x+dx,state.y+dy)==='water'))$('actions').insertAdjacentHTML('beforeend',button('Cast fishing line',{type:'fish'},'primary'));
  }
- const atShipConsole=!atMultiverseTube(state)&&state.mode==='dungeon'&&state.dungeon?.ship&&Math.abs(state.dungeon.x-7)+Math.abs(state.dungeon.y-5)<=7;
- $('planet-console').hidden=!atShipConsole;
- $('planet-console').innerHTML=atShipConsole?'<p class="eyebrow">SHIP CONTROL STATION</p><h3>Select a planet to land</h3><div class="planet-choices">'+PLANETS.map((name,planet)=>button('<span class="planet-orb planet-'+planet+'" aria-hidden="true"></span><strong>'+esc(name.split(',')[0])+'</strong><span>'+esc(name.split(', ')[1])+'</span>',{type:'navigatePlanet',planet},'planet-choice')).join('')+(state.flags.earthCoordinates?button('<span class="planet-orb peebles-earth-orb" aria-hidden="true"></span><strong>Earth</strong><span>Professor Peebles’s coordinates</span>',{type:'visitEarth'},'planet-choice'):'')+'</div>':'';
- if(state.dungeon?.ship&&state.mode==='dungeon')$('actions').innerHTML=atMultiverseTube(state)?'':atShipConsole?'<span>Tap a planet on the control station to land.</span>':'<span>Find the control station at (7, 5).</span>';
+ const shipConsoleOpen=!atMultiverseTube(state)&&atShipConsole(state);
+ $('planet-console').hidden=!shipConsoleOpen;
+ $('planet-console').innerHTML=shipConsoleOpen?'<p class="eyebrow">SHIP CONTROL STATION</p><h3>Select a planet to land</h3><div class="planet-choices">'+PLANETS.map((name,planet)=>button('<span class="planet-orb planet-'+planet+'" aria-hidden="true"></span><strong>'+esc(name.split(',')[0])+'</strong><span>'+esc(name.split(', ')[1])+'</span>',{type:'navigatePlanet',planet},'planet-choice')).join('')+(state.flags.earthCoordinates?button('<span class="planet-orb peebles-earth-orb" aria-hidden="true"></span><strong>Earth</strong><span>Professor Peebles’s coordinates</span>',{type:'visitEarth'},'planet-choice'):'')+'</div>':'';
+ if(state.dungeon?.ship&&state.mode==='dungeon')$('actions').innerHTML=atMultiverseTube(state)?'':shipConsoleOpen?'<span>Tap a planet on the control station to land.</span>':'<span>Find the control station at (7, 5).</span>';
  if(state.dungeon?.site===ROADSIDE_CRYPT&&state.mode==='dungeon'){
   const atLadder=state.dungeon.x===1&&state.dungeon.y===1;
   $('actions').innerHTML=(atLadder?button('Leave crypt',{type:'leave'},'primary'):'')+'<button data-panel="potions">Drink potion</button>';
