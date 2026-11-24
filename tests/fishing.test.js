@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {act,createGame,worldTile} from '../public/game/engine.js';
 import {readFile} from 'node:fs/promises';
+import {FISHING_CAST_MS,fishingCastFrame} from '../public/game/fishing-animation.js';
 
 function shoreState(){
  const s=createGame();
@@ -63,4 +64,14 @@ test('wilderness controls expose a cast button for an equipped pole at shore',as
  const source=await readFile(new URL('../public/game/app.js',import.meta.url),'utf8');
  assert.match(source,/Cast fishing line/);
  assert.match(source,/type:'fish'/);
+});
+
+test('fishing cast travels outward before making an expanding splash',()=>{
+ assert.equal(FISHING_CAST_MS,850);
+ assert.deepEqual(fishingCastFrame(0),{phase:'cast',progress:0,splash:0});
+ const line=fishingCastFrame(300);
+ assert.equal(line.phase,'cast');assert.ok(line.progress>.5&&line.progress<1);assert.equal(line.splash,0);
+ const splash=fishingCastFrame(700);
+ assert.equal(splash.phase,'splash');assert.equal(splash.progress,1);assert.ok(splash.splash>.4&&splash.splash<1);
+ assert.equal(fishingCastFrame(850).phase,'done');
 });

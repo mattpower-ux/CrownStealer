@@ -72,6 +72,7 @@ import {cemeteryMonsterArt} from './dungeon-populations.js';
 import {SEWER_WALL,drawSewerChannel} from './sewer-scenery.js';
 
 import {drawFishBones,drawRowboat} from './nautical.js';
+import {drawFishingCast} from './fishing-animation.js';
 import {isHauntedShipyardDungeon} from './haunted-shipyard.js';
 import {drawUnderwaterAtmosphere,drawUnderwaterGalleon,drawUnderwaterVault,underwaterGalleonVisible,underwaterWallPixel} from './underwater-render.js';
 
@@ -368,7 +369,7 @@ function visibleWorldPoint({x,y},{cols,rows,left,top}){
 const bridgeTrollArt=new Image();
 bridgeTrollArt.src=BRIDGE_TROLL_ART;
 
-function drawWorldViewport(c,w,h,s){
+function drawWorldViewport(c,w,h,s,time=0,fx=null,reduced=false){
  const view=worldViewport(s),{cols,rows,left,top}=view,map=outdoorMap(s),size=h/rows;
  c.drawImage(worldGround(map,view,s),0,0,w,h);
  c.save();
@@ -404,6 +405,7 @@ function drawWorldViewport(c,w,h,s){
   c.drawImage(bridgeTrollArt,tx-width*.5,ty-height+size*.2,width,height);
  }
  drawAdventurer(c,x,y,size*(inWater?1.25:1.9));
+ if(fx?.kind==='fishing')drawFishingCast(c,{x,y,size,dx:fx.dx,dy:fx.dy,elapsed:Math.max(0,time-fx.start),reduced});
  if(s.flags.impaledMoves){
   c.save();
   c.strokeStyle='#644127';c.lineWidth=Math.max(5,size*.12);c.lineCap='round';
@@ -429,13 +431,13 @@ export function render(canvas,s,time=0,fx=null,reduced=false){renderedHero=s;can
  canvas.dataset.view=arena?(s.mode==='battle'?'arena-battle':'arena-floor'):wildContact?(castle?'castle-contact':'wilderness-contact'):contact?(s.enemy?.firstContact?'dungeon-contact':'dungeon-battle'):s.mode==='battle'?'battle-map':s.mode==='dungeon'?'dungeon-3d':castle?'castle-map':s.mode==='town'?'town-map':'world-map';
 
  if(arena){drawArenaRing(c,w,h);if(s.mode==='battle')dungeonMonster(c,w,h,s,time,fx,reduced);}
- else if(wildContact){if(castle)drawCastle(c,w,h,s,castle,time,fx,reduced);else drawWorldViewport(c,w,h,s);wildernessMonster(c,w,h,s);}
+ else if(wildContact){if(castle)drawCastle(c,w,h,s,castle,time,fx,reduced);else drawWorldViewport(c,w,h,s,time,fx,reduced);wildernessMonster(c,w,h,s);}
  else if(contact){if(!drawIllustratedBossEntrance(c,w,h,s)){dungeon(c,w,h,s,reduced?0:time);dungeonMonster(c,w,h,s,time,fx,reduced);}}
  else if(s.mode==='battle')battle(c,w,h,s,time,fx,reduced);
  else if(s.mode==='dungeon')dungeon(c,w,h,s,reduced?0:time);
  else if(castle)drawCastle(c,w,h,s,castle,time,fx,reduced);
  else if(s.mode==='town')town(c,w,h,s,reduced?0:time);
- else drawWorldViewport(c,w,h,s);
+ else drawWorldViewport(c,w,h,s,time,fx,reduced);
 
  if(s.flags.beansRounds)drawBeansGas(c,w,h,s,time,fx,reduced);
  if(wizardAudienceAvailable(s)||whiteWizardCanCure(s))drawWhiteWizard(c,w,h,{label:false});
