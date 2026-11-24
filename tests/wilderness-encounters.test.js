@@ -34,6 +34,20 @@ test('main lands and branches support payoff, trade and sale encounters', () => 
   }
 });
 
+test('a roadside offer cannot persist or reopen inside the Royal Dungeon', () => {
+  const s = createGame('Royal dungeon traveler');
+  Object.assign(s, {
+    mode: 'dungeon', location: 'bellwether', region: 0, returnMode: 'dungeon',
+    dungeon: {site: 'royal-dungeon', index: 0, floor: 0, x: 7, y: 1, dir: 1, cellsOpen: false},
+  });
+  s.flags.peacefulEncounter = {name: 'Memory Eel', speciesId: 'memory-eel', offer: 'gold', amount: 22};
+
+  const after = act(s, {type: 'forward'});
+
+  assert.equal(after.flags.peacefulEncounter, undefined);
+  assert.equal(after.mode, 'dungeon');
+});
+
 test('surprise permits free evasion or an uncontested opening attack', () => {
   const s = act(traveler('wild-0', 1976), east);
   assert.equal(s.enemy?.surprised, true);
