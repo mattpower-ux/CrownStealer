@@ -67,6 +67,7 @@ import {drawOceanBuilding} from './ocean-buildings.js';
 import {drawSaltChoirIcon} from './salt-choir-art.js';
 
 import {shipWallInk} from './spaceship-scenery.js';
+import {cemeteryMonsterArt} from './dungeon-populations.js';
 
 import {SEWER_WALL,drawSewerChannel} from './sewer-scenery.js';
 
@@ -1208,7 +1209,30 @@ const ghostDragon=new Image();ghostDragon.src='/assets/ghost-dragon.webp';
 const firedrakSprites=new Image();firedrakSprites.src='/assets/firedrak-monsters.webp';monsterAtlases['firedrak-monsters']=firedrakSprites;
 const briarPortraits=Object.fromEntries(['andros','lizard-thegn'].map(id=>{const img=new Image();img.src='/assets/'+id+'.webp';return [id,img];}));
 const caveTrollVariants=['cave-troll-eyepatch.webp','cave-troll-shaggy.webp','cave-troll-scarred.webp'].map(file=>{const img=new Image();img.src='/assets/'+file;return img;});
+function drawCemeterySkeleton(c,x,y,w,h){
+ c.save();c.translate(x+w*.5,y+h*.5);c.scale(Math.min(w,h),Math.min(w,h));
+ c.strokeStyle='#392f22';c.lineWidth=.045;c.lineCap='round';c.lineJoin='round';
+ c.fillStyle='#d8cfb6';c.beginPath();c.arc(0,-.31,.18,0,Math.PI*2);c.fill();c.stroke();
+ c.fillStyle='#25211e';c.beginPath();c.ellipse(-.065,-.34,.046,.062,0,0,Math.PI*2);c.ellipse(.065,-.34,.046,.062,0,0,Math.PI*2);c.fill();
+ c.strokeStyle='#f1e5c7';c.lineWidth=.05;c.beginPath();c.moveTo(0,-.13);c.lineTo(0,.33);c.moveTo(-.14,-.06);c.lineTo(.14,-.06);c.moveTo(-.15,-.01);c.lineTo(-.08,.22);c.moveTo(.15,-.01);c.lineTo(.08,.22);c.moveTo(-.08,.22);c.lineTo(-.12,.42);c.moveTo(.08,.22);c.lineTo(.12,.42);c.stroke();
+ c.lineWidth=.025;for(let rib=-.09;rib<=.09;rib+=.06){c.beginPath();c.moveTo(0,rib);c.quadraticCurveTo(-.14,rib+.02,-.13,rib+.12);c.moveTo(0,rib);c.quadraticCurveTo(.14,rib+.02,.13,rib+.12);c.stroke();}
+ c.restore();
+}
+function drawCemeteryGhoul(c,x,y,w,h){
+ c.save();c.translate(x+w*.5,y+h*.53);c.scale(Math.min(w,h),Math.min(w,h));
+ c.fillStyle='#171c17';c.beginPath();c.ellipse(0,.39,.31,.055,0,0,Math.PI*2);c.fill();
+ c.fillStyle='#536250';c.beginPath();c.ellipse(.02,-.19,.16,.19,-.22,0,Math.PI*2);c.fill();c.strokeStyle='#23291f';c.lineWidth=.035;c.stroke();
+ c.fillStyle='#70765e';c.beginPath();c.ellipse(.08,-.44,.14,.15,-.15,0,Math.PI*2);c.fill();c.stroke();
+ c.fillStyle='#b6b889';c.beginPath();c.arc(.03,-.45,.035,0,Math.PI*2);c.arc(.13,-.45,.035,0,Math.PI*2);c.fill();
+ c.strokeStyle='#2c3427';c.lineWidth=.11;c.lineCap='round';c.beginPath();c.moveTo(-.11,-.12);c.lineTo(-.3,.16);c.lineTo(-.2,.24);c.moveTo(.14,-.1);c.lineTo(.3,.13);c.lineTo(.22,.23);c.stroke();
+ c.fillStyle='#3e4938';c.beginPath();c.moveTo(-.17,-.05);c.lineTo(.2,-.05);c.lineTo(.26,.34);c.lineTo(-.22,.34);c.closePath();c.fill();c.stroke();
+ c.strokeStyle='#afa47c';c.lineWidth=.028;c.beginPath();c.moveTo(-.1,.03);c.lineTo(.12,.03);c.moveTo(-.13,.12);c.lineTo(.15,.12);c.stroke();
+ c.restore();
+}
 export function paintMonster(c,enemy,x,y,w,h,dungeonIndex=0,variantIndex=0){
+ const cemeteryArt=cemeteryMonsterArt(enemy);
+ if(cemeteryArt==='skeleton'){drawCemeterySkeleton(c,x,y,w,h);return true;}
+ if(cemeteryArt==='ghoul'){drawCemeteryGhoul(c,x,y,w,h);return true;}
  const briar=briarPortraits[enemy.speciesId==='kerrbear'?'andros':enemy.speciesId];
  if(briar?.complete&&briar.naturalWidth){
   const scale=Math.min(w/briar.naturalWidth,h/briar.naturalHeight),width=briar.naturalWidth*scale,height=briar.naturalHeight*scale;
