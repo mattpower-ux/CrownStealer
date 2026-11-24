@@ -3,6 +3,7 @@ import {minorApproachTrails,regionTrails,trailBlocked} from '../public/game/trai
 test('trails cannot cross ocean inlets or the pump lake',()=>{
  assert.equal(trailBlocked(2,112,20),true,'northern ocean inlet');
  assert.equal(trailBlocked(2,88,72),true,'Leviathan pump lake');
+ assert.equal(trailBlocked(2,30,94),true,'open ocean south of Pelagos');
 });
 test('curved trails reach every land-accessible landmark, avoid impassable terrain and have stable bends',()=>{for(let region=0;region<4;region++){const paths=regionTrails(region);assert.ok(paths.length>=1);assert.ok(paths.every(path=>path.site.id!=='leviathan-pump'),'the lake island must not receive a road across water');for(const path of paths){assert.deepEqual(path.points.at(-1),{x:path.site.x+.5,y:path.site.y+.5});assert.ok(path.points.every(p=>!trailBlocked(region,Math.floor(p.x),Math.floor(p.y))));assert.ok(path.points.some(p=>Math.abs(p.y-(path.site.y+.5))>.4));}assert.deepEqual(regionTrails(region),paths);}});
 

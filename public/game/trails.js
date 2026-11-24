@@ -1,8 +1,9 @@
 import {TOWNS,DUNGEONS} from './content.js';
 import {WILD_SITES,mountainTile} from './wild-sites.js';
 import {inlandWater,pumpLake} from './nautical.js';
+import {coastalWater} from './wilderness-landscape.js';
 const cache=new Map();
-export function trailBlocked(region,x,y){if(x<1||x>126||y<1||y>94)return true;if(inlandWater(region,x,y)||pumpLake(region,x,y))return true;if(x===64||y===48||[...TOWNS,...DUNGEONS,...WILD_SITES].some(p=>p.region===region&&Math.abs(x-p.x)<=1&&Math.abs(y-p.y)<=1))return false;return mountainTile(region,x,y);}
+export function trailBlocked(region,x,y){if(x<1||x>126||y<1||y>94)return true;const shore=coastalWater(region,null,x,y,undefined);if(shore||inlandWater(region,x,y)||pumpLake(region,x,y))return true;if(x===64||y===48||[...TOWNS,...DUNGEONS,...WILD_SITES].some(p=>p.region===region&&Math.abs(x-p.x)<=1&&Math.abs(y-p.y)<=1))return false;return mountainTile(region,x,y);}
 function route(region,start,end){const key=p=>p.x+','+p.y,queue=[start],previous=new Map([[key(start),null]]);for(let i=0;i<queue.length;i++){const p=queue[i];if(key(p)===key(end)){const result=[];let current=p;while(current){result.push(current);current=previous.get(key(current));}return result.reverse();}const directions=[[Math.sign(end.x-p.x),0],[0,Math.sign(end.y-p.y)],[0,1],[0,-1],[1,0],[-1,0]];for(const [dx,dy]of directions){if(!dx&&!dy)continue;const n={x:p.x+dx,y:p.y+dy};if(!previous.has(key(n))&&!trailBlocked(region,n.x,n.y)){previous.set(key(n),p);queue.push(n);}}}return [];}
 function minorRoute(region,site,index){
  const vertical=Math.abs(site.x-64)<=Math.abs(site.y-48),start=vertical?{x:64,y:site.y}:{x:site.x,y:48},end={x:site.x,y:site.y};

@@ -53,7 +53,8 @@ export function boatPassageShore(area) {
   return null;
 }
 
-function coastalWater(region, area, x, y, shore) {
+export function coastalWater(region, area, x, y, shore=landscapeFor(region,area)?.shore) {
+  if (!shore) return false;
   if (x > 23 && x < WORLD_WIDTH - 24 && y > 23 && y < WORLD_HEIGHT - 24) return false;
   const mainland = area == null;
   const east = WORLD_WIDTH - 1 - x;
