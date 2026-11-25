@@ -8,7 +8,10 @@ export function minorResidents(s){
  const map=minorDungeonMap(d),queue=[{x:1,y:1}],seen=new Set(),points=[];
  for(const p of queue){const key=p.x+','+p.y;if(seen.has(key))continue;seen.add(key);points.push(p);for(const [dx,dy]of steps){const x=p.x+dx,y=p.y+dy;if(map[y]?.[x]!==undefined&&map[y][x]!==1&&!seen.has(x+','+y))queue.push({x,y});}}
  let spots;
- if(site.kind==='tunnel')spots=points.filter(p=>map[p.y][p.x]===0&&steps.filter(([dx,dy])=>map[p.y+dy]?.[p.x+dx]!==1).length===1);
+ if(site.kind==='tunnel'){
+  const deadEnds=points.filter(p=>map[p.y][p.x]===0&&steps.filter(([dx,dy])=>map[p.y+dy]?.[p.x+dx]!==1).length===1);
+  spots=deadEnds.length>2?[deadEnds[0],deadEnds.at(-1)]:deadEnds;
+ }
  else spots=[.24,.53,.79].map(t=>points[Math.max(2,Math.floor((points.length-1)*t))]);
  return spots.map((p,i)=>({...p,id:d.minorId+':'+d.floor+':'+i,kind:site.kind==='tunnel'?'watcher':'undead',name:site.kind==='tunnel'?'Watcher of the Way':['Cemetery Skeleton','Grave Ghoul','Barrow Wight'][i],level:2+site.region*6+d.floor+i})).filter(p=>!s.flags.minorResidentsDefeated?.includes(p.id));
 }

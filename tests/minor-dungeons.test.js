@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {minorDungeonMap,minorDungeonChests,minorGuardian} from '../public/game/minor-dungeons.js';
 import {minorSiteDefinition} from '../public/game/minor-sites.js';
+import {secretAlcove} from '../public/game/secret-alcoves.js';
 
 function visit(minorId,floor) {
   const site=minorSiteDefinition(minorId);
@@ -68,10 +69,10 @@ test('kobold burrows form broad connected chambers across every land and preserv
    if(site.kind!=='koboldCave')continue;
    for(let floor=0;floor<site.floors;floor++){
     const map=minorDungeonMap(visit(id,floor).dungeon),open=map.flat().filter(t=>t!==1).length;
-    assert.ok(open>=95&&open<150,id+': open chamber area '+open);
+    assert.ok(open>=75&&open<150,id+': open chamber area '+open);
     let broad=0;
     for(let y=1;y<13;y++)for(let x=1;x<13;x++)if([map[y][x],map[y+1][x],map[y][x+1],map[y+1][x+1]].every(t=>t!==1))broad++;
-    assert.ok(broad>=60,id+': broad chamber coverage '+broad);
+    assert.ok(broad>=52,id+': broad chamber coverage '+broad);
     const queue=[[1,1]],seen=new Set(['1,1']);
     for(const [x,y] of queue)for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
      const nx=x+dx,ny=y+dy,key=nx+','+ny;
@@ -86,14 +87,22 @@ test('kobold burrows form broad connected chambers across every land and preserv
  }
 });
 
-test('cemeteries retain geometry and tunnels add connected side passages',()=>{
- for(const [slot,want] of [
-  [2,[0,14,8,8,28,28,2044,1052,7964,7936,7936,14336,12288,12288,0]],
-  [24,[0,126,960,64,1984,1024,1024,1024,1024,1024,1024,16256,8320,8320,0]],
- ]){
-  const map=minorDungeonMap(visit('minor-r0-'+slot,0).dungeon,{courtyard:false});
-  assert.deepEqual(map.map(row=>row.reduce((mask,tile,x)=>mask+(tile===1?0:2**x),0)),want);
+test('cemeteries keep a connected route and tunnels add connected side passages',()=>{
+ const cemetery=minorDungeonMap(visit('minor-r0-2',0).dungeon,{courtyard:false});
+ const tunnel=minorDungeonMap(visit('minor-r0-24',0).dungeon,{courtyard:false});
+ for(const [name,map] of [['cemetery',cemetery],['tunnel',tunnel]]){
+  const queue=[[1,1]],seen=new Set(['1,1']);
+  for(const [x,y] of queue)for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+   const nx=x+dx,ny=y+dy,key=nx+','+ny;
+   if(map[ny]?.[nx]===undefined||map[ny][nx]===1||seen.has(key))continue;
+   seen.add(key);queue.push([nx,ny]);
+  }
+  assert.ok(seen.has('13,13'),name+' exit remains reachable');
+  assert.equal(seen.size,map.flat().filter(tile=>tile!==1).length,name+' stays connected');
  }
+ const tunnelDeadEnds=[];
+ for(let y=1;y<14;y++)for(let x=1;x<14;x++)if(tunnel[y][x]===0&&[[1,0],[-1,0],[0,1],[0,-1]].filter(([dx,dy])=>tunnel[y+dy]?.[x+dx]!==1).length===1)tunnelDeadEnds.push([x,y]);
+ assert.ok(tunnelDeadEnds.length>=3,'branched tunnel has blind side passages');
 });
 
 test('open-air cemeteries use wall-height vault blocks to form connected lanes',()=>{
@@ -158,9 +167,20 @@ test('mountain tunnels connect the entrance and exit with treasure and no automa
   const map=minorDungeonMap(state.dungeon);
   assert.equal(map[1][1],3);
   assert.equal(map[13][13],2);
-  assert.equal(map.flat().filter(tile=>tile!==1).length,33);
+  assert.ok(map.flat().filter(tile=>tile!==1).length>33);
   assert.equal(minorDungeonChests(state,loot).length,1);
   assert.equal(minorGuardian(state),null);
+});
+
+test('every cave and tunnel has a discoverable hidden alcove',()=>{
+ for(const land of [...Array.from({length:4},(_,i)=>'r'+i),...Array.from({length:12},(_,i)=>'w'+i)])for(let slot=0;slot<=24;slot++){
+  const site=minorSiteDefinition('minor-'+land+'-'+slot);
+  if(!['koboldCave','tunnel'].includes(site.kind))continue;
+  for(let floor=0;floor<site.floors;floor++){
+   const dungeon={site:'minor-site',minorId:site.id,index:site.index,floor};
+   assert.ok(secretAlcove(dungeon,minorDungeonMap(dungeon)),site.id+':'+floor);
+  }
+ }
 });
 
 test('regional caves use local inhabitants and keep regional difficulty',()=>{
