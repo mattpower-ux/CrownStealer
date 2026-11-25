@@ -67,7 +67,7 @@ import {drawOceanBuilding} from './ocean-buildings.js';
 import {drawSaltChoirIcon} from './salt-choir-art.js';
 
 import {shipWallInk} from './spaceship-scenery.js';
-import {cemeteryMonsterArt} from './dungeon-populations.js';
+import {cemeteryMonsterArt,cemeterySkeletonProfile} from './dungeon-populations.js';
 
 import {SEWER_WALL,drawSewerChannel} from './sewer-scenery.js';
 
@@ -1213,13 +1213,16 @@ const firedrakSprites=new Image();firedrakSprites.src='/assets/firedrak-monsters
 const briarPortraits=Object.fromEntries(['andros','lizard-thegn'].map(id=>{const img=new Image();img.src='/assets/'+id+'.webp';return [id,img];}));
 const caveTrollVariants=['cave-troll-eyepatch.webp','cave-troll-shaggy.webp','cave-troll-scarred.webp'].map(file=>{const img=new Image();img.src='/assets/'+file;return img;});
 function drawCemeterySkeleton(c,x,y,w,h){
- c.save();c.translate(x+w*.5,y+h*.5);c.scale(Math.min(w,h),Math.min(w,h));
- c.strokeStyle='#392f22';c.lineWidth=.045;c.lineCap='round';c.lineJoin='round';
- c.fillStyle='#d8cfb6';c.beginPath();c.arc(0,-.31,.18,0,Math.PI*2);c.fill();c.stroke();
- c.fillStyle='#25211e';c.beginPath();c.ellipse(-.065,-.34,.046,.062,0,0,Math.PI*2);c.ellipse(.065,-.34,.046,.062,0,0,Math.PI*2);c.fill();
- c.strokeStyle='#f1e5c7';c.lineWidth=.05;c.beginPath();c.moveTo(0,-.13);c.lineTo(0,.33);c.moveTo(-.14,-.06);c.lineTo(.14,-.06);c.moveTo(-.15,-.01);c.lineTo(-.08,.22);c.moveTo(.15,-.01);c.lineTo(.08,.22);c.moveTo(-.08,.22);c.lineTo(-.12,.42);c.moveTo(.08,.22);c.lineTo(.12,.42);c.stroke();
- c.lineWidth=.025;for(let rib=-.09;rib<=.09;rib+=.06){c.beginPath();c.moveTo(0,rib);c.quadraticCurveTo(-.14,rib+.02,-.13,rib+.12);c.moveTo(0,rib);c.quadraticCurveTo(.14,rib+.02,.13,rib+.12);c.stroke();}
- c.restore();
+ const p=cemeterySkeletonProfile(w,h),cx=x+w*.5,base=y+h*.94,skullY=y+h*.15,skullW=p.skull.width,skullH=p.skull.height,bone='#d8cfb6',edge='#42382a';
+ c.save();c.fillStyle='#11171388';c.beginPath();c.ellipse(cx,base,w*.27,h*.045,0,0,Math.PI*2);c.fill();
+ c.fillStyle='#34342b';c.beginPath();c.moveTo(cx-w*.24,y+h*.36);c.quadraticCurveTo(cx,y+h*.24,cx+w*.23,y+h*.39);c.lineTo(cx+w*.17,base-h*.08);c.lineTo(cx,y+h*.8);c.lineTo(cx-w*.19,base-h*.07);c.closePath();c.fill();
+ c.strokeStyle=edge;c.lineWidth=Math.max(2,w*.022);c.lineJoin='round';c.stroke();
+ c.fillStyle=bone;c.beginPath();c.ellipse(cx,skullY,skullW*.5,skullH*.5,0,0,Math.PI*2);c.fill();c.stroke();
+ c.fillStyle='#292720';for(const eye of [-1,1]){c.beginPath();c.ellipse(cx+eye*skullW*.16,skullY-skullH*.03,skullW*.075,skullH*.115,eye*.18,0,Math.PI*2);c.fill();}c.beginPath();c.moveTo(cx-skullW*.12,skullY+skullH*.22);c.lineTo(cx+skullW*.12,skullY+skullH*.22);c.lineTo(cx,skullY+skullH*.34);c.closePath();c.fill();
+ c.strokeStyle=bone;c.lineCap='round';c.lineWidth=Math.max(3,w*.04);c.beginPath();c.moveTo(cx,skullY+skullH*.46);c.lineTo(cx,y+h*.63);c.moveTo(cx-w*.23,y+h*.37);c.lineTo(cx+w*.23,y+h*.37);c.moveTo(cx-w*.19,y+h*.39);c.lineTo(cx-w*.31,y+h*.62);c.lineTo(cx-w*.25,y+h*.72);c.moveTo(cx+w*.19,y+h*.39);c.lineTo(cx+w*.31,y+h*.61);c.lineTo(cx+w*.25,y+h*.71);c.stroke();
+ c.lineWidth=Math.max(2,w*.022);for(let rib=0;rib<p.ribs;rib++){const yy=y+h*(.42+rib*.045),spread=w*(.17-rib*.009);c.beginPath();c.moveTo(cx,yy);c.quadraticCurveTo(cx-spread,yy-h*.005,cx-spread*.9,yy+h*.07);c.moveTo(cx,yy);c.quadraticCurveTo(cx+spread,yy-h*.005,cx+spread*.9,yy+h*.07);c.stroke();}
+ c.lineWidth=Math.max(4,w*.045);c.beginPath();c.moveTo(cx-w*.13,y+h*.69);c.lineTo(cx+w*.13,y+h*.69);c.moveTo(cx-w*.1,y+h*.71);c.lineTo(cx-w*.13,y+h*.82);c.lineTo(cx-w*.18,base);c.moveTo(cx+w*.1,y+h*.71);c.lineTo(cx+w*.13,y+h*.82);c.lineTo(cx+w*.18,base);c.stroke();
+ c.strokeStyle='#9b7750';c.lineWidth=Math.max(2,w*.018);c.beginPath();c.moveTo(cx+w*.27,y+h*.42);c.lineTo(cx+w*.42,y+h*.18);c.moveTo(cx+w*.39,y+h*.21);c.lineTo(cx+w*.47,y+h*.16);c.stroke();c.restore();
 }
 function drawCemeteryGhoul(c,x,y,w,h){
  c.save();c.translate(x+w*.5,y+h*.53);c.scale(Math.min(w,h),Math.min(w,h));

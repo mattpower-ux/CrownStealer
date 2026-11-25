@@ -9,6 +9,7 @@ export function cemeteryMonsterArt(enemy){
  if(/^depth-\d+-grave-ghoul$/.test(id))return 'ghoul';
  return null;
 }
+export const cemeterySkeletonProfile=(w,h)=>({height:h*.92,skull:{width:w*.27,height:h*.17},shoulders:{width:w*.5},ribs:6,legs:[{x:-w*.12},{x:w*.12}]});
 export function dungeonDepth(s,total){return Math.max(0,Math.min(1,s.dungeon.floor/Math.max(1,total-1)));}
 export function depthPool(s,pool,total){if(s.dungeon.royal)return pool.filter(m=>m.depthBand===undefined);const depth=dungeonDepth(s,total),cemetery=CEMETERY_DUNGEONS.has(s.dungeon.index);const themed=cemetery?pool.filter(m=>m.depthBand!==undefined):pool;return themed.filter(m=>{const band=m.depthBand??0;return band<=depth+.00001&&(depth-band<=(cemetery?.55:.8)||m.depthBand>=.75);});}
 export function depthWeight(s,m,total){const age=dungeonDepth(s,total)-(m.depthBand??0);return Math.max(.12,1-age*1.5)*(/imp|mephit/.test(m.id)?.3:1);}
