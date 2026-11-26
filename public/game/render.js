@@ -1317,19 +1317,24 @@ function dungeonMonster(c,w,h,s,time,fx,reduced){
  if(fade===0)return;
 
  const distance=s.returnMode==='dungeon'?battlefieldDistance(s):1,reaction=s.flags.beansRounds?beansEnemyReaction(s.enemy):null,fleeing=reaction==='fleeing',perspective=1/(1+(distance-1)*.48)*(fleeing?.64:1);
- const height=Math.min(h*.67,w*.72)*perspective,width=height*.85,x=w/2-width/2+(fleeing?w*.11:0),feet=dungeonFloorBaseline(h,distance+(fleeing?1:0));
+ const count=s.enemy.memberHp?Math.max(1,Math.ceil(s.enemy.hp/s.enemy.memberHp)):1;
+ const baseHeight=Math.min(h*.67,w*.72)*perspective;
+ const gap=12;
+ const separateGroup=count>1&&count<=3;
+ const width=separateGroup?Math.min(baseHeight*.85,(w-48-gap*(count-1))/count):baseHeight*.85;
+ const height=separateGroup?width/.85:baseHeight;
+ const x=w/2-width/2+(fleeing?w*.11:0),feet=dungeonFloorBaseline(h,distance+(fleeing?1:0));
 
  c.save();c.globalAlpha=fade;const shadow=c.createRadialGradient(w/2,feet-3,2,w/2,feet-3,width*.55);shadow.addColorStop(0,'#000000b0');shadow.addColorStop(1,'#00000000');c.fillStyle=shadow;c.beginPath();c.ellipse(w/2,feet-3,width*.6,height*.07,0,0,Math.PI*2);c.fill();
 
  if(monsterLayer.width!==Math.ceil(width))monsterLayer.width=Math.ceil(width);if(monsterLayer.height!==Math.ceil(height))monsterLayer.height=Math.ceil(height);const mc=monsterLayer.getContext('2d');mc.clearRect(0,0,monsterLayer.width,monsterLayer.height);
 
- const count=s.enemy.memberHp?Math.max(1,Math.ceil(s.enemy.hp/s.enemy.memberHp)):1;
  let painted=false;
  for(let i=0;i<count;i++){
   mc.clearRect(0,0,monsterLayer.width,monsterLayer.height);
   const memberPainted=paintMonster(mc,s.enemy,0,0,width,height,s.dungeon?.index??0,i);
   painted=painted||memberPainted;
-  if(memberPainted){if(enemyHit){mc.globalCompositeOperation='source-atop';mc.fillStyle=`rgba(255,20,15,${pulse*.8})`;mc.fillRect(0,0,width,height);mc.globalCompositeOperation='source-over';}c.drawImage(monsterLayer,x+(i-(count-1)/2)*width*.42,feet-height);}
+  if(memberPainted){if(enemyHit){mc.globalCompositeOperation='source-atop';mc.fillStyle=`rgba(255,20,15,${pulse*.8})`;mc.fillRect(0,0,width,height);mc.globalCompositeOperation='source-over';}c.drawImage(monsterLayer,x+(i-(count-1)/2)*(separateGroup?width+gap:width*.42),feet-height);}
  }
  if(!painted){c.fillStyle='#111a17';c.beginPath();c.ellipse(w/2,feet-height*.45,width*.25,height*.4,0,0,Math.PI*2);c.fill();circle(c,w/2-width*.06,feet-height*.72,3,'#d5b07c');circle(c,w/2+width*.06,feet-height*.72,3,'#d5b07c');}
 
