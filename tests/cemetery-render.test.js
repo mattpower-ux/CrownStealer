@@ -15,7 +15,7 @@ test('coffins preserve chest gold, loot IDs, one-time opening and save state',()
 });
 test('broken cemetery remains are deterministic decorative objects and do not alter dungeon navigation',()=>{
  const d={index:0,floor:3,x:1,y:1,dir:0},map=dungeonMap(d),before=JSON.stringify(map),debris=cemeteryRemains(d,map);
- assert.ok(debris.some(p=>p.kind==='sarcophagus'));assert.ok(debris.some(p=>p.kind==='headstone'));assert.deepEqual(cemeteryRemains(d,map),debris);assert.equal(JSON.stringify(map),before);
+ assert.ok(debris.some(p=>p.kind==='sarcophagus'));assert.ok(debris.every(p=>p.kind!=='headstone'));assert.deepEqual(cemeteryRemains(d,map),debris);assert.equal(JSON.stringify(map),before);
 });
 
 test('every cemetery surface opens onto a moonlit yard and stairs descend to enclosed crypts',()=>{
@@ -44,7 +44,8 @@ test('every cemetery surface opens onto a moonlit yard and stairs descend to enc
 test('surface cemeteries form a dense varied necropolis instead of a sparse yard',()=>{
  const d={index:0,floor:0,x:1,y:1,dir:0},map=dungeonMap(d),structures=cemeteryRemains(d,map);
  assert.ok(structures.length>=18);
- for(const kind of ['mausoleum','vault','obelisk','headstone','sarcophagus'])assert.ok(structures.some(item=>item.kind===kind),kind);
+ for(const kind of ['mausoleum','vault','obelisk','sarcophagus'])assert.ok(structures.some(item=>item.kind===kind),kind);
+ assert.ok(structures.every(item=>item.kind!=='headstone'),'short skull-faced stones are absent');
  const faces=new Set(Array.from({length:20},(_,i)=>cemeteryFacadeKind(i,i*3,true)));
  assert.ok(faces.size>=4);
  const door=cemeteryFacadeInk('vault-door',.57,.72),rgb=door.match(/[0-9a-f]{2}/gi).map(value=>parseInt(value,16));

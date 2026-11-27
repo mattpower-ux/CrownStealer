@@ -125,8 +125,7 @@ export function cemeteryRemains(d,map){
   {x:4,y:3,kind:'mausoleum'},{x:10,y:4,kind:'vault'},{x:3,y:10,kind:'crypt'},
   {x:8,y:3,kind:'vault'},{x:11,y:8,kind:'mausoleum'},{x:2,y:7,kind:'obelisk'},
   {x:7,y:10,kind:'obelisk'},{x:11,y:11,kind:'vault'},{x:4,y:11,kind:'mausoleum'},
-  {x:6,y:4,kind:'headstone'},{x:7,y:4,kind:'headstone'},
-  {x:5,y:8,kind:'sarcophagus'},{x:9,y:9,kind:'sarcophagus'},{x:6,y:11,kind:'headstone'},{x:9,y:5,kind:'headstone'},
+  {x:5,y:8,kind:'sarcophagus'},{x:9,y:9,kind:'sarcophagus'},
   {x:5.35,y:5.2,kind:'skull',seed:1},{x:8.25,y:7.1,kind:'femur',seed:2},{x:10.4,y:10.1,kind:'ribcage',seed:3},
  ]:[];
  for(let y=1;y<map.length-1;y++)for(let x=1;x<map[y].length-1;x++){
@@ -134,7 +133,8 @@ export function cemeteryRemains(d,map){
   const seed=(x*31+y*47+(d.floor||0)*17+(d.index||0)*7)%19;
   if(seed>(isOpenAirCemetery(d)?7:2))continue;
   const wall=[[0,-1],[1,0],[0,1],[-1,0]].find(([dx,dy])=>map[y+dy]?.[x+dx]===1);if(!wall)continue;
-  const kind=seed===0?'sarcophagus':isOpenAirCemetery(d)&&seed===3?'obelisk':isOpenAirCemetery(d)&&seed===4?'vault':isOpenAirCemetery(d)&&seed===5?'skull':isOpenAirCemetery(d)&&seed===6?'femur':isOpenAirCemetery(d)&&seed===7?'ribcage':'headstone';
+  const kind=seed===0?'sarcophagus':isOpenAirCemetery(d)&&seed===3?'obelisk':isOpenAirCemetery(d)&&seed===4?'vault':isOpenAirCemetery(d)&&seed===5?'skull':isOpenAirCemetery(d)&&seed===6?'femur':isOpenAirCemetery(d)&&seed===7?'ribcage':null;
+  if(!kind)continue;
   remains.push({x:x+wall[0]*.30,y:y+wall[1]*.30,kind,seed});
  }
  return remains;
