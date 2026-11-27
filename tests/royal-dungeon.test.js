@@ -112,7 +112,7 @@ test('staff remain passive when approached and spoken to, and either insult or a
   assert.throws(() => roundTrip(invalid), /Invalid royal dungeon/);
 });
 
-test('trying either cell provokes one guard at a time and releasing all three prisoners grants one necklace', () => {
+test('each prisoner is freed separately, earns a distinct reward, and stays free after saving', () => {
   let s = act(atStair(), {type: 'enterRoyalDungeon'});
   assert.equal(ROYAL_DUNGEON_CELLS.length, 2);
   assert.equal(ROYAL_DUNGEON_CELLS.flatMap(cell => cell.prisoners).length, 3);
@@ -120,18 +120,21 @@ test('trying either cell provokes one guard at a time and releasing all three pr
   for (const cell of ROYAL_DUNGEON_CELLS) assert.equal(dungeonMap(s.dungeon)[cell.door.y][cell.door.x], 1);
   s = walkTo(s, west.x, west.y);
   const greeting = [];
-  s = act(s, {type: 'royalDungeonFree', id: west.id}, greeting);
+  s = act(s, {type: 'royalDungeonFree', id: west.prisoners[0].id}, greeting);
   assert.equal(s.enemy.royalDungeonNpc, 'royal-torturer');
   assert.equal(greeting.find(event => event.voice === 'royal-torturer-intro')?.message, "Oh goodee. A little fly has flown into our little nest, and now I've got to squash him. This might be a bit messy.");
   s = win(s);
   assert.equal(s.dungeon.cellsOpen, false);
   s = walkTo(s, east.x, east.y);
-  s = act(s, {type: 'royalDungeonFree', id: east.id});
+  s = act(s, {type: 'royalDungeonFree', id: east.prisoners[0].id});
   assert.equal(s.enemy.royalDungeonNpc, 'royal-heckler');
   s = win(s);
-  s = roundTrip(act(s, {type: 'royalDungeonFree', id: east.id}));
-  assert.equal(s.dungeon.cellsOpen, true);
-  for (const cell of ROYAL_DUNGEON_CELLS) assert.equal(dungeonMap(s.dungeon)[cell.door.y][cell.door.x], 0);
+  assert.deepEqual(royalDungeonActions(s).map(choice=>choice.label),['Free Young maiden']);
+  s = roundTrip(act(s, {type: 'royalDungeonFree', id: east.prisoners[0].id}));
+  assert.equal(s.dungeon.cellsOpen, false);
+  assert.deepEqual(s.flags.royalDungeonRescued,[east.prisoners[0].id]);
+  assert.equal(dungeonMap(s.dungeon)[east.door.y][east.door.x],0);
+  assert.equal(dungeonMap(s.dungeon)[west.door.y][west.door.x],1);
   const reward = 'necklace-bravery';
   assert.equal(s.bag.filter(id => id === reward).length, 1);
   assert.ok(s.pendingLoot.includes(reward));
@@ -140,11 +143,25 @@ test('trying either cell provokes one guard at a time and releasing all three pr
   const charisma = effectiveAttributes(s, itemById).charisma;
   s = act(s, {type: 'equip', id: reward});
   assert.equal(effectiveAttributes(s, itemById).charisma, charisma + 5);
+  s = walkTo(s, west.x, west.y);
+  assert.deepEqual(royalDungeonActions(s).map(choice=>choice.label),['Free Kobold','Free Drunken peasant']);
+  const gold=s.gold;
+  s = roundTrip(act(s, {type: 'royalDungeonFree', id: west.prisoners[0].id}));
+  assert.equal(s.gold,gold+80);
+  assert.equal(s.dungeon.cellsOpen,false);
+  assert.equal(dungeonMap(s.dungeon)[west.door.y][west.door.x],0);
+  assert.deepEqual(royalDungeonActions(s).map(choice=>choice.label),['Free Drunken peasant']);
+  s = roundTrip(act(s, {type: 'royalDungeonFree', id: west.prisoners[1].id}));
+  assert.ok(s.bag.includes('common-lesser-healing'));
+  assert.equal(s.dungeon.cellsOpen,true);
+  assert.equal(s.flags.royalDungeonFreed,true);
+  assert.equal(s.flags.royalDungeonRescued.length,3);
+  assert.deepEqual(royalDungeonActions(s),[]);
   s = walkTo(s, 1, 1);
   s = act(act(s, {type: 'leave'}), {type: 'enterRoyalDungeon'});
   assert.equal(s.dungeon.cellsOpen, true);
   s = walkTo(s, west.x, west.y);
-  s = roundTrip(act(s, {type: 'royalDungeonFree', id: west.id}));
+  s = roundTrip(act(s, {type: 'royalDungeonFree', id: west.prisoners[0].id}));
   assert.equal(s.bag.filter(id => id === reward).length, 1);
 });
 

@@ -1,5 +1,5 @@
 import {artLoaded} from './art-revision.js';
-import {ROYAL_DUNGEON_CELLS} from './royal-dungeon.js';
+import {ROYAL_DUNGEON_CELLS,royalDungeonRescued,royalDungeonCellOpen} from './royal-dungeon.js';
 const bodies=Object.fromEntries(['royal-torturer','royal-heckler'].map(id=>{const image=new Image();image.onload=artLoaded;image.src='/assets/'+id+'-body.webp';return [id,image];}));
 export function paintRoyalBody(c,enemy,x,y,w,h){
  const art=bodies[enemy.speciesId];if(!art)return false;
@@ -36,12 +36,12 @@ export function drawRoyalDungeonScenery(c,w,h,s,map,wallDepth,time=0){
  const d=s.dungeon,dirs=[[0,-1],[1,0],[0,1],[-1,0]],[dx,dy]=dirs[d.dir],focal=w/(2*Math.tan(Math.PI/5.2));
  const project=(x,y,z=0)=>{const rx=x-d.x-.5,ry=y-d.y-.5,depth=rx*dx+ry*dy;return depth>.1?{x:w*.5+(-dy*rx+dx*ry)*focal/depth,y:h*.5-z*h*.85/depth,depth}:null;};
  const objects=[{x:6.3,y:11.7,height:.75,art:cauldron,foreground:true},{x:8.15,y:5.4,height:.7,art:table,foreground:true},{x:6.12,y:10.3,height:.72,art:manacles,foreground:true,z:.22}];
- if(!s.flags.royalDungeonFreed&&!d.cellsOpen)for(const cell of ROYAL_DUNGEON_CELLS)for(const person of cell.prisoners)objects.push({x:person.x+.5,y:person.y+.5,height:person.id.includes('kobold')?.65:.9,art:ctx=>prisoner(ctx,person.id)});
+ for(const cell of ROYAL_DUNGEON_CELLS)for(const person of cell.prisoners)if(!royalDungeonRescued(s).includes(person.id))objects.push({x:person.x+.5,y:person.y+.5,height:person.id.includes('kobold')?.65:.9,art:ctx=>prisoner(ctx,person.id)});
  const drawn=objects.map(o=>({...o,p:project(o.x,o.y,-.5)})).filter(o=>o.p).sort((a,b)=>b.p.depth-a.p.depth);
  const drawObject=o=>{const size=h*.85*o.height/o.p.depth,x=o.p.x-size*.5,y=o.p.y-size-(o.z||0)*h*.85/o.p.depth;if(x+size<0||x>w)return;c.save();c.beginPath();for(let xx=Math.max(0,Math.floor(x));xx<Math.min(w,x+size);xx+=2)if(o.p.depth<=wallDepth[xx]+.15)c.rect(xx,0,2,h);c.clip();c.translate(x,y);c.scale(size,size);o.art(c,time);c.restore();};for(const o of drawn.filter(o=>!o.foreground))drawObject(o);
  // Bars are drawn after their occupants, in perspective, with dark sides and a worn highlight.
- for(const cell of ROYAL_DUNGEON_CELLS){const b=cell.bars,bx=b.x+(b.facing===3?.94:.06);for(let y=b.top;y<b.bottom+1;y+=.16){if(d.cellsOpen&&y>=cell.door.y&&y<cell.door.y+1)continue;const top=project(bx,y,.48),bottom=project(bx,y,-.5);if(!top||!bottom)continue;const xx=Math.floor(top.x);if(xx<0||xx>=w||top.depth>wallDepth[xx]+.15)continue;const width=Math.max(2,h*.027/top.depth);c.strokeStyle='#161e1c';c.lineWidth=width;c.beginPath();c.moveTo(top.x,top.y);c.lineTo(bottom.x,bottom.y);c.stroke();c.strokeStyle='#899083';c.lineWidth=Math.max(1,width*.25);c.beginPath();c.moveTo(top.x-width*.18,top.y);c.lineTo(bottom.x-width*.18,bottom.y);c.stroke();}
-  for(const z of [-.12,.46])for(let y=b.top;y<b.bottom+1;y+=.1){if(d.cellsOpen&&y>=cell.door.y&&y<cell.door.y+1)continue;const a=project(bx,y,z),v=project(bx,Math.min(b.bottom+1,y+.11),z);if(!a||!v)continue;const xx=Math.max(0,Math.min(w-1,Math.floor(a.x)));if(a.depth>wallDepth[xx]+.15)continue;c.strokeStyle='#424b43';c.lineWidth=Math.max(2,h*.025/a.depth);c.beginPath();c.moveTo(a.x,a.y);c.lineTo(v.x,v.y);c.stroke();}
+ for(const cell of ROYAL_DUNGEON_CELLS){const b=cell.bars,bx=b.x+(b.facing===3?.94:.06);for(let y=b.top;y<b.bottom+1;y+=.16){if(royalDungeonCellOpen(d,cell)&&y>=cell.door.y&&y<cell.door.y+1)continue;const top=project(bx,y,.48),bottom=project(bx,y,-.5);if(!top||!bottom)continue;const xx=Math.floor(top.x);if(xx<0||xx>=w||top.depth>wallDepth[xx]+.15)continue;const width=Math.max(2,h*.027/top.depth);c.strokeStyle='#161e1c';c.lineWidth=width;c.beginPath();c.moveTo(top.x,top.y);c.lineTo(bottom.x,bottom.y);c.stroke();c.strokeStyle='#899083';c.lineWidth=Math.max(1,width*.25);c.beginPath();c.moveTo(top.x-width*.18,top.y);c.lineTo(bottom.x-width*.18,bottom.y);c.stroke();}
+  for(const z of [-.12,.46])for(let y=b.top;y<b.bottom+1;y+=.1){if(royalDungeonCellOpen(d,cell)&&y>=cell.door.y&&y<cell.door.y+1)continue;const a=project(bx,y,z),v=project(bx,Math.min(b.bottom+1,y+.11),z);if(!a||!v)continue;const xx=Math.max(0,Math.min(w-1,Math.floor(a.x)));if(a.depth>wallDepth[xx]+.15)continue;c.strokeStyle='#424b43';c.lineWidth=Math.max(2,h*.025/a.depth);c.beginPath();c.moveTo(a.x,a.y);c.lineTo(v.x,v.y);c.stroke();}
  }
  for(const o of drawn.filter(o=>o.foreground))drawObject(o);
 }

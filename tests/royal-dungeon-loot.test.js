@@ -19,10 +19,12 @@ test('each Royal Dungeon staff member drops distinct functional loot only once',
 test('facing nearby cell bars exposes prisoner rescue without the exact old square',()=>{
  let s=inside();s.dungeon.x=6;s.dungeon.y=5;s.dungeon.dir=3;
  assert.equal(royalDungeonCellAt(s)?.id,'royal-west-cell');assert.equal(royalDungeonAt(s)?.kind,'cell');assert.ok(royalDungeonActions(s).some(a=>a.action.type==='royalDungeonFree'));
- s=act(s,{type:'royalDungeonFree',id:'royal-west-cell'});assert.equal(s.mode,'battle');assert.doesNotThrow(()=>loadGame(saveGame(s)));
+ s=act(s,{type:'royalDungeonFree',id:'royal-prisoner-kobold'});assert.equal(s.mode,'battle');assert.doesNotThrow(()=>loadGame(saveGame(s)));
  for(const npc of ROYAL_DUNGEON_NPCS)royalDungeonVictory(s,{royalDungeonNpc:npc.id},()=>{});
- s=act(s,{type:'royalDungeonFree',id:'royal-west-cell'});assert.equal(s.flags.royalDungeonFreed,true);assert.equal(s.bag.filter(id=>id==='necklace-bravery').length,1);
- s=act(loadGame(saveGame(s)),{type:'royalDungeonFree',id:'royal-west-cell'});assert.equal(s.bag.filter(id=>id==='necklace-bravery').length,1);
+ const gold=s.gold;
+ s=act(s,{type:'royalDungeonFree',id:'royal-prisoner-kobold'});assert.equal(s.gold,gold+80);assert.equal(s.flags.royalDungeonFreed,undefined);
+ s=act(loadGame(saveGame(s)),{type:'royalDungeonFree',id:'royal-prisoner-kobold'});assert.equal(s.gold,gold+80);
+ s=act(s,{type:'royalDungeonFree',id:'royal-prisoner-peasant'});assert.equal(s.bag.filter(id=>id==='common-lesser-healing').length,1);
  const away=inside();away.dungeon.x=7;away.dungeon.y=1;assert.equal(royalDungeonCellAt(away),null);
 });
 

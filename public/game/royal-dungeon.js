@@ -56,6 +56,10 @@ export const ROYAL_DUNGEON_CELLS = [
     prisoners: [{id: 'royal-prisoner-maiden', name: 'Young maiden', x: 11, y: 10}],
   },
 ];
+const prisoners=ROYAL_DUNGEON_CELLS.flatMap(cell=>cell.prisoners);
+export const royalDungeonRescued=s=>s.flags.royalDungeonRescued??(s.flags.royalDungeonFreed?prisoners.map(person=>person.id):[]);
+export const royalDungeonCellOpen=(d,cell)=>!!d.cellsOpen||!!d.openCells?.includes(cell.id);
+const openedCells=rescued=>ROYAL_DUNGEON_CELLS.filter(cell=>cell.prisoners.some(person=>rescued.includes(person.id))).map(cell=>cell.id);
 
 const at = (position, point) => position?.x === point.x && position.y === point.y;
 const near = (position, point) => Math.abs(position.x - point.x) + Math.abs(position.y - point.y) <= 1;
@@ -74,7 +78,7 @@ export function royalDungeonHeckle(s, note, events) {
   voiceEvent(events, 'royal-heckler-' + index, line);
 }
 
-function makeMap(cellsOpen) {
+function makeMap(openCellIds) {
   const map = Array.from({length: 15}, () => Array(15).fill(1));
   const floor = (left, top, right, bottom) => {
     for (let y = top; y <= bottom; y++) for (let x = left; x <= right; x++) map[y][x] = 0;
@@ -84,14 +88,15 @@ function makeMap(cellsOpen) {
   floor(6, 4, 8, 12);
   floor(2, 4, 4, 8);
   floor(10, 8, 12, 12);
-  if (cellsOpen) for (const {door} of ROYAL_DUNGEON_CELLS) map[door.y][door.x] = 0;
+  for (const {id,door} of ROYAL_DUNGEON_CELLS) if(openCellIds.includes(id))map[door.y][door.x] = 0;
   map[entrance.y][entrance.x] = 3;
   return map;
 }
 
-const lockedMap = makeMap(false);
-const openMap = makeMap(true);
-export const royalDungeonMap = d => d.cellsOpen ? openMap : lockedMap;
+const lockedMap = makeMap([]);
+const openMap = makeMap(ROYAL_DUNGEON_CELLS.map(cell=>cell.id));
+const partialMaps=new Map(ROYAL_DUNGEON_CELLS.map(cell=>[cell.id,makeMap([cell.id])]));
+export const royalDungeonMap = d => d.cellsOpen ? openMap : d.openCells?.length===1?partialMaps.get(d.openCells[0])??lockedMap:d.openCells?.length===2?openMap:lockedMap;
 
 export function royalDungeonStairAt(s) {
   return s.mode === 'town' && s.location === town && at(s.castle, ROYAL_DUNGEON_STAIR);
@@ -125,9 +130,9 @@ export function royalDungeonActions(s) {
     {label: 'Tell him his job is meaningless', action: {type: 'royalDungeonInsult', id: point.id}},
     {label: 'Attack the ' + point.name, action: {type: 'royalDungeonAttack', id: point.id}},
   ];
-  if (point?.kind === 'cell' && !s.dungeon.cellsOpen) return [
-    {label: 'Free the prisoners', action: {type: 'royalDungeonFree', id: point.id}},
-  ];
+  if (point?.kind === 'cell') return point.prisoners.filter(person=>!royalDungeonRescued(s).includes(person.id)).map(person=>({
+    label:'Free '+person.name,action:{type:'royalDungeonFree',id:person.id},
+  }));
   if (point?.kind === 'stair') return [{label: 'Climb to Bellwether Castle', action: {type: 'leave'}}];
   return [];
 }
@@ -157,21 +162,30 @@ function startFight(s, npc, note, events) {
   }
 }
 
-function freePrisoners(s, id, note, events) {
+function freePrisoner(s, id, note, events) {
   const cell = royalDungeonCellAt(s);
-  if (!cell || cell.id!==id || s.dungeon.cellsOpen) return;
+  const rescued=royalDungeonRescued(s);
+  const person=cell?.prisoners.find(person=>(person.id===id||cell.id===id)&&!rescued.includes(person.id));
+  if (!person) return;
   const guard = royalDungeonFigures(s)[0];
   if (guard) {
     note(s, 'The keys rattle as you test the cell door.');
     startFight(s, guard, note, events);
     return;
   }
-  s.flags.royalDungeonFreed = s.dungeon.cellsOpen = true;
-  if (!s.bag.includes(BRAVERY_NECKLACE.id)) {
-    s.bag.push(BRAVERY_NECKLACE.id);
-    s.pendingLoot.push(BRAVERY_NECKLACE.id);
+  s.flags.royalDungeonRescued=[...rescued,person.id];
+  s.dungeon.openCells=openedCells(s.flags.royalDungeonRescued);
+  if(person.id==='royal-prisoner-kobold'){
+    s.gold+=80;
+    note(s,'You free the kobold. He shows you 80 gold hidden beneath a loose stone.');
+  }else if(person.id==='royal-prisoner-peasant'){
+    s.bag.push('common-lesser-healing');s.pendingLoot.push('common-lesser-healing');
+    note(s,'You free the drunken peasant. He gives you a Lesser Healing Potion he kept hidden from the guards.');
+  }else{
+    s.bag.push(BRAVERY_NECKLACE.id);s.pendingLoot.push(BRAVERY_NECKLACE.id);
+    note(s,'You free the young maiden. She gives you the Necklace of Bravery.');
   }
-  note(s, 'You unlock both cells. The kobold, the drunken peasant, and the young maiden are free. The young maiden gives you the Necklace of Bravery.');
+  if(s.flags.royalDungeonRescued.length===prisoners.length){s.flags.royalDungeonFreed=true;s.dungeon.cellsOpen=true;note(s,'All three prisoners are free.');}
 }
 
 export function royalDungeonAction(s, action, note, events = []) {
@@ -179,7 +193,8 @@ export function royalDungeonAction(s, action, note, events = []) {
     if (!royalDungeonStairAt(s) || s.castle.alarm || s.casino?.active) return true;
     delete s.castle;
     s.mode = s.returnMode = 'dungeon';
-    s.dungeon = {site: ROYAL_DUNGEON_ID, index: 0, floor: 0, x: entrance.x, y: entrance.y, dir: 1, cellsOpen: !!s.flags.royalDungeonFreed};
+    const rescued=royalDungeonRescued(s);
+    s.dungeon = {site: ROYAL_DUNGEON_ID, index: 0, floor: 0, x: entrance.x, y: entrance.y, dir: 1, cellsOpen: !!s.flags.royalDungeonFreed,openCells:openedCells(rescued)};
     note(s, 'You descend into the Royal Dungeon beneath Bellwether Castle.');
     return true;
   }
@@ -190,7 +205,7 @@ export function royalDungeonAction(s, action, note, events = []) {
     return true;
   }
   if (action.type === 'royalDungeonFree') {
-    freePrisoners(s, action.id, note, events);
+    freePrisoner(s, action.id, note, events);
     return true;
   }
   if (!['royalDungeonTalk', 'royalDungeonInsult', 'royalDungeonAttack'].includes(action.type)) return false;
@@ -224,8 +239,14 @@ export function royalDungeonVictory(s, enemy, note) {
 }
 
 export function validRoyalDungeonState(s) {
+  const rescued=s.flags.royalDungeonRescued;
+  const prisonerIds=prisoners.map(person=>person.id);
+  if(rescued!==undefined&&(!Array.isArray(rescued)||new Set(rescued).size!==rescued.length||rescued.some(id=>!prisonerIds.includes(id))))return false;
   if (s.flags.royalDungeonFreed !== undefined &&
       (s.flags.royalDungeonFreed !== true || !ROYAL_DUNGEON_NPCS.every(npc => s.flags[defeatedKey(npc)] === true))) return false;
+  if(rescued?.length&&!ROYAL_DUNGEON_NPCS.every(npc=>s.flags[defeatedKey(npc)]===true))return false;
+  if(s.flags.royalDungeonFreed&&royalDungeonRescued(s).length!==prisoners.length)return false;
+  if(!s.flags.royalDungeonFreed&&rescued?.length===prisoners.length)return false;
   const heckle = s.flags.royalDungeonHeckle;
   if (heckle !== undefined && (!Number.isInteger(heckle) || heckle < 0 || heckle >= heckles.length)) return false;
   for (const [key, value] of Object.entries(s.flags)) {
@@ -233,6 +254,9 @@ export function validRoyalDungeonState(s) {
   }
   if (!isRoyalDungeon(s)) return s.enemy?.royalDungeonNpc === undefined && s.dungeon?.cellsOpen === undefined;
   const d = s.dungeon;
+  const expectedOpenCells=openedCells(royalDungeonRescued(s));
+  if(d.openCells!==undefined&&(!Array.isArray(d.openCells)||d.openCells.length!==expectedOpenCells.length||d.openCells.some(id=>!expectedOpenCells.includes(id))))return false;
+  if(!s.flags.royalDungeonFreed&&expectedOpenCells.length&&!d.openCells)return false;
   if (s.location !== town || s.region !== 0 || d.index !== 0 || d.floor !== 0 || d.royal || d.ship || d.expedition ||
       d.secretRoom || s.exploration?.area || d.cellsOpen !== !!s.flags.royalDungeonFreed || s.returnMode !== 'dungeon') return false;
   if (s.mode === 'dungeon') return !s.enemy;
