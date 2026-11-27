@@ -83,6 +83,18 @@ test('only the Bellwether stair leads to one dungeon floor and the ladder return
   assert.equal(s.dungeon, null);
 });
 
+test('the first Royal Dungeon entry plays its cue once across visits and saves', () => {
+  const firstEvents=[];
+  let s=roundTrip(act(atStair(),{type:'enterRoyalDungeon'},firstEvents));
+  assert.deepEqual(firstEvents.map(event=>event.kind),['royalDungeonFirstEntry']);
+  assert.equal(s.flags.royalDungeonEntered,true);
+  s=act(s,{type:'leave'});
+  const secondEvents=[];
+  s=act(s,{type:'enterRoyalDungeon'},secondEvents);
+  assert.equal(s.dungeon.site,'royal-dungeon');
+  assert.equal(secondEvents.some(event=>event.kind==='royalDungeonFirstEntry'),false);
+});
+
 test('staff remain passive when approached and spoken to, and either insult or attack starts one fight', () => {
   let s = act(atStair(), {type: 'enterRoyalDungeon'});
   assert.equal(act(s, {type: 'royalDungeonAttack', id: 'royal-torturer'}).mode, 'dungeon');

@@ -195,6 +195,7 @@ export function royalDungeonAction(s, action, note, events = []) {
     s.mode = s.returnMode = 'dungeon';
     const rescued=royalDungeonRescued(s);
     s.dungeon = {site: ROYAL_DUNGEON_ID, index: 0, floor: 0, x: entrance.x, y: entrance.y, dir: 1, cellsOpen: !!s.flags.royalDungeonFreed,openCells:openedCells(rescued)};
+    if(!s.flags.royalDungeonEntered){s.flags.royalDungeonEntered=true;events.push({kind:'royalDungeonFirstEntry'});}
     note(s, 'You descend into the Royal Dungeon beneath Bellwether Castle.');
     return true;
   }
