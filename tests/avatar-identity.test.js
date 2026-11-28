@@ -13,6 +13,16 @@ test('evil empowerment adds separate horn and forked-tail layers that disappear 
  const exiled=avatarMarkup({...empowered,flags:{},evilRoute:{version:1,phase:'exiled'}});
  assert.doesNotMatch(exiled,/avatar-devil-horns|avatar-evil-tail/);
 });
+test('every selectable look keeps its own avatar and aligns the evil face treatment to its head',async()=>{
+ const {CHARACTER_LOOKS}=await import('../public/game/character-looks.js');
+ for(const look of CHARACTER_LOOKS){
+  const html=avatarMarkup({...base,look:look.id,alignmentPoints:0});
+  assert.match(html,new RegExp(look.url.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+  assert.match(html,/transform="translate\(0 18\)"/);
+  assert.match(html,/raised black eyebrows/);
+  assert.match(html,/Forked red devil tail/);
+ }
+});
 test('leprosy visibly bandages the inventory head and hands without replacing identity or gear',()=>{
  const s={...base,gender:'her',flags:{leprosy:true}};
  const html=avatarMarkup(s);assert.match(html,/avatar-bandages/);assert.match(html,/Bandages cover your head and hands/);assert.match(html,/data-avatar-identity="her"/);
