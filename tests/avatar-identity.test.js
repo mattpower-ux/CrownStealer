@@ -9,7 +9,7 @@ test('evil empowerment adds separate horn and forked-tail layers that disappear 
  const html=avatarMarkup(empowered);
  assert.match(html,/avatar-devil-horns/);
  assert.match(html,/avatar-evil-tail/);
- assert.match(html,/Forked red devil tail/);
+ assert.match(html,/Slim forked red devil tail/);
  const exiled=avatarMarkup({...empowered,flags:{},evilRoute:{version:1,phase:'exiled'}});
  assert.doesNotMatch(exiled,/avatar-devil-horns|avatar-evil-tail/);
 });
@@ -20,7 +20,7 @@ test('every selectable look keeps its own avatar and aligns the evil face treatm
   assert.match(html,new RegExp(look.url.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
   assert.match(html,/transform="translate\(0 18\)"/);
   assert.match(html,/raised black eyebrows/);
-  assert.match(html,/Forked red devil tail/);
+  assert.match(html,/Slim forked red devil tail/);
  }
 });
 test('leprosy visibly bandages the inventory head and hands without replacing identity or gear',()=>{
