@@ -155,8 +155,9 @@ export function castleFigures(s) {
 export function castleGuards(s) {
   const layout = castleLayout(s.location);
   if (!layout) return [];
+  const conquered=s.location!=='bellwether'&&s.cities?.[s.location];
   const consultation = s.castle?.guardConsultation;
-  return [...layout.guards, ...layout.patrols].map(guard => {
+  return [...layout.guards, ...layout.patrols].filter(guard=>!s.flags?.['castleGuardFled:'+s.location+':'+guard.id]&&(conquered||!s.flags?.['castleGuardDefeated:'+s.location+':'+guard.id])).map(guard => {
     const current = consultation?.guardId === guard.id ? consultation.destination : s.castle?.guardPositions?.[guard.id];
     return current ? {...guard, x: current.x, y: current.y} : guard;
   });
@@ -229,10 +230,11 @@ export function castleInteractionActions(s, id) {
   if (point.kind === 'book') return [choice('READ', 'readCastleBook'), choice('IGNORE', 'leaveCastleBook')];
   if (point.kind === 'talking-head') return [choice('Yes', 'greetCastleHead'), choice('No', 'leaveCastleHead')];
   if (point.kind === 'bath') return [choice('Bathe', 'batheCastle')];
-  if (point.kind === 'guard') return s.flags.royalHero ? [] : figureDistance(s, point) === 0
+  if (point.kind === 'guard') return s.cities?.[s.location] ? [choice('Talk','castleTalk'),choice('Attack','attackCastleGuard')] : s.flags.royalHero ? [] : figureDistance(s, point) === 0
     ? [choice('JUST VISITING', 'castleGuardVisit'), choice('IGNORE', 'castleGuardIgnore'), choice('ATTACK', 'attackCastleGuard')]
     : [choice('Talk', 'castleTalk'), choice('Attack', 'attackCastleGuard')];
   const leave = choice('Leave the Room', 'castleLeaveRoom');
+  if(point.kind==='governor'&&s.cities?.[s.location])return [leave];
   if (s.flags.royalHero) return [leave];
   const attack = {label: 'Attack', action: {type: 'attackCastleRoyal', target: point.id}};
   const report = choice('Report on Your Progress', 'castleReport');
@@ -286,6 +288,7 @@ function royalProgress(s) {
 const reportKey = point => 'castleReported:' + point.id;
 const isRoyal = point => point.kind === 'king' || point.kind === 'princess';
 const say = (s, point, line, note) => note(s, point.name + ': ' + line);
+const occupiedGuardLines=['Yes, your lordship!','Make way for the benign dictator!','Hail to the thief!','Who says scum can’t rise to the top?'];
 
 function greet(s, point, progress, note) {
   if (s.flags.royalHero && (isRoyal(point) || ['governor', 'guard'].includes(point.kind))) {
@@ -302,7 +305,9 @@ function greet(s, point, progress, note) {
     say(s, point, ready || progress.length ? 'Well? What progress have you made?' : kingDismissal, note);
   }
   else if (point.kind === 'princess') say(s, point, progress.length ? 'You look like you have news. Tell me what happened.' : 'Hello again. How is your quest coming along?', note);
+  else if (point.kind === 'guard'&&s.cities?.[s.location]) say(s,point,occupiedGuardLines[(s.flags.occupiedGuardRemarks=(s.flags.occupiedGuardRemarks||0)+1)-1 & 3],note);
   else if (point.kind === 'guard') say(s, point, 'Keep your hands to yourself and there will be no trouble.', note);
+  else if (point.kind === 'governor'&&s.cities?.[s.location]) say(s,point,s.location==='mothbridge'?'The coronet is yours. Do not mistake my surrender for affection.':'The city answers to you now.',note);
   else if (point.kind === 'governor') say(s, point, canDeliverRoyalMessage(s, point)
     ? 'That seal is the King’s. You may deliver his message to me.' : rulerPersonality(s.location).greeting, note);
   else if (point.kind === 'chest') say(s, point, 'The chest is locked.', note);
@@ -321,6 +326,7 @@ function converse(s, action, layout, options) {
   if (!point) return;
   if (action.type === 'attackCastleGuard') {
     if (point.kind !== 'guard') return;
+    if(s.cities?.[s.location]){s.flags['castleGuardFled:'+s.location+':'+point.id]=true;note(s,point.name+': “Your lordship! No need for that!” The guard drops his spear and runs.');return;}
     startCastleDuel(s, point, options);
     return;
   }

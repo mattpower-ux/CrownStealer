@@ -357,6 +357,27 @@ test('attacking a governor triggers six personal guards with 70 percent of royal
   assert.equal(s.flags['palaceWins:' + location], undefined);
 });
 
+test('defeating the governor guard claims the town and its guards grumble or flee', () => {
+  let s=approachGovernor(act(governorGuest(),{type:'enterCastle'}));
+  s=act(s,{type:'attackCastleRoyal',target:'governor'});
+  s.enemy.hp=1;s.level=100;s.rng=187441;
+  s=loadGame(saveGame(act(s,{type:'attack'})));
+  assert.ok(s.cities.mothbridge);
+  assert.match(s.log.join(' '),/Countess Adrianna.*spits.*coronet/);
+  const visitor=palaceAt('mothbridge',8,13);
+  visitor.cities=s.cities;visitor.flags=s.flags;
+  s=visitor;
+  const guard=castles.castleGuards(s)[0];
+  assert.ok(guard);
+  s.castle.x=guard.x;s.castle.y=guard.y;
+  s=act(s,{type:'castleTalk',id:guard.id});
+  assert.match(s.log.at(-1),/Yes, your lordship!/);
+  s=loadGame(saveGame(act(s,{type:'attackCastleGuard',id:guard.id})));
+  assert.equal(s.mode,'town');
+  assert.match(s.log.at(-1),/runs/);
+  assert.ok(!castles.castleGuards(s).some(other=>other.id===guard.id));
+});
+
 test('the indoor garrison challenge starts a level-35 governor guard and describes it correctly', () => {
   const audience = approachGovernor(act(governorGuest(), {type: 'enterCastle'}));
   const s = act(audience, {type: 'challenge'});

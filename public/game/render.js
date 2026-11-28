@@ -700,6 +700,18 @@ function castleFloor(layout,region){
  return castleFloorCache.base;
 }
 
+function drawConquerorPortrait(c,s,layout,size){
+ if(!s.cities?.[s.location]||!layout.governor)return;
+ const x=(layout.throne.x+.5)*size,y=(layout.throne.y-.25)*size;
+ c.save();
+ c.fillStyle='#201514';c.fillRect(x-size*.43,y-size*.60,size*.86,size*.94);
+ c.fillStyle='#d7ab5d';c.fillRect(x-size*.38,y-size*.55,size*.76,size*.84);
+ c.fillStyle='#243c35';c.fillRect(x-size*.31,y-size*.48,size*.62,size*.70);
+ c.beginPath();c.rect(x-size*.29,y-size*.46,size*.58,size*.66);c.clip();
+ drawGearAvatar(c,s,x,y+size*.18,size*.86);
+ c.restore();
+}
+
 export function castleChestPortrait(chest,opened=false){
  // The lower sprites start above the midpoint of the 1254 × 1254 atlas.
  return {column:chest.treasurySlot===undefined?0:1,row:opened?1:0,y:opened?555:0,width:627,height:opened?699:555};
@@ -776,6 +788,7 @@ export function renderCastleOverview(canvas,s){
  canvas.height=layout.height*size;
  const c=canvas.getContext('2d');
  c.drawImage(castleFloor(layout,s.region),0,0,canvas.width,canvas.height);
+ drawConquerorPortrait(c,s,layout,size);
  const fontSize=Math.max(15,Math.min(23,Math.round(layout.width*.42)));
  c.font='bold '+fontSize+'px Georgia';c.textAlign='center';c.textBaseline='middle';
  c.lineWidth=3;c.strokeStyle='#221e24';c.fillStyle='#fff2cd';
@@ -810,6 +823,7 @@ function drawCastle(c,w,h,s,layout,time,fx,reduced){
  c.translate(-left*size,-top*size);
  c.beginPath();c.arc(px,py,(CASTLE_VIEW_RADIUS+.5)*size,0,Math.PI*2);c.clip();
  c.drawImage(castleFloor(layout,s.region),0,0,width*size,height*size);
+ drawConquerorPortrait(c,s,layout,size);
  for(const room of rooms){
   const labelCol=room.x+room.width/2,labelRow=room.id==='audience'?room.y-.15:room.y+room.height-.36;
   if(!castlePointVisible(s,{x:labelCol-.5,y:labelRow-.5}))continue;

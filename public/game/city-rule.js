@@ -1,13 +1,21 @@
 import {TOWNS} from './content.js';
 import {gameDay} from './wild-sites.js';
 export const MAYORS=['Osbert Quill','Lady Prudence Pout','Barnaby Ribbons','Vera Redbrick','Magnus Rivet','Saffron Haggles','Coraline Whelk','Tobias Wick','Dame Periwinkle','Asta Snowcap','Edmund Cog','Morrow Grey'];
+const DEFIANT_RULERS=new Set(['mothbridge','redhaven','ash-market','salt-choir','last-dawn']);
+const PLEADING_RULERS=new Set(['gallows-fair','iron-choir','firehaven','hinge-town']);
+function handover(town){
+ if(town==='mothbridge')return 'Countess Adrianna stands straight, spits at your feet, and presses her coronet into your hand. “Take it, then. You may command the city, but you will never command me.”';
+ if(DEFIANT_RULERS.has(town))return 'The ruler tears off their coronet and thrusts it at you. “The city is yours. My loyalty is not.”';
+ if(PLEADING_RULERS.has(town))return 'The ruler whines for mercy, fumbles with the coronet, and begs to keep a small room in the palace.';
+ return 'The ruler bows stiffly and hands over the coronet. The court announces your rule.';
+}
 export const DISPUTES=[
  {title:'The Kielbasa Incident',text:'A dog has peed on a man’s Kielbasa Cart. The dog’s owner calls it a review. The sausage seller demands justice.',choices:['Order the owner to clean the cart','Declare the dog an unlicensed food critic','Buy everyone fresh sausages · 10 gold'],reply:['The owner scrubs. The dog receives a stern look and remains unmoved.','The dog is fined one biscuit. The sausage guild promises to remember this.','The crowd cheers. The dog joins the queue.']},
  {title:'The Hat That Wasn’t',text:'A hat vendor sold a hat that immediately fell apart. He insists the customer purchased a portable nest.',choices:['Order a refund','Make the vendor wear it for a week','Pay for a replacement · 10 gold'],reply:['The buyer receives a refund. The vendor calls you an enemy of innovation.','The vendor leaves wearing three feathers and a terrible expression.','Everyone is satisfied except the treasury.']},
  {title:'The Widow’s Basement',text:'A grieving widow’s husband is alive in her locked basement. He has been shouting through the potato hatch for eleven years.',choices:['Free him and order an investigation','Ask Giacomo to investigate the marriage','Pay a locksmith · 10 gold'],reply:['The husband emerges. His first complaint concerns the soup.','Giacomo already has a dossier. Of course she does.','The door opens. The widow asks whether the locksmith offers a loyalty discount.']}
 ];
 export const cityOf=(s,id=s.location)=>s.cities?.[id];
-export function claimCity(s,note){const id=s.location;if(cityOf(s,id))return;const day=gameDay(s);s.cities??={};s.cities[id]={claimed:day,paidThrough:day,tribute:'waiting',deadline:day+10,guards:0,destroyed:false,disputes:0,case:null};note(s,MAYORS[TOWNS.findIndex(t=>t.id===id)]+' yields the Key to '+TOWNS.find(t=>t.id===id).name+'. You receive a free house, 500 gold each 30-day month, and Giacomo: maid, royal spy, and collector of other people’s business.');}
+export function claimCity(s,note){const id=s.location;if(cityOf(s,id))return;const day=gameDay(s);s.cities??={};s.cities[id]={claimed:day,paidThrough:day,tribute:'waiting',deadline:day+10,guards:0,destroyed:false,disputes:0,case:null};note(s,handover(id));note(s,'You now rule '+TOWNS.find(t=>t.id===id).name+'. '+MAYORS[TOWNS.findIndex(t=>t.id===id)]+' yields the city key. You receive a free house, 500 gold each 30-day month, and Giacomo: maid, royal spy, and collector of other people’s business.');}
 export function cityTick(s,note,random){
  const day=gameDay(s);
  for(const [id,city] of Object.entries(s.cities||{})){
