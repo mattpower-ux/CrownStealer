@@ -1,9 +1,14 @@
 import {itemById} from './items.js';
 import {applyAlignmentImpact} from './alignment.js';
+import {evilCreatureDisposition} from './evil-disposition.js';
 export const BRIDGE_TROLL_ART='/assets/bridge-troll.webp';
 const gearKinds=new Set(['weapon','armor','shield','head','hands','boots','ring','necklace']);
 export function startBridgeTroll(s,key,note,previous={x:s.x,y:s.y}){
  if(s.mode!=='world'||s.flags.bridgeTrollPaid?.includes(key)||s.flags.bridgeTroll)return false;
+ if(evilCreatureDisposition(s,{speciesId:'bridge-troll',name:'Bridge Troll'})==='neutral'){
+  s.flags.bridgeTrollPaid??=[];s.flags.bridgeTrollPaid.push(key);
+  note(s,'The bridge troll recognizes a fellow creature of darkness and waves you across.');return false;
+ }
  s.flags.bridgeTroll={key,x:s.x,y:s.y,backX:previous.x,backY:previous.y,toll:500+s.region*250};
  note(s,'A bridge troll blocks the crossing. Pay '+s.flags.bridgeTroll.toll+' gold, surrender a piece of gear, or hear his alternatives.');return true;
 }
@@ -30,6 +35,10 @@ export function bridgeDirections(s,tileAt){
 export function bridgeTrollAction(s,a,note){
  const troll=s.flags.bridgeTroll;if(!troll||s.mode!=='world')return false;
  if(a.type!=='bridgeTroll')return ['move','mapStep','enter'].includes(a.type);
+ if(a.choice!=='fight'&&evilCreatureDisposition(s,{speciesId:'bridge-troll',name:'Bridge Troll'})==='neutral'){
+  s.flags.bridgeTrollPaid??=[];if(!s.flags.bridgeTrollPaid.includes(troll.key))s.flags.bridgeTrollPaid.push(troll.key);
+  delete s.flags.bridgeTroll;note(s,'The bridge troll sees what you have become and lets you pass unharmed.');return true;
+ }
  if(a.choice==='leave'){s.x=troll.backX;s.y=troll.backY;delete s.flags.bridgeTroll;note(s,'You retreat from the troll bridge.');return true;}
  if(a.choice==='quest'){troll.quest='offered';note(s,'“Those Billy Goats bully me every day. Dress as an old lady and offer them poisonous oatcakes at their cottage. Agree, and I will make it worth your while.”');return true;}
  if(a.choice==='acceptQuest'){troll.quest='accepted';applyAlignmentImpact(s,-200,'Agreeing to poison the Billy Goats');note(s,'You agree to play the old lady. The troll hands over a basket of poisonous oatcakes and whispers the cottage is ten clicks away in the grassy field.');return true;}
@@ -37,7 +46,7 @@ export function bridgeTrollAction(s,a,note){
  else if(a.choice==='gear'){if(!bridgeTrollGear(s).includes(a.id)){note(s,'Choose an unequipped piece of gear to surrender.');return true;}s.bag.splice(s.bag.indexOf(a.id),1);s.pendingLoot=s.pendingLoot.filter(id=>id!==a.id||s.bag.includes(id));}
  else if(a.choice==='sleep'||a.choice==='fight'){
   s.returnMode='world';s.mode='battle';const level=4+s.region*6,hp=90+s.region*65;
-  s.enemy={speciesId:'bridge-troll',name:'Bridge Troll',level,hp,maxHp:hp,attack:12+s.region*7,armor:3+s.region*3,gold:troll.toll,xp:55+s.region*45,kind:'brute',weakness:'quick strikes',firstContact:true,bridgeTrollKey:troll.key,bridgeApproach:{x:troll.backX,y:troll.backY,atX:troll.x,atY:troll.y,region:s.region,area:s.exploration?.area??null}};
+  s.enemy={speciesId:'bridge-troll',name:'Bridge Troll',level,hp,maxHp:hp,attack:12+s.region*7,armor:3+s.region*3,gold:troll.toll,xp:55+s.region*45,kind:'brute',weakness:'quick strikes',firstContact:true,provoked:a.choice==='fight',bridgeTrollKey:troll.key,bridgeApproach:{x:troll.backX,y:troll.backY,atX:troll.x,atY:troll.y,region:s.region,area:s.exploration?.area??null}};
   delete s.flags.bridgeTroll;s.flags.guarded=false;s.flags.combo=0;
   if(a.choice==='sleep'){s.hp=Math.max(1,s.hp-Math.ceil(s.maxHp*.15));note(s,'The troll offers a free bed in his cave. As you drift off he leaps from the shadows! You scramble awake, wounded, beside the bridge.');}else note(s,'The bridge troll raises his club.');return true;
  }else return true;

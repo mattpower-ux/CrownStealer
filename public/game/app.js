@@ -1255,7 +1255,8 @@ function openPanel(name,{winkShot=false,winkResult=null}={}){if(state?.dungeon?.
   const place=townPlace(state);
   if(place?.merchant){
    $('panel-title').textContent=place.name;
-   renderMerchantView(body,state,place,dispatch);
+   if(alignmentPoints(state)===0&&!cityOf(state))body.innerHTML='<p role="status">The merchant sees your evil horns and refuses to buy or sell in a town you do not rule.</p>';
+   else renderMerchantView(body,state,place,dispatch);
   }
  }
  if(name==='fortune')body.innerHTML=sageView(state,fortuneFor(state.name));

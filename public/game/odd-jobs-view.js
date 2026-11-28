@@ -1,7 +1,8 @@
 import {SIDE_QUESTS} from './content.js';
 import {itemArt,itemById} from './items.js';
+import {alignmentPoints} from './alignment.js';
 
-const localJobs=s=>SIDE_QUESTS.filter(job=>job.town===s.location);
+const localJobs=s=>alignmentPoints(s)===0?[]:SIDE_QUESTS.filter(job=>job.town===s.location);
 const number=value=>value.toLocaleString('en-US');
 
 export function selectOddJob(s,id) {
@@ -23,6 +24,7 @@ function requirement(s,job) {
 }
 
 export function oddJobsView(s,id,button,esc) {
+ if(alignmentPoints(s)===0)return '<p role="status">No one will offer odd jobs to someone so completely evil.</p>';
  const jobs=localJobs(s),selected=jobs.find(job=>job.id===id)??jobs[0];
  if(!selected)return '<p>There are no odd jobs in this town.</p>';
 
