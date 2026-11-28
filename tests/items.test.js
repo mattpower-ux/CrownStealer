@@ -10,15 +10,18 @@ test('item categories retain recognizable art when an item has no known shape', 
     ['belt-sneakiness-1','belt'], ['travel-armor','armor'], ['common-helmet-1','helmet'],
     ['boots-speed-1','boots'],
   ]) {
-    assert.match(itemArt({...itemById(id),shape:'missing'}), new RegExp('aria-label="'+shape+' illustration"'));
+    assert.match(itemArt({...itemById(id),shape:'missing'}), new RegExp('aria-label="(?:'+shape+'|'+itemById(id).name+') illustration"'));
   }
 });
 
 test('named legendary rewards use their own art and quest bones and teeth differ from books', () => {
-  for (const id of ['belt-double-damage','galen-fireball-ring','balrog-whip','holy-avenger','wang-sceptre']) {
+  for (const id of ['belt-double-damage','galen-fireball-ring','balrog-whip','whip-of-command','holy-avenger','wang-sceptre']) {
     const item = itemById(id);
     assert.ok(itemArt(item).includes('aria-label="'+item.name+' illustration"'), id);
   }
+  const commandWhip=itemArt(itemById('whip-of-command'));
+  assert.match(commandWhip,/stroke="#bd2531"/);
+  assert.match(commandWhip,/fill="#111114"/);
   assert.match(itemArt(itemById('job-keepsake-the-husband-in-the-ledger')), /src="\/assets\/ancient-book.webp"/);
   assert.match(itemArt(itemById('job-keepsake-an-unflattering-history')), /aria-label="bone illustration"/);
   assert.match(itemArt(itemById('job-keepsake-amnesty-in-small-print')), /aria-label="tooth illustration"/);
