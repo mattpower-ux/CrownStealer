@@ -378,6 +378,24 @@ test('defeating the governor guard claims the town and its guards grumble or fle
   assert.ok(!castles.castleGuards(s).some(other=>other.id===guard.id));
 });
 
+test('an older save with five palace wins restores Mothbridge rule',()=>{
+ const s=governorGuest();
+ s.flags['palaceWins:mothbridge']=5;
+ const restored=loadGame(saveGame(s));
+ assert.equal(restored.flags['townGarrison:mothbridge'],true);
+ assert.ok(restored.cities.mothbridge);
+ assert.match(restored.log.join(' '),/coronet/);
+});
+
+test('losing a later palace challenge keeps earlier Mothbridge victories',()=>{
+ let s=governorGuest();
+ s.flags['palaceWins:mothbridge']=2;
+ s=act(s,{type:'challenge'});
+ assert.equal(s.enemy.guardChallenge,true);
+ s=act({...s,hp:1},{type:'guard'});
+ assert.equal(s.flags['palaceWins:mothbridge'],2);
+});
+
 test('the indoor garrison challenge starts a level-35 governor guard and describes it correctly', () => {
   const audience = approachGovernor(act(governorGuest(), {type: 'enterCastle'}));
   const s = act(audience, {type: 'challenge'});

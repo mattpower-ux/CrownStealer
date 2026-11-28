@@ -261,7 +261,7 @@ function encounter(s,boss=false,guard=false,challenged=false){
 function startCastleGuard(s,forced=false) {
  encounter(s,false,true,forced);
 }
-function resetPalaceAttempt(s){if(s.enemy?.gateGuard){delete s.flags.gateAttemptWins;delete s.flags.gateAttemptId;}if(s.enemy?.guard&&!s.enemy.castleRoyalDefense&&!s.enemy.castleDuel&&!s.enemy.tributeTown&&!s.enemy.gossipGuard&&!s.enemy.gateGuard&&s.location!=='bellwether')delete s.flags['palaceWins:'+s.location];}
+function resetPalaceAttempt(s){if(s.enemy?.gateGuard){delete s.flags.gateAttemptWins;delete s.flags.gateAttemptId;}}
 function recover(s,events=[]){if(s.dungeon?.site===SAGE_MAZE_ID){s.hp=Math.max(1,Math.ceil(s.maxHp/2));failSageMaze(s,note,'The Sage drags you out of the rat nest and bars her hut for eight days.');return;}if(finishChampionChallenge(s,false,note,events))return;if(arenaDefeat(s,note,events))return;if(isRoyalCampaign(s)&&s.dungeon?.royal&&['imprisoned','sewers'].includes(s.flags.royalQuest))s.flags.royalQuest='commission';captureDragon(s);s.spellEffects.stunnedTurns=0;const rescue=message=>{s.flags.rescuePending=true;s.flags.rescueMessage=message;note(s,message);};if(s.enemy?.castleDuel){exitCastle(s,true);s.enemy=null;s.hp=s.maxHp;s.dungeon=null;rescue('The palace guard carries you outside to recover.');return;}if(s.enemy?.castleRobbery){
  resetPalaceAttempt(s);exitCastle(s,true);s.enemy=null;s.hp=s.maxHp;s.dungeon=null;
  rescue('The castle guards carry you outside. Pay the 2,000-gold fine at the town gate.');
@@ -1425,6 +1425,11 @@ export function loadGame(json){
  if(s.dungeon?.royal&&!['cell','sewer'].includes(s.dungeon.royal))throw Error('Invalid royal dungeon.');
  for(const [key,value] of Object.entries(s.flags)){if(key.startsWith('secretRoom:')){const dungeon=secretDungeonForKey(key.slice('secretRoom:'.length));const expected=dungeon?secretAlcove(dungeon,dungeonMap(dungeon)):null;if(!expected||!value||expected.x!==value.x||expected.y!==value.y)throw Error('Invalid discovered secret room.');}if(key.startsWith('gossip:')&&(!TOWNS.some(t=>t.id===key.slice(7))||!Number.isSafeInteger(value)||value<0))throw Error('Invalid gossip progress.');if(key.startsWith('palaceBan:')&&(!TOWNS.some(t=>t.id===key.slice(10)&&t.id!=='bellwether')||typeof value!=='boolean'))throw Error('Invalid palace ban.');}
  for(const [key,value] of Object.entries(s.flags))if(key.startsWith('palaceWins:')&&(!TOWNS.some(t=>t.id===key.slice(11)&&t.id!=='bellwether')||!Number.isInteger(value)||value<0||value>5))throw Error('Invalid palace guard progress.');
+ for(const town of TOWNS.filter(t=>t.id!=='bellwether')){
+  if((s.flags['palaceWins:'+town.id]||0)<5&&!s.flags['townGarrison:'+town.id])continue;
+  s.flags['townGarrison:'+town.id]=true;
+  if(!s.cities[town.id]){const location=s.location;s.location=town.id;claimCity(s,note);s.location=location;}
+ }
  if(s.flags.royalGuardWins!==undefined&&(!Number.isInteger(s.flags.royalGuardWins)||s.flags.royalGuardWins<0||s.flags.royalGuardWins>10000))throw Error('Invalid royal guard progress.');
  // Relic crossings wrote both flags. A lone eastern gate unlock records three guard wins.
  if(s.flags.guardVictories===undefined){
