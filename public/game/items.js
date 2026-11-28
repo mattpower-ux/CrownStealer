@@ -71,6 +71,37 @@ const legendaryDetails = {
  hammer:'<path d="m65 73 7 7-7 7-7-7Zm70 0 7 7-7 7-7-7Z" fill="#ead08f"/>',
  mace:'<path d="m100 43 15 17-15 17-15-17Z" fill="#d9b568" stroke="#855a38" stroke-width="4"/>',
 };
+function itemEmblem(item){
+ const name=String(item.name||item.id||'').toLowerCase();
+ if(/return|teleport|travel/.test(name))return '<path d="M111 69a28 28 0 1 0 13 48M111 69l-2 22-20-9" fill="none" stroke="#315f77" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>';
+ if(/intelligence|sage|mapping|clarissa/.test(name))return '<path d="M64 96q17-27 36 0 19-27 36 0v34q-18-18-36 1-18-19-36-1Z" fill="#b4d9df" stroke="#44677b" stroke-width="5"/><path d="M100 98v32" stroke="#44677b" stroke-width="4"/>';
+ if(/fire|flame|burn/.test(name))return '<path d="M100 62q30 33 20 53-8 18-22 18-22 0-25-21-2-18 14-33l2 21q13-10 11-38Z" fill="#df6c38" stroke="#8d3d2c" stroke-width="4"/>';
+ if(/invis|shadow|dark/.test(name))return '<path d="M59 105q41-51 82 0-41 52-82 0Z" fill="#6d638b" stroke="#3d3457" stroke-width="5"/><circle cx="100" cy="105" r="17" fill="#c7badc"/><circle cx="100" cy="105" r="7" fill="#332e4e"/>';
+ if(/heal|health|restore/.test(name))return '<path d="M89 70h22v23h23v22h-23v23H89v-23H66V93h23Z" fill="#e6e6be" stroke="#9d4b55" stroke-width="5"/>';
+ if(/protect|ward|shield/.test(name))return '<path d="M100 65 132 78v29q-7 24-32 35-25-11-32-35V78Z" fill="#add4ca" stroke="#4c827b" stroke-width="5"/>';
+ const symbols=[
+  '<path d="m100 67 11 20 22 4-16 16 4 23-21-11-21 11 4-23-16-16 22-4Z" fill="#d6b979" stroke="#77563d" stroke-width="4"/>',
+  '<circle cx="100" cy="104" r="30" fill="none" stroke="#5d7991" stroke-width="7"/><path d="M100 59v91m-34-46h68" stroke="#5d7991" stroke-width="5"/>',
+  '<path d="m100 65 32 38-32 38-32-38Z" fill="#a5c3a2" stroke="#4c765d" stroke-width="5"/><circle cx="100" cy="103" r="10" fill="#f3e4a1"/>',
+  '<path d="M70 127q-16-29 6-48 19-17 43-2 15 9 11 26-4 16-20 15-13-1-11-12" fill="none" stroke="#8871a5" stroke-width="9" stroke-linecap="round"/>',
+ ];
+ const hash=[...String(item.id||name)].reduce((value,char)=>value*31+char.charCodeAt(0)|0,0);
+ return symbols[Math.abs(hash)%symbols.length];
+}
+function distinctiveSupplyArt(item,shape){
+ const name=String(item.name||item.id||'').toLowerCase();
+ if(shape==='potion'){
+  const palette=['#d9a35b','#6ba6ad','#bf88ad','#d9b96f'];
+  const hash=[...String(item.id||name)].reduce((value,char)=>value*31+char.charCodeAt(0)|0,0);
+  const liquid=/heal|health|red/.test(name)?'#d76c77':/mana|magic|blue/.test(name)?'#5e9fd8':/poison|venom/.test(name)?'#83b46a':/invis|shadow/.test(name)?'#8875bc':palette[Math.abs(hash)%palette.length];
+  return `<svg class="item-art" viewBox="0 0 200 220" role="img" aria-label="${item.name} illustration"><path d="M78 26h44v40q39 26 34 80-2 45-56 48-54-3-56-48-5-54 34-80Z" fill="#b4d9d544" stroke="#c9e4dc" stroke-width="6"/><path d="M50 132q50 15 100 0v27q-7 27-50 31-43-4-50-31Z" fill="${liquid}" stroke="#f3e6bc" stroke-width="4"/><path d="M76 25h48v17H76Z" fill="#795b42" stroke="#d1ac74" stroke-width="5"/><path d="M66 101q10-20 24-24" fill="none" stroke="#ffffff99" stroke-width="7" stroke-linecap="round"/>${itemEmblem(item)}</svg>`;
+ }
+ if(shape==='food'){
+  const meal=/bread|loaf|meal|ration/.test(name);
+  return meal?`<svg class="item-art" viewBox="0 0 200 220" role="img" aria-label="${item.name} illustration"><path d="M31 113q6-53 69-55 63 2 69 55l-8 56H39Z" fill="#bd8650" stroke="#f0c579" stroke-width="7"/><path d="m61 93 17 31m23-43 12 39m21-28 9 29" stroke="#f3d69d" stroke-width="7" stroke-linecap="round"/><path d="M32 166h136" stroke="#84532e" stroke-width="8"/></svg>`:`<svg class="item-art" viewBox="0 0 200 220" role="img" aria-label="${item.name} illustration"><ellipse cx="100" cy="154" rx="67" ry="31" fill="#ad8253" stroke="#e5c087" stroke-width="6"/><path d="M58 126q10-57 44-55 38 4 42 54-9 23-43 27-34-2-43-26Z" fill="#ba6c45" stroke="#e7a873" stroke-width="6"/><path d="M139 91q30-16 36 6-2 24-30 18" fill="none" stroke="#ead9ba" stroke-width="13"/></svg>`;
+ }
+ return '';
+}
 export function itemArt(item){
  if(item?.shape==='climbing-gear')return '<img class="item-art" src="/assets/mountain-climbing-gear.webp" alt="" width="256" height="256">';
  if(!item)return '';
@@ -93,7 +124,8 @@ export function itemArt(item){
  if(shape==='seed')return '<svg class="item-art" viewBox="0 0 200 220" aria-label="Silver Acorn"><defs><linearGradient id="silver-acorn-metal"><stop stop-color="#66777c"/><stop offset=".4" stop-color="#f1fff6"/><stop offset="1" stop-color="#8a9a9c"/></linearGradient></defs><path d="M55 88Q45 150 100 194Q155 150 145 88Z" fill="url(#silver-acorn-metal)" stroke="#495b5d" stroke-width="5"/><path d="M40 92Q42 49 100 49Q158 49 160 92Z" fill="#84968b" stroke="#dce6df" stroke-width="5"/><path d="M96 49Q88 25 111 20M52 72L68 88M72 61L94 89M95 56L119 88M120 61L143 85" fill="none" stroke="#dce6df" stroke-width="7"/></svg>';
  if(shape==='book')return '<img class="item-art" src="/assets/ancient-book.webp" alt="Ancient leather-bound book" width="256" height="256">';
  const decoration=item.rarity==='legendary'?(legendaryDetails[shape]||''):'';
- if(shape==='scroll')return `<svg class="item-art" viewBox="0 0 200 220" role="img" aria-label="scroll illustration"><circle cx="100" cy="110" r="86" fill="${color}18"/>${ornament}<g transform="rotate(-9 100 110)" stroke-linejoin="round"><path d="M50 43H155V169q10 5 7 18-3 13-19 13H54q-21-7-13-28l13-8V62Z" fill="#000" opacity=".25"/><path d="M48 30h103q-12 7-12 23v111q0 15 10 19H52q-14-6-14-19V52q0-14 10-22Z" fill="#e8ce91" stroke="#85572d" stroke-width="4"/><path d="M53 48h77v116H53Z" fill="#f7e5b6"/><path d="M48 30h105q21 2 19 21l-3 13h-29l3-15q1-11-10-11H48Z" fill="#f6dfab" stroke="#85572d" stroke-width="4"/><path d="M154 40q12-1 10 11h-20" fill="none" stroke="#bc8a50" stroke-width="4"/><path d="M38 156h98q-7 10-2 20 4 10 17 7-3 13-18 13H43q-19-3-19-21 0-14 14-19Z" fill="#d3ae6d" stroke="#85572d" stroke-width="4"/><path d="M38 165q-8 3-5 12 2 8 12 8h82M49 42v104" fill="none" stroke="#fff0c6" stroke-width="4" stroke-linecap="round"/><path d="m92 67 8 16 18 3-13 13 3 18-16-9-16 9 3-18-13-13 18-3Z" fill="${color}" stroke="#79543b" stroke-width="3"/><path d="M62 131h58m-54 10h21m10 0h17" stroke="#866342" stroke-width="4" stroke-linecap="round"/><path d="M57 61h12m46 0h10M56 119v-9m69 9v-9" stroke="#bd9456" stroke-width="2"/></g>${decoration}</svg>`;
+ if(shape==='scroll')return `<svg class="item-art" viewBox="0 0 200 220" role="img" aria-label="${item.name} illustration"><circle cx="100" cy="110" r="86" fill="${color}18"/>${ornament}<g transform="rotate(-9 100 110)" stroke-linejoin="round"><path d="M50 43H155V169q10 5 7 18-3 13-19 13H54q-21-7-13-28l13-8V62Z" fill="#000" opacity=".25"/><path d="M48 30h103q-12 7-12 23v111q0 15 10 19H52q-14-6-14-19V52q0-14 10-22Z" fill="#e8ce91" stroke="#85572d" stroke-width="4"/><path d="M53 48h77v116H53Z" fill="#f7e5b6"/><path d="M48 30h105q21 2 19 21l-3 13h-29l3-15q1-11-10-11H48Z" fill="#f6dfab" stroke="#85572d" stroke-width="4"/><path d="M154 40q12-1 10 11h-20" fill="none" stroke="#bc8a50" stroke-width="4"/><path d="M38 156h98q-7 10-2 20 4 10 17 7-3 13-18 13H43q-19-3-19-21 0-14 14-19Z" fill="#d3ae6d" stroke="#85572d" stroke-width="4"/><path d="M38 165q-8 3-5 12 2 8 12 8h82M49 42v104" fill="none" stroke="#fff0c6" stroke-width="4" stroke-linecap="round"/>${itemEmblem(item)}<path d="M62 139h58" stroke="#866342" stroke-width="4" stroke-linecap="round"/></g>${decoration}</svg>`;
+ const supplyArt=distinctiveSupplyArt(item,shape);if(supplyArt)return supplyArt;
  if(Object.hasOwn(drawings,shape))return `<svg class="item-art" viewBox="0 0 200 220" role="img" aria-label="${shape} illustration"><circle cx="100" cy="110" r="86" fill="${color}18"/>${ornament}<g fill="${color}33" stroke="${color}" stroke-width="8" stroke-linejoin="round">${drawings[shape]}</g>${decoration}</svg>`;
  const metal=color,gradient="steel-"+String(item.id||item.name).replace(/[^a-z0-9-]/gi,"");
  const head=shape==='armor'?'<path d="M68 40 L42 61 L25 105 L57 119 L66 96 L61 182 Q100 205 139 182 L134 96 L143 119 L175 105 L158 61 L132 40 Q100 69 68 40 Z" fill="url(#steel)"/><path d="M100 66 V190 M66 130 H134 M65 145 H135" stroke="#5a5c51" stroke-width="4"/>':shape==='axe'?'<path d="M94 57 Q43 44 47 104 L94 91 M106 57 Q157 44 153 104 L106 91" fill="url(#steel)"/>':shape==='hammer'?'<rect x="52" y="55" width="96" height="45" rx="7" fill="url(#steel)"/><path d="M62 64 H138 M62 90 H138" stroke="#6a5c40"/>':shape==='spear'?'<path d="M100 17 L117 65 L100 85 L83 65 Z" fill="url(#steel)"/>':shape==='relic'?'<path d="M55 75 L78 94 L100 56 L122 94 L145 75 L134 132 H66 Z" fill="url(#steel)"/><circle cx="100" cy="113" r="9" fill="#203d41"/>':'<path d="M100 20 L114 49 L108 133 H92 L86 49 Z" fill="url(#steel)"/><path d="M100 30 V130" stroke="#ffffffaa"/><path d="M69 135 Q100 121 131 135 L128 143 H72 Z" fill="#aa884e"/>';
