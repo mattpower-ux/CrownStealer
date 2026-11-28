@@ -602,15 +602,15 @@ export function castleAction(s, action, options) {
     note(s, 'You leave the locked chest untouched.');
     return true;
   }
-  if (s.castle.alarm) {
+  const owned=!!s.cities?.[s.location];
+  if (s.castle.alarm&&!owned) {
     note(s, 'The alarm is still ringing. Get out of the castle.');
     return true;
   }
   const {skill, lockLevel} = castleLockpickOdds(s, chest, dexterity(s));
-  const score = 100 - Math.floor(random() * 100) + skill;
-  const success = score >= lockLevel;
-  options.events?.push({kind: 'castleLockpick', id: chest.id, score, lockLevel, success});
-  note(s, `Lockpick score ${score} against lock level ${lockLevel}.`);
+  const score = owned?lockLevel:100 - Math.floor(random() * 100) + skill;
+  const success = owned||score >= lockLevel;
+  if(!owned){options.events?.push({kind: 'castleLockpick', id: chest.id, score, lockLevel, success});note(s, `Lockpick score ${score} against lock level ${lockLevel}.`);}
   if (success) {
     s.flags[chest.id] = true;
     applyAlignmentImpact(s, -5, 'Robbing a castle chest');
@@ -618,7 +618,7 @@ export function castleAction(s, action, options) {
     const items = castleTreasuryLoot(s, chest);
     s.bag.push(...items);
     s.pendingLoot.push(...items);
-    note(s, 'The lock clicks open. You pocket ' + chest.gold + ' gold.' + (items.length ? ' You also find rare equipment.' : ''));
+    note(s, (owned?'You open your palace chest without raising the alarm.':'The lock clicks open.')+' You pocket ' + chest.gold + ' gold.' + (items.length ? ' You also find rare equipment.' : ''));
   } else {
     s.castle.alarm = true;
     s.flags['townFaction:' + s.location] = -20;

@@ -387,6 +387,27 @@ test('an older save with five palace wins restores Mothbridge rule',()=>{
  assert.match(restored.log.join(' '),/coronet/);
 });
 
+test('a ruler can empty palace chests without an alarm and loses five alignment points per chest',()=>{
+ const chests=castles.castleLayout('mothbridge').chests.slice(0,2);
+ let s=palaceAt('mothbridge',chests[0].x,chests[0].y);
+ s.flags['palaceWins:mothbridge']=5;
+ s=loadGame(saveGame(s));
+ s.rng=187441;
+ const start=s.alignmentPoints;
+ const first=act(s,{type:'robCastleChest',id:chests[0].id});
+ assert.equal(first.flags[chests[0].id],true);
+ assert.equal(first.castle.alarm,false);
+ assert.equal(first.enemy,null);
+ assert.equal(first.alignmentPoints,start-5);
+ assert.match(first.log.at(-1),/without raising the alarm/);
+ first.castle.x=chests[1].x;first.castle.y=chests[1].y;
+ const second=loadGame(saveGame(act(first,{type:'robCastleChest',id:chests[1].id})));
+ assert.equal(second.flags[chests[1].id],true);
+ assert.equal(second.alignmentPoints,start-10);
+ assert.equal(second.castle.alarm,false);
+ assert.equal(castles.castleFineFor(second,'mothbridge'),0);
+});
+
 test('losing a later palace challenge keeps earlier Mothbridge victories',()=>{
  let s=governorGuest();
  s.flags['palaceWins:mothbridge']=2;
