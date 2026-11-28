@@ -21,6 +21,9 @@ export function validateEvilRoute(state) {
 export const evilEmpowered = state => empoweredPhases.has(state.evilRoute?.phase)
   || (state.evilRoute === undefined && state.flags?.redGlobeCurse === true);
 
+export const evilAppearance = state => state.alignmentPoints === 0 || state.alignment <= -100
+  || evilEmpowered(state);
+
 export const evilStrengthBonus = state => evilEmpowered(state) ? 10 : 0;
 
 export function purifyEvilRoute(state, note) {
@@ -29,6 +32,8 @@ export function purifyEvilRoute(state, note) {
   delete state.flags.redGlobeSworn;
   state.flags.redGlobePurified = true;
   state.alignment = 0;
+  state.alignmentPoints = 500;
+  delete state.flags.evilAlignmentLocked;
   note?.(state, 'The White Mountain burns away the curse. Your horns, tail, and borrowed strength vanish. You are free.');
   return state;
 }

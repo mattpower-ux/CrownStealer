@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {applyAlignmentImpact, alignmentPoints, alignmentLocked, alignmentShiftMessage} from '../public/game/alignment.js';
+import {devilHornsMarkup,devilTailMarkup} from '../public/game/devil-horns.js';
+import {evilAppearance,evilEmpowered} from '../public/game/evil-route.js';
 
 const state = () => ({alignment: 0, alignmentPoints: 500, flags: {}, exploration: null});
 
@@ -12,6 +14,10 @@ test('alignment uses a persistent 0–1000 scale and locks only at absolute evil
   assert.equal(applyAlignmentImpact(s, -1000), -600);
   assert.equal(alignmentPoints(s), 0);
   assert.equal(alignmentLocked(s), true);
+  assert.equal(evilAppearance(s),true);
+  assert.equal(evilEmpowered(s),false);
+  assert.match(devilHornsMarkup(s),/devil-horns/);
+  assert.match(devilTailMarkup(s),/evil-tail/);
   assert.equal(applyAlignmentImpact(s, 1), 0);
 });
 

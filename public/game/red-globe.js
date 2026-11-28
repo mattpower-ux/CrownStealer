@@ -22,7 +22,7 @@ export function fulfillRedGlobe(before,s,a,events,note){
  const opening=before.mode!=='battle'&&s.mode==='battle'&&['attackCastleGuard','fightGuards','challengeGarrison','attackGuard','gossipGuardAttack','challengeGate','challenge'].includes(a?.type);
  const strike=before.mode==='battle'&&before.enemy?.guard&&['attack','useMagic','useItem'].includes(a?.type)&&events.some(e=>e.target==='enemy'&&['hit','miss','magic'].includes(e.kind));
  if(!opening&&!strike)return;
- s.flags.redGlobeCurse=true;s.evilRoute={version:1,phase:'empowered'};s.alignment=-100;
+ s.flags.redGlobeCurse=true;s.evilRoute={version:1,phase:'empowered'};s.alignment=-100;s.alignmentPoints=0;s.flags.evilAlignmentLocked=true;
  note(s,'The globe keeps its promise. +10 Strength! Your soul turns EVIL. Huge red horns tear skyward. Seek the White Mountain of Purity in the far north.');
  events.push({kind:'redGlobeCurse',sound:'magic',message:s.log.at(-1)});
 }

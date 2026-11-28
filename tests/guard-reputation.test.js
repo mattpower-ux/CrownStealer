@@ -21,6 +21,8 @@ test('two victories still allow pursuit; explicit palace challenge continues thr
  s=act(s,{type:'challenge'});
  for(let i=0;i<5;i++){assert.equal(s.mode,'battle');s=loadGame(saveGame(s));s=win(s);}
  assert.equal(s.mode,'town');assert.equal(s.flags['townGarrison:mothbridge'],true);
+ assert.ok(s.cities.mothbridge);
+ assert.match(s.log.join(' '),/Key to Mothbridge/);
  assert.equal(s.flags.guardVictories,7);
 });
 
